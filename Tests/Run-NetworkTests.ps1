@@ -78,13 +78,31 @@ function Test-RepairFixture {
             # Same production CMD and powershell.exe -File startup as a double-click.
             # Select the target noninteractively; EOF releases the usual pause.
             $command='""'+(Join-Path $source 'Apply CT QA Network Update.cmd')+'" -TargetFolder "'+$target+'" -NoLaunch < nul"'
-            & $env:ComSpec /d /s /c $command > (Join-Path $fixture 'repair.log') 2>&1
+            # ProcessStartInfo preserves CMD's quote string exactly; legacy PowerShell
+            # native-argument marshaling can otherwise escape the leading quotes.
+            $process=New-Object Diagnostics.Process
+            $process.StartInfo=New-Object Diagnostics.ProcessStartInfo
+            $process.StartInfo.FileName=$env:ComSpec
+            $process.StartInfo.Arguments='/d /s /c '+$command
+            $process.StartInfo.WorkingDirectory=[IO.Path]::GetTempPath()
+            $process.StartInfo.UseShellExecute=$false
+            $process.StartInfo.RedirectStandardOutput=$true
+            $process.StartInfo.RedirectStandardError=$true
+            try {
+                [void]$process.Start()
+                $stdout=$process.StandardOutput.ReadToEndAsync();$stderr=$process.StandardError.ReadToEndAsync()
+                if(-not $process.WaitForExit(60000)){$process.Kill();throw 'Production launcher did not complete within one minute'}
+                [IO.File]::WriteAllText((Join-Path $fixture 'repair.log'),($stdout.Result+$stderr.Result))
+                $helperExitCode=$process.ExitCode
+            } finally {$process.Dispose()}
         } elseif($UseLauncherDefaults) {
             & (Get-Process -Id $PID).Path -NoProfile -File (Join-Path $source 'App/ApplyNetworkUpdate.ps1') -TargetFolder $target -NoLaunch > (Join-Path $fixture 'repair.log') 2>&1
+            $helperExitCode=$LASTEXITCODE
         } else {
             & (Get-Process -Id $PID).Path -NoProfile -File (Join-Path $source 'App/ApplyNetworkUpdate.ps1') -TargetFolder $target -SourceFolder $source -NoLaunch > (Join-Path $fixture 'repair.log') 2>&1
+            $helperExitCode=$LASTEXITCODE
         }
-        Check ($LASTEXITCODE -eq 0) 'Repair helper succeeded'
+        Check ($helperExitCode -eq 0) ('Repair helper succeeded: '+[IO.File]::ReadAllText((Join-Path $fixture 'repair.log')))
     } finally {Pop-Location}
     $saved=Get-Content (Join-Path $target 'Config/Settings.local.json') -Raw|ConvertFrom-Json
     Check ($saved.Sources[0].Path -eq $scanner.Path) 'Private profile applied to the existing installation'

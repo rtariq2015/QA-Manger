@@ -1,0 +1,92 @@
+﻿{
+    "Product":  "CT QA Manager Pro",
+    "Suite":  "Configurable connections and protected credentials",
+    "TimestampUtc":  "2026-11-10T13:44:32.8315719Z",
+    "Runtime":  "5.1.26100.33648",
+    "Platform":  "Microsoft Windows NT 10.0.26100.0",
+    "WindowsPowerShell51ActuallyRun":  true,
+    "WindowsDPAPIActuallyRun":  true,
+    "Tests":  15,
+    "Assertions":  181,
+    "Passed":  15,
+    "Skipped":  0,
+    "Failed":  0,
+    "Results":  [
+                    {
+                        "Name":  "Adding a fourth configured scanner imports and updates it without changing existing scanner reports",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "A single configured scanner can complete setup and a cached update",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Twenty configured scanners are accepted; zero or twenty-one are rejected before writes",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Unsafe or colliding scanner identities, names, and drive letters are rejected before writes",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "An archived scanner identity absent from configuration is not silently trusted",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Connection edits cannot remove report identities; a display-name edit preserves the archive",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Saved sign-ins use Windows protection or refuse before creating any file on other platforms",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Credential status and reads do not create files; non-Windows remove refuses without changes",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Credential IDs cannot traverse paths or use Windows reserved connection identities",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Actual background worker isolates one unreadable sign-in and continues every configured scanner",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "A saved scanner path change rebinds the same relative file and hash without duplicating reviewed reports",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "A known root alias never merges identical basenames from different relative source folders",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Ambiguous prior-root matches never merge two legitimate archived report identities",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Update-on-open defaults on, honors a persisted opt-out, and normalizes older settings read-only",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Actual startup-update decision and callback run once only for an opted-in established archive",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    }
+                ],
+    "FixturesKept":  false
+}

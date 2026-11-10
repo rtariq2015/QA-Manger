@@ -1,5 +1,5 @@
 {
-  "Version": "4.2.1",
+  "Version": "4.2.2",
   "Runtime": "7.4.13",
   "Platform": "Unix 6.18.57.0",
   "WindowsPowerShell51ActuallyRun": false,
@@ -87,5 +87,6 @@
       "Result": "PASS",
       "Details": ""
     }
-  ]
+  ],
+  "SyntheticScenario": "/tmp/CTQA_PortableTests_6cfa1dc8ff064fe7a7eedacaa46d3c88"
 }

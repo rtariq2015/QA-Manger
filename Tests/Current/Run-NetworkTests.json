@@ -1,9 +1,9 @@
 {
-  "Version": "4.2.1",
+  "Version": "4.2.2",
   "Runtime": "7.4.13",
   "WindowsPowerShell51ActuallyRun": false,
-  "Tests": 11,
-  "Assertions": 33,
+  "Tests": 12,
+  "Assertions": 41,
   "Failed": 0,
   "Results": [
     {
@@ -33,6 +33,11 @@
     },
     {
       "Name": "The repair helper updates an existing installation and retains its data and archive choice",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "Production launcher resolves default folders from another working directory with spaces in paths",
       "Result": "PASS",
       "Details": ""
     },

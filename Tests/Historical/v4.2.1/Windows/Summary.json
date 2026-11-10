@@ -1,0 +1,64 @@
+{
+  "Version": "4.2.1",
+  "SourceCommit": "4bd29df1f048612c4af79080c019dff953d4a076",
+  "WorkflowRun": "https://github.com/rtariq2015/QA-Manger/actions/runs/42827136048",
+  "Runtime": "Windows PowerShell 5.1.26100.33648",
+  "Host": "GitHub-hosted Windows Server 2025",
+  "Tests": 131,
+  "Assertions": 905,
+  "Failed": 0,
+  "WindowsPowerShell51ActuallyRun": true,
+  "NativeWPFActuallyRun": true,
+  "WindowsDPAPIActuallyRun": true,
+  "Suites": [
+    {
+      "Name": "Run-BrowseTests",
+      "Tests": 17,
+      "Assertions": 117,
+      "Failed": 0
+    },
+    {
+      "Name": "Run-ConnectionTests",
+      "Tests": 15,
+      "Assertions": 181,
+      "Failed": 0
+    },
+    {
+      "Name": "Run-ExportTests",
+      "Tests": 24,
+      "Assertions": 250,
+      "Failed": 0
+    },
+    {
+      "Name": "Run-MonthlyTests",
+      "Tests": 16,
+      "Assertions": 89,
+      "Failed": 0
+    },
+    {
+      "Name": "Run-NetworkTests",
+      "Tests": 11,
+      "Assertions": 33,
+      "Failed": 0
+    },
+    {
+      "Name": "Run-PdfTests",
+      "Tests": 8,
+      "Assertions": 25,
+      "Failed": 0
+    },
+    {
+      "Name": "Run-PortableTests",
+      "Tests": 16,
+      "Assertions": 45,
+      "Failed": 0
+    },
+    {
+      "Name": "Run-Tests",
+      "Tests": 24,
+      "Assertions": 165,
+      "Failed": 0
+    }
+  ],
+  "Scope": "Synthetic PDFs, local scanner fixtures and mocked network boundaries. WPF rendered a synthetic preview. Hospital access, actual scanner authentication and workstation endpoint policy were not tested."
+}

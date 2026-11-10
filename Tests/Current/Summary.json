@@ -1,14 +1,20 @@
 {
   "Product": "CT QA Manager Pro",
-  "Version": "4.2.1",
+  "Version": "4.2.2",
   "Runtime": "PowerShell 7.4.13 on Linux",
-  "Tests": 131,
-  "Assertions": 898,
+  "Tests": 132,
+  "Assertions": 906,
   "Failed": 0,
   "WindowsPowerShell51ActuallyRun": false,
   "NativeWPFActuallyRun": false,
   "WindowsDPAPIActuallyRun": false,
   "Suites": [
+    {
+      "Name": "Run-Tests",
+      "Tests": 24,
+      "Assertions": 165,
+      "Failed": 0
+    },
     {
       "Name": "Run-BrowseTests",
       "Tests": 17,
@@ -34,12 +40,6 @@
       "Failed": 0
     },
     {
-      "Name": "Run-NetworkTests",
-      "Tests": 11,
-      "Assertions": 33,
-      "Failed": 0
-    },
-    {
       "Name": "Run-PdfTests",
       "Tests": 8,
       "Assertions": 25,
@@ -52,9 +52,9 @@
       "Failed": 0
     },
     {
-      "Name": "Run-Tests",
-      "Tests": 24,
-      "Assertions": 165,
+      "Name": "Run-NetworkTests",
+      "Tests": 12,
+      "Assertions": 41,
       "Failed": 0
     }
   ],
@@ -64,7 +64,9 @@
     "Reset": true,
     "RelativePdfLinks": 4,
     "Browser": "Chromium 151",
-    "Scope": "Generated offline library with synthetic PDFs"
+    "Scope": "Generated offline library with synthetic PDFs",
+    "ValidatedVersion": "4.2.0 (offline library unchanged in the updater fixes)"
   },
-  "WindowsEvidence": "Windows/Summary.json (v4.2.1: 131 scenarios, 905 assertions; PowerShell 5.1, DPAPI and native WPF executed)"
+  "WindowsEvidence": "Windows/Summary.json (prior v4.2.1 until current Windows run completes)",
+  "SourceCommit": "1ad469235c156fc6659fc82151455ca233ef9fe3"
 }
