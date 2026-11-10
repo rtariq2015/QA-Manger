@@ -12,9 +12,10 @@ assert repo=='rtariq2015/QA-Manger'
 run=json.loads(subprocess.check_output(['gh','api',f'repos/{repo}/actions/runs/{run_id}'],text=True))
 assert run['status']=='completed' and run['conclusion']=='success' and run['head_sha']==tested,'The recorded Windows validation did not pass for the expected source.'
 assert run['path']=='.github/workflows/windows-validation.yml'
-paths=['App','Config','Tests/*.ps1','Start CT QA Manager.cmd','Update CT QA Manager.cmd','Apply CT QA Network Update.cmd','Export CT QA Diagnostics.cmd','scripts/build_release.py','.github/workflows/windows-validation.yml']
+paths=['App','Host','Config','Tests/*.ps1','Tests/Web','Start CT QA Manager.cmd','Update CT QA Manager.cmd','Apply CT QA Network Update.cmd','Export CT QA Diagnostics.cmd','scripts/build_release.py','.github/workflows/windows-validation.yml']
 subprocess.run(['git','diff','--exit-code',tested,head,'--',*paths],cwd=root,check=True)
-assert 'Version '+version in (root/'App/MainWindow.xaml').read_text(),'Release version does not match the program.'
+assert '<Version>'+version+'</Version>' in (root/'Host/CTQa.Host.csproj').read_text(),'Release version does not match the host.'
+subprocess.run(['gh','run','download',str(run_id),'--repo',repo,'--name','portable-web-host','--dir',str(root/'App/Host')],check=True)
 assert not (root/'Config/NetworkProfile.local.json').exists(),'Private profiles must never enter a release build.'
 out=root/'artifacts/release';out.mkdir(parents=True,exist_ok=True)
 subprocess.run(['python3','scripts/build_release.py','--version',version,'--output-dir',str(out)],cwd=root,check=True)
@@ -28,16 +29,16 @@ notes=out/'Release-notes.md'
 notes.write_text(f'''Choose the download for your task:
 
 - **[Full portable program — new installation]({base}CT_QA_Manager_Pro_v{version}_Portable.zip)**: Extract the complete folder and run **Start CT QA Manager.cmd**. This is the clean program package, without development files or archived reports.
-- **[Update ZIP — use inside the app]({base}CT_QA_Manager_Pro_v{version}_Update.zip)**: In version 4.3.0 or later, open **Updates**, choose/drop this ZIP, then install and restart. Your reports and settings stay in place.
+- **[Update ZIP — use inside the app]({base}CT_QA_Manager_Pro_v{version}_Update.zip)**: In version 5.0.0 or later, open **Updates**, choose/drop this ZIP, then install and restart. Your reports and settings stay in place.
 - **[One-time upgrade — older installed versions]({base}CT_QA_Manager_Pro_v{version}_Upgrade.zip)**: Extract separately, close the existing program, run **Install update.cmd**, and select the existing program folder. It also includes **Export diagnostics.cmd**, which can export scrubbed logs while the existing app is open.
-- **[Visual preview]({base}{preview.name})**: Six actual Windows screens using synthetic demonstration data.
+- **[Visual preview]({base}{preview.name})**: Actual offline browser screens using synthetic demonstration data.
 - **[SHA-256 checksums]({base}SHA256SUMS.txt)**.
 
-This patch fixes the crash when typing a reviewer name, and corrects the startup CMD encoding so Windows recognizes the first command. Keyboard, drag-and-drop, close and error handlers preserve the supplied event arguments. Regression checks cover native routed keyboard events, reviewer editing, F1, quiet CMD startup and the existing review workflow.
+Version 5 uses an offline HTML interface with **Today, Reports and Settings**, built on the original Windows archive and connection modules. Pending files use two main actions: **Approve** or **Disapprove**. No typed name or approval checkbox is required for file organization. Decisions are reversible and never manufacture clinical PASS/FAIL or department checklist evidence.
 
-The application includes a focused **View PDF → Accept or Decline → Next** workspace. Accepted and declined suggestions leave pending immediately; skipped PDFs stay pending. Reports remain saved, with Accepted/Declined filters, persistent decision history and audited Undo. Monthly coverage counts only the department items explicitly selected; accepting a report type does not infer clinical PASS/FAIL. Native PDF page previews use the Windows renderer, with the normal viewer available as a fallback. Readable folders refresh once per review session.
+A readable Report Library groups PDFs by scanner, year, month and Daily/Monthly/Other. Existing archives, original PDFs, legacy review history and configuration are retained. Background jobs keep browsing available. The self-contained local helper is bundled: no internet, administrator launch, runtime installation or public website is required. The larger download includes the runtime components. Workstation application policy must permit the helper executable and browser loopback access.
 
-The earlier scanner connection improvements, offline ZIP updates and complete retained scrubbed support logs remain included. Nothing is uploaded automatically.
+Use **Start CT QA Manager.cmd**. The original Windows interface remains available by running that launcher with the `classic` argument. Offline ZIP updates and scrubbed support logs remain available. Nothing is uploaded automatically.
 
 Passwords, workplace network profiles and live report data are excluded from all release assets. Configure scanner access on the work computer. Updates use local files and do not contact GitHub. A previous-program copy is kept under Backups.
 

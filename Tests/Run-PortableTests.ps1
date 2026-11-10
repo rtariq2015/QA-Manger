@@ -191,7 +191,7 @@ if([Environment]::OSVersion.Platform -eq [PlatformID]::Win32NT){
         $launcher=Join-Path $folder 'Start CT QA Manager.cmd'
         [IO.File]::WriteAllBytes($launcher,[IO.File]::ReadAllBytes((Join-Path $ProductRoot 'Start CT QA Manager.cmd')))
         $stub='param([switch]$PortableLaunch)'+"`r`n"+'if(-not $PortableLaunch){exit 7}'+"`r`n"+'Write-Output "Synthetic application launcher reached PowerShell"'+"`r`n"+'exit 0'
-        [IO.File]::WriteAllText((Join-Path $folder 'App/Start.ps1'),$stub,(New-Object Text.UTF8Encoding $true))
+        [IO.File]::WriteAllText((Join-Path $folder 'App/Start-Web.ps1'),$stub,(New-Object Text.UTF8Encoding $true))
         $info=New-Object Diagnostics.ProcessStartInfo;$info.FileName=$env:ComSpec;$info.Arguments='/d /c ""'+$launcher+'""';$info.UseShellExecute=$false;$info.CreateNoWindow=$true;$info.RedirectStandardOutput=$true;$info.RedirectStandardError=$true
         $process=[Diagnostics.Process]::Start($info)
         try{

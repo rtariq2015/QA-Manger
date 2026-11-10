@@ -11,6 +11,7 @@ function Test-QaUpdateRelativePath([string]$Name) {
 }
 function Test-QaUpdatePayloadName([string]$Name) {
     if($Name -in @('Package.json','Package-SHA256SUMS.txt','Start CT QA Manager.cmd','Update CT QA Manager.cmd','Export CT QA Diagnostics.cmd','User Guide.html','Config/Settings.json')){return $true}
+    if($Name -ceq 'App/Host/CTQa.Host.exe' -or $Name -in @('App/Web/app.js','App/Web/app.css')){return $true}
     return ($Name.StartsWith('App/',[StringComparison]::Ordinal) -and $Name -match '\.(ps1|psm1|xaml|dll|json|txt|html)$')
 }
 function Test-QaUpdateFolder {
@@ -30,6 +31,7 @@ function Test-QaUpdateFolder {
         $hashes[$name]=$hash
     }
     foreach($required in @('Package.json','Start CT QA Manager.cmd','User Guide.html','Config/Settings.json','App/Start.ps1','App/MainWindow.xaml','App/Upgrade.ps1','App/Updates.psm1','App/Workspace.psm1')){if(-not $hashes.ContainsKey($required)){throw ('Update package is missing '+$required+'.')}}
+    if([version]$package.Version -ge [version]'5.0.0'){foreach($required in @('App/Start-Web.ps1','App/WebWorker.ps1','App/WebService.psm1','App/Host/CTQa.Host.exe','App/Web/index.html','App/Web/app.css','App/Web/app.js')){if(-not $hashes.ContainsKey($required)){throw ('The offline HTML update is missing '+$required)}}}
     $files=@(Get-ChildItem -LiteralPath $source -Recurse -File);$seen=@{};$bytes=[long]0
     foreach($file in $files){
         Assert-QaUpdateDirectPath $file.FullName;$name=$file.FullName.Substring($source.Length+1).Replace('\','/')

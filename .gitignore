@@ -44,3 +44,10 @@ Config/NetworkProfile.local.json.*
 
 __pycache__/
 *.pyc
+
+# Rebuilt portable host is compiled from Host/ by release CI
+Host/bin/
+Host/obj/
+App/Host/
+**/Report Library/
+Exports/

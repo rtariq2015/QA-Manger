@@ -6,6 +6,11 @@ if not exist "%CTQA_PS%" goto no_powershell
 set "CTQA_LOGDIR=%~dp0Logs"
 if not exist "%CTQA_LOGDIR%" mkdir "%CTQA_LOGDIR%" 2>nul
 if not exist "%CTQA_LOGDIR%" set "CTQA_LOGDIR=%TEMP%"
+if /i "%~1"=="classic" goto classic
+"%CTQA_PS%" -NoLogo -NoProfile -STA -File "%~dp0App\Start-Web.ps1" -PortableLaunch > "%CTQA_LOGDIR%\Startup.log" 2>&1
+if errorlevel 1 goto failed
+exit /b 0
+:classic
 "%CTQA_PS%" -NoLogo -NoProfile -STA -File "%~dp0App\Start.ps1" -PortableLaunch > "%CTQA_LOGDIR%\Startup.log" 2>&1
 if errorlevel 1 goto failed
 exit /b 0

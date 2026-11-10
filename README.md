@@ -1,113 +1,37 @@
-# CT QA Manager Pro 4.4.1
+# CT QA Manager Pro 5.0.0
 
-[Download the latest full program, update ZIP, and older-version upgrade helper from Releases](https://github.com/rtariq2015/QA-Manger/releases/latest).
+A portable offline HTML interface built on the original Windows archive, network, PDF and export modules. Run **Start CT QA Manager.cmd**. The local helper and runtime are bundled; the work computer needs no separate runtime installation or administrator launch. Its application policy must permit the included Windows x64 executable and local browser access.
 
-A portable Windows workspace for collecting, reviewing, finding and sharing CT QA report PDFs. Run it from one folder using the Windows PowerShell 5.1 and WPF components already supplied with Windows. No installer, administrator launch, Python, Git or external PowerShell modules are required for normal use.
+[Download the program, offline update or upgrade helper from Releases](https://github.com/rtariq2015/QA-Manger/releases/latest).
 
-![Native WPF dashboard with synthetic demonstration data](docs/images/dashboard-native-demo.png)
+## The original program, with a new browser interface
 
-*Native WPF preview rendered on hosted Windows with synthetic scanner data.*
+**Today** shows daily receipt, scanner status and department Monthly evidence. **Reports** combines PDF preview, scanner/year/month/type/status/search filters, whole-year or multiple-year selection, and prominent ZIP exports with a readable summary and CSV inventory. **Settings** holds scanner profiles/sign-ins, archive location, department settings, backups/restore, reading, offline ZIP updates and scrubbed support logs.
 
-[Connections and settings](docs/images/connections-native-demo.png) · [Archive review](docs/images/review-native-demo.png) · [Reports and confirmation](docs/images/reports-native-demo.png) · [Offline updates](docs/images/updates-native-demo.png)
+Pending file organization has exactly two primary actions: **Approve** keeps the suggested type; **Disapprove** keeps the PDF as Other. The item leaves Pending and the next PDF opens. Undo remains available after a restart. No typed name, authorization checkbox, reason or second confirmation is required for sorting files.
 
-![Offline report library with synthetic PDFs](docs/images/offline-library.png)
+These organization decisions are stored separately from clinical review. They do not manufacture a reviewer identity, printed PASS/FAIL or Monthly checklist evidence. Existing PDFs, reviewer names, selected evidence and archive history remain unchanged. The original interface remains available under Settings → Additional Windows tools, or through **Start CT QA Manager.cmd classic**, for detailed evidence review and legacy tools.
 
-*Actual browser screenshot of the generated offline library with synthetic PDFs. Both images use demonstration data.*
+The readable **Report Library** groups files by scanner/year/month/Daily/Monthly/Other. Protected original archives and earlier browsing copies remain preserved. Existing settings keep their archive location; opening a new extracted folder starts a separate workspace. Update the existing folder to retain its configuration and data.
 
-## Reviewer input crash fixed (4.4.1)
+## Offline and portable
 
-The patch fixes a crash triggered by typing a reviewer name. Keyboard, drag-and-drop, close and dispatcher handlers now preserve their actual event arguments instead of binding PowerShell's automatic `$args` variable. The startup CMD is BOM-free so Windows recognizes `@echo off` and keeps normal launch quiet. Existing reports, settings and review history stay in place.
+The HTML, styles, icons, JavaScript, host and runtime are local files. No CDN, public website or cloud login is used. Scanner collection needs the hospital's internal network; saved reports and review work offline. Online services are disabled and nothing is uploaded automatically.
 
-## View, accept or decline
+The Microsoft ASP.NET Core host listens only on 127.0.0.1 with an OS-selected port, same-origin checks and a per-run authenticated session. It invokes narrow PowerShell operations rather than arbitrary commands or file paths. Scanner passwords travel through local authenticated requests and process stdin, never URLs, command arguments or browser storage. Remembered passwords use Windows account/workstation protection and may need re-entry after moving to another computer.
 
-In Reports, select **Pending review**, filter to a scanner and period, then choose **Review pending PDFs**. Inspect the PDF beside its controls, accept its type or decline the Monthly suggestion, and advance immediately. Decline keeps the PDF as Daily, acceptance tests or another reviewed report. Skip leaves it pending. The workspace supports page navigation, zoom and the normal PDF viewer as a fallback.
+The larger download contains the self-contained runtime. Runtime licensing notices are included with the host. Build dependencies are development-only; normal use requires no Python, Node, Git or SDK installation.
 
-Accepted and declined filters keep completed decisions accessible. **Decision history** retains the audit trail and supports undoing the latest decision after restarting; **Undo last decision** is also available during a review session. Saved-file fingerprints and review stamps reject changed PDFs and stale actions. Readable folder copies refresh once on leaving the queue, instead of rebuilding after every accepted report.
+## Build and validate
 
-Only explicitly checked department items count toward Monthly coverage. Accepting the report type does not infer a printed PASS/FAIL or complete the checklist automatically. The native preview uses the Windows PDF renderer without installing a runtime.
-
-![Native review workspace with a synthetic PDF](docs/images/queue-native-demo.png)
-
-## Daily workspace, review and offline updates
-
-Version 4.3.0 moves scanner status to the top, adds a dedicated Archive review tab with grouped checks, makes pending report confirmation explicit in Reports, and simplifies scanner sign-ins. Automatic PDF reading displays cached/pending counts and can be paused. Export a scrubbed support ZIP in the app, or use the standalone diagnostic tool against an existing open installation; the export includes all retained structured activity while excluding reports, filenames, network addresses, usernames, credentials and raw logs. Logs include operation starts/outcomes, durations, scanner ordinals, aggregate counts and fixed error categories, with 90-day/50 MB retention. Reading stops scheduling automatic batches when its queue is empty.
-
-The Updates tab accepts a clean offline update ZIP by file picker or drag-and-drop. The checked package is staged separately; installation waits for the app to close and preserves reports, settings, sign-ins and previous-program backups. Checksums detect corruption, not package authorship. End-user portable and update ZIPs exclude repository documentation, GitHub workflows, tests and development files.
-
-## Updater launch fix
-
-Version 4.2.2 fixes folder discovery when the network updater is double-clicked under Windows PowerShell 5.1. The updater resolves its own location after startup, so it works from another working directory and from folders containing spaces. Re-extract the corrected package into a separate folder and run **Apply CT QA Network Update.cmd**, then select the existing installation. Passwords are never bundled.
-
-## Network setup update
-
-Version 4.2.1 adds a local connection profile and clearer Windows errors. Generic GitHub downloads contain example addresses. Enter your real scanner folders under Advanced settings, or apply your own private profile with **Apply local connection profile**. See `Config/NetworkProfile.example.json` for the format; never include passwords.
-
-A private `Config/NetworkProfile.local.json` automatically replaces factory examples on startup. Existing customized connections are preserved until an explicit profile apply. The app authenticates to the share root, reads the complete reports folder directly, and leaves occupied drive letters untouched. An optional drive-mapping failure does not invalidate a readable UNC folder. Passwords belong only in the secure prompt or Windows-protected saved sign-ins.
-
-For an existing installation, the private network-update package includes an **Apply CT QA Network Update.cmd** helper: close the app, extract the package elsewhere, run the helper and select the existing application folder. It verifies program updates, preserves data/settings and applies the local connection profile. Real network profiles are excluded from GitHub.
-
-## Start on Windows
-
-1. Choose **Code → Download ZIP** and extract the complete folder to a writable local location.
-2. Double-click **Start CT QA Manager.cmd**.
-3. Configure your approved scanner paths and usernames, then preview and confirm First-Time Setup.
-
-The optional bundled PDF text reader needs .NET Framework 4.7.2+ already on the workstation. Follow IT approval/signing requirements. The application preserves execution policy and does not install or download components.
-
-## Your everyday view
-
-- **Today:** see which scheduled Daily PDFs were received, separately from extracted printed results. Provisional classification does not count as confirmed Daily receipt.
-- **This month:** see reviewed checklist coverage, department due dates and missing evidence. One combined PDF or several separate PDFs can contribute reviewed items.
-- **Local analysis:** extract explicit printed PASS/FAIL lines with page evidence. Unrecognized formats stay for review; no numerical tolerances or clinical decisions are invented.
-- **Background checks:** optional checks every 5–240 minutes while the window is open, with local analysis in batches. Set interval to 0 to pause updates. Nothing runs after closing the app.
-- **Find and export:** filter saved PDFs and create verified ZIP packages. Saved-report search stays available during scanner checks.
-- **Protect:** check this computer, inspect free storage, verify saved PDFs or scanner source fingerprints, and create/restore a complete verified backup.
-
-## All persistent workspace files together
+Build the Windows host with .NET 10 SDK:
 
 ```text
-CT QA Manager/
-  App/                         Program and bundled PDF libraries
-  Config/
-    Settings.json              Generic distribution baseline
-    Settings.local.json        Your settings (created locally; ignored by Git)
-    Credentials/               Optional Windows-protected sign-ins
-  Data/                        New installations' default archive
-    Reports/                   Managed, verified PDFs
-    Browse Reports/            Ordinary PDFs for manual use
-      Open Reports.html        Searchable offline library
-      Report list.csv
-      CT Edge/2026/11 November/
-        Daily QA/
-        Monthly QA/Confirmed/
-        Monthly QA/Pending Verification/
-    .ctqa/                     Index, reviews, recovery and cached analysis
-  Backups/                     Verified backup destination / previous program
-  Logs/
+dotnet publish Host/CTQa.Host.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:DebugType=None -o App/Host
 ```
 
-Readable PDFs can be opened, copied or dragged without the application. Copy the entire **Browse Reports** folder to keep offline links working. A full backup also preserves the application's metadata and review evidence. Choose approved separate storage for protection from drive failure.
+Distribute only CTQa.Host.exe plus its .NET/ASP.NET Core license and third-party notices in App/Host. The Windows workflow builds and uploads that exact tested host; the release publisher downloads it rather than rebuilding an untested executable. `scripts/build_release.py` produces clean portable, update and upgrade ZIPs, excluding development material and private profiles. A private configured package can be built locally with `--private-profile`; it must never be uploaded to the generic release.
 
-New archives use a relative Data location so the folder can move. Existing custom archive locations are preserved. Close the app before moving it. Saved Windows sign-ins may need re-entry on another computer.
+Existing PowerShell regression suites remain. `Run-WebServiceTests.ps1` verifies no-name decisions, hash/stale checks, persistent Undo, readable copies, exported ZIPs, preserved clinical fields and offline worker transport. `Tests/Web/run-all.cjs` exercises the real host and adapter in a browser, including local-only assets, origin/auth rejection, PDF bytes, file decisions, filters, actual downloads, restart persistence and small-window layouts. Hosted checks do not establish hospital SMB access, endpoint approval or physical workstation behavior. See [testing details](docs/TESTING.md).
 
-## Safe updates and recovery
-
-For later updates, close the app and run **Update CT QA Manager.cmd** from your current installation, then select a separately extracted new release. The updater verifies App/launcher/guide checksums, preserves local settings and data, and keeps the previous program in Backups. The release's manifest is at `Tests/Repository-SHA256SUMS.txt`.
-
-Use **Create full backup** to save a verified ZIP outside the live archive. **Restore to new folder** never overwrites an existing workspace and verifies all restored files. Backups include program files, configuration, reports, analysis and review metadata; saved credentials are excluded.
-
-## Validation and evidence
-
-The v4.4.1 Linux run passed **170 scenarios and 1080 assertions** across eleven suites. The hosted Windows run passed **174 scenarios and 1137 assertions**, including native routed keyboard events, reviewer-name editing, F1, original dispatcher errors, quiet application CMD startup, PDF rendering and the review workflow. [Saved Windows evidence](Tests/Current/Windows) identifies the exact source commit and workflow run. Six fresh synthetic screens were captured. Earlier results live under [historical evidence](Tests/Historical); v4.4.0's tests did not exercise the keyboard preview path, which this patch now covers. Physical keyboard/IME and hospital-workstation behavior still need the approved workstation check.
-
-The earlier v4.2.0 10,000-record search benchmark measured **0.021 seconds** for a cached filter after **1.38 seconds** to build the index on this Linux host; it was not rerun for the review workflow. These in-memory measurements and hosted synthetic checks do not establish hospital connectivity, endpoint-policy approval or physical-workstation DPI behavior.
-
-Actual hospital access, scanner authentication, endpoint restrictions and interactive DPI acceptance still require workstation validation. See [testing and limitations](docs/TESTING.md) and the [Windows checklist](Tests/Windows-Smoke.md).
-
-[User guide](User%20Guide.html) · [Siemens QA reference](App/Reference/Siemens_QA_Guide.html) · [Changes](CHANGELOG.md) · [Development](CONTRIBUTING.md)
-
-HTML guides are best viewed after downloading. The repository uses generic connection placeholders. Keep real reports, local configuration, credentials and logs out of Git. No project license has been selected; bundled libraries retain their own licenses and notices in `App/Lib/PdfPig`.
-
-## Build clean end-user releases
-
-Run `python scripts/build_release.py --output-dir <output-folder>` on the development machine. Python is build-time only. The portable and offline update ZIPs contain runtime files, baseline settings, a user guide and package metadata/checksums. They exclude repository documentation, tests, workflows and development instructions. The one-time upgrade ZIP supplies separate install and diagnostic launchers for older versions. A local profile may be supplied through `--private-profile`; it enters only the private Work Portable ZIP and never the generic update. Password fields are rejected. Existing installations use the one-time upgrade and retain their current configuration and archives. Future updates use the in-app Updates tab.
+[Research and design rationale](docs/Redesign-Research.html) · [User guide](User%20Guide.html) · [Historical validation](Tests/Historical)

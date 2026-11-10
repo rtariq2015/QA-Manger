@@ -61,7 +61,7 @@ function New-QaBackup {
         $dashboard=Get-QaDashboard $Config
         foreach($r in $dashboard.Records){Assert-QaMaintenanceDirect $r.DestinationPath;if((Get-FileHash -LiteralPath $r.DestinationPath -Algorithm SHA256).Hash -ne $r.Hash){throw 'An archived PDF failed verification. Run the integrity audit before backing up.'}}
         $files=New-Object 'System.Collections.Generic.List[object]'
-        foreach($folder in @('Reports','.ctqa','Browse Reports')) {
+        foreach($folder in @('Reports','.ctqa','Browse Reports','Report Library')) {
             $base=Join-Path $root $folder
             if([IO.Directory]::Exists($base)) {
                 Assert-QaMaintenanceDirect $base
