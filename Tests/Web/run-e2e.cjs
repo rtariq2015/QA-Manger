@@ -90,7 +90,7 @@ async function loadBrowserPage() {
   await page.locator('#refresh-button').waitFor({ state: 'visible' });
   await until(async () => !(await page.locator('#refresh-button').isDisabled()), 'The browser did not load the saved snapshot.');
 }
-async function nav(name) { await page.locator('.main-nav [data-page="' + name + '"]').click(); }
+async function nav(name) { await page.locator('.main-nav button[data-page="' + name + '"]').click(); }
 async function selectPending(recordId) {
   await nav('reports');
   await page.locator('#clear-filters').click();
@@ -99,6 +99,11 @@ async function selectPending(recordId) {
   await until(async () => (await page.locator('#pdf-frame').isVisible()) || (await page.locator('#pdf-image').isVisible()), 'The selected PDF preview did not become visible.');
   if (await page.locator('#pdf-image').isVisible()) await until(() => page.locator('#pdf-image').evaluate(image => image.complete && image.naturalWidth > 0), 'The native PDF page image did not load.');
   await until(() => page.locator('#approve-button').isEnabled(), 'The approve button was not available for the pending PDF.');
+}
+async function enterWithKeyboard(selector, value, paste = false) {
+  await page.locator(selector).click();
+  await page.keyboard.press('Control+A');
+  if (paste) await page.keyboard.insertText(value); else await page.keyboard.type(value);
 }
 async function scenario(name, fn) {
   try { await fn(); results.push({ name, result: 'PASS' }); process.stdout.write('PASS ' + name + '\n'); }
@@ -137,7 +142,7 @@ function verifyArchivePreserved() {
     await context.route('**/*', route => { const url = new URL(route.request().url()); if (['http:', 'https:'].includes(url.protocol) && !['127.0.0.1', 'localhost', '[::1]'].includes(url.hostname)) { externalRequests.push(url.hostname); route.abort(); } else route.continue(); });
     await scenario('The three-screen interface loads locally without external assets', async () => {
       await loadBrowserPage();
-      check(await page.locator('.main-nav [data-page]').count() === 3, 'Only Today, Reports and Settings appear as primary navigation');
+      check(await page.locator('.main-nav button[data-page]').count() === 3, 'Only Today, Reports and Settings appear as primary navigation');
       await page.screenshot({ path: path.join(output, 'today-web-demo.png'), fullPage: true });
       await nav('settings'); await page.locator('#connection-scanner').waitFor({ state: 'visible' });
       await page.screenshot({ path: path.join(output, 'settings-web-demo.png'), fullPage: true });
@@ -147,6 +152,78 @@ function verifyArchivePreserved() {
       await delay(4000);
       await page.screenshot({ path: path.join(output, 'reports-web-demo.png'), fullPage: true });
       check(externalRequests.length === 0, 'All requested interface assets came from the local host');
+    });
+    await scenario('Normal mouse-release clicks keep settings and search fields focused for real keyboard input', async () => {
+      await nav('settings');
+      const scanner = before.scanners.find(s => s.id === chosen.scanner);
+      await page.locator('#connection-scanner').selectOption(scanner.id);
+      const typedPath = scanner.path + ' typed-edit';
+      await enterWithKeyboard('#connection-path', typedPath);
+      check((await page.locator('#connection-path').inputValue()) === typedPath, 'Folder input accepts keyboard typing after an ordinary released mouse click');
+      check(await page.evaluate(() => document.activeElement.id) === 'connection-path', 'Folder typing retains focus instead of redirecting it to the main workspace');
+      await enterWithKeyboard('#connection-username', 'Synthetic Typed User');
+      check((await page.locator('#connection-username').inputValue()) === 'Synthetic Typed User', 'Username accepts normal mouse-click then keyboard typing');
+      check(await page.evaluate(() => document.activeElement.id) === 'connection-username', 'Username remains focused after the click and keystrokes');
+      await enterWithKeyboard('#connection-password', 'Synthetic typed secret');
+      check((await page.locator('#connection-password').inputValue()) === 'Synthetic typed secret', 'Password accepts keyboard typing without holding the mouse button');
+      check(await page.evaluate(() => document.activeElement.id) === 'connection-password', 'Password remains focused after the normal mouse release');
+      await enterWithKeyboard('#connection-path', scanner.path);
+      await enterWithKeyboard('#connection-username', scanner.username);
+      await page.locator('#connection-password').click(); await page.keyboard.press('Control+A'); await page.keyboard.press('Backspace');
+      await nav('reports'); await page.locator('#report-search').click(); await page.keyboard.type('Monthly');
+      check((await page.locator('#report-search').inputValue()) === 'Monthly', 'Report search accepts typing after a real released mouse click');
+      check(await page.evaluate(() => document.activeElement.id) === 'report-search', 'Search input keeps keyboard focus');
+      await page.keyboard.press('Control+A'); await page.keyboard.press('Backspace');
+      await selectPending(chosen.id);
+    });
+    if (args['focus-only'] === 'true') return;
+    await scenario('Connection drafts survive blur, unrelated job completion and scanner switching', async () => {
+      await nav('settings');
+      const scannerA = before.scanners.find(s => s.id === chosen.scanner);
+      const scannerB = before.scanners.find(s => s.id !== scannerA.id);
+      await page.locator('#connection-scanner').selectOption(scannerA.id);
+      const draftPath = 'Synthetic pasted folder draft';
+      const draftUsername = 'Synthetic Draft User';
+      const secret = 'Synthetic unsaved secret - not a credential';
+      await enterWithKeyboard('#connection-path', draftPath, true);
+      await enterWithKeyboard('#connection-username', draftUsername);
+      await enterWithKeyboard('#connection-password', secret);
+      await page.getByRole('heading', { name: 'Connections', exact: true }).click();
+      let browserSnapshots = 0;
+      const observeSnapshot = response => { if (new URL(response.url()).pathname === '/api/snapshot' && response.status() === 200) browserSnapshots++; };
+      page.on('response', observeSnapshot);
+      const previousJobs = new Set((await jobs()).map(job => job.id));
+      await page.locator('#diagnostics-button').click();
+      await until(async () => (await jobs()).some(job => !previousJobs.has(job.id) && job.action === 'Diagnostics' && job.status === 'completed'), 'The unrelated diagnostics job did not finish.', 180000);
+      await until(() => browserSnapshots > 0, 'The browser did not refresh its saved snapshot after diagnostics');
+      await until(async () => !(await page.locator('#connect-button').isDisabled()), 'The connection form did not become available after diagnostics');
+      page.off('response', observeSnapshot);
+      check((await page.locator('#connection-path').inputValue()) === draftPath, 'Pasted folder draft survives blur and the unrelated job snapshot');
+      check((await page.locator('#connection-username').inputValue()) === draftUsername, 'Typed username survives blur and the unrelated job snapshot');
+      check((await page.locator('#connection-password').inputValue()) === secret, 'Same-scanner snapshot rendering does not erase an unsaved password');
+      await nav('today'); await nav('settings');
+      check((await page.locator('#connection-path').inputValue()) === draftPath && (await page.locator('#connection-username').inputValue()) === draftUsername, 'Unsaved nonsecret connection fields survive navigation');
+      await page.locator('#connection-scanner').selectOption(scannerB.id);
+      check((await page.locator('#connection-password').inputValue()) === '', 'Switching scanners clears the password field');
+      await enterWithKeyboard('#connection-username', 'Synthetic second-scanner draft');
+      await page.locator('#connection-scanner').selectOption(scannerA.id);
+      check((await page.locator('#connection-path').inputValue()) === draftPath && (await page.locator('#connection-username').inputValue()) === draftUsername, 'Each scanner retains its own nonsecret draft');
+      check((await page.locator('#connection-password').inputValue()) === '', 'Returning to a scanner does not restore a secret from a draft map');
+      await enterWithKeyboard('#connection-password', secret);
+      const submitted = page.waitForRequest(request => { if (new URL(request.url()).pathname !== '/api/actions' || request.method() !== 'POST') return false; try { return request.postDataJSON().action === 'Reconnect'; } catch { return false; } });
+      const jobsBeforeSave = new Set((await jobs()).map(job => job.id));
+      await page.locator('#connect-button').click();
+      const payload = (await submitted).postDataJSON();
+      check(payload.path === draftPath && payload.username === draftUsername && payload.password === secret, 'An actual Save click sends the current visible connection draft');
+      const rejected = await until(async () => (await jobs()).find(job => !jobsBeforeSave.has(job.id) && job.action === 'Reconnect' && ['completed', 'failed'].includes(job.status)), 'The synthetic draft validation did not finish.', 180000);
+      check(rejected.status === 'failed', 'The deliberately invalid synthetic path is rejected without making a scanner connection');
+      await until(async () => (await page.locator('#connection-password').inputValue()) === '', 'Saving did not clear the password input');
+      check(!JSON.stringify(await jobs()).includes(secret), 'Draft password text does not appear in public job records');
+      await enterWithKeyboard('#connection-path', scannerA.path); await enterWithKeyboard('#connection-username', scannerA.username);
+      await page.locator('#connection-scanner').selectOption(scannerB.id); await enterWithKeyboard('#connection-username', scannerB.username);
+      await page.locator('#connection-scanner').selectOption(scannerA.id);
+      verifyArchivePreserved();
+      await selectPending(chosen.id);
     });
     await scenario('The PDF preview returns the selected verified local report', async () => {
       const response = await api('/api/pdf/' + chosen.id);
@@ -262,7 +339,7 @@ function verifyArchivePreserved() {
   } catch (error) { if (page) try { await page.screenshot({ path: path.join(output, 'failure-web-demo.png'), fullPage: true }); } catch {} if (!results.some(r => r.result === 'FAIL')) results.push({ name: 'Test setup or completion', result: 'FAIL', details: clean(error.stack || error.message) }); process.exitCode = 1; }
   finally {
     if (browser) await browser.close(); await stopHost();
-    const summary = { version: '5.0.0', syntheticOnly: true, browser: 'Chromium via Playwright', browserChannel: args['browser-channel'] || 'chromium', nativePdfPreviewActuallyRun: nativePreviewActuallyRun, tests: results.length, assertions, failed: results.filter(r => r.result === 'FAIL').length, externalAssetRequests: externalRequests.length, javascriptErrors: errors, results, scope: 'Actual local host, PowerShell adapter and synthetic archived PDFs. Does not establish hospital network access or workstation endpoint-policy approval.' };
+    const summary = { version: '5.0.1', syntheticOnly: true, browser: 'Chromium via Playwright', browserChannel: args['browser-channel'] || 'chromium', nativePdfPreviewActuallyRun: nativePreviewActuallyRun, tests: results.length, assertions, failed: results.filter(r => r.result === 'FAIL').length, externalAssetRequests: externalRequests.length, javascriptErrors: errors, results, scope: 'Actual local host, PowerShell adapter and synthetic archived PDFs. Does not establish hospital network access or workstation endpoint-policy approval.' };
     fs.writeFileSync(path.join(output, 'browser-summary.json'), JSON.stringify(summary, null, 2) + '\n');
     process.stdout.write('Result: ' + (summary.tests - summary.failed) + '/' + summary.tests + ' scenarios; ' + assertions + ' assertions.\n');
   }

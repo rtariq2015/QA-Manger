@@ -1,4 +1,4 @@
-# CT QA Manager Pro 5.0.0
+# CT QA Manager Pro 5.0.1
 
 A portable offline HTML interface built on the original Windows archive, network, PDF and export modules. Run **Start CT QA Manager.cmd**. The local helper and runtime are bundled; the work computer needs no separate runtime installation or administrator launch. Its application policy must permit the included Windows x64 executable and local browser access.
 
@@ -7,6 +7,8 @@ A portable offline HTML interface built on the original Windows archive, network
 ![Reports, PDF review and exports in the tested Windows browser interface, using synthetic demonstration data](docs/images/reports-web-demo.png)
 
 The release includes an offline visual preview with Today, Reports and Settings screenshots. These are actual Windows interface captures using synthetic data.
+
+Version 5.0.1 fixes mouse clicks moving focus away from text fields. You can click, release, type or paste scanner settings normally. Unfinished scanner settings also survive background refreshes; passwords stay only in the current password field until submitted or cleared.
 
 ## The original program, with a new browser interface
 

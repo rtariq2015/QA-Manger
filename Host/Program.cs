@@ -74,7 +74,7 @@ app.MapGet("/favicon.ico", () => Results.NoContent());
 app.MapPost("/api/session", (HttpContext context) => {
     if (!HeaderAuthorized(context.Request)) return Results.Unauthorized();
     context.Response.Cookies.Append("ctqa-session", token, new CookieOptions { HttpOnly = true, SameSite = SameSiteMode.Strict, IsEssential = true, Path = "/api", MaxAge = TimeSpan.FromHours(24) });
-    return Results.Json(new { connected = true, version = "5.0.0" });
+    return Results.Json(new { connected = true, version = "5.0.1" });
 });
 app.MapPost("/api/heartbeat", () => { state.Heartbeat(); return Results.Json(new { alive = true }); });
 app.MapGet("/api/snapshot", () => state.Snapshot is JsonNode snapshot ? Results.Json(snapshot) : Results.Json(new { error = state.StartupError ?? "The saved library is loading. Please wait a moment." }, statusCode: 503));
@@ -150,7 +150,7 @@ app.MapGet("/api/download/{id}", (string id) => {
 await app.StartAsync();
 origin = app.Services.GetRequiredService<IServer>().Features.Get<IServerAddressesFeature>()!.Addresses.Single().TrimEnd('/');
 // Kestrel starts on an OS-selected loopback port. No URL ACL, service or firewall rule is created.
-var ready = JsonSerializer.Serialize(new { url = origin, token, pid = Environment.ProcessId, version = "5.0.0" });
+var ready = JsonSerializer.Serialize(new { url = origin, token, pid = Environment.ProcessId, version = "5.0.1" });
 SafeFiles.WritePrivate(readyPath, ready);
 var browserStartup = Stopwatch.StartNew();
 var startupFailed = 0;

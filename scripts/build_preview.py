@@ -1,7 +1,7 @@
 """Build an offline gallery from actual synthetic browser screenshots."""
 import argparse,base64,html
 from pathlib import Path
-parser=argparse.ArgumentParser();parser.add_argument('--output',required=True);parser.add_argument('--version',default='5.0.0');args=parser.parse_args()
+parser=argparse.ArgumentParser();parser.add_argument('--output',required=True);parser.add_argument('--version',default='5.0.1');args=parser.parse_args()
 root=Path(__file__).resolve().parents[1]
 screens=[('today-web-demo.png','Today'),('reports-web-demo.png','Reports, PDF review & exports'),('settings-web-demo.png','Connections & settings'),('reports-small-web-demo.png','Smaller workstation window')]
 buttons=''.join(f'<button onclick="show({i})">{html.escape(label)}</button>' for i,(name,label) in enumerate(screens))

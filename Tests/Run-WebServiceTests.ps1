@@ -144,6 +144,33 @@ Scenario 'The web worker records scrubbed action outcomes without retaining requ
     Check ($all -match 'Reclassify' -and $all -match 'Completed') 'Retained worker action outcomes appear in the shareable logs'
 }
 if([Environment]::OSVersion.Platform -eq [PlatformID]::Win32NT){
+    Scenario 'Manual scanner folder and sign-in edits survive Save and connect plus later startup' {
+        $f=New-WebFixture 'ManualWindowsConnection';$before=(Get-FileHash $f.StatePath).Hash
+        $profile=[pscustomobject]@{Version=1;Connections=@([pscustomobject]@{Scanner='CT_Edge';Path='\\SYNTHETIC-PROFILE\SiteData\ConstancyReports';Username='SyntheticProfileAccount'})}
+        $profile|ConvertTo-Json -Depth 6|Set-Content (Join-Path $f.AppRoot 'Config/NetworkProfile.local.json') -Encoding UTF8
+        $module=Get-Module WebService;$original=& $module { (Get-Command Reconnect-QaScanner).ScriptBlock }
+        try{
+            & $module {
+                $script:ManualReconnectSeen=$null
+                function script:Reconnect-QaScanner {param($Scanner,$Credential)
+                    $script:ManualReconnectSeen=[pscustomobject]@{path=$Scanner.Path;username=$Credential.UserName;passwordLength=$Credential.Password.Length}
+                    return [pscustomobject]@{Scanner=$Scanner.Scanner;Status='Connected';Message='Synthetic connection boundary accepted; no scanner contacted.';DriveLetter=$Scanner.DriveLetter;NativeCode=0}
+                }
+            }
+            $requestedPath='\\SYNTHETIC-MANUAL\SiteData\ConstancyReports';$requestedName='SyntheticManualAccount';$password='SyntheticCredentialOnly_48c1'
+            $result=Invoke-QaWebRequest $f.AppRoot ([pscustomobject]@{action='Reconnect';scanner='CT_Edge';path=$requestedPath;username=$requestedName;password=$password;remember=$false})
+            $seen=& $module {$script:ManualReconnectSeen}
+            Check ($seen.path -ceq $requestedPath -and $seen.username -ceq $requestedName -and $seen.passwordLength -eq $password.Length) 'Save and connect passes the newly edited folder and secure sign-in to the network boundary'
+            Check ($result.snapshot.scanners[0].path -ceq $requestedPath -and $result.snapshot.scanners[0].username -ceq $requestedName) 'The returned snapshot retains the manual field values'
+            $local=Join-Path $f.AppRoot 'Config/Settings.local.json';$saved=Get-Content $local -Raw|ConvertFrom-Json
+            Check ($saved.Sources[0].Path -ceq $requestedPath -and $saved.Sources[0].Username -ceq $requestedName) 'Edited values are actually persisted rather than only displayed'
+            Check (-not ([IO.File]::ReadAllText($local)).Contains($password)) 'The password is not written to the settings document'
+            $hash=(Get-FileHash $local).Hash;$later=Get-Web $f
+            Check ($later.scanners[0].path -ceq $requestedPath -and $later.scanners[0].username -ceq $requestedName -and (Get-FileHash $local).Hash -ceq $hash) 'A later startup does not replace custom values with the bundled profile'
+            Check ((Get-FileHash $f.StatePath).Hash -ceq $before) 'Connection editing leaves the archived report and clinical evidence unchanged'
+            Check ((Get-FileHash $f.Source).Hash -ceq $f.SourceHash) 'The original synthetic report is untouched'
+        }finally{& $module {param($body) Set-Item -Path Function:script:Reconnect-QaScanner -Value $body;Remove-Variable ManualReconnectSeen -Scope Script -ErrorAction SilentlyContinue} $original}
+    }
     Scenario 'The web adapter returns an actual native Windows PDF page' {
         $f=New-WebFixture 'NativeWebPreview';$page=Invoke-QaWebRequest $f.AppRoot ([pscustomobject]@{action='PreviewPdf';id=$f.Record.Id;page=0})
         $bytes=[Convert]::FromBase64String($page.PngBase64)
@@ -153,7 +180,7 @@ if([Environment]::OSVersion.Platform -eq [PlatformID]::Win32NT){
     }
 }
 $failed=@($script:Results|Where-Object Result -eq 'FAIL').Count
-$report=[pscustomobject]@{Version='5.0.0';Runtime=$PSVersionTable.PSVersion.ToString();Tests=$script:Results.Count;Assertions=$script:Assertions;Failed=$failed;Results=@($script:Results.ToArray());Scope='Synthetic PDFs and local scanner folders; independent file organization, no fabricated clinical review, stale/changed-file rejection, append-only Undo, readable ownership, exports and stdin/stdout JSON worker.'}
+$report=[pscustomobject]@{Version='5.0.1';Runtime=$PSVersionTable.PSVersion.ToString();Tests=$script:Results.Count;Assertions=$script:Assertions;Failed=$failed;Results=@($script:Results.ToArray());Scope='Synthetic PDFs and local scanner folders; independent file organization, no fabricated clinical review, stale/changed-file rejection, append-only Undo, readable ownership, exports and stdin/stdout JSON worker.'}
 if($OutputPath){$report|ConvertTo-Json -Depth 12|Set-Content $OutputPath -Encoding UTF8}
 Write-Host ('Result: '+($report.Tests-$failed)+'/'+$report.Tests+' scenarios; '+$report.Assertions+' assertions.')
 if([IO.Directory]::Exists($TestRoot)){Remove-Item $TestRoot -Recurse -Force}
