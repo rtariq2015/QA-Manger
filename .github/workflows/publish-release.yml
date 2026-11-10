@@ -1,0 +1,24 @@
+name: Publish clean portable release
+on:
+  push:
+    branches: [main]
+    paths: ['Release/Publish.json']
+  workflow_dispatch:
+permissions:
+  contents: write
+  actions: read
+concurrency:
+  group: ctqa-release
+  cancel-in-progress: false
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Verify Windows validation and publish versioned downloads
+        run: python3 scripts/publish_release.py

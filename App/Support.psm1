@@ -173,7 +173,7 @@ function Export-QaSupportBundle {
         # The JSON exporter also validates local storage and protects code/config/data paths.
         [void](Export-QaSupportReport -AppRoot $AppRoot -Config $Config -Dashboard $Dashboard -DestinationPath $snapshot -ConnectionResults $ConnectionResults -CurrentOperation $CurrentOperation)
         $events=@(Get-QaSupportEvents -AppRoot $AppRoot -All -Config $Config)
-        Add-Type -AssemblyName System.IO.Compression.FileSystem
+        Add-Type -AssemblyName System.IO.Compression,System.IO.Compression.FileSystem
         $stream=[IO.File]::Open($temp,[IO.FileMode]::CreateNew,[IO.FileAccess]::Write,[IO.FileShare]::None);$archive=New-Object IO.Compression.ZipArchive($stream,[IO.Compression.ZipArchiveMode]::Create,$false)
         $entry=$archive.CreateEntry('Support-Summary.json');$writer=New-Object IO.StreamWriter($entry.Open(),(New-Object Text.UTF8Encoding($false)));try{$writer.Write([IO.File]::ReadAllText($snapshot))}finally{$writer.Dispose()}
         $entry=$archive.CreateEntry('Scrubbed-Activity.jsonl');$writer=New-Object IO.StreamWriter($entry.Open(),(New-Object Text.UTF8Encoding($false)));try{foreach($event in $events){$writer.WriteLine(($event|ConvertTo-Json -Depth 5 -Compress))}}finally{$writer.Dispose()}

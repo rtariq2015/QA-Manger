@@ -55,7 +55,7 @@ function New-QaUpdateStage {
     $zip=[IO.Path]::GetFullPath($ZipPath);$root=[IO.Path]::GetFullPath($AppRoot);Assert-QaUpdateDirectPath $zip;Assert-QaUpdateDirectPath $root
     if([IO.Path]::GetExtension($zip) -ne '.zip' -or -not [IO.File]::Exists($zip)){throw 'Choose one downloaded update ZIP file.'}
     if((Get-Item -LiteralPath $zip).Length -gt 268435456){throw 'The update ZIP exceeds the 256 MB limit.'}
-    Add-Type -AssemblyName System.IO.Compression.FileSystem
+    Add-Type -AssemblyName System.IO.Compression,System.IO.Compression.FileSystem
     $archive=[IO.Compression.ZipFile]::OpenRead($zip);$stage='';$success=$false
     try {
         if($archive.Entries.Count -gt 4096){throw 'The update contains too many entries.'}

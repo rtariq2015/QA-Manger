@@ -41,3 +41,6 @@ Config/NetworkProfile.local.json
 Config/NetworkProfile.local.json.*
 
 .pending-update-*/
+
+__pycache__/
+*.pyc
