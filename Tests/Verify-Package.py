@@ -56,7 +56,7 @@ for path in root.rglob('*.json'):
 
 launchers = list(root.glob('*.cmd')) + list(root.glob('*.bat'))
 check((root / 'Start CT QA Manager.cmd').exists(), 'Root has one named application launcher')
-check(all(p.name in ('Start CT QA Manager.cmd', 'Update CT QA Manager.cmd', 'Apply CT QA Network Update.cmd') for p in launchers), 'Only named application, update and private network setup launchers are present')
+check(all(p.name in ('Start CT QA Manager.cmd', 'Update CT QA Manager.cmd', 'Apply CT QA Network Update.cmd', 'Export CT QA Diagnostics.cmd') for p in launchers), 'Only named application, update and private network setup launchers are present')
 for path in launchers:
     text = path.read_text(encoding='utf-8-sig')
     check('-STA' in text.upper(), 'Launcher uses an STA for WPF')

@@ -77,6 +77,12 @@ function Write-QaAnalysisFile {
         if([IO.File]::Exists($path)){[IO.File]::Replace($temp,$path,($temp+'.bak'));[IO.File]::Delete($temp+'.bak')}else{[IO.File]::Move($temp,$path)}
     }finally{if([IO.File]::Exists($temp)){[IO.File]::Delete($temp)}}
 }
+function Get-QaAnalysisProgress {
+    [CmdletBinding()]param($Config,[object[]]$Records=@())
+    $cached=0;$errors=0
+    foreach($record in $Records){$row=Get-QaSavedAnalysis -Config $Config -Record $record;if($null -ne $row){$cached++;if($row.Status -eq 'ReadError'){$errors++}}}
+    return [pscustomobject]@{Total=$Records.Count;Cached=$cached;Pending=($Records.Count-$cached);Errors=$errors}
+}
 function Get-QaTodayOverview {
     [CmdletBinding()]param($Config,$Dashboard,[datetime]$Date=(Get-Date))
     $day=$Date.Date;$key=$day.ToString('yyyy-MM-dd');$rows=New-Object 'System.Collections.Generic.List[object]'
@@ -108,8 +114,8 @@ function Get-QaMonthOverview {
         $source=@($Config.Sources|Where-Object{$_.Scanner -eq $row.Scanner})[0]
         $due=[int](Get-QaInsightValue $source 'MonthlyDueDay' 0);$dueText='Set department due date';$timing='Not configured'
         if($due -gt 0){$dueDate=New-Object datetime $Date.Year,$Date.Month,([math]::Min($due,[datetime]::DaysInMonth($Date.Year,$Date.Month)));$dueText=$dueDate.ToString('MMM d');$timing=if($row.Status -eq 'Complete'){'Reviewed evidence complete'}elseif($Date.Date -gt $dueDate){'Overdue evidence'}elseif($Date.Date -eq $dueDate){'Due today'}else{'Upcoming'}}
-        $detail=if($row.Status -eq 'ChecklistNotSet'){'Department checklist not set'}elseif($row.Status -eq 'Complete'){'All configured items have reviewed evidence'}else{('Still needed: '+($row.MissingComponents -join '; '))}
-        [pscustomobject]@{Scanner=$row.Scanner;Name=$row.ScannerName;Month=$month;Progress=($row.ConfirmedComponents.Count.ToString()+' / '+$row.RequiredComponents.Count+' items');Due=$dueText;Timing=$timing;Detail=$detail;Status=$row.Status}
+        $detail=if($row.Status -eq 'ChecklistNotSet'){'Set the department checklist in scanner settings'}elseif($row.Status -eq 'Complete'){'All configured items have reviewed evidence'}else{('Still needed: '+($row.MissingComponents -join '; '))}
+        [pscustomobject]@{Scanner=$row.Scanner;Name=$row.ScannerName;Month=$month;Progress=$(if($row.Status -eq 'ChecklistNotSet'){'Not set'}elseif($row.Status -eq 'NotRequired'){'Not required'}else{$row.ConfirmedComponents.Count.ToString()+' / '+$row.RequiredComponents.Count+' items'});Due=$dueText;Timing=$timing;Detail=$detail;Status=$row.Status}
     }
 }
 function Invoke-QaSourceAudit {
@@ -128,4 +134,4 @@ function Invoke-QaSourceAudit {
     }
     return [pscustomobject]@{Mode='SourceAudit';Rows=@($rows.ToArray());Summary=[pscustomobject]@{Description='Scanner source fingerprints checked read-only. Archive labels were not changed.';Cancelled=($null -ne $Progress -and [bool]$Progress.Cancel)}}
 }
-Export-ModuleMember -Function ConvertFrom-QaReportText,Get-QaSavedAnalysis,Invoke-QaAnalysis,Get-QaTodayOverview,Get-QaMonthOverview,Invoke-QaSourceAudit
+Export-ModuleMember -Function ConvertFrom-QaReportText,Get-QaSavedAnalysis,Invoke-QaAnalysis,Get-QaTodayOverview,Get-QaAnalysisProgress,Get-QaMonthOverview,Invoke-QaSourceAudit

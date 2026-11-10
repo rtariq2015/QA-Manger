@@ -10,6 +10,7 @@ on:
       - '.github/workflows/**'
       - 'Start CT QA Manager.cmd'
       - 'Apply CT QA Network Update.cmd'
+      - 'Export CT QA Diagnostics.cmd'
       - 'Update CT QA Manager.cmd' 
   workflow_dispatch:
 permissions:
@@ -25,7 +26,7 @@ jobs:
         run: |
           New-Item -ItemType Directory -Path artifacts/windows -Force | Out-Null
           $failed = $false
-          foreach ($name in @('Run-NetworkTests','Run-Tests','Run-ExportTests','Run-ConnectionTests','Run-BrowseTests','Run-MonthlyTests','Run-PdfTests','Run-PortableTests')) {
+          foreach ($name in @('Run-UpdateTests','Run-SupportTests','Run-NetworkTests','Run-Tests','Run-ExportTests','Run-ConnectionTests','Run-BrowseTests','Run-MonthlyTests','Run-PdfTests','Run-PortableTests')) {
             & powershell.exe -NoProfile -File ".\Tests\$name.ps1" -OutputPath ".\artifacts\windows\$name.json"
             if ($LASTEXITCODE -ne 0) { $failed = $true }
           }
@@ -37,6 +38,14 @@ jobs:
           & powershell.exe -NoProfile -STA -File .\App\Start.ps1 -ValidateLayout
           if ($LASTEXITCODE -ne 0) { exit 1 }
           & powershell.exe -NoProfile -STA -File .\App\Start.ps1 -DemoPreview -ScreenshotPath .\artifacts\windows\dashboard-native-demo.png
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+          & powershell.exe -NoProfile -STA -File .\App\Start.ps1 -DemoPreview -PreviewPage Advanced -ScreenshotPath .\artifacts\windows\connections-native-demo.png
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+          & powershell.exe -NoProfile -STA -File .\App\Start.ps1 -DemoPreview -PreviewPage Review -ScreenshotPath .\artifacts\windows\review-native-demo.png
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+          & powershell.exe -NoProfile -STA -File .\App\Start.ps1 -DemoPreview -PreviewPage Reports -ScreenshotPath .\artifacts\windows\reports-native-demo.png
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+          & powershell.exe -NoProfile -STA -File .\App\Start.ps1 -DemoPreview -PreviewPage Updates -ScreenshotPath .\artifacts\windows\updates-native-demo.png
           if ($LASTEXITCODE -ne 0) { exit 1 }
       - name: Save test results and image
         if: always()

@@ -1,20 +1,14 @@
 {
   "Product": "CT QA Manager Pro",
-  "Version": "4.2.2",
+  "Version": "4.3.0",
   "Runtime": "PowerShell 7.4.13 on Linux",
-  "Tests": 132,
-  "Assertions": 906,
+  "Tests": 152,
+  "Assertions": 1003,
   "Failed": 0,
   "WindowsPowerShell51ActuallyRun": false,
   "NativeWPFActuallyRun": false,
   "WindowsDPAPIActuallyRun": false,
   "Suites": [
-    {
-      "Name": "Run-Tests",
-      "Tests": 24,
-      "Assertions": 165,
-      "Failed": 0
-    },
     {
       "Name": "Run-BrowseTests",
       "Tests": 17,
@@ -40,6 +34,12 @@
       "Failed": 0
     },
     {
+      "Name": "Run-NetworkTests",
+      "Tests": 12,
+      "Assertions": 41,
+      "Failed": 0
+    },
+    {
       "Name": "Run-PdfTests",
       "Tests": 8,
       "Assertions": 25,
@@ -52,9 +52,21 @@
       "Failed": 0
     },
     {
-      "Name": "Run-NetworkTests",
-      "Tests": 12,
-      "Assertions": 41,
+      "Name": "Run-SupportTests",
+      "Tests": 11,
+      "Assertions": 51,
+      "Failed": 0
+    },
+    {
+      "Name": "Run-Tests",
+      "Tests": 24,
+      "Assertions": 179,
+      "Failed": 0
+    },
+    {
+      "Name": "Run-UpdateTests",
+      "Tests": 9,
+      "Assertions": 32,
       "Failed": 0
     }
   ],
@@ -67,6 +79,5 @@
     "Scope": "Generated offline library with synthetic PDFs",
     "ValidatedVersion": "4.2.0 (offline library unchanged in the updater fixes)"
   },
-  "WindowsEvidence": "Windows/Summary.json (v4.2.2: 132 scenarios, 913 assertions; real CMD launch, omitted updater defaults, PowerShell 5.1, DPAPI and native WPF executed)",
-  "SourceCommit": "8ff17987d18fa061dcc8928c8b1a14da1ba0e6d8"
+  "WindowsEvidence": "Windows/Summary.json (prior v4.2.2 until the v4.3.0 native workflow completes)"
 }

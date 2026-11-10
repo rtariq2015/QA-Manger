@@ -1,4 +1,4 @@
-# CT QA Manager Pro 4.2.2
+# CT QA Manager Pro 4.3.0
 
 A portable Windows workspace for collecting, reviewing, finding and sharing CT QA report PDFs. Run it from one folder using the Windows PowerShell 5.1 and WPF components already supplied with Windows. No installer, administrator launch, Python, Git or external PowerShell modules are required for normal use.
 
@@ -9,6 +9,12 @@ A portable Windows workspace for collecting, reviewing, finding and sharing CT Q
 ![Offline report library with synthetic PDFs](docs/images/offline-library.png)
 
 *Actual browser screenshot of the generated offline library with synthetic PDFs. Both images use demonstration data.*
+
+## Daily workspace, review and offline updates
+
+Version 4.3.0 moves scanner status to the top, adds a dedicated Archive review tab with grouped checks, makes pending report confirmation explicit in Reports, and simplifies scanner sign-ins. Automatic PDF reading displays cached/pending counts and can be paused. Save a support JSON in the app, or use the standalone diagnostic tool against an existing open installation; the export excludes reports, filenames, network addresses, usernames, credentials and raw logs.
+
+The Updates tab accepts a clean offline update ZIP by file picker or drag-and-drop. The checked package is staged separately; installation waits for the app to close and preserves reports, settings, sign-ins and previous-program backups. Checksums detect corruption, not package authorship. End-user portable and update ZIPs exclude repository documentation, GitHub workflows, tests and development files.
 
 ## Updater launch fix
 

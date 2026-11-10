@@ -643,7 +643,7 @@ function Get-QaAttention { param($Config,$State,$Paths)
         $rows=@($State.Records|Where-Object{$_.Scanner -eq $s.Scanner})
         foreach($r in $rows) {
             if ($r.Category -eq 'Monthly_QA/Pending_Verification') { [void]$attention.Add((New-QaIssue $s.Scanner 'MonthlyReview' ($s.Name+' - Possible Monthly report requires verification: '+$r.OriginalFileName) $r.DestinationPath $r.Id)) }
-            elseif($r.Category -eq 'Needs_Review') { [void]$attention.Add((New-QaIssue $s.Scanner 'Classification' ($s.Name+' - Review this report classification: '+$r.OriginalFileName) $r.DestinationPath $r.Id)) }
+            elseif($r.Category -eq 'Needs_Review' -or ([string](Get-QaValue $r 'ClassificationBasis' '') -like 'Provisional*' -and -not [string](Get-QaValue $r 'ConfirmedBy' ''))) { [void]$attention.Add((New-QaIssue $s.Scanner 'Classification' ($s.Name+' - Review this report classification: '+$r.OriginalFileName) $r.DestinationPath $r.Id)) }
         }
         foreach($group in @($rows|Group-Object OriginalFileName|Where-Object{$_.Count -gt 1})) {
             [void]$attention.Add((New-QaIssue $s.Scanner 'DuplicateName' ($s.Name+' - '+$group.Count+' preserved records share the filename '+$group.Name+'. They may be distinct source files or revisions.') (Join-Path $Paths.Reports $s.Scanner)))
@@ -663,7 +663,7 @@ function Get-QaAttention { param($Config,$State,$Paths)
         if ($active -gt $start) {$start=$active}
         $daily=@{};$pending=@{};$monthly=@{}
         foreach($r in $dated) {
-            if ($r.Category -eq 'Daily_QA') {$daily[$r.ReportDate]=$true}
+            if ($r.Category -eq 'Daily_QA') {if([string](Get-QaValue $r 'ClassificationBasis' '') -like 'Provisional*' -and -not [string](Get-QaValue $r 'ConfirmedBy' '')){$pending[$r.ReportDate]=$r}else{$daily[$r.ReportDate]=$true}}
             if ($r.Category -eq 'Monthly_QA/Pending_Verification') {$pending[$r.ReportDate]=$r}
             if ($r.Category -eq 'Monthly_QA' -and $r.ConfirmedBy -and $r.ConfirmedAt) {$monthly[$r.ReportDate.Substring(0,7)]=$true}
         }

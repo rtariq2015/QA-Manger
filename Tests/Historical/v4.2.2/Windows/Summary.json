@@ -1,0 +1,67 @@
+{
+  "Version": "4.2.2",
+  "SourceCommit": "8ff17987d18fa061dcc8928c8b1a14da1ba0e6d8",
+  "WorkflowRun": "https://github.com/rtariq2015/QA-Manger/actions/runs/42831061355",
+  "Runtime": "Windows PowerShell 5.1.26100.33648",
+  "Host": "GitHub-hosted Windows Server 2025",
+  "Tests": 132,
+  "Assertions": 913,
+  "Failed": 0,
+  "WindowsPowerShell51ActuallyRun": true,
+  "NativeWPFActuallyRun": true,
+  "WindowsDPAPIActuallyRun": true,
+  "ProductionNetworkUpdateCmdActuallyRun": true,
+  "DefaultSourceFolderActuallyRun": true,
+  "DefaultUpgradeTargetFolderActuallyRun": true,
+  "Suites": [
+    {
+      "Name": "Run-BrowseTests",
+      "Tests": 17,
+      "Assertions": 117,
+      "Failed": 0
+    },
+    {
+      "Name": "Run-ConnectionTests",
+      "Tests": 15,
+      "Assertions": 181,
+      "Failed": 0
+    },
+    {
+      "Name": "Run-ExportTests",
+      "Tests": 24,
+      "Assertions": 250,
+      "Failed": 0
+    },
+    {
+      "Name": "Run-MonthlyTests",
+      "Tests": 16,
+      "Assertions": 89,
+      "Failed": 0
+    },
+    {
+      "Name": "Run-NetworkTests",
+      "Tests": 12,
+      "Assertions": 41,
+      "Failed": 0
+    },
+    {
+      "Name": "Run-PdfTests",
+      "Tests": 8,
+      "Assertions": 25,
+      "Failed": 0
+    },
+    {
+      "Name": "Run-PortableTests",
+      "Tests": 16,
+      "Assertions": 45,
+      "Failed": 0
+    },
+    {
+      "Name": "Run-Tests",
+      "Tests": 24,
+      "Assertions": 165,
+      "Failed": 0
+    }
+  ],
+  "Scope": "Synthetic PDFs, local scanner fixtures and mocked network boundaries. Production CMD started Windows PowerShell with the source-folder default omitted and paths containing spaces from an unrelated working directory. Target selection and subsequent app launch were supplied noninteractively. WPF rendered a synthetic preview. Actual hospital access, scanner authentication, interactive folder-picker clicks and workstation endpoint policy were not tested."
+}

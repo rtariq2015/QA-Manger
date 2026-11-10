@@ -170,7 +170,7 @@ Scenario 'Authentication, session conflicts and folder permission errors retain 
     Check ($result.Status -eq 'Unavailable' -and $result.Message -like '*accepted*denied*') 'Post-authentication ACL denial does not repeatedly request a password'
 }
 $failed=@($script:Results|Where-Object Result -eq 'FAIL').Count
-$report=[pscustomobject]@{Version='4.2.2';Runtime=$PSVersionTable.PSVersion.ToString();WindowsPowerShell51ActuallyRun=($PSVersionTable.PSVersion.Major -eq 5);Tests=$script:Results.Count;Assertions=$script:Assertions;Failed=$failed;Results=@($script:Results.ToArray());Scope='Synthetic profiles and mocked native connection boundaries only. Hospital SMB access was not tested.'}
+$report=[pscustomobject]@{Version='4.3.0';Runtime=$PSVersionTable.PSVersion.ToString();WindowsPowerShell51ActuallyRun=($PSVersionTable.PSVersion.Major -eq 5);Tests=$script:Results.Count;Assertions=$script:Assertions;Failed=$failed;Results=@($script:Results.ToArray());Scope='Synthetic profiles and mocked native connection boundaries only. Hospital SMB access was not tested.'}
 if($OutputPath){$report|ConvertTo-Json -Depth 12|Set-Content -LiteralPath $OutputPath -Encoding UTF8}
 Write-Host ('Result: '+($report.Tests-$failed)+'/'+$report.Tests+' scenarios; '+$report.Assertions+' assertions.')
 Remove-Item -LiteralPath $testRoot -Recurse -Force

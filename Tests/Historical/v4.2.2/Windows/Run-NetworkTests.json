@@ -1,0 +1,71 @@
+﻿{
+    "Version":  "4.2.2",
+    "Runtime":  "5.1.26100.33648",
+    "WindowsPowerShell51ActuallyRun":  true,
+    "Tests":  12,
+    "Assertions":  41,
+    "Failed":  0,
+    "Results":  [
+                    {
+                        "Name":  "UNC authentication targets the share root and preserves the full source folder",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Factory placeholders are identified before network access",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "A local profile replaces examples without changing archive or review settings",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Automatic profile loading preserves customized connections; explicit apply retains their previous root",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Profiles containing a password are rejected without changing local settings",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "The repair helper updates an existing installation and retains its data and archive choice",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Production launcher resolves default folders from another working directory with spaces in paths",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "An occupied preferred drive does not block authentication or direct UNC access",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "A free preferred drive is optional and uses the full reports path",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Mapping races cannot invalidate a readable UNC folder",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "A credential conflict still reuses an already readable Windows connection",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Authentication, session conflicts and folder permission errors retain their Windows numbers",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    }
+                ],
+    "Scope":  "Synthetic profiles and mocked native connection boundaries only. Hospital SMB access was not tested."
+}

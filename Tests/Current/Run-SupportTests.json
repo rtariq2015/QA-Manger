@@ -1,0 +1,66 @@
+{
+  "Version": "4.3.0",
+  "Runtime": "7.4.13",
+  "WindowsPowerShell51ActuallyRun": false,
+  "Tests": 11,
+  "Assertions": 51,
+  "Failed": 0,
+  "Results": [
+    {
+      "Name": "Hundreds of date checks are grouped without deleting or changing a review item",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "Information can be filtered separately and all original details remain accessible",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "Shareable diagnostics exclude free text, identifiers, names, paths and secrets",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "Unrecognized status and settings values cannot inject sensitive text into diagnostics",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "PDF analysis diagnostics retain counts without copying extracted evidence",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "Diagnostic exports are atomic new JSON files and protect existing application files",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "Safe operation history excludes arbitrary old log content and injected fields",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "Support events remain bounded and do not change saved report data",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "Standalone diagnostics work against an installation with an active application lock",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "Pending verification includes provisional daily files and clears only on actual confirmation",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "Real connection-result handling avoids repeated prompts and remembers only accepted sign-ins",
+      "Result": "PASS",
+      "Details": ""
+    }
+  ],
+  "Scope": "Synthetic review grouping, diagnostic privacy, protected destinations, safe events, standalone export and active application lock. Production diagnostic CMD runs on Windows."
+}

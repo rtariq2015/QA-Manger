@@ -1,6 +1,6 @@
 ﻿# Native WPF front end. Windows PowerShell 5.1; no execution-policy changes.
 [CmdletBinding()]
-param([switch]$ValidateLayout,[switch]$PortableLaunch,[switch]$DemoPreview,[string]$ScreenshotPath="")
+param([switch]$ValidateLayout,[switch]$PortableLaunch,[switch]$DemoPreview,[string]$ScreenshotPath="",[ValidateSet('Dashboard','Advanced','Review','Reports','Updates')][string]$PreviewPage='Dashboard')
 Set-StrictMode -Version 2.0
 $ErrorActionPreference = 'Stop'
 $script:AppRoot = Split-Path -Parent $PSScriptRoot
@@ -19,6 +19,13 @@ $script:CurrentMode = ''
 $script:PendingDecisions = @()
 $script:ReconnectCredentials = @{}
 $script:AfterReconnect = ''
+$script:ConnectionFeedback=@{}
+$script:AttemptedCredentials=@{}
+$script:RememberPending=@{}
+$script:ReconnectTarget=''
+$script:ReviewGroups=@()
+$script:PreparedUpdate=$null
+$script:UpdateLaunching=$false
 $script:ConsoleHandle = [intptr]::Zero
 $script:StartupHandled = $false
 $script:LastMonitor=[datetime]::Now
@@ -47,7 +54,7 @@ function Add-RecordLabels {
         $name=$scanner.Replace('_',' ')
         if($scannerNames.ContainsKey($scanner)){$name=$scannerNames[$scanner]}
         Add-Member -InputObject $row -NotePropertyName ScannerName -NotePropertyValue $name -Force
-        Add-Member -InputObject $row -NotePropertyName CategoryLabel -NotePropertyValue (Get-CategoryLabel ([string](Value-Or $row Category))) -Force
+        Add-Member -InputObject $row -NotePropertyName CategoryLabel -NotePropertyValue $(if([string](Value-Or $row Category) -eq 'Daily_QA' -and (Test-QaReportPending $row)){'Daily QA type - needs confirmation'}else{Get-CategoryLabel ([string](Value-Or $row Category))}) -Force
         if($null -ne $row.PSObject.Properties['Id']){Add-Member -InputObject $row -NotePropertyName ReportTitle -NotePropertyValue (Get-QaReportTitle -Record $row) -Force}
     }
 }
@@ -68,6 +75,7 @@ function Add-AttentionLabels {
 
 function Show-Note {
     param([string]$Text,[string]$Title='CT QA Manager Pro',[bool]$IsError=$false)
+    if($script:DemoPreview){throw ($Title+': '+$Text)}
     $icon = [System.Windows.MessageBoxImage]::Information
     if ($IsError) { $icon = [System.Windows.MessageBoxImage]::Warning }
     [void][System.Windows.MessageBox]::Show($script:Window,$Text,$Title,[System.Windows.MessageBoxButton]::OK,$icon)
@@ -142,8 +150,8 @@ function Safe-Open {
     } catch { Show-Note $_.Exception.Message 'Cannot open archive item' $true }
 }
 function Show-Page {
-    param([ValidateSet('Dashboard','Reports','Advanced')][string]$Page)
-    foreach ($name in @('Dashboard','Reports','Advanced')) {
+    param([ValidateSet('Dashboard','Reports','Advanced','Review','Updates')][string]$Page)
+    foreach ($name in @('Dashboard','Reports','Advanced','Review','Updates')) {
         $visibility=[System.Windows.Visibility]::Collapsed
         if ($name -eq $Page) { $visibility=[System.Windows.Visibility]::Visible }
         $script:Controls[$name+'View'].Visibility=$visibility
@@ -151,8 +159,10 @@ function Show-Page {
     }
     switch ($Page) {
         Dashboard { $script:Controls.PageTitle.Text='QA overview'; $script:Controls.PageSubtitle.Text='A clear view of your scanner reports and archive.' }
+        Review { $script:Controls.PageTitle.Text='Archive review';$script:Controls.PageSubtitle.Text='Grouped checks with every underlying date and report still available.' }
+        Updates { $script:Controls.PageTitle.Text='Program updates';$script:Controls.PageSubtitle.Text='Install an approved update ZIP from local storage.' }
         Reports { $script:Controls.PageTitle.Text='Find & export reports'; $script:Controls.PageSubtitle.Text='Choose a scanner and period, then export every matching report in one ZIP.' }
-        Advanced { $script:Controls.PageTitle.Text='Advanced settings'; $script:Controls.PageSubtitle.Text='Connections, archive preferences, and maintenance tools.' }
+        Advanced { $script:Controls.PageTitle.Text='Connections & settings'; $script:Controls.PageSubtitle.Text='Connections, archive preferences, and maintenance tools.' }
     }
 }
 function Initialize-ReportFilters {
@@ -260,14 +270,14 @@ function Refresh-Reports {
     if($script:UpdatingFilters -or $null -eq $script:Dashboard){return}
     $filter=Get-ReportFilters
     $rows=@(Select-QaReports -Records @($script:Dashboard.Records) -Scanner $filter.Scanner -Year $filter.Year -Years $filter.Years -Month $filter.Month -Category $filter.Category -Query $filter.Query -Index $script:ReportSearchIndex)
-    if($script:PendingOnly){$rows=@($rows | Where-Object {([string]$_.Category -eq 'Monthly_QA/Pending_Verification') -or ([string]$_.Category -eq 'Needs_Review')})}
+    if($script:PendingOnly){$rows=@($rows | Where-Object {Test-QaReportPending $_})}
     $script:FilteredReports=$rows
     $script:Controls.ReportsGrid.ItemsSource=$rows
     $script:Controls.ReportCount.Text=('{0:N0} matching reports' -f $rows.Count)
     $script:Controls.FilterSummary.Text=Get-ReportFilterSummary
     $script:Controls.ExportButtonText.Text=('Export {0:N0} reports (.zip)' -f $rows.Count)
     $script:Controls.ExportReportsButton.IsEnabled=((-not $script:Busy) -and $rows.Count -gt 0)
-    $script:Controls.ReviewPendingButton.Content=$(if($script:PendingOnly){'Needs confirmation: on'}else{'Needs confirmation'})
+    $script:Controls.ReviewPendingButton.Content=$(if($script:PendingOnly){'Pending verification: on'}else{'Pending verification'})
     $script:Controls.SearchPlaceholder.Visibility=$(if($filter.Query){[Windows.Visibility]::Collapsed}else{[Windows.Visibility]::Visible})
 }
 
@@ -461,7 +471,9 @@ function Initialize-DemoDashboard {
     }
     $records+=@([pscustomobject]@{Id=('4'*64);Scanner='CT_Edge';ReportDate=((Get-Date).ToString('yyyy-MM')+'-01');ReportTime='08:00:00';Category='Monthly_QA';OriginalFileName='Synthetic_combined_monthly.pdf';SourcePath='Synthetic-Edge-monthly';FirstArchived=[datetime]::UtcNow.ToString('o');Hash=('4'*64);DestinationPath='';ConfirmedComponents=@('MTF','Slice thickness');ConfirmedBy='Synthetic reviewer';ConfirmedAt=[datetime]::UtcNow.ToString('o')})
     $records+=@([pscustomobject]@{Id=('5'*64);Scanner='CT_Flash';ReportDate=((Get-Date).ToString('yyyy-MM')+'-01');ReportTime='08:00:00';Category='Monthly_QA';OriginalFileName='Synthetic_MTF_component.pdf';SourcePath='Synthetic-Flash-monthly';FirstArchived=[datetime]::UtcNow.ToString('o');Hash=('5'*64);DestinationPath='';ConfirmedComponents=@('MTF');ConfirmedBy='Synthetic reviewer';ConfirmedAt=[datetime]::UtcNow.ToString('o')})
-    $script:Dashboard=[pscustomobject]@{SetupComplete=$true;Records=$records;Scanners=$scanners;Attention=@([pscustomobject]@{Scanner='MDP_Building';Type='Connection';Message='Synthetic example: MDP Building is unavailable. Previously saved reports remain accessible.';Path='';RecordId=''});TotalReports=$records.Count;LegacyDetected=$false;ArchiveRoot=$script:AppRoot;LastUpdated=[datetime]::UtcNow.ToString('o')}
+    $demoIssues=@([pscustomobject]@{Scanner='MDP_Building';Type='Connection';Message='Synthetic example: the reports folder is unavailable. Saved reports remain accessible.';Path='';RecordId=''})
+    foreach($source in $script:Config.Sources){foreach($day in 1..60){$demoIssues+=@([pscustomobject]@{Scanner=$source.Scanner;Type='DailyGap';Message=('Synthetic archive example: daily PDF not found for '+(Get-Date).AddDays(-$day).ToString('yyyy-MM-dd'));Path='';RecordId=''})}}
+    $script:Dashboard=[pscustomobject]@{SetupComplete=$true;Records=$records;Scanners=$scanners;Attention=$demoIssues;TotalReports=$records.Count;LegacyDetected=$false;ArchiveRoot=$script:AppRoot;LastUpdated=[datetime]::UtcNow.ToString('o')}
 }
 
 function Refresh-Dashboard {
@@ -471,8 +483,16 @@ function Refresh-Dashboard {
         $script:Controls.TodayHeadline.Text=$today.Headline
         $script:Controls.TodayDate.Text=(Get-Date).ToString('dddd, MMMM d').ToUpperInvariant()
         if($script:DemoPreview){$today.Scanners[0].Findings='Recognized printed PASS results';$today.Scanners[1].Findings='Printed FAIL detected - review PDF'}
+        foreach($row in $today.Scanners){
+            if($row.DailyStatus -eq 'Report needs classification'){$row.DailyStatus='Saved - confirm report type'}
+            if($row.Findings -eq 'Not analyzed'){$row.Findings=if($row.DailyStatus -eq 'Saved - confirm report type'){'Confirm type to show daily results'}elseif($row.DailyStatus -eq 'Awaiting report'){'No confirmed daily PDF yet'}elseif([bool](Value-Or $script:Config AutoAnalyze $true)){'Text reading queued'}else{'Automatic text reading is off'}}
+            elseif($row.Findings -eq 'Needs review / text incomplete'){$row.Findings='Text read - result needs review'}
+        }
         $script:Controls.TodayGrid.ItemsSource=@($today.Scanners)
         $script:Controls.MonthlyGrid.ItemsSource=@(Get-QaMonthOverview -Config $script:Config -Dashboard $script:Dashboard)
+        $reading=Get-QaAnalysisProgress -Config $script:Config -Records @($script:Dashboard.Records)
+        $script:Controls.ReadingProgressLabel.Text=($reading.Cached.ToString()+' of '+$reading.Total+' PDFs have cached reading results; '+$reading.Pending+' waiting, '+$reading.Errors+' need a manual retry. Up to 20 new PDFs per batch.')
+        $script:Controls.ToggleReadingButton.Content=$(if([bool](Value-Or $script:Config AutoAnalyze $true)){'Pause automatic PDF reading'}else{'Enable automatic PDF reading'})
         $minutes=[int](Value-Or $script:Config MonitorMinutes 15)
         $script:Controls.BackgroundLabel.Text=$(if($minutes -gt 0){'Checks every '+$minutes+' minutes while open. Saved PDFs stay available offline.'}else{'Automatic checks paused. Saved PDFs stay available offline.'})
         try{$script:Controls.StorageLabel.Text=(Get-QaStorage $script:Config.ArchiveRoot).Label+' / Full backups should be stored on approved separate storage.'}catch{$script:Controls.StorageLabel.Text='Storage is unavailable. Check the selected archive folder.'}
@@ -512,14 +532,16 @@ function Refresh-Dashboard {
             switch($status){Connected{$text='Connected';$color='#42D4B6'} Unavailable{$text='Connection unavailable';$color='#E4AD65'} Partial{$text='Some folders unavailable';$color='#E4AD65'} Issues{$text='Update needs attention';$color='#E4AD65'}}
             $last=[string](Value-Or $scanner LastSuccessfulUpdate);$updated='No successful update yet'
             if($last){try{$date=[datetime]::Parse($last).ToLocalTime();$updated='Updated '+$date.ToString('MMM d, yyyy  h:mm tt')}catch{$updated='Last update recorded'}}
+            if($script:ConnectionFeedback.ContainsKey([string]$scanner.Scanner)){
+                $feedback=$script:ConnectionFeedback[[string]$scanner.Scanner]
+                $checked=[datetime]::MinValue;try{$checked=[datetime]::Parse([string](Value-Or $scanner CheckedUtc ''))}catch{}
+                if($feedback.CheckedUtc -ge $checked.ToUniversalTime()){$text=if($feedback.Status -eq 'Connected'){'Folder accessible'}else{'Connection needs checking'};$color=if($feedback.Status -eq 'Connected'){'#42D4B6'}else{'#E4AD65'};$updated='Checked '+$feedback.CheckedUtc.ToLocalTime().ToString('h:mm tt')+' / Update reports to import';}
+            }
             [void]$cards.Add([pscustomobject]@{Scanner=[string]$scanner.Scanner;Name=[string]$scanner.Name;Message=[string](Value-Or $scanner Message);StatusLabel=$text;StatusColor=$color;CountLabel=('{0:N0}' -f [int](Value-Or $scanner SavedReports 0));UpdatedLabel=$updated})
         }
         $script:Controls.ScannerCards.ItemsSource=@($cards.ToArray())
-        $attention=@($script:Dashboard.Attention)
-        $script:Controls.AttentionList.ItemsSource=$attention
-        $script:Controls.AttentionEmpty.Visibility=$(if($attention.Count){[Windows.Visibility]::Collapsed}else{[Windows.Visibility]::Visible})
-        $script:Controls.AttentionEmpty.Text=$(if($complete){'No attention items in the current review period.'}else{'Run First-Time Setup to see report coverage and items needing review.'})
-        $script:Controls.AttentionCount.Text=('{0:N0} archive findings' -f $attention.Count)
+        $script:ReviewGroups=@(Get-QaReviewGroups -Issues @($script:Dashboard.Attention) -Sources @($script:Config.Sources))
+        Refresh-ReviewGroups
         Refresh-ReportYears
         Refresh-Reports
     } catch { Show-Note $_.Exception.Message 'Archive could not be read' $true }
@@ -555,6 +577,7 @@ function Save-EditedCredentials {
                 $credential=New-Object Management.Automation.PSCredential([string]$source.Username,$secure)
                 Save-QaSavedCredential -AppRoot $script:AppRoot -ScannerId ([string]$source.Scanner) -ExpectedPath ([string]$source.Path) -Credential $credential | Out-Null
                 $editor.Password.Clear()
+                $editor.ConnectionResult.Text='Sign-in saved. Reconnecting checks whether Windows accepts it.'
             }catch{[void]$warnings.Add(([string]$source.Name+': '+$_.Exception.Message))}
         }
         Set-CredentialStatusLabel $source $editor
@@ -614,10 +637,10 @@ function Fill-Settings {
     foreach ($source in @($script:Config.Sources)) {
         $name=[Security.SecurityElement]::Escape([string]$source.Name)
         $row=Load-Window @"
-<Border xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" BorderBrush="#2B3C55" BorderThickness="0,1,0,0" Padding="0,15,0,15"><StackPanel><TextBlock Text="$name" FontWeight="SemiBold" FontSize="14"/><Grid Margin="0,12,0,0"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="14"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions><StackPanel><TextBlock Text="Display name" Foreground="#91A9C7" Margin="0,0,0,6"/><TextBox x:Name="DisplayName"/></StackPanel><StackPanel Grid.Column="2"><TextBlock Text="Username" Foreground="#91A9C7" Margin="0,0,0,6"/><TextBox x:Name="Username"/></StackPanel></Grid><TextBlock Text="Network report folder (server/IP, share, and folder)" Foreground="#91A9C7" Margin="0,12,0,6"/><TextBox x:Name="SourcePath"/><TextBlock Text="Example: \\CT-EDGE\Reports\ConstancyReports" Foreground="#6F8AA9" FontSize="10" Margin="0,6,0,0"/><Grid Margin="0,12,0,0"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions><StackPanel><TextBlock Text="Password (blank keeps sign-in if address and username are unchanged)" Foreground="#91A9C7" Margin="0,0,0,6"/><PasswordBox x:Name="Password" Padding="10,8" Background="#182940" Foreground="White" BorderBrush="#314763"/></StackPanel><Button x:Name="Forget" Grid.Column="1" Content="Forget saved sign-in" Margin="12,19,0,0" Padding="12,9"/></Grid><TextBlock x:Name="SavedStatus" Foreground="#729CB8" FontSize="10" Margin="0,7,0,0"/><WrapPanel Margin="0,12,0,0"><StackPanel Width="115" Margin="0,0,14,0"><TextBlock Text="Preferred drive" Foreground="#91A9C7" Margin="0,0,0,6"/><TextBox x:Name="Drive" MaxLength="1"/></StackPanel><StackPanel Width="140" Margin="0,0,14,0"><TextBlock Text="Monthly hint (KB)" Foreground="#91A9C7" Margin="0,0,0,6"/><TextBox x:Name="Threshold"/></StackPanel><StackPanel Width="145" Margin="0,0,14,0"><TextBlock Text="Expected Daily QA" Foreground="#91A9C7" Margin="0,0,0,6"/><ComboBox x:Name="Schedule"/></StackPanel><StackPanel Width="155"><TextBlock Text="Active from (yyyy-MM-dd)" Foreground="#91A9C7" Margin="0,0,0,6"/><TextBox x:Name="ActiveFrom"/></StackPanel></WrapPanel><CheckBox x:Name="MonthlyExpected" Content="Include this scanner in Monthly QA coverage review" Margin="0,12,0,0"/><TextBlock Text="Required Monthly QA items (department checklist)" Foreground="#91A9C7" Margin="0,12,0,6"/><TextBox x:Name="MonthlyChecklist" TextWrapping="Wrap" AcceptsReturn="False" MinHeight="38"/><WrapPanel Margin="0,12,0,0"><StackPanel Width="155" Margin="0,0,14,0"><TextBlock Text="Checklist effective (yyyy-MM)"/><TextBox x:Name="ChecklistEffectiveMonth"/></StackPanel><StackPanel Width="155" Margin="0,0,14,0"><TextBlock Text="Monthly due day (0 = not set)"/><TextBox x:Name="MonthlyDueDay"/></StackPanel><StackPanel Width="260"><TextBlock Text="Daily exceptions (yyyy-MM-dd; ...)"/><TextBox x:Name="ExcludedDates"/></StackPanel></WrapPanel><TextBlock Text="Separate approved item names with semicolons. Example only: Light marker; MTF; Slice thickness. Leave blank if no department checklist is set; monthly completeness will not be assessed." Foreground="#729CB8" TextWrapping="Wrap" FontSize="10" Margin="0,7,0,0"/></StackPanel></Border>
+<Border xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" BorderBrush="#2B3C55" BorderThickness="0,1,0,0" Padding="0,15,0,15"><StackPanel><TextBlock Text="$name" FontWeight="SemiBold" FontSize="14"/><Grid Margin="0,12,0,0"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="14"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions><StackPanel><TextBlock Text="Display name" Foreground="#91A9C7" Margin="0,0,0,6"/><TextBox x:Name="DisplayName"/></StackPanel><StackPanel Grid.Column="2"><TextBlock Text="Username" Foreground="#91A9C7" Margin="0,0,0,6"/><TextBox x:Name="Username"/></StackPanel></Grid><TextBlock Text="Network report folder (server/IP, share, and folder)" Foreground="#91A9C7" Margin="0,12,0,6"/><TextBox x:Name="SourcePath"/><TextBlock Text="Example: \\CT-EDGE\Reports\ConstancyReports" Foreground="#6F8AA9" FontSize="10" Margin="0,6,0,0"/><Grid Margin="0,12,0,0"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions><StackPanel><TextBlock Text="Password (blank keeps the saved sign-in)" Foreground="#91A9C7" Margin="0,0,0,6"/><PasswordBox x:Name="Password" Padding="10,8" Background="#182940" Foreground="White" BorderBrush="#314763"/></StackPanel><Button x:Name="Forget" Grid.Column="1" Content="Forget saved sign-in" Margin="12,19,0,0" Padding="12,9"/></Grid><TextBlock x:Name="SavedStatus" Foreground="#90BFC4" FontSize="12" Margin="0,9,0,0"/><WrapPanel Margin="0,12,0,8"><Button x:Name="SaveConnect" Content="Save sign-in &amp; reconnect this scanner" Background="#1C6670" Padding="12,9"/></WrapPanel><TextBlock x:Name="ConnectionResult" Foreground="#A8C6D4" FontSize="12" Margin="0,0,0,9"/><Expander Header="QA schedule, checklist &amp; classification" x:Name="QaOptions" IsExpanded="False" Foreground="#AFC7DA"><StackPanel><WrapPanel Margin="0,12,0,0"><StackPanel Width="115" Margin="0,0,14,0"><TextBlock Text="Preferred drive" Foreground="#91A9C7" Margin="0,0,0,6"/><TextBox x:Name="Drive" MaxLength="1"/></StackPanel><StackPanel Width="140" Margin="0,0,14,0"><TextBlock Text="Monthly hint (KB)" Foreground="#91A9C7" Margin="0,0,0,6"/><TextBox x:Name="Threshold"/></StackPanel><StackPanel Width="145" Margin="0,0,14,0"><TextBlock Text="Expected Daily QA" Foreground="#91A9C7" Margin="0,0,0,6"/><ComboBox x:Name="Schedule"/></StackPanel><StackPanel Width="155"><TextBlock Text="Active from (yyyy-MM-dd)" Foreground="#91A9C7" Margin="0,0,0,6"/><TextBox x:Name="ActiveFrom"/></StackPanel></WrapPanel><CheckBox x:Name="MonthlyExpected" Content="Include this scanner in Monthly QA coverage review" Margin="0,12,0,0"/><TextBlock Text="Required Monthly QA items (department checklist)" Foreground="#91A9C7" Margin="0,12,0,6"/><TextBox x:Name="MonthlyChecklist" TextWrapping="Wrap" AcceptsReturn="False" MinHeight="38"/><WrapPanel Margin="0,12,0,0"><StackPanel Width="155" Margin="0,0,14,0"><TextBlock Text="Checklist effective (yyyy-MM)"/><TextBox x:Name="ChecklistEffectiveMonth"/></StackPanel><StackPanel Width="155" Margin="0,0,14,0"><TextBlock Text="Monthly due day (0 = not set)"/><TextBox x:Name="MonthlyDueDay"/></StackPanel><StackPanel Width="260"><TextBlock Text="Daily exceptions (yyyy-MM-dd; ...)"/><TextBox x:Name="ExcludedDates"/></StackPanel></WrapPanel><TextBlock Text="Separate approved item names with semicolons. Example only: Light marker; MTF; Slice thickness. Leave blank if no department checklist is set; monthly completeness will not be assessed." Foreground="#729CB8" TextWrapping="Wrap" FontSize="10" Margin="0,7,0,0"/></StackPanel></Expander></StackPanel></Border>
 "@
         $ed=@{}
-        foreach ($n in @('DisplayName','Username','SourcePath','Password','SavedStatus','Forget','Drive','Threshold','Schedule','ActiveFrom','MonthlyExpected','MonthlyChecklist','ChecklistEffectiveMonth','MonthlyDueDay','ExcludedDates')) { $ed[$n]=$row.FindName($n) }
+        foreach ($n in @('DisplayName','Username','SourcePath','Password','SavedStatus','Forget','Drive','Threshold','Schedule','ActiveFrom','MonthlyExpected','MonthlyChecklist','ChecklistEffectiveMonth','MonthlyDueDay','ExcludedDates','SaveConnect','ConnectionResult','QaOptions')) { $ed[$n]=$row.FindName($n) }
         $ed.DisplayName.Text=[string]$source.Name;$ed.Username.Text=[string](Value-Or $source Username 'SCANNER_USERNAME')
         $ed.SourcePath.Text=[string]$source.Path; $ed.Drive.Text=[string]$source.DriveLetter
         $ed.Threshold.Text=[string]$source.MonthlyThresholdKB; $ed.ActiveFrom.Text=[string]$source.ActiveFrom
@@ -631,6 +654,9 @@ function Fill-Settings {
         $script:ScannerEditors[[string]$source.Scanner]=$ed
         $ed.Forget.Tag=[string]$source.Scanner
         $ed.Forget.Add_Click({param($sender,$args) try{Remove-QaSavedCredential -AppRoot $script:AppRoot -ScannerId ([string]$sender.Tag) | Out-Null;$editor=$script:ScannerEditors[[string]$sender.Tag];$editor.Password.Clear();$editor.SavedStatus.Text='Saved sign-in removed. Existing Windows connections are not disconnected.';$sender.IsEnabled=$false}catch{Show-Note $_.Exception.Message 'Saved sign-in could not be removed' $true}})
+        $ed.SaveConnect.Tag=[string]$source.Scanner
+        $ed.SaveConnect.Add_Click({param($sender,$args) if(Save-Settings){Start-Work -Mode Reconnect -Plan ([pscustomobject]@{ScannerId=[string]$sender.Tag})}})
+        if($script:ConnectionFeedback.ContainsKey([string]$source.Scanner)){$ed.ConnectionResult.Text=$script:ConnectionFeedback[[string]$source.Scanner].Message}
         Set-CredentialStatusLabel $source $ed
         [void]$script:Controls.ScannerSettingsPanel.Children.Add($row)
     }
@@ -697,10 +723,11 @@ function Save-Settings {
 function Set-Busy {
     param([bool]$Busy)
     $script:Busy=$Busy
-    foreach ($name in @('SetupButton','UpdateButton','SaveSettingsButton','ReconnectButton','AuditButton','ReclassifyButton','ReviewReportButton','AdoptLegacyButton','BrowseArchiveButton','ExportReportsButton','ReviewPendingButton','ClearFiltersButton','ReadReportTextButton','BrowseReportsButton','OpenFolderButton','AnalyzeButton','BackupButton','RestoreButton','CompatibilityButton','RetryAnalysisButton','SourceAuditButton','ImportConnectionsButton')) { $script:Controls[$name].IsEnabled=(-not $Busy) }
+    foreach ($name in @('SetupButton','UpdateButton','SaveSettingsButton','ReconnectButton','AuditButton','ReclassifyButton','ReviewReportButton','AdoptLegacyButton','BrowseArchiveButton','ExportReportsButton','ReviewPendingButton','ClearFiltersButton','ReadReportTextButton','BrowseReportsButton','OpenFolderButton','AnalyzeButton','BackupButton','RestoreButton','CompatibilityButton','RetryAnalysisButton','SourceAuditButton','ImportConnectionsButton','ManageConnectionsButton','CoverageSettingsButton','MonthlySettingsButton','ChooseUpdateButton','InstallUpdateButton')) { $script:Controls[$name].IsEnabled=(-not $Busy) }
     $script:Controls.AdvancedView.IsEnabled=(-not $Busy)
     # Searching an immutable saved snapshot remains available during network checks.
     $script:Controls.ReportFilters.IsEnabled=$true
+    if(-not $Busy){$script:Controls.InstallUpdateButton.IsEnabled=($null -ne $script:PreparedUpdate)}
     if(-not $Busy){$script:Controls.ExportReportsButton.IsEnabled=(@($script:FilteredReports).Count -gt 0)}
     $script:Controls.CancelButton.Visibility=$(if($Busy){[Windows.Visibility]::Visible}else{[Windows.Visibility]::Collapsed})
     $script:Controls.WorkProgress.Visibility=$(if($Busy){[Windows.Visibility]::Visible}else{[Windows.Visibility]::Collapsed})
@@ -709,6 +736,10 @@ function Set-Busy {
 function Start-Work {
     param([string]$Mode,$Plan=$null,$Decisions=@(),[string]$LegacyRoot='',$Credentials=@{})
     if ($script:Busy) { return }
+    if($Mode -eq 'Reconnect'){
+        if($Credentials.Count -eq 0){$script:AttemptedCredentials=@{};$script:RememberPending=@{};$script:ReconnectTarget=[string](Value-Or $Plan ScannerId '')}
+        foreach($key in $Credentials.Keys){$script:AttemptedCredentials[[string]$key]=$true}
+    }
     $script:CurrentMode=$Mode
     $shared=[hashtable]::Synchronized(@{Message='Preparing your request...'; Percent=0; Cancel=$false; Done=$false; Error=''; Result=$null})
     $runspace=[RunspaceFactory]::CreateRunspace(); $runspace.ApartmentState='MTA'; $runspace.ThreadOptions='ReuseThread'; $runspace.Open()
@@ -752,7 +783,9 @@ try {
   Import-Module (Join-Path $appRoot 'App\Credentials.psm1') -Force -ErrorAction Stop
   $results=New-Object 'System.Collections.Generic.List[object]'
   $i=0
-  foreach($scanner in @($config.Sources)) {
+  $connectionSources=@($config.Sources)
+  if($null -ne $plan -and $null -ne $plan.PSObject.Properties['ScannerId'] -and $plan.ScannerId){$connectionSources=@($config.Sources|Where-Object Scanner -eq $plan.ScannerId)}
+  foreach($scanner in $connectionSources) {
    if ($progress.Cancel) { break }
    $progress.Message='Checking connection to '+$scanner.Name+'...'
    $cred=$null
@@ -762,7 +795,7 @@ try {
     catch{[void]$connectionWarnings.Add(([string]$scanner.Name+' - Saved sign-in could not be read. Enter the password again in Advanced settings.'));$cred=$null}
    }
    [void]$results.Add((Reconnect-QaScanner -Scanner $scanner -Credential $cred))
-   $i++; $progress.Percent=[int](100*$i/@($config.Sources).Count)
+   $i++; $progress.Percent=[int](100*$i/[math]::Max(1,$connectionSources.Count))
   }
   $progress.Result=[pscustomobject]@{Connections=@($results.ToArray());ConnectionWarnings=@($connectionWarnings.ToArray())}
  } else {
@@ -852,19 +885,21 @@ function Show-Preview {
     } else { $script:Controls.StatusText.Text='Preview closed. No changes were applied.' }
 }
 function Show-Credentials {
-    param([string]$Name,[string]$Username='SCANNER_USERNAME')
+    param([string]$Name,[string]$Username='SCANNER_USERNAME',[string]$ScannerId='',[string]$Failure='')
     $content=@'
-<Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions><TextBlock x:Name="CredentialTitle" FontSize="21" FontWeight="SemiBold"/><TextBlock Grid.Row="1" Text="Use your approved scanner account. The password stays in memory for this reconnect request and is never saved." TextWrapping="Wrap" Foreground="#9CB3CE" Margin="0,12,0,18"/><StackPanel Grid.Row="2"><TextBlock Text="Username (or DOMAIN\username)" Foreground="#9CB3CE" Margin="0,0,0,7"/><TextBox x:Name="Username" Text="SCANNER_USERNAME"/></StackPanel><StackPanel Grid.Row="3" Margin="0,14,0,0"><TextBlock Text="Password" Foreground="#9CB3CE" Margin="0,0,0,7"/><PasswordBox x:Name="Password" Padding="10,8" Background="#182940" Foreground="White" BorderBrush="#314763"/></StackPanel><TextBlock Grid.Row="4" Text="Ask IT if another account is already connected to this server. The app will never close that connection automatically." TextWrapping="Wrap" Foreground="#869FBF" Margin="0,15,0,15"/><StackPanel Grid.Row="5" Orientation="Horizontal" HorizontalAlignment="Right"><Button x:Name="Skip" Content="Skip scanner" Margin="0,0,10,0"/><Button x:Name="Connect" Content="Reconnect" Background="#1D6871"/></StackPanel>
+<Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions><TextBlock x:Name="CredentialTitle" FontSize="21" FontWeight="SemiBold"/><TextBlock Grid.Row="1" Text="Use the approved scanner account. A password is required when Windows has no existing access. Choose Remember to save it only after this connection succeeds." TextWrapping="Wrap" Foreground="#9CB3CE" Margin="0,12,0,18"/><StackPanel Grid.Row="2"><TextBlock Text="Username (or DOMAIN\username)" Foreground="#9CB3CE" Margin="0,0,0,7"/><TextBox x:Name="Username" Text="SCANNER_USERNAME"/></StackPanel><StackPanel Grid.Row="3" Margin="0,14,0,0"><TextBlock Text="Password" Foreground="#9CB3CE" Margin="0,0,0,7"/><PasswordBox x:Name="Password" Padding="10,8" Background="#182940" Foreground="White" BorderBrush="#314763"/></StackPanel><StackPanel Grid.Row="4" Margin="0,10,0,15"><CheckBox x:Name="Remember" Content="Remember this sign-in on this PC"/><TextBlock x:Name="Failure" Foreground="#E1BE83" TextWrapping="Wrap" Margin="0,7,0,0"/></StackPanel><StackPanel Grid.Row="5" Orientation="Horizontal" HorizontalAlignment="Right"><Button x:Name="Skip" Content="Skip scanner" Margin="0,0,10,0"/><Button x:Name="Connect" Content="Reconnect" Background="#1D6871"/></StackPanel>
 '@
-    $d=New-Dialog 'Secure scanner connection' $content 580 440
+    $d=New-Dialog 'Secure scanner connection' $content 620 520
     $d.FindName('CredentialTitle').Text='Connect to '+$Name
     $d.FindName('Username').Text=$Username
+    $d.FindName('Failure').Text=$Failure
     $d.FindName('Skip').Add_Click({param($sender,$args) [Windows.Window]::GetWindow($sender).DialogResult=$false})
     $d.FindName('Connect').Add_Click({param($sender,$args) $parent=[Windows.Window]::GetWindow($sender); if($parent.FindName('Username').Text.Trim() -and $parent.FindName('Password').SecurePassword.Length -gt 0){$parent.DialogResult=$true}})
     if($d.ShowDialog() -eq $true) {
         $secure=$d.FindName('Password').SecurePassword.Copy()
         $cred=New-Object System.Management.Automation.PSCredential($d.FindName('Username').Text.Trim(),$secure)
         $d.FindName('Password').Clear()
+        if($ScannerId -and $d.FindName('Remember').IsChecked){$script:RememberPending[$ScannerId]=$cred}
         return $cred
     }
     $d.FindName('Password').Clear()
@@ -878,14 +913,24 @@ function Finish-Connections {
         $sourceName=[string]$connection.Scanner
         $sourceMatch=@($script:Config.Sources | Where-Object Scanner -eq $connection.Scanner)
         if($sourceMatch.Count){$sourceName=[string]$sourceMatch[0].Name}
+        $feedback=[pscustomobject]@{Scanner=[string]$connection.Scanner;Status=[string]$connection.Status;Message=[string]$connection.Message;NativeCode=[int](Value-Or $connection NativeCode 0);CheckedUtc=[datetime]::UtcNow}
+        $script:ConnectionFeedback[[string]$connection.Scanner]=$feedback
+        if($script:ScannerEditors.ContainsKey([string]$connection.Scanner)){$script:ScannerEditors[[string]$connection.Scanner].ConnectionResult.Text=[string]$connection.Message}
+        Write-QaSupportEvent -AppRoot $script:AppRoot -Operation Reconnect -Outcome $(if($connection.Status -eq 'Connected'){'Completed'}else{'Failed'}) -NativeCode $feedback.NativeCode
+        if($script:RememberPending.ContainsKey([string]$connection.Scanner)){
+            $pending=$script:RememberPending[[string]$connection.Scanner]
+            if($connection.Status -eq 'Connected' -and $sourceMatch.Count){try{[void](Save-QaSavedCredential -AppRoot $script:AppRoot -ScannerId ([string]$connection.Scanner) -ExpectedPath ([string]$sourceMatch[0].Path) -Credential $pending);Set-CredentialStatusLabel $sourceMatch[0] $script:ScannerEditors[[string]$connection.Scanner]}catch{[void]$lines.Add('The connection succeeded, but the sign-in was not remembered. Check the saved username in Advanced settings.')}}
+            $script:RememberPending.Remove([string]$connection.Scanner)
+        }
         [void]$lines.Add(($sourceName+': '+[string]$connection.Message))
-        if([string]$connection.Status -eq 'CredentialsRequired') {
+        if([string]$connection.Status -eq 'CredentialsRequired' -and -not $script:AttemptedCredentials.ContainsKey([string]$connection.Scanner)) {
             $source=@($script:Config.Sources | Where-Object Scanner -eq $connection.Scanner)[0]
-            $credential=Show-Credentials -Name ([string]$source.Name) -Username ([string](Value-Or $source Username 'SCANNER_USERNAME'))
+            $credential=Show-Credentials -Name ([string]$source.Name) -Username ([string](Value-Or $source Username 'SCANNER_USERNAME')) -ScannerId ([string]$source.Scanner) -Failure ([string]$connection.Message)
             if($null -ne $credential) { $needed[[string]$connection.Scanner]=$credential }
         }
     }
-    if($needed.Count) { Start-Work -Mode Reconnect -Credentials $needed; return }
+    if($needed.Count) { Start-Work -Mode Reconnect -Credentials $needed -Plan ([pscustomobject]@{ScannerId=$script:ReconnectTarget}); return }
+    Refresh-Dashboard
     if($script:AfterReconnect) {
         $next=$script:AfterReconnect; $script:AfterReconnect=''
         $script:Controls.StatusText.Text='Connections checked. Preparing the report preview...'
@@ -964,9 +1009,113 @@ function Review-SelectedReport {
         Start-Work -Mode ReclassifyPreview -Decisions $script:PendingDecisions
     }
 }
+function Show-QaSettings {
+    param([string]$ScannerId='')
+    Show-Page Advanced
+    foreach($id in $script:ScannerEditors.Keys){if(-not $ScannerId -or $id -eq $ScannerId){$script:ScannerEditors[$id].QaOptions.IsExpanded=$true}}
+    $script:Controls.AdvancedView.ScrollToTop()
+}
+function Show-SelectedReportHelp {
+    $record=$script:Controls.ReportsGrid.SelectedItem
+    if($null -eq $record){$script:Controls.SelectedReportHelp.Text='Select a saved report. Open its PDF, then Review / confirm to record its correct type and verified checklist items.';return}
+    $category=[string](Value-Or $record Category)
+    $pending=($category -in @('Needs_Review','Monthly_QA/Pending_Verification') -or ([string](Value-Or $record ClassificationBasis) -like 'Provisional*' -and -not [string](Value-Or $record ConfirmedBy)))
+    $script:Controls.SelectedReportHelp.Text=$(if($pending){'Saved PDF - pending verification. Open the PDF, then Review / confirm selected report. Confirm its type and only checklist items supported by the PDF.'}else{'Saved PDF - '+(Get-CategoryLabel $category)+'. Open it to inspect the evidence, or Review / confirm to correct its label. Text reading and reviewed confirmation are separate.'})
+}
+function Review-TodayReports {
+    $selected=$script:Controls.TodayGrid.SelectedItem
+    Clear-ReportFilters;Show-Page Reports
+    if($null -ne $selected){$script:Controls.ScannerFilter.SelectedValue=[string]$selected.Scanner}
+    $script:Controls.ReportSearch.Text=(Get-Date).ToString('yyyy-MM-dd')
+    Refresh-Reports
+}
+function Toggle-PdfReading {
+    try {
+        $enabled=-not [bool](Value-Or $script:Config AutoAnalyze $true)
+        $copy=$script:Config|ConvertTo-Json -Depth 20|ConvertFrom-Json;$copy|Add-Member AutoAnalyze $enabled -Force
+        Save-QaConfig -AppRoot $script:AppRoot -Config $copy|Out-Null;$script:Config=Read-QaConfig -AppRoot $script:AppRoot
+        $script:Controls.AutoAnalyze.IsChecked=$enabled
+        if(-not $enabled -and $script:Busy -and $script:CurrentMode -eq 'Analysis'){$script:Worker.Shared.Cancel=$true}
+        Refresh-Dashboard
+        $script:Controls.StatusText.Text=$(if($enabled){'Automatic text reading enabled. New or changed PDFs are read in small batches while open.'}else{'Automatic text reading paused. Saved reports and cached results remain available.'})
+    }catch{Show-Note $_.Exception.Message 'PDF reading setting could not be saved' $true}
+}
+function Choose-UpdatePackage {
+    if($script:Busy){Show-Note 'Wait for the current report operation, or cancel it safely before choosing an update.';return}
+    $dialog=New-Object Microsoft.Win32.OpenFileDialog;$dialog.Filter='CT QA update (*.zip)|*.zip'
+    if($dialog.ShowDialog($script:Window)){Prepare-UpdatePackage $dialog.FileName}
+}
+function Prepare-UpdatePackage {
+    param([string]$Path)
+    if($script:Busy){Show-Note 'Wait for the report operation to finish before checking an update.';return}
+    try {
+        $script:Controls.InstallUpdateButton.IsEnabled=$false
+        if($null -ne $script:PreparedUpdate){Remove-QaUpdateStage -AppRoot $script:AppRoot -StageRoot $script:PreparedUpdate.StageRoot;$script:PreparedUpdate=$null}
+        $script:Controls.UpdatePackagePath.Text='Checking the selected ZIP...'
+        $plan=New-QaUpdateStage -AppRoot $script:AppRoot -ZipPath $Path
+        $script:PreparedUpdate=$plan
+        $script:Controls.UpdatePackagePath.Text=$Path
+        $script:Controls.UpdatePackageSummary.Text=('Current: 4.3.0 / Selected: '+$plan.Version+' / '+$plan.Files+' checked program files. Reports and saved settings stay in place.')
+        $script:Controls.InstallUpdateButton.IsEnabled=$true
+    }catch{$script:Controls.UpdatePackagePath.Text='The package could not be checked.';$script:Controls.UpdatePackageSummary.Text=$_.Exception.Message;Show-Note $_.Exception.Message 'Update file needs attention' $true}
+}
+function Install-PreparedUpdate {
+    if($script:Busy -or $null -eq $script:PreparedUpdate){return}
+    try {
+        $plan=$script:PreparedUpdate
+        [void](Test-QaUpdateFolder -SourceFolder $plan.SourceFolder)
+        if([Windows.MessageBox]::Show($script:Window,('Install version '+$plan.Version+' and restart? The app will close. Your archive and settings will be preserved, and the previous program will be kept in Backups.'),'Install update',[Windows.MessageBoxButton]::YesNo,[Windows.MessageBoxImage]::Question) -ne [Windows.MessageBoxResult]::Yes){return}
+        $arguments='-NoLogo -NoProfile -STA -File "'+(Join-Path $plan.SourceFolder 'App/Upgrade.ps1')+'" -SourceFolder "'+$plan.SourceFolder+'" -TargetFolder "'+$script:AppRoot+'" -WaitForApp -LaunchAfter -StageRoot "'+$plan.StageRoot+'"'
+        Start-Process -FilePath (Join-Path $PSHOME 'powershell.exe') -ArgumentList $arguments -WorkingDirectory $script:AppRoot|Out-Null
+        $script:UpdateLaunching=$true
+        $script:Window.Close()
+    }catch{Show-Note $_.Exception.Message 'Update could not start' $true}
+}
+
+function Refresh-ReviewGroups {
+    $category=[string]$script:Controls.AttentionFilter.SelectedValue;if(-not $category){$category='All'}
+    $visible=@(Select-QaReviewGroups -Groups $script:ReviewGroups -Category $category)
+    $script:Controls.AttentionList.ItemsSource=$visible
+    $total=0;foreach($group in $script:ReviewGroups){$total+=$group.Count}
+    $script:Controls.AttentionCount.Text=('{0:N0} items / {1} groups; showing {2}' -f $total,$script:ReviewGroups.Count,$visible.Count)
+    $script:Controls.AttentionEmpty.Visibility=$(if($visible.Count){[Windows.Visibility]::Collapsed}else{[Windows.Visibility]::Visible})
+    $script:Controls.AttentionEmpty.Text='No review groups in this category. Other categories remain available above.'
+    $script:Controls.AttentionScope.Text=('Daily checks cover up to '+$script:Config.LookbackDays+' prior days through yesterday, using each scanner schedule and active-from date. Monthly checks use completed months. Open a group to see every item and its next step.')
+}
+function Open-ReviewGroup {
+    if($script:Busy){Show-Note 'A report operation is running. Wait for it to finish, or use Cancel safely before reviewing items.';return}
+    $group=$script:Controls.AttentionList.SelectedItem
+    if($null -eq $group){Show-Note 'Select a review group first.';return}
+    $content=@'
+<Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+<TextBlock x:Name="Title" FontSize="21" FontWeight="SemiBold"/>
+<TextBlock x:Name="NextStep" Grid.Row="1" Foreground="#AFC8D8" Margin="0,13,0,16"/>
+<ListBox x:Name="Items" Grid.Row="2" ScrollViewer.VerticalScrollBarVisibility="Auto"><ListBox.ItemTemplate><DataTemplate><Border Background="#1B2D45" CornerRadius="8" Padding="12"><TextBlock Text="{Binding Message}" TextWrapping="Wrap"/></Border></DataTemplate></ListBox.ItemTemplate></ListBox>
+<WrapPanel Grid.Row="3" HorizontalAlignment="Right" Margin="0,15,0,0"><Button x:Name="Settings" Content="Check scanner settings" Margin="0,0,9,7"/><Button x:Name="Open" Content="Review selected item" Margin="0,0,9,7"/><Button x:Name="Close" Content="Close" Margin="0,0,0,7"/></WrapPanel>
+'@
+    $d=New-Dialog 'Archive review details' $content 860 600
+    $d.FindName('Title').Text=$group.Message;$d.FindName('NextStep').Text=$group.NextStep
+    $d.FindName('Items').ItemsSource=@($group.Items)
+    $d.FindName('Open').Add_Click({param($sender,$args) $parent=[Windows.Window]::GetWindow($sender);$selected=$parent.FindName('Items').SelectedItem;if($null -ne $selected){$parent.Tag=$selected;$parent.DialogResult=$true}})
+    $d.FindName('Settings').Add_Click({param($sender,$args) $parent=[Windows.Window]::GetWindow($sender);$parent.Tag='Settings';$parent.DialogResult=$true})
+    $d.FindName('Close').Add_Click({param($sender,$args) [Windows.Window]::GetWindow($sender).DialogResult=$false})
+    if($d.ShowDialog() -eq $true){if($d.Tag -is [string]){Show-QaSettings -ScannerId ([string]$group.Scanner)}else{Open-AttentionItem -Item $d.Tag}}
+}
+function Save-SupportReport {
+    try {
+        $folder=Join-Path $script:AppRoot 'Logs/Support';[void][IO.Directory]::CreateDirectory($folder)
+        $dialog=New-Object Microsoft.Win32.SaveFileDialog;$dialog.Filter='Support report (*.json)|*.json';$dialog.FileName='CTQA-Support-'+(Get-Date).ToString('yyyyMMdd-HHmmss')+'.json';$dialog.InitialDirectory=$folder
+        if(-not $dialog.ShowDialog($script:Window)){return}
+        $mode='';if($script:Busy){$mode=$script:CurrentMode}
+        $path=Export-QaSupportReport -AppRoot $script:AppRoot -Config $script:Config -Dashboard $script:Dashboard -DestinationPath $dialog.FileName -ConnectionResults @($script:ConnectionFeedback.Values) -CurrentOperation $mode
+        Show-Note ('Support report saved to:'+"`r`n"+$path+"`r`n`r`n"+'You can share this JSON file for troubleshooting. It contains counts, QA archive date ranges and error numbers. No passwords, usernames, network addresses, filenames, PDF contents or raw logs are included. Scanner 1, 2, 3 follow your configured scanner order.') 'Shareable support report'
+    }catch{Show-Note $_.Exception.Message 'Support report could not be saved' $true}
+}
+
 function Open-AttentionItem {
+    param($Item=$null)
     if($script:Busy){return}
-    $item=$script:Controls.AttentionList.SelectedItem
+    if($null -eq $Item){$item=$script:Controls.AttentionList.SelectedItem}else{$item=$Item}
     if($null -eq $item){return}
     $recordId=[string](Value-Or $item RecordId)
     if($recordId) {
@@ -1007,14 +1156,34 @@ try {
     Import-Module (Join-Path $PSScriptRoot 'Credentials.psm1') -Force
     Import-Module (Join-Path $PSScriptRoot 'Insights.psm1') -Force
     Import-Module (Join-Path $PSScriptRoot 'Maintenance.psm1') -Force
+    Import-Module (Join-Path $PSScriptRoot 'Review.psm1') -Force
+    Import-Module (Join-Path $PSScriptRoot 'Support.psm1') -Force
+    Import-Module (Join-Path $PSScriptRoot 'Updates.psm1') -Force
     Import-Module (Join-Path $PSScriptRoot 'Workspace.psm1') -Force
     Fit-Window $script:Window
     if(-not $script:DemoPreview){[void](Initialize-QaWorkspace $script:AppRoot)}
     $script:Config=Read-QaConfig -AppRoot $script:AppRoot
     if($script:DemoPreview){Initialize-DemoDashboard}
     if(-not $script:DemoPreview){$script:ProgramLock=[IO.File]::Open((Join-Path $script:AppRoot 'Data/application.lock'),[IO.FileMode]::OpenOrCreate,[IO.FileAccess]::ReadWrite,[IO.FileShare]::Read)}
+    $script:Controls.AttentionFilter.ItemsSource=@([pscustomobject]@{Value='All';Label='All review groups'},[pscustomobject]@{Value='Files';Label='Connection & file checks'},[pscustomobject]@{Value='Reports';Label='Report labels & confirmation'},[pscustomobject]@{Value='Dates';Label='Daily archive dates'},[pscustomobject]@{Value='Monthly';Label='Monthly evidence & checklist'},[pscustomobject]@{Value='Information';Label='Preserved reports: information'})
+    $script:Controls.AttentionFilter.SelectedValue='All'
     Initialize-ReportFilters; Fill-Settings; Refresh-Dashboard
+    if(-not $script:DemoPreview){Write-QaSupportEvent -AppRoot $script:AppRoot -Operation Startup -Outcome Completed}
+    $script:Controls.AttentionFilter.Add_SelectionChanged({Refresh-ReviewGroups})
+    $script:Controls.OpenReviewGroupButton.Add_Click({Open-ReviewGroup})
+    $script:Controls.ManageConnectionsButton.Add_Click({Show-Page Advanced;$script:Controls.AdvancedView.ScrollToTop()})
+    foreach($button in @('CoverageSettingsButton','MonthlySettingsButton')){$script:Controls[$button].Add_Click({Show-QaSettings})}
+    foreach($button in @('ExportDiagnosticsButton','ExportDiagnosticsAdvancedButton')){$script:Controls[$button].Add_Click({Save-SupportReport})}
     if($script:Dashboard.SetupComplete){$script:Controls.StatusText.Text=$(if([bool](Value-Or $script:Config AutoUpdateOnOpen $true)){'Opening your archive. An update will begin after this window appears.'}else{'Saved information. Click Update Reports to check for new PDFs.'})}
+    $script:Controls.ReviewNav.Add_Click({Show-Page Review})
+    $script:Controls.UpdatesNav.Add_Click({Show-Page Updates})
+    $script:Controls.ReviewTodayButton.Add_Click({Review-TodayReports})
+    $script:Controls.ToggleReadingButton.Add_Click({Toggle-PdfReading})
+    $script:Controls.ReportsGrid.Add_SelectionChanged({Show-SelectedReportHelp})
+    $script:Controls.ChooseUpdateButton.Add_Click({Choose-UpdatePackage})
+    $script:Controls.InstallUpdateButton.Add_Click({Install-PreparedUpdate})
+    $script:Controls.UpdateDropZone.Add_DragOver({param($sender,$args) $args.Effects=[Windows.DragDropEffects]::None;if($args.Data.GetDataPresent([Windows.DataFormats]::FileDrop)){$args.Effects=[Windows.DragDropEffects]::Copy};$args.Handled=$true})
+    $script:Controls.UpdateDropZone.Add_Drop({param($sender,$args) if($args.Data.GetDataPresent([Windows.DataFormats]::FileDrop)){$files=@($args.Data.GetData([Windows.DataFormats]::FileDrop));if($files.Count -eq 1){Prepare-UpdatePackage ([string]$files[0])}else{Show-Note 'Drop one update ZIP at a time.'}};$args.Handled=$true})
     $script:Controls.SourceAuditButton.Add_Click({Start-Work -Mode SourceAudit})
     $script:Controls.AnalyzeButton.Add_Click({$script:LastAnalysis=[datetime]::Now;Start-Work -Mode Analysis})
     $script:Controls.CompatibilityButton.Add_Click({Start-Work -Mode Compatibility})
@@ -1072,8 +1241,8 @@ try {
     $script:Controls.OpenReportButton.Add_Click({if($null -ne $script:Controls.ReportsGrid.SelectedItem){Safe-Open ([string]$script:Controls.ReportsGrid.SelectedItem.DestinationPath)}else{Show-Note 'Select a saved report first.'}})
     $script:Controls.ReportsGrid.Add_MouseDoubleClick({if($null -ne $script:Controls.ReportsGrid.SelectedItem){Safe-Open ([string]$script:Controls.ReportsGrid.SelectedItem.DestinationPath)}})
     $script:Controls.ReviewReportButton.Add_Click({Review-SelectedReport})
-    $script:Controls.AttentionList.Add_SelectionChanged({if($null -ne $script:Controls.AttentionList.SelectedItem){Open-AttentionItem}})
-    $script:Controls.AttentionList.Add_PreviewKeyDown({param($sender,$args) if($args.Key -eq [Windows.Input.Key]::Enter){Open-AttentionItem;$args.Handled=$true}})
+    $script:Controls.AttentionList.Add_MouseDoubleClick({Open-ReviewGroup})
+    $script:Controls.AttentionList.Add_PreviewKeyDown({param($sender,$args) if($args.Key -eq [Windows.Input.Key]::Enter){Open-ReviewGroup;$args.Handled=$true}})
     $script:Controls.SaveSettingsButton.Add_Click({[void](Save-Settings)})
     $script:Controls.BrowseArchiveButton.Add_Click({$p=Choose-Folder 'Choose the archive parent location' $script:Controls.ArchivePath.Text;if($p){$script:Controls.ArchivePath.Text=$p}})
     $script:Controls.ImportConnectionsButton.Add_Click({
@@ -1109,8 +1278,10 @@ try {
         $errorText=[string]$worker.Shared.Error; $result=$worker.Shared.Result; $mode=$script:CurrentMode; $cancelled=[bool]$worker.Shared.Cancel
         try { [void]$worker.PowerShell.EndInvoke($worker.Handle); if(-not $errorText -and $worker.PowerShell.HadErrors){$errorText=($worker.PowerShell.Streams.Error | Out-String)} } catch {$errorText=$_.Exception.Message}
         finally {$worker.PowerShell.Dispose();$worker.Runspace.Dispose();$script:Worker=$null;Set-Busy $false;$script:Controls.CancelButton.IsEnabled=$true}
+        if(-not $script:DemoPreview){Write-QaSupportEvent -AppRoot $script:AppRoot -Operation $mode -Outcome $(if($errorText){'Failed'}elseif($cancelled){'Cancelled'}else{'Completed'})}
         $completedSummary=Value-Or $result Summary $null
         if($null -ne $completedSummary -and $null -ne $completedSummary.PSObject.Properties['Cancelled']){$cancelled=[bool]$completedSummary.Cancelled}
+        if($mode -eq 'Reconnect' -and ($cancelled -or $errorText)){$script:RememberPending=@{}}
         if($cancelled -and -not $errorText){
             $script:AfterReconnect=''
             if($mode -eq 'Export'){$script:Controls.ExportResultPanel.Visibility=[Windows.Visibility]::Visible;$script:Controls.ExportResultText.Text='Export cancelled. No completed ZIP was created.';$script:Controls.OpenExportFolderButton.Visibility=[Windows.Visibility]::Collapsed}
@@ -1162,7 +1333,7 @@ try {
         if($minutes -gt 0 -and ([datetime]::Now-$script:LastMonitor).TotalMinutes -ge $minutes){$script:LastMonitor=[datetime]::Now;Start-Work -Mode Update;return}
         if([bool](Value-Or $script:Config AutoAnalyze $true) -and ([datetime]::Now-$script:LastAnalysis).TotalMinutes -ge 5){$script:LastAnalysis=[datetime]::Now;Start-Work -Mode Analysis}
     })
-    $script:Window.Add_Closed({$script:Timer.Stop();$script:MonitorTimer.Stop();$script:SearchTimer.Stop();if(-not $script:DemoPreview){$script:ProgramLock.Dispose()}})
+    $script:Window.Add_Closed({if($null -ne $script:PreparedUpdate -and -not $script:UpdateLaunching){try{Remove-QaUpdateStage -AppRoot $script:AppRoot -StageRoot $script:PreparedUpdate.StageRoot}catch{}};$script:Timer.Stop();$script:MonitorTimer.Stop();$script:SearchTimer.Stop();if(-not $script:DemoPreview){$script:ProgramLock.Dispose()}})
     $script:Window.Add_PreviewKeyDown({param($sender,$args) if($args.Key -eq [Windows.Input.Key]::F1){Show-Help;$args.Handled=$true}})
     $script:Window.Dispatcher.Add_UnhandledException({param($sender,$args) $args.Handled=$true;Show-Note $args.Exception.Message 'Application action needs attention' $true})
     if($PortableLaunch) {
@@ -1189,9 +1360,11 @@ namespace CtQa {
         $script:Controls.TodayDate.Text+=' / SYNTHETIC DEMONSTRATION'
         $script:Controls.WelcomeText.Text='Synthetic sample data. No real scanner reports or credentials are shown.'
         $script:Window.MaxHeight=2200;$script:Window.Height=1650;$script:Window.MaxWidth=1600;$script:Window.Width=1280
+        if($PreviewPage -ne 'Dashboard'){Show-Page $PreviewPage}
         $script:Window.Show()
         # Pump the dispatcher so hosted Windows applies size changes and paints controls before capture.
         $script:Window.Dispatcher.Invoke([Action]{$script:Window.UpdateLayout()},[Windows.Threading.DispatcherPriority]::ApplicationIdle)
+        if($PreviewPage -eq 'Review'){$script:Controls.ReviewView.ScrollToTop();$script:Window.Dispatcher.Invoke([Action]{$script:Window.UpdateLayout()},[Windows.Threading.DispatcherPriority]::ApplicationIdle)}
         $bitmap=New-Object Windows.Media.Imaging.RenderTargetBitmap ([int]$script:Window.ActualWidth),([int]$script:Window.ActualHeight),96,96,([Windows.Media.PixelFormats]::Pbgra32)
         $bitmap.Render($script:Window);$encoder=New-Object Windows.Media.Imaging.PngBitmapEncoder
         $encoder.Frames.Add([Windows.Media.Imaging.BitmapFrame]::Create($bitmap))
@@ -1202,6 +1375,7 @@ namespace CtQa {
     [void]$script:Window.ShowDialog()
 } catch {
     if($script:ConsoleHandle -ne [intptr]::Zero){try{[void][CtQa.NativeWindow]::ShowWindow($script:ConsoleHandle,5)}catch{}}
+    if($ValidateLayout -or $DemoPreview){Write-Error ($_.Exception.Message+' / '+$_.ScriptStackTrace);exit 1}
     $message='CT QA Manager Pro could not start.'+"`r`n`r`n"+$_.Exception.Message+"`r`n`r`nExtract the complete application folder. If scripts are blocked, ask hospital IT to approve the package; do not change execution policy."
     try { [void][Windows.MessageBox]::Show($message,'CT QA Manager Pro',[Windows.MessageBoxButton]::OK,[Windows.MessageBoxImage]::Error) } catch { Write-Error $message }
     exit 1
