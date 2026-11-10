@@ -1178,18 +1178,11 @@ namespace CtQa {
         $script:Controls.TodayDate.Text+=' / SYNTHETIC DEMONSTRATION'
         $script:Controls.WelcomeText.Text='Synthetic sample data. No real scanner reports or credentials are shown.'
         $script:Window.MaxHeight=2200;$script:Window.Height=1650;$script:Window.MaxWidth=1600;$script:Window.Width=1280
-        $script:Window.Show();$script:Window.UpdateLayout()
-        # Render the actual WPF controls at a full preview size independently of the hosted desktop resolution.
-        $visual=$script:Window.Content
-        foreach($key in $script:Window.Resources.Keys){$visual.Resources[$key]=$script:Window.Resources[$key]}
-        $visual.Background=$script:Window.Background
-        [Windows.Documents.TextElement]::SetFontFamily($visual,$script:Window.FontFamily)
-        [Windows.Documents.TextElement]::SetFontSize($visual,$script:Window.FontSize)
-        [Windows.Documents.TextElement]::SetForeground($visual,$script:Window.Foreground)
-        $script:Window.Content=$null;$visual.Width=1280;$visual.Height=1600
-        $visual.Measure((New-Object Windows.Size 1280,1600));$visual.Arrange((New-Object Windows.Rect 0,0,1280,1600));$visual.UpdateLayout()
-        $bitmap=New-Object Windows.Media.Imaging.RenderTargetBitmap 1280,1600,96,96,([Windows.Media.PixelFormats]::Pbgra32)
-        $bitmap.Render($visual);$encoder=New-Object Windows.Media.Imaging.PngBitmapEncoder
+        $script:Window.Show()
+        # Pump the dispatcher so hosted Windows applies size changes and paints controls before capture.
+        $script:Window.Dispatcher.Invoke([Action]{$script:Window.UpdateLayout()},[Windows.Threading.DispatcherPriority]::ApplicationIdle)
+        $bitmap=New-Object Windows.Media.Imaging.RenderTargetBitmap ([int]$script:Window.ActualWidth),([int]$script:Window.ActualHeight),96,96,([Windows.Media.PixelFormats]::Pbgra32)
+        $bitmap.Render($script:Window);$encoder=New-Object Windows.Media.Imaging.PngBitmapEncoder
         $encoder.Frames.Add([Windows.Media.Imaging.BitmapFrame]::Create($bitmap))
         $stream=[IO.File]::Create([IO.Path]::GetFullPath($ScreenshotPath));try{$encoder.Save($stream)}finally{$stream.Dispose()}
         $script:Window.Close();exit 0
