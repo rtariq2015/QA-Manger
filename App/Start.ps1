@@ -568,8 +568,10 @@ function Set-CredentialStatusLabel {
     }catch{$Editor.SavedStatus.Text='Saved sign-in status is unavailable. '+$_.Exception.Message;$Editor.Forget.IsEnabled=$false}
 }
 function Save-EditedCredentials {
+    param([string]$ScannerId='')
     $warnings=New-Object 'System.Collections.Generic.List[string]'
     foreach($source in @($script:Config.Sources)){
+        if($ScannerId -and [string]$source.Scanner -ne $ScannerId){continue}
         $editor=$script:ScannerEditors[[string]$source.Scanner]
         if($editor.Password.SecurePassword.Length -gt 0){
             try{
@@ -634,10 +636,13 @@ function Fill-Settings {
     $script:Controls.AutoAnalyze.IsChecked=[bool](Value-Or $script:Config AutoAnalyze $true)
     $script:Controls.ScannerSettingsPanel.Children.Clear()
     $script:ScannerEditors=@{}
+    $selectedConnection=[string]$script:Controls.ConnectionScannerSelector.SelectedValue
+    $script:Controls.ConnectionScannerSelector.ItemsSource=@($script:Config.Sources|ForEach-Object{[pscustomobject]@{Value=[string]$_.Scanner;Label=[string]$_.Name}})
+    if($selectedConnection -and @($script:Config.Sources|Where-Object Scanner -eq $selectedConnection).Count){$script:Controls.ConnectionScannerSelector.SelectedValue=$selectedConnection}else{$script:Controls.ConnectionScannerSelector.SelectedIndex=0}
     foreach ($source in @($script:Config.Sources)) {
         $name=[Security.SecurityElement]::Escape([string]$source.Name)
         $row=Load-Window @"
-<Border xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" BorderBrush="#2B3C55" BorderThickness="0,1,0,0" Padding="0,15,0,15"><StackPanel><TextBlock Text="$name" FontWeight="SemiBold" FontSize="14"/><Grid Margin="0,12,0,0"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="14"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions><StackPanel><TextBlock Text="Display name" Foreground="#91A9C7" Margin="0,0,0,6"/><TextBox x:Name="DisplayName"/></StackPanel><StackPanel Grid.Column="2"><TextBlock Text="Username" Foreground="#91A9C7" Margin="0,0,0,6"/><TextBox x:Name="Username"/></StackPanel></Grid><TextBlock Text="Network report folder (server/IP, share, and folder)" Foreground="#91A9C7" Margin="0,12,0,6"/><TextBox x:Name="SourcePath"/><TextBlock Text="Example: \\CT-EDGE\Reports\ConstancyReports" Foreground="#6F8AA9" FontSize="10" Margin="0,6,0,0"/><Grid Margin="0,12,0,0"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions><StackPanel><TextBlock Text="Password (blank keeps the saved sign-in)" Foreground="#91A9C7" Margin="0,0,0,6"/><PasswordBox x:Name="Password" Padding="10,8" Background="#182940" Foreground="White" BorderBrush="#314763"/></StackPanel><Button x:Name="Forget" Grid.Column="1" Content="Forget saved sign-in" Margin="12,19,0,0" Padding="12,9"/></Grid><TextBlock x:Name="SavedStatus" Foreground="#90BFC4" FontSize="12" Margin="0,9,0,0"/><WrapPanel Margin="0,12,0,8"><Button x:Name="SaveConnect" Content="Save sign-in &amp; reconnect this scanner" Background="#1C6670" Padding="12,9"/></WrapPanel><TextBlock x:Name="ConnectionResult" Foreground="#A8C6D4" FontSize="12" Margin="0,0,0,9"/><Expander Header="QA schedule, checklist &amp; classification" x:Name="QaOptions" IsExpanded="False" Foreground="#AFC7DA"><StackPanel><WrapPanel Margin="0,12,0,0"><StackPanel Width="115" Margin="0,0,14,0"><TextBlock Text="Preferred drive" Foreground="#91A9C7" Margin="0,0,0,6"/><TextBox x:Name="Drive" MaxLength="1"/></StackPanel><StackPanel Width="140" Margin="0,0,14,0"><TextBlock Text="Monthly hint (KB)" Foreground="#91A9C7" Margin="0,0,0,6"/><TextBox x:Name="Threshold"/></StackPanel><StackPanel Width="145" Margin="0,0,14,0"><TextBlock Text="Expected Daily QA" Foreground="#91A9C7" Margin="0,0,0,6"/><ComboBox x:Name="Schedule"/></StackPanel><StackPanel Width="155"><TextBlock Text="Active from (yyyy-MM-dd)" Foreground="#91A9C7" Margin="0,0,0,6"/><TextBox x:Name="ActiveFrom"/></StackPanel></WrapPanel><CheckBox x:Name="MonthlyExpected" Content="Include this scanner in Monthly QA coverage review" Margin="0,12,0,0"/><TextBlock Text="Required Monthly QA items (department checklist)" Foreground="#91A9C7" Margin="0,12,0,6"/><TextBox x:Name="MonthlyChecklist" TextWrapping="Wrap" AcceptsReturn="False" MinHeight="38"/><WrapPanel Margin="0,12,0,0"><StackPanel Width="155" Margin="0,0,14,0"><TextBlock Text="Checklist effective (yyyy-MM)"/><TextBox x:Name="ChecklistEffectiveMonth"/></StackPanel><StackPanel Width="155" Margin="0,0,14,0"><TextBlock Text="Monthly due day (0 = not set)"/><TextBox x:Name="MonthlyDueDay"/></StackPanel><StackPanel Width="260"><TextBlock Text="Daily exceptions (yyyy-MM-dd; ...)"/><TextBox x:Name="ExcludedDates"/></StackPanel></WrapPanel><TextBlock Text="Separate approved item names with semicolons. Example only: Light marker; MTF; Slice thickness. Leave blank if no department checklist is set; monthly completeness will not be assessed." Foreground="#729CB8" TextWrapping="Wrap" FontSize="10" Margin="0,7,0,0"/></StackPanel></Expander></StackPanel></Border>
+<Border xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" BorderBrush="#2B3C55" BorderThickness="0,1,0,0" Padding="0,5,0,15"><StackPanel><Grid Margin="0,12,0,0"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="14"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions><StackPanel><TextBlock Text="Display name" Foreground="#91A9C7" Margin="0,0,0,6"/><TextBox x:Name="DisplayName"/></StackPanel><StackPanel Grid.Column="2"><TextBlock Text="Username" Foreground="#91A9C7" Margin="0,0,0,6"/><TextBox x:Name="Username"/></StackPanel></Grid><TextBlock Text="Network report folder (server/IP, share, and folder)" Foreground="#91A9C7" Margin="0,12,0,6"/><TextBox x:Name="SourcePath"/><TextBlock Text="Example: \\CT-EDGE\Reports\ConstancyReports" Foreground="#6F8AA9" FontSize="10" Margin="0,6,0,0"/><Grid Margin="0,12,0,0"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions><StackPanel><TextBlock Text="Password (blank keeps the saved sign-in)" Foreground="#91A9C7" Margin="0,0,0,6"/><PasswordBox x:Name="Password" Padding="10,8" Background="#182940" Foreground="White" BorderBrush="#314763"/></StackPanel><Button x:Name="Forget" Grid.Column="1" Content="Forget saved sign-in" Margin="12,19,0,0" Padding="12,9"/></Grid><TextBlock x:Name="SavedStatus" Foreground="#90BFC4" FontSize="12" Margin="0,9,0,0"/><WrapPanel Margin="0,12,0,8"><Button x:Name="SaveConnect" Content="Save sign-in &amp; reconnect this scanner" Background="#1C6670" Padding="12,9"/></WrapPanel><TextBlock x:Name="ConnectionResult" Foreground="#A8C6D4" FontSize="12" Margin="0,0,0,9"/><Expander Header="QA schedule, checklist &amp; classification" x:Name="QaOptions" IsExpanded="False" Foreground="#AFC7DA"><StackPanel><WrapPanel Margin="0,12,0,0"><StackPanel Width="115" Margin="0,0,14,0"><TextBlock Text="Preferred drive" Foreground="#91A9C7" Margin="0,0,0,6"/><TextBox x:Name="Drive" MaxLength="1"/></StackPanel><StackPanel Width="140" Margin="0,0,14,0"><TextBlock Text="Monthly hint (KB)" Foreground="#91A9C7" Margin="0,0,0,6"/><TextBox x:Name="Threshold"/></StackPanel><StackPanel Width="145" Margin="0,0,14,0"><TextBlock Text="Expected Daily QA" Foreground="#91A9C7" Margin="0,0,0,6"/><ComboBox x:Name="Schedule"/></StackPanel><StackPanel Width="155"><TextBlock Text="Active from (yyyy-MM-dd)" Foreground="#91A9C7" Margin="0,0,0,6"/><TextBox x:Name="ActiveFrom"/></StackPanel></WrapPanel><CheckBox x:Name="MonthlyExpected" Content="Include this scanner in Monthly QA coverage review" Margin="0,12,0,0"/><TextBlock Text="Required Monthly QA items (department checklist)" Foreground="#91A9C7" Margin="0,12,0,6"/><TextBox x:Name="MonthlyChecklist" TextWrapping="Wrap" AcceptsReturn="False" MinHeight="38"/><WrapPanel Margin="0,12,0,0"><StackPanel Width="155" Margin="0,0,14,0"><TextBlock Text="Checklist effective (yyyy-MM)"/><TextBox x:Name="ChecklistEffectiveMonth"/></StackPanel><StackPanel Width="155" Margin="0,0,14,0"><TextBlock Text="Monthly due day (0 = not set)"/><TextBox x:Name="MonthlyDueDay"/></StackPanel><StackPanel Width="260"><TextBlock Text="Daily exceptions (yyyy-MM-dd; ...)"/><TextBox x:Name="ExcludedDates"/></StackPanel></WrapPanel><TextBlock Text="Separate approved item names with semicolons. Example only: Light marker; MTF; Slice thickness. Leave blank if no department checklist is set; monthly completeness will not be assessed." Foreground="#729CB8" TextWrapping="Wrap" FontSize="10" Margin="0,7,0,0"/></StackPanel></Expander></StackPanel></Border>
 "@
         $ed=@{}
         foreach ($n in @('DisplayName','Username','SourcePath','Password','SavedStatus','Forget','Drive','Threshold','Schedule','ActiveFrom','MonthlyExpected','MonthlyChecklist','ChecklistEffectiveMonth','MonthlyDueDay','ExcludedDates','SaveConnect','ConnectionResult','QaOptions')) { $ed[$n]=$row.FindName($n) }
@@ -651,17 +656,20 @@ function Fill-Settings {
         $ed.ChecklistEffectiveMonth.Text=(Get-Date).ToString('yyyy-MM')
         $ed.MonthlyDueDay.Text=[string](Value-Or $source MonthlyDueDay 0)
         $ed.ExcludedDates.Text=(@(Value-Or $source ExcludedDates @()) -join '; ')
+        $ed.Row=$row
         $script:ScannerEditors[[string]$source.Scanner]=$ed
         $ed.Forget.Tag=[string]$source.Scanner
         $ed.Forget.Add_Click({param($sender,$args) try{Remove-QaSavedCredential -AppRoot $script:AppRoot -ScannerId ([string]$sender.Tag) | Out-Null;$editor=$script:ScannerEditors[[string]$sender.Tag];$editor.Password.Clear();$editor.SavedStatus.Text='Saved sign-in removed. Existing Windows connections are not disconnected.';$sender.IsEnabled=$false}catch{Show-Note $_.Exception.Message 'Saved sign-in could not be removed' $true}})
         $ed.SaveConnect.Tag=[string]$source.Scanner
-        $ed.SaveConnect.Add_Click({param($sender,$args) if(Save-Settings){Start-Work -Mode Reconnect -Plan ([pscustomobject]@{ScannerId=[string]$sender.Tag})}})
+        $ed.SaveConnect.Add_Click({param($sender,$args) if(Save-Settings -CredentialScannerId ([string]$sender.Tag)){Start-Work -Mode Reconnect -Plan ([pscustomobject]@{ScannerId=[string]$sender.Tag})}})
         if($script:ConnectionFeedback.ContainsKey([string]$source.Scanner)){$ed.ConnectionResult.Text=$script:ConnectionFeedback[[string]$source.Scanner].Message}
         Set-CredentialStatusLabel $source $ed
         [void]$script:Controls.ScannerSettingsPanel.Children.Add($row)
     }
+    Show-ConnectionEditor
 }
 function Save-Settings {
+    param([string]$CredentialScannerId='')
     try {
         # Work on a detached copy so failed validation cannot change the active configuration.
         $cfg=$script:Config | ConvertTo-Json -Depth 12 | ConvertFrom-Json
@@ -714,7 +722,7 @@ function Save-Settings {
         if (@($cfg.Sources | Group-Object DriveLetter | Where-Object Count -gt 1).Count) { throw 'Use a different preferred drive letter for each scanner.' }
         Save-QaConfig -AppRoot $script:AppRoot -Config $cfg | Out-Null
         $script:Config=$cfg
-        Save-EditedCredentials;Refresh-ScannerFilterOptions
+        Save-EditedCredentials -ScannerId $CredentialScannerId;Refresh-ScannerFilterOptions
         Refresh-Dashboard
         $script:Controls.StatusText.Text='Advanced settings saved.'
         return $true
@@ -1009,9 +1017,15 @@ function Review-SelectedReport {
         Start-Work -Mode ReclassifyPreview -Decisions $script:PendingDecisions
     }
 }
+function Show-ConnectionEditor {
+    $selected=[string]$script:Controls.ConnectionScannerSelector.SelectedValue
+    if($null -eq (Get-Variable ScannerEditors -Scope Script -ErrorAction SilentlyContinue)){return}
+    foreach($id in $script:ScannerEditors.Keys){$script:ScannerEditors[$id].Row.Visibility=$(if($id -eq $selected){[Windows.Visibility]::Visible}else{[Windows.Visibility]::Collapsed})}
+}
 function Show-QaSettings {
     param([string]$ScannerId='')
     Show-Page Advanced
+    if($ScannerId){$script:Controls.ConnectionScannerSelector.SelectedValue=$ScannerId}
     foreach($id in $script:ScannerEditors.Keys){if(-not $ScannerId -or $id -eq $ScannerId){$script:ScannerEditors[$id].QaOptions.IsExpanded=$true}}
     $script:Controls.AdvancedView.ScrollToTop()
 }
@@ -1169,6 +1183,7 @@ try {
     $script:Controls.AttentionFilter.SelectedValue='All'
     Initialize-ReportFilters; Fill-Settings; Refresh-Dashboard
     if(-not $script:DemoPreview){Write-QaSupportEvent -AppRoot $script:AppRoot -Operation Startup -Outcome Completed}
+    $script:Controls.ConnectionScannerSelector.Add_SelectionChanged({Show-ConnectionEditor})
     $script:Controls.AttentionFilter.Add_SelectionChanged({Refresh-ReviewGroups})
     $script:Controls.OpenReviewGroupButton.Add_Click({Open-ReviewGroup})
     $script:Controls.ManageConnectionsButton.Add_Click({Show-Page Advanced;$script:Controls.AdvancedView.ScrollToTop()})

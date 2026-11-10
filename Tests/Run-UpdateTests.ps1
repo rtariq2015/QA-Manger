@@ -45,7 +45,10 @@ Scenario 'An active application prevents installation and is never forcibly term
     $lock=[IO.File]::Open((Join-Path $target 'Data/application.lock'),[IO.FileMode]::OpenOrCreate,[IO.FileAccess]::ReadWrite,[IO.FileShare]::Read)
     try{
         $clock=[Diagnostics.Stopwatch]::StartNew()
-        & (Get-Process -Id $PID).Path -NoProfile -File (Join-Path $plan.SourceFolder 'App/Upgrade.ps1') -SourceFolder $plan.SourceFolder -TargetFolder $target -WaitForApp -WaitSeconds 1 > (Join-Path $testRoot 'locked.log') 2>&1
+        # The nonzero exit and stderr are expected. Windows PowerShell wraps
+        # native stderr as NativeCommandError; retain it without aborting the assertion.
+        $priorPreference=$ErrorActionPreference
+        try{$ErrorActionPreference='Continue';& (Get-Process -Id $PID).Path -NoProfile -File (Join-Path $plan.SourceFolder 'App/Upgrade.ps1') -SourceFolder $plan.SourceFolder -TargetFolder $target -WaitForApp -WaitSeconds 1 > (Join-Path $testRoot 'locked.log') 2>&1}finally{$ErrorActionPreference=$priorPreference}
         Check ($LASTEXITCODE -ne 0 -and $clock.Elapsed.TotalSeconds -lt 15) 'Lock wait is bounded'
         Check ((Get-FileHash (Join-Path $target 'App/Upgrade.ps1')).Hash -eq $before) 'Live files unchanged while locked'
     }finally{$lock.Dispose();Remove-QaUpdateStage $target $plan.StageRoot}
