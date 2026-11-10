@@ -1,21 +1,22 @@
 {
-  "Version": "4.4.0",
-  "SourceCommit": "f09d99aedae1bbacbdd8cd41c88ae572a5e8f55b",
-  "WorkflowRun": "https://github.com/rtariq2015/QA-Manger/actions/runs/42872162927",
+  "Version": "4.4.1",
+  "SourceCommit": "7d197d6a2f4a38c9f3ecefa1d95cef67cc9eca24",
+  "WorkflowRun": "https://github.com/rtariq2015/QA-Manger/actions/runs/42878879406",
   "Runtime": "Windows PowerShell 5.1.26100.33648",
   "Host": "GitHub-hosted Windows Server 2025",
-  "Tests": 172,
-  "Assertions": 1107,
+  "Tests": 174,
+  "Assertions": 1137,
   "Failed": 0,
   "WindowsPowerShell51ActuallyRun": true,
   "NativeWPFActuallyRun": true,
   "WindowsDPAPIActuallyRun": true,
-  "ProductionNetworkUpdateCmdActuallyRun": true,
-  "ProductionDiagnosticCmdActuallyRun": true,
-  "OfflineUpdateLockWaitAndRestartActuallyRun": true,
-  "CompleteScrubbedLogBundleActuallyRun": true,
   "NativePdfRendererActuallyRun": true,
-  "ReviewWorkspaceAcceptUndoDeclineSkipActuallyRun": true,
+  "ReviewWorkspaceDecisionsActuallyRun": true,
+  "NativeRoutedKeyboardEventsAndReviewerEditingActuallyRun": true,
+  "ProductionF1HandlerActuallyRun": true,
+  "ProductionDispatcherEventHandlerActuallyRun": true,
+  "ProductionApplicationCmdQuietStartupActuallyRun": true,
+  "OfflineUpdateLockWaitAndRestartActuallyRun": true,
   "Screens": [
     "Dashboard",
     "Connections and settings",
@@ -63,14 +64,14 @@
     },
     {
       "Name": "Run-PortableTests",
-      "Tests": 16,
-      "Assertions": 45,
+      "Tests": 17,
+      "Assertions": 48,
       "Failed": 0
     },
     {
       "Name": "Run-ReviewQueueTests",
-      "Tests": 13,
-      "Assertions": 56,
+      "Tests": 14,
+      "Assertions": 83,
       "Failed": 0
     },
     {
@@ -92,5 +93,5 @@
       "Failed": 0
     }
   ],
-  "Scope": "Actual synthetic PDF rendering and native WPF button actions, persistent decision history, report preservation, reviewed-other browsing/exports, stale actions, offline ZIP upgrades, DPAPI, scrubbed logs and existing regression suites. Six native screens captured. Real hospital access, endpoint policy and physical-workstation DPI still require workstation checks."
+  "Scope": "Synthetic fixtures only. Native WPF routed key events, reviewer edits with apostrophe/hyphen/backspace, production F1 and dispatcher handlers, exact application CMD with a harmless stub, actual PDF rendering, review decisions and all prior regression suites. Physical keyboard/IME, hospital access and workplace endpoint policy are not simulated."
 }

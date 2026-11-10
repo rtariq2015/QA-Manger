@@ -1,9 +1,10 @@
 {
   "Product": "CT QA Manager Pro",
-  "Version": "4.4.0",
+  "Version": "4.4.1",
+  "SourceCommit": "7d197d6a2f4a38c9f3ecefa1d95cef67cc9eca24",
   "Runtime": "PowerShell 7.4.13 on Linux",
-  "Tests": 169,
-  "Assertions": 1076,
+  "Tests": 170,
+  "Assertions": 1080,
   "Failed": 0,
   "WindowsPowerShell51ActuallyRun": false,
   "NativeWPFActuallyRun": false,
@@ -53,8 +54,8 @@
     },
     {
       "Name": "Run-ReviewQueueTests",
-      "Tests": 11,
-      "Assertions": 38,
+      "Tests": 12,
+      "Assertions": 40,
       "Failed": 0
     },
     {
@@ -66,7 +67,7 @@
     {
       "Name": "Run-Tests",
       "Tests": 24,
-      "Assertions": 185,
+      "Assertions": 187,
       "Failed": 0
     },
     {
@@ -76,6 +77,6 @@
       "Failed": 0
     }
   ],
-  "WindowsEvidence": "Windows/Summary.json: 172 scenarios / 1107 assertions, native PDF rendering and actual Accept/Undo/Decline/Skip clicks.",
-  "HistoricalSearchBenchmark": "Search-Benchmark.json was executed for v4.2.0; it has not been rerun for this review-workspace change."
+  "WindowsEvidence": "Windows/Summary.json: 174 scenarios / 1137 assertions, native routed keyboard events, reviewer editing, F1 and quiet application CMD startup.",
+  "HistoricalSearchBenchmark": "Search-Benchmark.json was executed for v4.2.0 and was not rerun for this input patch."
 }

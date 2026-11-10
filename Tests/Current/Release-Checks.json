@@ -1,10 +1,12 @@
 {
-  "Version": "4.4.0",
+  "Version": "4.4.1",
   "AllFourZipManifestsVerified": true,
   "NoDevelopmentFilesInRuntimePackages": true,
   "NoPasswordsBundled": true,
   "PrivateNetworkProfileOnlyInWorkPortable": true,
   "ActualUpgradeFrom422PreservesConfigCredentialsArchiveAndDataSentinels": true,
+  "ActualUpgradeFrom440PreservesConfigCredentialsArchiveAndDataSentinels": true,
+  "UpgradedLauncherMatchesCorrectedBOMFreeCMD": true,
   "StandalonePackagedDiagnosticsPass": true,
-  "Scope": "Executed against actual packaged ZIPs on Linux using PowerShell 7.4.13. Native PowerShell 5.1 and WPF are tested in the separately recorded Windows workflow."
+  "Scope": "Executed against actual packaged ZIPs using PowerShell 7.4.13 on Linux. Separate Windows validation executes the production CMD and native WPF keyboard events."
 }

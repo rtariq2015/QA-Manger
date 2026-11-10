@@ -1,0 +1,67 @@
+{
+  "Version": "4.4.0",
+  "Runtime": "7.4.13",
+  "WindowsPowerShell51ActuallyRun": false,
+  "NativePdfPreviewActuallyRun": false,
+  "Tests": 11,
+  "Assertions": 38,
+  "Failed": 0,
+  "Results": [
+    {
+      "Name": "Quick decisions require PDF review, reviewer identity and authorization",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "Accept removes a candidate from pending and records only selected checklist evidence",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "Decline clears the Monthly suggestion while preserving a reviewed other PDF",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "Decline can identify a Daily report without accepting it as Monthly",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "Undo restores the previous pending state and keeps both audit entries",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "Undo also restores a declined candidate and rejects an unrelated old decision",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "A stale decision cannot overwrite another review of the same PDF",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "A changed saved PDF cannot be accepted or silently reclassified",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "A normal scanner update preserves the declined decision for unchanged source bytes",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "Declined PDFs export and browse as reviewed reports instead of unresolved suggestions",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "Undo invalidates old pending actions even when the category returns to its original value",
+      "Result": "PASS",
+      "Details": ""
+    }
+  ],
+  "Scope": "Synthetic saved PDFs: accept, decline, exact undo snapshots, stale decisions, source preservation, unchanged rescans and native Windows PDF page rendering."
+}

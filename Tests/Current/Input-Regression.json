@@ -1,0 +1,10 @@
+{
+  "Version": "4.4.1",
+  "ReportedError": "Missing Handled property while typing reviewer name",
+  "Cause": "WPF event parameter args collided with the automatic PowerShell args variable. The keyboard handler lost the event, and the dispatcher handler masked the original error with a second event-argument failure.",
+  "Published440FailureReproduced": true,
+  "SameDispatcherEventPassesAfterFix": true,
+  "LauncherCause": "UTF-8 BOM before @echo off was interpreted as command characters by CMD.",
+  "LauncherCorrection": "ASCII, no BOM, existing CRLF preserved.",
+  "Fixtures": "Synthetic event object and synthetic original error only. No screenshot content, reviewer identity or clinical document was copied into the repository."
+}

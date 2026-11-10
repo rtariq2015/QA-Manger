@@ -1,0 +1,81 @@
+{
+  "Product": "CT QA Manager Pro",
+  "Version": "4.4.0",
+  "Runtime": "PowerShell 7.4.13 on Linux",
+  "Tests": 169,
+  "Assertions": 1076,
+  "Failed": 0,
+  "WindowsPowerShell51ActuallyRun": false,
+  "NativeWPFActuallyRun": false,
+  "WindowsDPAPIActuallyRun": false,
+  "Suites": [
+    {
+      "Name": "Run-BrowseTests",
+      "Tests": 17,
+      "Assertions": 117,
+      "Failed": 0
+    },
+    {
+      "Name": "Run-ConnectionTests",
+      "Tests": 15,
+      "Assertions": 174,
+      "Failed": 0
+    },
+    {
+      "Name": "Run-ExportTests",
+      "Tests": 24,
+      "Assertions": 250,
+      "Failed": 0
+    },
+    {
+      "Name": "Run-MonthlyTests",
+      "Tests": 16,
+      "Assertions": 89,
+      "Failed": 0
+    },
+    {
+      "Name": "Run-NetworkTests",
+      "Tests": 13,
+      "Assertions": 43,
+      "Failed": 0
+    },
+    {
+      "Name": "Run-PdfTests",
+      "Tests": 8,
+      "Assertions": 25,
+      "Failed": 0
+    },
+    {
+      "Name": "Run-PortableTests",
+      "Tests": 16,
+      "Assertions": 45,
+      "Failed": 0
+    },
+    {
+      "Name": "Run-ReviewQueueTests",
+      "Tests": 11,
+      "Assertions": 38,
+      "Failed": 0
+    },
+    {
+      "Name": "Run-SupportTests",
+      "Tests": 16,
+      "Assertions": 78,
+      "Failed": 0
+    },
+    {
+      "Name": "Run-Tests",
+      "Tests": 24,
+      "Assertions": 185,
+      "Failed": 0
+    },
+    {
+      "Name": "Run-UpdateTests",
+      "Tests": 9,
+      "Assertions": 32,
+      "Failed": 0
+    }
+  ],
+  "WindowsEvidence": "Windows/Summary.json: 172 scenarios / 1107 assertions, native PDF rendering and actual Accept/Undo/Decline/Skip clicks.",
+  "HistoricalSearchBenchmark": "Search-Benchmark.json was executed for v4.2.0; it has not been rerun for this review-workspace change."
+}

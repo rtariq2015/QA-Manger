@@ -1,12 +1,17 @@
 ﻿{
-    "Version":  "4.4.0",
+    "Version":  "4.4.1",
     "Runtime":  "5.1.26100.33648",
     "WindowsPowerShell51ActuallyRun":  true,
     "NativePdfPreviewActuallyRun":  true,
-    "Tests":  13,
-    "Assertions":  56,
+    "Tests":  14,
+    "Assertions":  83,
     "Failed":  0,
     "Results":  [
+                    {
+                        "Name":  "The production dispatcher handler preserves event arguments and reports the original error",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
                     {
                         "Name":  "Quick decisions require PDF review, reviewer identity and authorization",
                         "Result":  "PASS",

@@ -1,0 +1,96 @@
+{
+  "Version": "4.4.0",
+  "SourceCommit": "f09d99aedae1bbacbdd8cd41c88ae572a5e8f55b",
+  "WorkflowRun": "https://github.com/rtariq2015/QA-Manger/actions/runs/42872162927",
+  "Runtime": "Windows PowerShell 5.1.26100.33648",
+  "Host": "GitHub-hosted Windows Server 2025",
+  "Tests": 172,
+  "Assertions": 1107,
+  "Failed": 0,
+  "WindowsPowerShell51ActuallyRun": true,
+  "NativeWPFActuallyRun": true,
+  "WindowsDPAPIActuallyRun": true,
+  "ProductionNetworkUpdateCmdActuallyRun": true,
+  "ProductionDiagnosticCmdActuallyRun": true,
+  "OfflineUpdateLockWaitAndRestartActuallyRun": true,
+  "CompleteScrubbedLogBundleActuallyRun": true,
+  "NativePdfRendererActuallyRun": true,
+  "ReviewWorkspaceAcceptUndoDeclineSkipActuallyRun": true,
+  "Screens": [
+    "Dashboard",
+    "Connections and settings",
+    "Archive review",
+    "Reports",
+    "Offline updates",
+    "PDF review workspace"
+  ],
+  "Suites": [
+    {
+      "Name": "Run-BrowseTests",
+      "Tests": 17,
+      "Assertions": 117,
+      "Failed": 0
+    },
+    {
+      "Name": "Run-ConnectionTests",
+      "Tests": 15,
+      "Assertions": 181,
+      "Failed": 0
+    },
+    {
+      "Name": "Run-ExportTests",
+      "Tests": 24,
+      "Assertions": 250,
+      "Failed": 0
+    },
+    {
+      "Name": "Run-MonthlyTests",
+      "Tests": 16,
+      "Assertions": 89,
+      "Failed": 0
+    },
+    {
+      "Name": "Run-NetworkTests",
+      "Tests": 13,
+      "Assertions": 43,
+      "Failed": 0
+    },
+    {
+      "Name": "Run-PdfTests",
+      "Tests": 8,
+      "Assertions": 25,
+      "Failed": 0
+    },
+    {
+      "Name": "Run-PortableTests",
+      "Tests": 16,
+      "Assertions": 45,
+      "Failed": 0
+    },
+    {
+      "Name": "Run-ReviewQueueTests",
+      "Tests": 13,
+      "Assertions": 56,
+      "Failed": 0
+    },
+    {
+      "Name": "Run-SupportTests",
+      "Tests": 16,
+      "Assertions": 79,
+      "Failed": 0
+    },
+    {
+      "Name": "Run-Tests",
+      "Tests": 24,
+      "Assertions": 187,
+      "Failed": 0
+    },
+    {
+      "Name": "Run-UpdateTests",
+      "Tests": 10,
+      "Assertions": 35,
+      "Failed": 0
+    }
+  ],
+  "Scope": "Actual synthetic PDF rendering and native WPF button actions, persistent decision history, report preservation, reviewed-other browsing/exports, stale actions, offline ZIP upgrades, DPAPI, scrubbed logs and existing regression suites. Six native screens captured. Real hospital access, endpoint policy and physical-workstation DPI still require workstation checks."
+}
