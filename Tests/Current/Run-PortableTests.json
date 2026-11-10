@@ -4,7 +4,7 @@
   "Platform": "Unix 6.18.57.0",
   "WindowsPowerShell51ActuallyRun": false,
   "Tests": 16,
-  "Assertions": 44,
+  "Assertions": 45,
   "Failed": 0,
   "Results": [
     {

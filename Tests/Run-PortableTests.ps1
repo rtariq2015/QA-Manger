@@ -55,6 +55,15 @@ Scenario 'Readable folders preserve all PDFs and build a movable offline library
     Check ($text -match 'Original' -or $text -match 'ORIGINAL') 'Original report names identified'
     Check ($text -notmatch 'href="(?:file:|https?:)') 'All generated report links are portable and local'
     Check ([IO.File]::Exists((Join-Path $cfg.ArchiveRoot 'Browse Reports/Report list.csv'))) 'Readable inventory exists'
+    $record=@((Get-QaDashboard $cfg).Records|Where-Object{$_.Category -eq 'Daily_QA'})[0]
+    $other=$record|Select-Object *;$other.Id=('A'*64)
+    $base=& (Get-Module Browse) {param($r) Get-QaBrowseBase $r} $record
+    $padding=[math]::Max(1,(243-$TestRoot.Length-$base.Folder.Length-$base.Name.Length-6))
+    $longRoot=Join-Path $TestRoot ('p'*$padding);$used=@{}
+    $one=& (Get-Module Browse) {param($r,$u,$p) Get-QaBrowseTarget $r $null $u $p} $record $used $longRoot
+    $two=& (Get-Module Browse) {param($r,$u,$p) Get-QaBrowseTarget $r $null $u $p} $other $used $longRoot
+    Check ($one -ne $two -and (Join-Path $longRoot $one).Length -le 245 -and (Join-Path $longRoot $two).Length -le 245) 'Colliding original names remain distinct and within the Windows path budget'
+
 }
 Scenario 'Monthly reminder dates and historical checklist versions stay distinct' {
     $rows=@(Get-QaMonthOverview $cfg (Get-QaDashboard $cfg) -Date ([datetime]($month+'-20')))

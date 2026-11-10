@@ -129,6 +129,12 @@ function Get-QaBrowseTarget { param($Record,$Existing,$Used,[string]$BrowseRoot=
         $relative=Join-Path $base.Folder ($base.Name+'.pdf')
     }
     while($Used.ContainsKey($relative) -and $Used[$relative] -ne [string]$Record.Id){$relative=Join-Path $base.Folder ($base.Name+' - Report '+$counter+'.pdf');$counter++}
+    # A collision suffix may push an otherwise valid name over the Windows limit.
+    if($BrowseRoot -and (Join-Path $BrowseRoot $relative).Length -gt 245){
+        $short=([string]$Record.ReportDate)+'_'+(([string]$Record.ReportTime).Replace(':','-'))+'_'+([string]$Record.Id).Substring(0,16)+'.pdf'
+        $relative=Join-Path $base.Folder $short
+        if($Used.ContainsKey($relative) -and $Used[$relative] -ne [string]$Record.Id){throw 'A compact browsing name collided. Original files were preserved.'}
+    }
     $Used[$relative]=[string]$Record.Id;return $relative
 }
 function Assert-QaBrowseRelative { param([string]$Relative,[string]$Parent)
