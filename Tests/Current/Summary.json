@@ -66,5 +66,5 @@
     "Browser": "Chromium 151",
     "Scope": "Generated offline library with synthetic PDFs"
   },
-  "WindowsEvidence": "Windows/Summary.json (v4.2.0 historical until the v4.2.1 workflow completes)"
+  "WindowsEvidence": "Windows/Summary.json (v4.2.1: 131 scenarios, 905 assertions; PowerShell 5.1, DPAPI and native WPF executed)"
 }

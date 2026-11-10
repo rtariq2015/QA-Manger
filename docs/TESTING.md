@@ -8,7 +8,7 @@ The offline library is also tested in Chromium for searching, no results, reset,
 
 ## Windows validation
 
-The GitHub **Windows validation and visual preview** workflow runs all seven suites under Windows PowerShell 5.1. It also loads WPF and captures a native dashboard populated only with synthetic demonstration data. Download its `windows-validation` artifact for the JSON results and image. Check the actual workflow result; the existence of the workflow does not mean it passed.
+The GitHub **Windows validation and visual preview** workflow runs all eight suites under Windows PowerShell 5.1. It also loads WPF and captures a native dashboard populated only with synthetic demonstration data. Download its `windows-validation` artifact for the JSON results and image. Check the actual workflow result; the existence of the workflow does not mean it passed.
 
 The Linux cloud suite and the dedicated hosted Windows suite have both run. The Windows run additionally exercised native PowerShell 5.1 and DPAPI and rendered WPF. These checks do not establish real scanner authentication, interactive high-DPI behavior, workstation endpoint approval, or hospital SMB performance. Follow `Tests/Windows-Smoke.md` on the approved work computer. The original v4.1.0 reports remain historical evidence; current-run reports live in `Tests/Current`.
 
