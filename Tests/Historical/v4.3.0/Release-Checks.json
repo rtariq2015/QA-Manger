@@ -1,0 +1,11 @@
+{
+  "Version": "4.3.0",
+  "CleanPortableAndUpdateZipContentsVerified": true,
+  "NoPasswordsBundled": true,
+  "PackageManifestHashesVerified": true,
+  "ActualPackagedUpgradeFromVersion": "4.2.2",
+  "SettingsDataCredentialSentinelAndCustomArchiveHashesPreserved": true,
+  "PreviousProgramBackupVerified": true,
+  "PackagedStandaloneDiagnosticsVerified": true,
+  "Scope": "Synthetic installation; no real credentials or clinical reports. Credential sentinel tests byte preservation only. Actual scanner connectivity is outside this test."
+}

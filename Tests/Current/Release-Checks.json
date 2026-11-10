@@ -1,11 +1,10 @@
 {
-  "Version": "4.3.0",
-  "CleanPortableAndUpdateZipContentsVerified": true,
+  "Version": "4.4.0",
+  "AllFourZipManifestsVerified": true,
+  "NoDevelopmentFilesInRuntimePackages": true,
   "NoPasswordsBundled": true,
-  "PackageManifestHashesVerified": true,
-  "ActualPackagedUpgradeFromVersion": "4.2.2",
-  "SettingsDataCredentialSentinelAndCustomArchiveHashesPreserved": true,
-  "PreviousProgramBackupVerified": true,
-  "PackagedStandaloneDiagnosticsVerified": true,
-  "Scope": "Synthetic installation; no real credentials or clinical reports. Credential sentinel tests byte preservation only. Actual scanner connectivity is outside this test."
+  "PrivateNetworkProfileOnlyInWorkPortable": true,
+  "ActualUpgradeFrom422PreservesConfigCredentialsArchiveAndDataSentinels": true,
+  "StandalonePackagedDiagnosticsPass": true,
+  "Scope": "Executed against actual packaged ZIPs on Linux using PowerShell 7.4.13. Native PowerShell 5.1 and WPF are tested in the separately recorded Windows workflow."
 }

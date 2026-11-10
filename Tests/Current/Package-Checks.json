@@ -1,6 +1,8 @@
 {
-  "checks": 618,
-  "failed": 0,
-  "failures": [],
+  "checks": 721,
+  "failed": 1,
+  "failures": [
+    "Package-Checks.json: Expecting value: line 1 column 1 (char 0)"
+  ],
   "scope": "Static package checks only. Windows execution and WPF rendering require Windows."
 }

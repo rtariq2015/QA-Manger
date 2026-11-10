@@ -1,11 +1,11 @@
 {
-  "Version": "4.3.0",
-  "SourceCommit": "5c48dfda7ebd47c091f4de2e554cda95e708d895",
-  "WorkflowRun": "https://github.com/rtariq2015/QA-Manger/actions/runs/42853303563",
+  "Version": "4.4.0",
+  "SourceCommit": "f09d99aedae1bbacbdd8cd41c88ae572a5e8f55b",
+  "WorkflowRun": "https://github.com/rtariq2015/QA-Manger/actions/runs/42872162927",
   "Runtime": "Windows PowerShell 5.1.26100.33648",
   "Host": "GitHub-hosted Windows Server 2025",
-  "Tests": 159,
-  "Assertions": 1043,
+  "Tests": 172,
+  "Assertions": 1107,
   "Failed": 0,
   "WindowsPowerShell51ActuallyRun": true,
   "NativeWPFActuallyRun": true,
@@ -14,14 +14,15 @@
   "ProductionDiagnosticCmdActuallyRun": true,
   "OfflineUpdateLockWaitAndRestartActuallyRun": true,
   "CompleteScrubbedLogBundleActuallyRun": true,
-  "ConcurrentStructuredLogWritersActuallyRun": true,
-  "LegacyActivityFieldsScrubbedActuallyRun": true,
+  "NativePdfRendererActuallyRun": true,
+  "ReviewWorkspaceAcceptUndoDeclineSkipActuallyRun": true,
   "Screens": [
     "Dashboard",
     "Connections and settings",
     "Archive review",
     "Reports",
-    "Offline updates"
+    "Offline updates",
+    "PDF review workspace"
   ],
   "Suites": [
     {
@@ -67,6 +68,12 @@
       "Failed": 0
     },
     {
+      "Name": "Run-ReviewQueueTests",
+      "Tests": 13,
+      "Assertions": 56,
+      "Failed": 0
+    },
+    {
       "Name": "Run-SupportTests",
       "Tests": 16,
       "Assertions": 79,
@@ -75,7 +82,7 @@
     {
       "Name": "Run-Tests",
       "Tests": 24,
-      "Assertions": 179,
+      "Assertions": 187,
       "Failed": 0
     },
     {
@@ -85,5 +92,5 @@
       "Failed": 0
     }
   ],
-  "Scope": "Synthetic PDFs, local scanner fixtures and controlled privacy canaries. Includes native CMD launchers, DPAPI, full retained log export while locked, concurrent safe writers, legacy activity field allowlisting, failed-read cache, customized usernames, offline ZIP validation, app-close waits and normal launcher restart. Five native WPF screens captured. Real scanner authentication, hospital network/endpoint policy, physical-workstation DPI and manual folder-picker clicks were not tested."
+  "Scope": "Actual synthetic PDF rendering and native WPF button actions, persistent decision history, report preservation, reviewed-other browsing/exports, stale actions, offline ZIP upgrades, DPAPI, scrubbed logs and existing regression suites. Six native screens captured. Real hospital access, endpoint policy and physical-workstation DPI still require workstation checks."
 }

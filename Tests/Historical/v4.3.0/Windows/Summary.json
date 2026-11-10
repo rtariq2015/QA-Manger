@@ -1,0 +1,89 @@
+{
+  "Version": "4.3.0",
+  "SourceCommit": "5c48dfda7ebd47c091f4de2e554cda95e708d895",
+  "WorkflowRun": "https://github.com/rtariq2015/QA-Manger/actions/runs/42853303563",
+  "Runtime": "Windows PowerShell 5.1.26100.33648",
+  "Host": "GitHub-hosted Windows Server 2025",
+  "Tests": 159,
+  "Assertions": 1043,
+  "Failed": 0,
+  "WindowsPowerShell51ActuallyRun": true,
+  "NativeWPFActuallyRun": true,
+  "WindowsDPAPIActuallyRun": true,
+  "ProductionNetworkUpdateCmdActuallyRun": true,
+  "ProductionDiagnosticCmdActuallyRun": true,
+  "OfflineUpdateLockWaitAndRestartActuallyRun": true,
+  "CompleteScrubbedLogBundleActuallyRun": true,
+  "ConcurrentStructuredLogWritersActuallyRun": true,
+  "LegacyActivityFieldsScrubbedActuallyRun": true,
+  "Screens": [
+    "Dashboard",
+    "Connections and settings",
+    "Archive review",
+    "Reports",
+    "Offline updates"
+  ],
+  "Suites": [
+    {
+      "Name": "Run-BrowseTests",
+      "Tests": 17,
+      "Assertions": 117,
+      "Failed": 0
+    },
+    {
+      "Name": "Run-ConnectionTests",
+      "Tests": 15,
+      "Assertions": 181,
+      "Failed": 0
+    },
+    {
+      "Name": "Run-ExportTests",
+      "Tests": 24,
+      "Assertions": 250,
+      "Failed": 0
+    },
+    {
+      "Name": "Run-MonthlyTests",
+      "Tests": 16,
+      "Assertions": 89,
+      "Failed": 0
+    },
+    {
+      "Name": "Run-NetworkTests",
+      "Tests": 13,
+      "Assertions": 43,
+      "Failed": 0
+    },
+    {
+      "Name": "Run-PdfTests",
+      "Tests": 8,
+      "Assertions": 25,
+      "Failed": 0
+    },
+    {
+      "Name": "Run-PortableTests",
+      "Tests": 16,
+      "Assertions": 45,
+      "Failed": 0
+    },
+    {
+      "Name": "Run-SupportTests",
+      "Tests": 16,
+      "Assertions": 79,
+      "Failed": 0
+    },
+    {
+      "Name": "Run-Tests",
+      "Tests": 24,
+      "Assertions": 179,
+      "Failed": 0
+    },
+    {
+      "Name": "Run-UpdateTests",
+      "Tests": 10,
+      "Assertions": 35,
+      "Failed": 0
+    }
+  ],
+  "Scope": "Synthetic PDFs, local scanner fixtures and controlled privacy canaries. Includes native CMD launchers, DPAPI, full retained log export while locked, concurrent safe writers, legacy activity field allowlisting, failed-read cache, customized usernames, offline ZIP validation, app-close waits and normal launcher restart. Five native WPF screens captured. Real scanner authentication, hospital network/endpoint policy, physical-workstation DPI and manual folder-picker clicks were not tested."
+}
