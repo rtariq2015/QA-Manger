@@ -3,10 +3,13 @@
   "Platform": "Unix 6.18.57.0",
   "Fixtures": 300,
   "ApproximatePdfBytes": 51200,
-  "PreviewSeconds": 1.02,
-  "ImportSeconds": 6.548,
-  "UnchangedUpdateSeconds": 2.158,
+  "PreviewSeconds": 1.085,
+  "ImportSeconds": 7.786,
+  "UnchangedUpdateSeconds": 1.234,
   "UpdateCopied": 0,
   "UpdateUnchanged": 300,
+  "BrowseFirstSeconds": 3.236,
+  "BrowseUnchangedSeconds": 0.85,
+  "BrowseUnchanged": 300,
   "Scope": "Synthetic local disk benchmark; not hospital SMB performance or Windows performance."
 }

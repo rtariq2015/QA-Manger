@@ -16,6 +16,20 @@ function Set-QaValue { param($Object,[string]$Name,$Value)
     if ($Object -is [System.Collections.IDictionary]) { $Object[$Name]=$Value }
     else { $Object | Add-Member -NotePropertyName $Name -NotePropertyValue $Value -Force }
 }
+function Get-QaComponentLabels {
+    param($Values,[string]$Context='Monthly checklist')
+    $labels=New-Object 'System.Collections.Generic.List[string]';$seen=@{}
+    foreach($value in @($Values)) {
+        if($null -eq $value){continue}
+        if($value -isnot [string]){throw ($Context+' must contain text labels only.')}
+        $label=([string]$value).Trim()
+        if([string]::IsNullOrWhiteSpace($label) -or $label.Length -gt 80 -or $label -match '[\x00-\x1f;]' -or $label -match '^[=+@]'){throw ($Context+' labels must be 1 through 80 characters, without control characters or semicolons.')}
+        if($seen.ContainsKey($label)){throw ($Context+' contains a repeated item: '+$label)}
+        $seen[$label]=$true;[void]$labels.Add($label)
+        if($labels.Count -gt 32){throw ($Context+' may contain at most 32 items.')}
+    }
+    return @($labels.ToArray())
+}
 function Get-QaHashText { param([string]$Text)
     $sha=[Security.Cryptography.SHA256]::Create()
     try { return ([BitConverter]::ToString($sha.ComputeHash([Text.Encoding]::UTF8.GetBytes($Text)))).Replace('-','') }
@@ -58,11 +72,11 @@ function Get-QaDefaultConfig {
     [CmdletBinding()]param([Parameter(Mandatory=$true)][string]$AppRoot)
     [pscustomobject]@{
         Version=4; AppRoot=[IO.Path]::GetFullPath($AppRoot); ArchiveRoot=[IO.Path]::GetFullPath($AppRoot)
-        LookbackDays=60; MonthlyLookbackMonths=12; MinimumFileAgeSeconds=120; SetupComplete=$false
+        LookbackDays=60; MonthlyLookbackMonths=12; MinimumFileAgeSeconds=120; SetupComplete=$false; AutoUpdateOnOpen=$true
         Sources=@(
-            [pscustomobject]@{Scanner='CT_Edge';Name='CT Edge';Path='\\CT-EDGE\Reports\ConstancyReports';DriveLetter='K';DailySchedule='AllDays';ExpectedMonthly=$true;ActiveFrom='';MonthlyThresholdKB=70},
-            [pscustomobject]@{Scanner='CT_Flash';Name='CT Flash';Path='\\CT-FLASH\Reports\ConstancyReports';DriveLetter='J';DailySchedule='AllDays';ExpectedMonthly=$true;ActiveFrom='';MonthlyThresholdKB=85},
-            [pscustomobject]@{Scanner='MDP_Building';Name='MDP Building';Path='\\MDP-SCANNER\Reports\ConstancyReports';DriveLetter='Y';DailySchedule='AllDays';ExpectedMonthly=$true;ActiveFrom='';MonthlyThresholdKB=85}
+            [pscustomobject]@{Scanner='CT_Edge';Name='CT Edge';Path='\\CT-EDGE\Reports\ConstancyReports';DriveLetter='K';DailySchedule='AllDays';ExpectedMonthly=$true;ActiveFrom='';MonthlyThresholdKB=70;Username='SCANNER_USERNAME';PreviousPaths=@();MonthlyChecklist=@()},
+            [pscustomobject]@{Scanner='CT_Flash';Name='CT Flash';Path='\\CT-FLASH\Reports\ConstancyReports';DriveLetter='J';DailySchedule='AllDays';ExpectedMonthly=$true;ActiveFrom='';MonthlyThresholdKB=85;Username='SCANNER_USERNAME';PreviousPaths=@();MonthlyChecklist=@()},
+            [pscustomobject]@{Scanner='MDP_Building';Name='MDP Building';Path='\\MDP-SCANNER\Reports\ConstancyReports';DriveLetter='Y';DailySchedule='AllDays';ExpectedMonthly=$true;ActiveFrom='';MonthlyThresholdKB=85;Username='SCANNER_USERNAME';PreviousPaths=@();MonthlyChecklist=@()}
         )
     }
 }
@@ -76,17 +90,36 @@ function Assert-QaConfig { param($Config)
         $drive=New-Object IO.DriveInfo([IO.Path]::GetPathRoot($archiveFull))
         if ($drive.DriveType -eq [IO.DriveType]::Network) { throw 'Choose a local archive folder. Network and mapped scanner drives are read-only sources.' }
     }
-    if (@($Config.Sources).Count -ne 3) { throw 'Settings must contain CT Edge, CT Flash and MDP Building.' }
-    $ids=@{}
+    if($null -ne $Config.PSObject.Properties['AutoUpdateOnOpen'] -and $Config.AutoUpdateOnOpen -isnot [bool]){throw 'Update on opening must be enabled or disabled.'}
+    if (@($Config.Sources).Count -lt 1 -or @($Config.Sources).Count -gt 20) { throw 'Configure between 1 and 20 scanner connections.' }
+    $ids=@{};$names=@{};$letters=@{};$sourcePaths=@{}
     foreach($s in $Config.Sources) {
-        if ($s.Scanner -notin @('CT_Edge','CT_Flash','MDP_Building') -or $ids.ContainsKey([string]$s.Scanner)) { throw 'Scanner identifiers in settings are invalid or repeated.' }
+        if ([string]$s.Scanner -notmatch '^[A-Za-z][A-Za-z0-9_]{0,31}$' -or [string]$s.Scanner -match '^(All|CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])$' -or $ids.ContainsKey([string]$s.Scanner)) { throw 'Scanner identifiers must be unique, safe letters, numbers or underscores; existing identifiers cannot be changed.' }
         $ids[[string]$s.Scanner]=$true
+        [void]@(Get-QaComponentLabels (Get-QaValue $s 'MonthlyChecklist' $null) ('Monthly checklist for '+$s.Name))
+        $displayName=([string]$s.Name).Trim()
+        if ([string]::IsNullOrWhiteSpace($displayName) -or $displayName.Length -gt 64 -or $displayName -match '[\x00-\x1f]' -or $names.ContainsKey($displayName)) { throw 'Give each scanner a different display name of 1 through 64 characters.' }
+        $names[$displayName]=$true
+        $username=[string](Get-QaValue $s 'Username' 'SCANNER_USERNAME')
+        if ($username.Length -gt 256 -or $username -match '[\x00-\x1f]') { throw 'The scanner username contains unsupported characters or is too long.' }
         if ([string]::IsNullOrWhiteSpace([string]$s.Path) -or -not [IO.Path]::IsPathRooted([string]$s.Path)) { throw ('Choose an absolute source folder for '+$s.Name+'.') }
         if ($s.DailySchedule -notin @('AllDays','Weekdays','Off')) { throw ('Invalid daily schedule for '+$s.Name+'.') }
         if ([double]$s.MonthlyThresholdKB -lt 1 -or [double]$s.MonthlyThresholdKB -gt 10000) { throw 'Monthly candidate thresholds must be between 1 and 10000 KB.' }
-        if ([string]$s.DriveLetter -notmatch '^[D-Z]$') { throw 'Preferred drive letters must be D through Z.' }
+        if ([string]$s.DriveLetter -notmatch '^[D-Z]$' -or $letters.ContainsKey([string]$s.DriveLetter)) { throw 'Choose a different preferred drive letter D through Z for each scanner.' }
+        $letters[[string]$s.DriveLetter]=$true
         if ($s.ActiveFrom) { $date=[datetime]::MinValue; if (-not [datetime]::TryParseExact([string]$s.ActiveFrom,'yyyy-MM-dd',[Globalization.CultureInfo]::InvariantCulture,[Globalization.DateTimeStyles]::None,[ref]$date)) { throw 'Active from dates must use yyyy-MM-dd.' } }
         $source=[IO.Path]::GetFullPath([string]$s.Path).TrimEnd('\','/')
+        if ($sourcePaths.ContainsKey($source)) { throw 'Each scanner must use a different reports folder. This network folder is already configured.' }
+        $sourcePaths[$source]=$true
+        $previousRoots=@{};$previousCount=0
+        foreach ($previous in @(Get-QaValue $s 'PreviousPaths' $null)) {
+            if ($null -eq $previous) { continue }
+            $previousCount++
+            if ($previousCount -gt 50 -or [string]::IsNullOrWhiteSpace([string]$previous) -or -not [IO.Path]::IsPathRooted([string]$previous)) { throw 'Previous scanner folders must be full paths; keep at most 50 previous addresses for a scanner.' }
+            $previousRoot=[IO.Path]::GetFullPath([string]$previous).TrimEnd('\','/')
+            if ($previousRoots.ContainsKey($previousRoot)) { throw 'A previous scanner folder is repeated in settings.' }
+            $previousRoots[$previousRoot]=$true
+        }
         $archive=[IO.Path]::GetFullPath([string]$Config.ArchiveRoot).TrimEnd('\','/')
         if ($archive.Equals($source,[StringComparison]::OrdinalIgnoreCase) -or $archive.StartsWith($source+[IO.Path]::DirectorySeparatorChar,[StringComparison]::OrdinalIgnoreCase) -or $source.StartsWith($archive+[IO.Path]::DirectorySeparatorChar,[StringComparison]::OrdinalIgnoreCase)) { throw 'Scanner sources and the archive must be separate folders; neither may contain the other.' }
     }
@@ -99,12 +132,41 @@ function Read-QaConfig {
     $path=Join-Path (Join-Path $AppRoot 'Config') 'Settings.json'
     if ([IO.File]::Exists($path)) { $c=[IO.File]::ReadAllText($path) | ConvertFrom-Json; Set-QaValue $c 'AppRoot' ([IO.Path]::GetFullPath($AppRoot)); if ([string]::IsNullOrWhiteSpace([string]$c.ArchiveRoot) -or [string]$c.ArchiveRoot -eq '.') { $c.ArchiveRoot=[IO.Path]::GetFullPath($AppRoot) } }
     else { $c=Get-QaDefaultConfig -AppRoot $AppRoot }
+    foreach ($source in @($c.Sources)) { if ($null -eq $source.PSObject.Properties['Username']) { Set-QaValue $source 'Username' 'SCANNER_USERNAME' };if ($null -eq $source.PSObject.Properties['PreviousPaths']) { Set-QaValue $source 'PreviousPaths' ([object[]]@()) };if ($null -eq $source.PSObject.Properties['MonthlyChecklist']) { Set-QaValue $source 'MonthlyChecklist' ([object[]]@()) } }
+    if($null -eq $c.PSObject.Properties['AutoUpdateOnOpen']){Set-QaValue $c 'AutoUpdateOnOpen' $true}
     Assert-QaConfig $c
     return $c
 }
 function Save-QaConfig {
     [CmdletBinding()]param([Parameter(Mandatory=$true)][string]$AppRoot,[Parameter(Mandatory=$true)]$Config)
+    foreach ($source in @($Config.Sources)) { if ($null -eq $source.PSObject.Properties['Username']) { Set-QaValue $source 'Username' 'SCANNER_USERNAME' };if ($null -eq $source.PSObject.Properties['PreviousPaths']) { Set-QaValue $source 'PreviousPaths' ([object[]]@()) };if ($null -eq $source.PSObject.Properties['MonthlyChecklist']) { Set-QaValue $source 'MonthlyChecklist' ([object[]]@()) } }
+    if($null -eq $Config.PSObject.Properties['AutoUpdateOnOpen']){Set-QaValue $Config 'AutoUpdateOnOpen' $true}
     Assert-QaConfig $Config
+    $settingsPath=Join-Path (Join-Path $AppRoot 'Config') 'Settings.json'
+    Assert-QaNoReparse $settingsPath
+    $oldSources=@()
+    if ([IO.File]::Exists($settingsPath)) {
+        try { $previousSettings=[IO.File]::ReadAllText($settingsPath)|ConvertFrom-Json;$oldSources=@($previousSettings.Sources) }
+        catch { throw 'The existing connection settings could not be read. They were not replaced; ask IT to check Settings.json.' }
+    }
+    foreach ($source in @($Config.Sources)) {
+        $known=@{};$retained=New-Object 'System.Collections.Generic.List[string]'
+        $currentRoot=[IO.Path]::GetFullPath([string]$source.Path).TrimEnd('\','/')
+        foreach($root in @(Get-QaPreviousRoots $source)) { if(-not $root.Equals($currentRoot,[StringComparison]::OrdinalIgnoreCase) -and -not $known.ContainsKey($root)){$known[$root]=$true;[void]$retained.Add($root)} }
+        $old=@($oldSources|Where-Object { $_.Scanner -ceq $source.Scanner }|Select-Object -First 1)
+        if($old.Count -eq 1) {
+            if(-not [IO.Path]::IsPathRooted([string]$old[0].Path)){throw 'A previous scanner address in settings is not a full path. No settings were replaced.'}
+            $roots=@(Get-QaPreviousRoots $old[0])+@([IO.Path]::GetFullPath([string]$old[0].Path).TrimEnd('\','/'))
+            foreach($root in $roots) { if(-not $root.Equals($currentRoot,[StringComparison]::OrdinalIgnoreCase) -and -not $known.ContainsKey($root)){$known[$root]=$true;[void]$retained.Add($root)} }
+        }
+        Set-QaValue $source 'PreviousPaths' ([object[]]$retained.ToArray())
+    }
+    Assert-QaConfig $Config
+    # Validate saved report ownership before replacing settings. Removing or changing
+    # an existing scanner ID must not leave the archive unusable on the next launch.
+    $candidatePaths=Get-QaPaths $Config
+    Assert-QaNoReparse $candidatePaths.State
+    [void](Read-QaState $candidatePaths)
     Set-QaValue $Config 'AppRoot' ([IO.Path]::GetFullPath($AppRoot))
     $saved=$Config|Select-Object * -ExcludeProperty AppRoot
     if ([IO.Path]::GetFullPath([string]$Config.ArchiveRoot).TrimEnd('\','/').Equals([IO.Path]::GetFullPath($AppRoot).TrimEnd('\','/'),[StringComparison]::OrdinalIgnoreCase)) { $saved.ArchiveRoot='.' }
@@ -114,7 +176,7 @@ function Save-QaConfig {
 function Get-QaPaths { param($Config)
     $root=[IO.Path]::GetFullPath([string]$Config.ArchiveRoot)
     $meta=Join-Path $root '.ctqa'
-    return [pscustomobject]@{Root=$root;Reports=(Join-Path $root 'Reports');Meta=$meta;State=(Join-Path $meta 'state.json');Transactions=(Join-Path $meta 'transactions');Staging=(Join-Path $meta 'staging');Index=(Join-Path $root 'QA_Master_Index.csv');History=(Join-Path $root 'Activity.csv')}
+    return [pscustomobject]@{Root=$root;Reports=(Join-Path $root 'Reports');Meta=$meta;State=(Join-Path $meta 'state.json');Transactions=(Join-Path $meta 'transactions');Staging=(Join-Path $meta 'staging');Index=(Join-Path $root 'QA_Master_Index.csv');History=(Join-Path $root 'Activity.csv');ScannerIds=@($Config.Sources | ForEach-Object { [string]$_.Scanner })}
 }
 function Test-QaChildPath { param([string]$Path,[string]$Parent)
     $full=[IO.Path]::GetFullPath($Path)
@@ -139,20 +201,21 @@ function Read-QaState { param($Paths)
     catch { throw 'The archive state could not be read. It has not been replaced. Keep the archive and contact IT; a previous state is in .ctqa/state.json.bak.' }
     if ([int]$state.Version -ne 4) { throw 'This archive uses an unsupported state version. No archive data was changed.' }
     foreach($record in @($state.Records)) {
-        if ([string]$record.Hash -notmatch '^[0-9A-Fa-f]{64}$' -or [string]$record.Id -notmatch '^[0-9A-Fa-f]{64}$' -or -not $record.SourcePath -or $record.Scanner -notin @('CT_Edge','CT_Flash','MDP_Building') -or $record.Category -notin $script:QaCategories) { throw 'The archive state contains an incomplete report record; no updates were made.' }
+        if ([string]$record.Hash -notmatch '^[0-9A-Fa-f]{64}$' -or [string]$record.Id -notmatch '^[0-9A-Fa-f]{64}$' -or -not $record.SourcePath -or [string]$record.Scanner -notmatch '^[A-Za-z][A-Za-z0-9_]{0,31}$' -or @($Paths.ScannerIds) -cnotcontains [string]$record.Scanner -or $record.Category -notin $script:QaCategories) { throw 'The archive state contains an incomplete report record; no updates were made.' }
         $relative=[string]$record.RelativePath
         if (-not $relative -or [IO.Path]::IsPathRooted($relative)) { throw 'An archive record has an unsafe relative path.' }
         $dst=Join-Path $Paths.Reports $relative
         if (-not (Test-QaChildPath $dst $Paths.Reports)) { throw 'An archive record points outside Reports; no updates were made.' }
         Assert-QaNoReparse $dst $Paths.Root
         Set-QaValue $record 'DestinationPath' $dst
+        Set-QaValue $record 'ConfirmedComponents' ([object[]]@(Get-QaComponentLabels (Get-QaValue $record 'ConfirmedComponents' $null) 'Reviewed report items'))
     }
     return $state
 }
 function Save-QaState { param($State,$Paths)
     $State.UpdatedUtc=[datetime]::UtcNow.ToString('o')
     Write-QaAtomicText $Paths.State ($State | ConvertTo-Json -Depth 12)
-    $csv=if(@($State.Records).Count -gt 0) { @($State.Records) | Select-Object Id,Scanner,ReportDate,ReportTime,Category,ClassificationBasis,OriginalFileName,SourcePath,Hash,Length,RelativePath,DestinationPath,FirstArchived,ConfirmedBy,ConfirmedAt,PdfPagesHint | ConvertTo-Csv -NoTypeInformation } else { @('"Id","Scanner","ReportDate","ReportTime","Category","ClassificationBasis","OriginalFileName","SourcePath","Hash","Length","RelativePath","DestinationPath","FirstArchived","ConfirmedBy","ConfirmedAt","PdfPagesHint"') }
+    $csv=if(@($State.Records).Count -gt 0) { @($State.Records) | Select-Object Id,Scanner,ReportDate,ReportTime,Category,ClassificationBasis,OriginalFileName,SourcePath,Hash,Length,RelativePath,DestinationPath,FirstArchived,ConfirmedBy,ConfirmedAt,@{Name='ConfirmedComponents';Expression={@(Get-QaValue $_ 'ConfirmedComponents' $null) -join '; '}},PdfPagesHint | ConvertTo-Csv -NoTypeInformation } else { @('"Id","Scanner","ReportDate","ReportTime","Category","ClassificationBasis","OriginalFileName","SourcePath","Hash","Length","RelativePath","DestinationPath","FirstArchived","ConfirmedBy","ConfirmedAt","ConfirmedComponents","PdfPagesHint"') }
     Write-QaAtomicText $Paths.Index ($csv -join "`r`n")
     if ([IO.Directory]::Exists($Paths.Transactions)) {
         foreach($f in [IO.Directory]::GetFiles($Paths.Transactions,'*.json')) {
@@ -242,7 +305,7 @@ function Get-QaInventory { param($Config,$State,$Progress,$Summary)
     $sourceNo=0
     foreach($s in $Config.Sources) {
         if (Test-QaCancel $Progress) { $Summary.Cancelled=$true; break }
-        $sourceNo++;Set-QaProgress $Progress ('Connecting to '+$s.Name+'...') (($sourceNo-1)*10)
+        $sourceNo++;Set-QaProgress $Progress ('Connecting to '+$s.Name+'...') (30*($sourceNo-1)/[math]::Max(1,@($Config.Sources).Count))
         $old=@($State.Scanners | Where-Object {$_.Scanner -eq $s.Scanner} | Select-Object -First 1)
         $last=if($old.Count){[string]$old[0].LastSuccessfulUpdate}else{''}
         $status=[pscustomobject]@{Scanner=$s.Scanner;Name=$s.Name;Status='Connected';Message='Scanner folder is accessible.';Count=@($State.Records|Where-Object{$_.Scanner -eq $s.Scanner}).Count;SavedReports=@($State.Records|Where-Object{$_.Scanner -eq $s.Scanner}).Count;LastSuccessfulUpdate=$last;CheckedUtc=[datetime]::UtcNow.ToString('o')}
@@ -329,6 +392,7 @@ function Restore-QaTransactions { param($State,$Paths,$Issues)
                 [void][IO.Directory]::CreateDirectory([IO.Path]::GetDirectoryName($target));[IO.File]::Move($stage,$target)
             }
             if ((Get-QaFileHash $target) -ne $r.Hash) { throw 'Recovery destination hash differs; no data was overwritten.' }
+            Set-QaValue $r 'ConfirmedComponents' ([object[]]@(Get-QaComponentLabels (Get-QaValue $r 'ConfirmedComponents' $null) 'Recovered review items'))
             $r.DestinationPath=$target;Set-QaValue $r 'DestinationLastWriteUtc' ((Get-Item -LiteralPath $target).LastWriteTimeUtc.ToString('o'))
             # The journal has a verified target and is the durable record of this transaction.
             # Replace the same identity as well (repairs and reviewed category changes).
@@ -338,6 +402,36 @@ function Restore-QaTransactions { param($State,$Paths,$Issues)
         } catch { [void]$Issues.Add((New-QaIssue '' 'Recovery' ('Interrupted transfer needs attention. '+$_.Exception.Message) $file)) }
     }
 }
+function Get-QaPreviousRoots { param($Source)
+    $roots=New-Object 'System.Collections.Generic.List[string]'
+    foreach($value in @(Get-QaValue $Source 'PreviousPaths' $null)) {
+        if ($null -eq $value) { continue }
+        if ([string]::IsNullOrWhiteSpace([string]$value) -or -not [IO.Path]::IsPathRooted([string]$value)) { throw 'Previous scanner folders must be absolute paths.' }
+        [void]$roots.Add([IO.Path]::GetFullPath([string]$value).TrimEnd('\','/'))
+    }
+    return @($roots.ToArray())
+}
+function Find-QaPreviousSourceRecord { param($Entry,$Source,$State,[string]$Hash)
+    # A connection edit can change the UNC root without changing the scanner or PDF.
+    # Match only an explicitly retained root plus the exact relative file path and hash.
+    # Previous network locations are never scanned or opened here.
+    $currentRoot=[IO.Path]::GetFullPath([string]$Source.Path).TrimEnd('\','/')
+    $currentPath=[IO.Path]::GetFullPath([string]$Entry.SourcePath)
+    $prefix=$currentRoot+[IO.Path]::DirectorySeparatorChar
+    if (-not $currentPath.StartsWith($prefix,[StringComparison]::OrdinalIgnoreCase)) { return $null }
+    $relative=$currentPath.Substring($prefix.Length)
+    $oldPaths=@{}
+    foreach($root in @(Get-QaPreviousRoots $Source)) {
+        $oldPaths[[IO.Path]::GetFullPath((Join-Path $root $relative))]=$true
+    }
+    $matches=@($State.Records | Where-Object {
+        $_.Scanner -ceq $Entry.Scanner -and $_.Hash -eq $Hash -and $oldPaths.ContainsKey([IO.Path]::GetFullPath([string]$_.SourcePath))
+    })
+    if ($matches.Count -gt 1) { throw 'More than one saved report matches this previous network location. No reports were merged; ask the archive administrator to review these records.' }
+    if ($matches.Count -eq 1) { return $matches[0] }
+    return $null
+}
+
 function Copy-QaVerified { param($Entry,$Source,$State,$Paths,$Progress,$Summary)
     $before=Get-Item -LiteralPath $Entry.SourcePath -ErrorAction Stop
     if ($before.Length -ne $Entry.Length -or $before.LastWriteTimeUtc.ToString('o') -ne $Entry.SourceLastWriteUtc) { throw 'The source changed after the scan. Run Update Reports again.' }
@@ -362,11 +456,29 @@ function Copy-QaVerified { param($Entry,$Source,$State,$Paths,$Progress,$Summary
         if ((Get-QaFileHash $stage) -ne $hash) { throw 'SHA-256 verification failed. The saved report was not committed.' }
         $id=Get-QaHashText ((Get-QaSourceKey $Entry.Scanner $Entry.SourcePath)+'|'+$hash)
         $existing=@($State.Records|Where-Object{$_.Id -eq $id}|Select-Object -First 1)
+        if ($existing.Count -eq 0) {
+            # A previously reassociated record keeps its immutable Id. A metadata-only
+            # touch must therefore also find that exact current source path and hash.
+            $sameSource=@($State.Records|Where-Object{ $_.Scanner -ceq $Entry.Scanner -and $_.Hash -eq $hash -and ([string]$_.SourcePath).Equals([string]$Entry.SourcePath,[StringComparison]::OrdinalIgnoreCase) })
+            if($sameSource.Count -gt 1){throw 'Multiple archive identities match this source and hash. No records were merged.'}
+            if($sameSource.Count -eq 1){$existing=$sameSource;$id=[string]$sameSource[0].Id}
+            else{
+                $prior=Find-QaPreviousSourceRecord $Entry $Source $State $hash
+                if($null -ne $prior){$existing=@($prior);$id=[string]$prior.Id}
+            }
+        }
         if ($existing.Count -gt 0) {
             $r=$existing[0]
             $Entry.Category=$r.Category;$Entry.ClassificationBasis=$r.ClassificationBasis
             Assert-QaNoReparse $r.DestinationPath
             if ([IO.File]::Exists($r.DestinationPath) -and (Get-QaFileHash $r.DestinationPath) -eq $hash) {
+                if(-not ([string]$r.SourcePath).Equals([string]$Entry.SourcePath,[StringComparison]::OrdinalIgnoreCase)) {
+                    $history=New-Object 'System.Collections.Generic.List[string]'
+                    foreach($priorPath in @(Get-QaValue $r 'SourceAliases' $null)){if($null -ne $priorPath -and -not $history.Contains([string]$priorPath)){[void]$history.Add([string]$priorPath)}}
+                    if(-not $history.Contains([string]$r.SourcePath)){[void]$history.Add([string]$r.SourcePath)}
+                    Set-QaValue $r 'SourceAliases' ([object[]]$history.ToArray())
+                    $r.SourcePath=[string]$Entry.SourcePath;Set-QaValue $r 'SourceKey' (Get-QaSourceKey $Entry.Scanner $Entry.SourcePath)
+                }
                 $r.SourceLastWriteUtc=$Entry.SourceLastWriteUtc;Set-QaValue $r 'DestinationLastWriteUtc' ((Get-Item -LiteralPath $r.DestinationPath).LastWriteTimeUtc.ToString('o'));$Summary.Verified++;[IO.File]::Delete($stage);return
             }
             # Same identity can be repaired into a new verified location without overwriting damaged bytes.
@@ -379,9 +491,13 @@ function Copy-QaVerified { param($Entry,$Source,$State,$Paths,$Progress,$Summary
         if ([IO.File]::Exists($target)) {
             if ((Get-QaFileHash $target) -ne $hash) { throw 'A destination collision has different bytes. It was preserved; no overwrite was attempted.' }
         }
-        $record=[pscustomobject]@{Id=$id;Scanner=$Entry.Scanner;ReportDate=$Entry.ReportDate;ReportTime=$Entry.ReportTime;OriginalFileName=$Entry.OriginalFileName;SourcePath=$Entry.SourcePath;SourceKey=(Get-QaSourceKey $Entry.Scanner $Entry.SourcePath);Hash=$hash;Length=[long]$Entry.Length;SourceLastWriteUtc=$Entry.SourceLastWriteUtc;RelativePath=$relative;DestinationPath=$target;DestinationLastWriteUtc='';Category=$Entry.Category;ClassificationBasis=$Entry.ClassificationBasis;FirstArchived=[datetime]::UtcNow.ToString('o');ConfirmedBy='';ConfirmedAt='';PdfPagesHint=[int]$pdf.Pages}
+        $record=[pscustomobject]@{Id=$id;Scanner=$Entry.Scanner;ReportDate=$Entry.ReportDate;ReportTime=$Entry.ReportTime;OriginalFileName=$Entry.OriginalFileName;SourcePath=$Entry.SourcePath;SourceKey=(Get-QaSourceKey $Entry.Scanner $Entry.SourcePath);Hash=$hash;Length=[long]$Entry.Length;SourceLastWriteUtc=$Entry.SourceLastWriteUtc;RelativePath=$relative;DestinationPath=$target;DestinationLastWriteUtc='';Category=$Entry.Category;ClassificationBasis=$Entry.ClassificationBasis;FirstArchived=[datetime]::UtcNow.ToString('o');ConfirmedBy='';ConfirmedAt='';ConfirmedComponents=@();PdfPagesHint=[int]$pdf.Pages}
         if ($existing.Count -gt 0) {
-            $old=$existing[0];$record.Category=$old.Category;$record.ClassificationBasis=$old.ClassificationBasis;$record.ConfirmedBy=$old.ConfirmedBy;$record.ConfirmedAt=$old.ConfirmedAt;$record.FirstArchived=$old.FirstArchived
+            $old=$existing[0];$record.Category=$old.Category;$record.ClassificationBasis=$old.ClassificationBasis;$record.ConfirmedBy=$old.ConfirmedBy;$record.ConfirmedAt=$old.ConfirmedAt;$record.FirstArchived=$old.FirstArchived;Set-QaValue $record 'ConfirmedComponents' ([object[]]@(Get-QaComponentLabels (Get-QaValue $old 'ConfirmedComponents' $null) 'Reviewed report items'))
+            $aliasHistory=New-Object 'System.Collections.Generic.List[string]'
+            foreach($priorPath in @(Get-QaValue $old 'SourceAliases' $null)){if($null -ne $priorPath -and -not $aliasHistory.Contains([string]$priorPath)){[void]$aliasHistory.Add([string]$priorPath)}}
+            if(-not ([string]$old.SourcePath).Equals([string]$Entry.SourcePath,[StringComparison]::OrdinalIgnoreCase) -and -not $aliasHistory.Contains([string]$old.SourcePath)){[void]$aliasHistory.Add([string]$old.SourcePath)}
+            if($aliasHistory.Count -gt 0){Set-QaValue $record 'SourceAliases' ([object[]]$aliasHistory.ToArray())}
         }
         $tx=[pscustomobject]@{StageName=[IO.Path]::GetFileName($stage);Record=$record}
         Write-QaAtomicText (Join-Path $Paths.Transactions ($token+'.json')) ($tx|ConvertTo-Json -Depth 8)
@@ -390,7 +506,7 @@ function Copy-QaVerified { param($Entry,$Source,$State,$Paths,$Progress,$Summary
         $record.DestinationLastWriteUtc=(Get-Item -LiteralPath $target).LastWriteTimeUtc.ToString('o')
         if ($existing.Count -gt 0) {
             # Keep review of the exact same bytes when repairing a damaged saved copy.
-            $old=$existing[0];$record.Category=$old.Category;$record.ClassificationBasis=$old.ClassificationBasis;$record.ConfirmedBy=$old.ConfirmedBy;$record.ConfirmedAt=$old.ConfirmedAt;$record.FirstArchived=$old.FirstArchived
+            $old=$existing[0];$record.Category=$old.Category;$record.ClassificationBasis=$old.ClassificationBasis;$record.ConfirmedBy=$old.ConfirmedBy;$record.ConfirmedAt=$old.ConfirmedAt;$record.FirstArchived=$old.FirstArchived;Set-QaValue $record 'ConfirmedComponents' ([object[]]@(Get-QaComponentLabels (Get-QaValue $old 'ConfirmedComponents' $null) 'Reviewed report items'))
             $State.Records=@($State.Records|Where-Object{$_.Id -ne $id})+@($record)
         } else { Add-QaRecord $State $record }
     } finally {
@@ -399,9 +515,57 @@ function Copy-QaVerified { param($Entry,$Source,$State,$Paths,$Progress,$Summary
         if ([IO.File]::Exists($stage) -and -not [IO.File]::Exists((Join-Path $Paths.Transactions ($token+'.json')))) { [IO.File]::Delete($stage) }
     }
 }
+function Get-QaMonthlyCoverage {
+    [CmdletBinding()]param([Parameter(Mandatory=$true)]$Config,[AllowEmptyCollection()][object[]]$Records=@(),[string[]]$Months=@())
+    Assert-QaConfig $Config
+    if(-not $PSBoundParameters.ContainsKey('Records')){$paths=Get-QaPaths $Config;$Records=@((Read-QaState $paths).Records)}
+    $explicit=$PSBoundParameters.ContainsKey('Months')
+    $selectedMonths=New-Object 'System.Collections.Generic.List[string]';$seenMonths=@{}
+    if($explicit) {
+        foreach($value in @($Months)) {
+            $monthDate=[datetime]::MinValue
+            if(-not [datetime]::TryParseExact([string]$value,'yyyy-MM',[Globalization.CultureInfo]::InvariantCulture,[Globalization.DateTimeStyles]::None,[ref]$monthDate)){throw 'Coverage months must use yyyy-MM.'}
+            if(-not $seenMonths.ContainsKey([string]$value)){$seenMonths[[string]$value]=$true;[void]$selectedMonths.Add([string]$value)}
+        }
+    }
+    $result=New-Object 'System.Collections.Generic.List[object]'
+    $thisMonth=(Get-Date).Date.AddDays(1-(Get-Date).Day)
+    foreach($source in @($Config.Sources)) {
+        if(-not [bool]$source.ExpectedMonthly){continue}
+        $rows=@($Records|Where-Object{$null -ne $_ -and $_.Scanner -ceq $source.Scanner})
+        $required=@(Get-QaComponentLabels (Get-QaValue $source 'MonthlyChecklist' $null))
+        $monthsToCheck=@($selectedMonths.ToArray())
+        if(-not $explicit) {
+            $dated=@($rows|Where-Object{[string]$_.ReportDate -match '^\d{4}-\d{2}-\d{2}$'}|Sort-Object ReportDate)
+            $active=[datetime]::MinValue
+            if($source.ActiveFrom){$active=[datetime]::ParseExact([string]$source.ActiveFrom,'yyyy-MM-dd',[Globalization.CultureInfo]::InvariantCulture)}
+            if($dated.Count -eq 0 -and $active -eq [datetime]::MinValue){continue}
+            $firstMonth=$thisMonth.AddMonths(-[int]$Config.MonthlyLookbackMonths)
+            if($active -ne [datetime]::MinValue){$activeMonth=$active.AddDays(1-$active.Day);if($firstMonth -lt $activeMonth){$firstMonth=$activeMonth}}
+            elseif($dated.Count -gt 0){$first=[datetime]::ParseExact([string]$dated[0].ReportDate,'yyyy-MM-dd',[Globalization.CultureInfo]::InvariantCulture);$first=$first.AddDays(1-$first.Day);if($firstMonth -lt $first){$firstMonth=$first}}
+            $monthsToCheck=@();for($month=$firstMonth;$month -lt $thisMonth;$month=$month.AddMonths(1)){$monthsToCheck+=@($month.ToString('yyyy-MM'))}
+        }
+        foreach($month in $monthsToCheck) {
+            $monthRows=@($rows|Where-Object{[string]$_.ReportDate -match '^\d{4}-\d{2}-\d{2}$' -and ([string]$_.ReportDate).StartsWith($month+'-',[StringComparison]::Ordinal)})
+            $confirmed=@($monthRows|Where-Object{$_.Category -eq 'Monthly_QA' -and (Get-QaValue $_ 'ConfirmedBy') -and (Get-QaValue $_ 'ConfirmedAt') -and [string](Get-QaValue $_ 'Hash') -match '^[0-9A-Fa-f]{64}$'})
+            $pending=@($monthRows|Where-Object{$_.Category -eq 'Monthly_QA/Pending_Verification'})
+            $coveredSet=@{}
+            foreach($record in $confirmed){foreach($item in @(Get-QaComponentLabels (Get-QaValue $record 'ConfirmedComponents' $null) 'Reviewed report items')){$coveredSet[$item]=$true}}
+            $covered=@($required|Where-Object{$coveredSet.ContainsKey($_)})
+            $missing=@($required|Where-Object{-not $coveredSet.ContainsKey($_)})
+            if($required.Count -eq 0){$status='ChecklistNotSet'}
+            elseif($confirmed.Count -eq 0){$status=if($pending.Count -gt 0){'NeedsConfirmation'}else{'NoConfirmedReport'}}
+            elseif($missing.Count -gt 0){$status='Partial'}else{$status='Complete'}
+            [void]$result.Add([pscustomobject]@{Scanner=[string]$source.Scanner;ScannerName=[string]$source.Name;Month=[string]$month;Status=$status;ReportCount=$monthRows.Count;ConfirmedReportCount=$confirmed.Count;RequiredComponents=[object[]]$required;ConfirmedComponents=[object[]]$covered;MissingComponents=[object[]]$missing})
+        }
+    }
+    return @($result.ToArray()|Sort-Object Scanner,Month)
+}
 function Get-QaAttention { param($Config,$State,$Paths)
     $attention=New-Object 'System.Collections.Generic.List[object]'
     foreach($issue in @($State.Issues)) { [void]$attention.Add($issue) }
+    $coverageByMonth=@{}
+    foreach($coverage in @(Get-QaMonthlyCoverage -Config $Config -Records @($State.Records))){$coverageByMonth[$coverage.Scanner+'|'+$coverage.Month]=$coverage}
     foreach($s in $Config.Sources) {
         $status=@($State.Scanners|Where-Object{$_.Scanner -eq $s.Scanner}|Select-Object -First 1)
         $rows=@($State.Records|Where-Object{$_.Scanner -eq $s.Scanner})
@@ -442,16 +606,21 @@ function Get-QaAttention { param($Config,$State,$Paths)
             }
         }
         if ([bool]$s.ExpectedMonthly) {
-            $firstMonth=(Get-Date).Date.AddDays(1-(Get-Date).Day).AddMonths(-[int]$Config.MonthlyLookbackMonths)
-            if($active -eq [datetime]::MinValue -and $dated.Count -gt 0 -and $firstMonth -lt $first.AddDays(1-$first.Day)){$firstMonth=$first.AddDays(1-$first.Day)}
-            if($active -ne [datetime]::MinValue -and $firstMonth -lt $active.AddDays(1-$active.Day)){$firstMonth=$active.AddDays(1-$active.Day)}
-            $thisMonth=(Get-Date).Date.AddDays(1-(Get-Date).Day)
-            for($month=$firstMonth;$month -lt $thisMonth;$month=$month.AddMonths(1)) {
-                if(-not $monthly.ContainsKey($month.ToString('yyyy-MM'))) {
-                    $hasCandidate=@($dated|Where-Object{$_.Category -eq 'Monthly_QA/Pending_Verification' -and $_.ReportDate.StartsWith($month.ToString('yyyy-MM'))}).Count -gt 0
+            $required=@(Get-QaComponentLabels (Get-QaValue $s 'MonthlyChecklist' $null))
+            if($required.Count -eq 0){[void]$attention.Add((New-QaIssue $s.Scanner 'MonthlyChecklist' ($s.Name+' - Monthly checklist not configured. Report presence can be checked, but completeness is not assessed.') (Join-Path $Paths.Reports $s.Scanner)))}
+            foreach($coverage in @($coverageByMonth.Values|Where-Object{$_.Scanner -ceq $s.Scanner}|Sort-Object Month)) {
+                $month=[datetime]::ParseExact($coverage.Month,'yyyy-MM',[Globalization.CultureInfo]::InvariantCulture)
+                $folder=Join-Path (Join-Path (Join-Path $Paths.Reports $s.Scanner) $month.ToString('yyyy')) $month.ToString('MM')
+                if($coverage.ConfirmedReportCount -eq 0) {
+                    $hasCandidate=@($dated|Where-Object{$_.Category -eq 'Monthly_QA/Pending_Verification' -and ([string]$_.ReportDate).StartsWith($coverage.Month+'-')}).Count -gt 0
                     $message=$s.Name+' - No Monthly QA report confirmed for '+$month.ToString('MMMM yyyy',[Globalization.CultureInfo]::InvariantCulture)+'.'
                     $type='MonthlyGap';if($hasCandidate){$message+=' A possible Monthly report is awaiting verification.';$type='MonthlyPending'}
-                    [void]$attention.Add((New-QaIssue $s.Scanner $type $message (Join-Path (Join-Path (Join-Path $Paths.Reports $s.Scanner) $month.ToString('yyyy')) $month.ToString('MM'))))
+                    [void]$attention.Add((New-QaIssue $s.Scanner $type $message $folder))
+                } elseif($coverage.Status -eq 'Partial') {
+                    $message=$s.Name+' - '+$month.ToString('MMMM yyyy',[Globalization.CultureInfo]::InvariantCulture)+': '+$coverage.ConfirmedComponents.Count+' of '+$coverage.RequiredComponents.Count+' required items confirmed. Still needs confirmation: '+($coverage.MissingComponents -join '; ')+'. These may be in a combined report or separate PDFs.'
+                    $issue=New-QaIssue $s.Scanner 'MonthlyComponents' $message $folder
+                    Set-QaValue $issue 'Month' $coverage.Month;Set-QaValue $issue 'MissingComponents' ([object[]]@($coverage.MissingComponents));Set-QaValue $issue 'ConfirmedComponents' ([object[]]@($coverage.ConfirmedComponents))
+                    [void]$attention.Add($issue)
                 }
             }
         }
@@ -462,14 +631,18 @@ function Get-QaDashboard {
     [CmdletBinding()]param([Parameter(Mandatory=$true)]$Config)
     Assert-QaConfig $Config;$paths=Get-QaPaths $Config;$state=Read-QaState $paths
     $scanners=New-Object 'System.Collections.Generic.List[object]'
+    foreach($record in @($state.Records)) {
+        $source=@($Config.Sources | Where-Object { $_.Scanner -eq $record.Scanner })[0]
+        Set-QaValue $record 'ScannerName' ([string]$source.Name)
+    }
     foreach($s in $Config.Sources) {
         $old=@($state.Scanners|Where-Object{$_.Scanner -eq $s.Scanner}|Select-Object -First 1)
         $count=@($state.Records|Where-Object{$_.Scanner -eq $s.Scanner}).Count
-        if($old.Count){$row=$old[0];$row.Count=$count;$row.SavedReports=$count;[void]$scanners.Add($row)}
+        if($old.Count){$row=$old[0];$row.Name=$s.Name;$row.Count=$count;$row.SavedReports=$count;[void]$scanners.Add($row)}
         else{[void]$scanners.Add([pscustomobject]@{Scanner=$s.Scanner;Name=$s.Name;Status='Unknown';Message='Connection has not been checked. Run Setup or Update Reports.';Count=$count;SavedReports=$count;LastSuccessfulUpdate='';CheckedUtc=''})}
     }
     $legacy=([IO.File]::Exists((Join-Path $paths.Root 'QA_Master_Index_v2.csv')) -and -not [IO.File]::Exists($paths.State))
-    return [pscustomobject]@{Records=@($state.Records);Attention=@(Get-QaAttention $Config $state $paths);Scanners=@($scanners.ToArray());SetupComplete=[bool]$state.SetupComplete;TotalReports=@($state.Records).Count;LegacyDetected=$legacy;ArchiveRoot=$paths.Root;IndexPath=$paths.Index;HistoryPath=$paths.History;LastUpdated=$state.UpdatedUtc}
+    return [pscustomobject]@{Records=@($state.Records);MonthlyCoverage=@(Get-QaMonthlyCoverage -Config $Config -Records @($state.Records));Attention=@(Get-QaAttention $Config $state $paths);Scanners=@($scanners.ToArray());SetupComplete=[bool]$state.SetupComplete;TotalReports=@($state.Records).Count;LegacyDetected=$legacy;ArchiveRoot=$paths.Root;IndexPath=$paths.Index;HistoryPath=$paths.History;LastUpdated=$state.UpdatedUtc}
 }
 function Get-QaReviewPlan { param($Config,$State,$Decisions)
     $items=New-Object 'System.Collections.Generic.List[object]';$seen=@{}
@@ -484,7 +657,17 @@ function Get-QaReviewPlan { param($Config,$State,$Decisions)
         if(-not [IO.File]::Exists($r.DestinationPath) -or (Get-QaFileHash $r.DestinationPath) -ne $r.Hash){throw 'The saved PDF is missing or has changed. Run the integrity audit before reviewing it.'}
         $declaredHash=[string](Get-QaValue $d 'Hash')
         if($declaredHash -and $declaredHash -ne $r.Hash){throw 'The review refers to a different report hash. Reopen the report and review the current saved bytes.'}
-        [void]$items.Add([pscustomobject]@{RecordId=$id;Scanner=$r.Scanner;OriginalFileName=$r.OriginalFileName;OldCategory=$r.Category;Category=$category;Reviewer=[string]$d.Reviewer;Reason=[string]$d.Reason;Hash=$r.Hash;SourcePath=$r.SourcePath})
+        $source=@($Config.Sources|Where-Object{$_.Scanner -ceq $r.Scanner})[0]
+        $required=@(Get-QaComponentLabels (Get-QaValue $source 'MonthlyChecklist' $null))
+        $declared=@(Get-QaComponentLabels (Get-QaValue $d 'ConfirmedComponents' $null) 'Confirmed report items')
+        if($category -ne 'Monthly_QA' -and $declared.Count -gt 0){throw 'Monthly checklist items can be confirmed only for a reviewed Monthly QA report.'}
+        $canonical=New-Object 'System.Collections.Generic.List[string]'
+        foreach($component in $declared) {
+            $match=@($required|Where-Object{$_ -ieq $component})
+            if($match.Count -ne 1){throw ('The confirmed item is not in this scanner''s department checklist: '+$component)}
+            [void]$canonical.Add([string]$match[0])
+        }
+        [void]$items.Add([pscustomobject]@{RecordId=$id;Scanner=$r.Scanner;OriginalFileName=$r.OriginalFileName;OldCategory=$r.Category;Category=$category;Reviewer=[string]$d.Reviewer;Reason=[string]$d.Reason;Hash=$r.Hash;SourcePath=$r.SourcePath;ConfirmedComponents=[object[]]$canonical.ToArray()})
     }
     if($items.Count -eq 0){throw 'Select at least one report to review.'}
     $summary=New-QaSummary;$summary.Total=$items.Count;$summary.Description=($items.Count.ToString()+' classification decision(s) ready for review.')
@@ -495,8 +678,9 @@ function Invoke-QaReview { param($Config,$State,$Paths,$Decisions,$Summary)
     foreach($item in $plan.Items) {
         $old=@($State.Records|Where-Object{$_.Id -eq $item.RecordId})[0]
         $r=$old|Select-Object *;$r.Category=$item.Category;$r.ClassificationBasis='Authorized review: '+$item.Reason;$r.ConfirmedBy=$item.Reviewer;$r.ConfirmedAt=[datetime]::UtcNow.ToString('o')
+        Set-QaValue $r 'ConfirmedComponents' ([object[]]@($item.ConfirmedComponents))
         $r.RelativePath=Get-QaRelativeTarget $r $r.Hash;$r.DestinationPath=Join-Path $Paths.Reports $r.RelativePath
-        $review=[pscustomobject]@{RecordId=$r.Id;Hash=$r.Hash;From=$old.Category;To=$r.Category;Reviewer=$item.Reviewer;Reason=$item.Reason;TimeUtc=$r.ConfirmedAt;PreviousPath=$old.DestinationPath;NewPath=$r.DestinationPath;PreviousRelativePath=$old.RelativePath;NewRelativePath=$r.RelativePath;HistoryRelativePath=''}
+        $review=[pscustomobject]@{RecordId=$r.Id;Hash=$r.Hash;From=$old.Category;To=$r.Category;Reviewer=$item.Reviewer;Reason=$item.Reason;TimeUtc=$r.ConfirmedAt;PreviousPath=$old.DestinationPath;NewPath=$r.DestinationPath;PreviousRelativePath=$old.RelativePath;NewRelativePath=$r.RelativePath;HistoryRelativePath='';ConfirmedComponents=[object[]]@($r.ConfirmedComponents)}
         Assert-QaNoReparse $r.DestinationPath $Paths.Root
         if(-not $r.DestinationPath.Equals($old.DestinationPath,[StringComparison]::OrdinalIgnoreCase)) {
             $token=[guid]::NewGuid().ToString('N');$stage=Join-Path $Paths.Staging ($token+'.partial')
@@ -562,6 +746,7 @@ function Invoke-QaLegacyAdoption { param($Config,$State,$Paths,[string]$LegacyRo
         try {
             $scanner=@($Config.Sources|Where-Object{$_.Scanner -eq $row.Scanner}|Select-Object -First 1)
             if($scanner.Count -ne 1){throw 'The old record has an unknown scanner.'}
+            $row.Scanner=[string]$scanner[0].Scanner
             $source=[string]$row.DestinationPath
             if(-not (Test-QaChildPath $source $reports)){throw 'The old index path is outside its Reports folder; it was not trusted.'}
             Assert-QaNoReparse $source $reports
@@ -581,7 +766,7 @@ function Invoke-QaLegacyAdoption { param($Config,$State,$Paths,[string]$LegacyRo
                 [void][IO.Directory]::CreateDirectory([IO.Path]::GetDirectoryName($target));[IO.File]::Move($stage,$target);$Summary.Copied++
             }
             $pdf=Get-QaPdfInfo $target
-            $record=[pscustomobject]@{Id=$id;Scanner=$row.Scanner;ReportDate=$class.ReportDate;ReportTime=$class.ReportTime;OriginalFileName=$row.OriginalFileName;SourcePath=$row.SourcePath;SourceKey=(Get-QaSourceKey $row.Scanner $row.SourcePath);Hash=$hash;Length=[long]$info.Length;SourceLastWriteUtc='';RelativePath=$relative;DestinationPath=$target;DestinationLastWriteUtc=(Get-Item -LiteralPath $target).LastWriteTimeUtc.ToString('o');Category=$entry.Category;ClassificationBasis=$class.ClassificationBasis;FirstArchived=[string]$row.FirstArchived;ConfirmedBy='';ConfirmedAt='';PdfPagesHint=$pdf.Pages}
+            $record=[pscustomobject]@{Id=$id;Scanner=$row.Scanner;ReportDate=$class.ReportDate;ReportTime=$class.ReportTime;OriginalFileName=$row.OriginalFileName;SourcePath=$row.SourcePath;SourceKey=(Get-QaSourceKey $row.Scanner $row.SourcePath);Hash=$hash;Length=[long]$info.Length;SourceLastWriteUtc='';RelativePath=$relative;DestinationPath=$target;DestinationLastWriteUtc=(Get-Item -LiteralPath $target).LastWriteTimeUtc.ToString('o');Category=$entry.Category;ClassificationBasis=$class.ClassificationBasis;FirstArchived=[string]$row.FirstArchived;ConfirmedBy='';ConfirmedAt='';ConfirmedComponents=@();PdfPagesHint=$pdf.Pages}
             Add-QaRecord $State $record;$Summary.Verified++
             Save-QaState $State $Paths
         } catch{$Summary.Failed++;[void]$Issues.Add((New-QaIssue ([string]$row.Scanner) 'Migration' ('Existing archive record could not be adopted: '+$_.Exception.Message) ([string]$row.DestinationPath)))}
@@ -674,7 +859,7 @@ function Invoke-QaOperation {
         Add-QaHistory $paths $Mode $summary $summary.Description
         if($summary.Cancelled){$summary.Description='Cancelled safely. Completed, verified reports are preserved. Run Update Reports to continue.'}
         Set-QaProgress $Progress $summary.Description 100
-        return [pscustomobject]@{Mode=$Mode;Summary=$summary;Scanners=@($state.Scanners);Attention=@(Get-QaAttention $Config $state $paths);Records=@($state.Records);SetupComplete=[bool]$state.SetupComplete}
+        return [pscustomobject]@{Mode=$Mode;Summary=$summary;Scanners=@($state.Scanners);Attention=@(Get-QaAttention $Config $state $paths);Records=@($state.Records);MonthlyCoverage=@(Get-QaMonthlyCoverage -Config $Config -Records @($state.Records));SetupComplete=[bool]$state.SetupComplete}
     } finally { if($null -ne $lock){$lock.Dispose()} }
 }
-Export-ModuleMember -Function Get-QaDefaultConfig,Read-QaConfig,Save-QaConfig,Get-QaDashboard,Invoke-QaOperation
+Export-ModuleMember -Function Get-QaDefaultConfig,Read-QaConfig,Save-QaConfig,Get-QaDashboard,Invoke-QaOperation,Get-QaMonthlyCoverage

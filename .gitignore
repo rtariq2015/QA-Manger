@@ -1,9 +1,12 @@
 # Runtime archive data and local logs
 **/.ctqa/
 **/Reports/
+**/Browse Reports/
+**/Config/Credentials/
 **/QA_Master_Index.csv
 **/Activity.csv
 *.pdf
+!Tests/Fixtures/PdfReader/*.pdf
 *.log
 *.partial
 *.bak

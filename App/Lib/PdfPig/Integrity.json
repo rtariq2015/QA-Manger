@@ -1,0 +1,55 @@
+{
+  "PdfPigVersion": "0.1.16",
+  "PdfPigTarget": "net471",
+  "WindowsMinimumFramework": ".NET Framework 4.7.2",
+  "Files": [
+    {
+      "Name": "Microsoft.Bcl.HashCode.dll",
+      "SHA256": "3a4e851ee5fc0f6182aa5a3d65dc56fcd6979b65334b5c3b92fbdc791457c0ab"
+    },
+    {
+      "Name": "System.Buffers.dll",
+      "SHA256": "3af1e07305bed0abe0cf32d9854e0a7f5f470216adee1b87d02350be09d31b35"
+    },
+    {
+      "Name": "System.Memory.dll",
+      "SHA256": "b8fe216aff0f6d162f8eefe7be1712162b7d8199e20ce2e70ffac36c7ce20a4c"
+    },
+    {
+      "Name": "System.Numerics.Vectors.dll",
+      "SHA256": "22c84be385fe8ba6d0e0138952748f28d781fce36078b5a7aed91a6104bcd99b"
+    },
+    {
+      "Name": "System.Runtime.CompilerServices.Unsafe.dll",
+      "SHA256": "2d6f419d641682d8efc4a40e850d2e85de519d6823b93daf2aeee63206d4e32d"
+    },
+    {
+      "Name": "UglyToad.PdfPig.Core.dll",
+      "SHA256": "894bf5e8daac5e4f6fbd7e2eb26c6b2f39e42b3122e35fa69c6fa30469a43bb0"
+    },
+    {
+      "Name": "UglyToad.PdfPig.DocumentLayoutAnalysis.dll",
+      "SHA256": "aa79f1774b74e5bd6939e089bb7770fd62b8e8c22d444f5f736a7171c243e16c"
+    },
+    {
+      "Name": "UglyToad.PdfPig.Fonts.dll",
+      "SHA256": "b066e7440e7d76d2b8229e9274e300dcfe7dcec65dd578106e8a1bf2473bb911"
+    },
+    {
+      "Name": "UglyToad.PdfPig.Package.dll",
+      "SHA256": "ec4a85d737582d93917a4dff811267723092e60f891916dd56dc94630417b5ee"
+    },
+    {
+      "Name": "UglyToad.PdfPig.Tokenization.dll",
+      "SHA256": "84315ce24887373ed9019442edfcb1b7777e7782ed0c4bf69be63e84941b43e0"
+    },
+    {
+      "Name": "UglyToad.PdfPig.Tokens.dll",
+      "SHA256": "d91a3f93ca27728709875ef71425d4c8e7165d5d3a7b13094ec976cfc22d305c"
+    },
+    {
+      "Name": "UglyToad.PdfPig.dll",
+      "SHA256": "cd712f405cbd4400903d18f2855e0b2458acb76d75019765f9faaa2f3ba0717e"
+    }
+  ]
+}

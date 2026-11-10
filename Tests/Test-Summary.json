@@ -1,0 +1,55 @@
+{
+  "Product": "CT QA Manager Pro",
+  "Version": "4.1.0",
+  "Tests": 104,
+  "Assertions": 797,
+  "Failed": 0,
+  "Runtime": "PowerShell 7.4.19 on Linux",
+  "WindowsPowerShell51ActuallyRun": false,
+  "WindowsDPAPIActuallyRun": false,
+  "NativeWPFActuallyRun": false,
+  "Suites": [
+    {
+      "Name": "Archive",
+      "Evidence": "Automated-Results.json",
+      "Tests": 24,
+      "Assertions": 143,
+      "Failed": 0
+    },
+    {
+      "Name": "Search and ZIP export",
+      "Evidence": "Export-Results.json",
+      "Tests": 24,
+      "Assertions": 250,
+      "Failed": 0
+    },
+    {
+      "Name": "Connections and startup",
+      "Evidence": "Connection-Results.json",
+      "Tests": 15,
+      "Assertions": 174,
+      "Failed": 0
+    },
+    {
+      "Name": "Readable folders",
+      "Evidence": "Browse-Results.json",
+      "Tests": 17,
+      "Assertions": 117,
+      "Failed": 0
+    },
+    {
+      "Name": "Monthly component coverage",
+      "Evidence": "Monthly-Results.json",
+      "Tests": 16,
+      "Assertions": 88,
+      "Failed": 0
+    },
+    {
+      "Name": "Portable PDF text reader",
+      "Evidence": "Pdf-Results.json",
+      "Tests": 8,
+      "Assertions": 25,
+      "Failed": 0
+    }
+  ]
+}
