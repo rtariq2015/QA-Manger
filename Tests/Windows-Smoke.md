@@ -57,3 +57,13 @@ The following checks apply to the added report tools and still require real Wind
 27. Close the app, apply a separately extracted update, verify settings/data are unchanged, and test rollback of the App folder. Reject a modified release checksum and an update while the app is open. Never perform this acceptance experiment on the only live archive.
 28. Open the offline HTML library in the workstation's approved browser, search by scanner/date/type, and open all sample PDF links. Copy the complete Browse Reports folder elsewhere and repeat offline. Verify the refresh timestamp and pending-vs-confirmed wording.
 29. Test 100%, 125%, 150%, and 200% scaling with the new Today and Monthly tables; check keyboard focus, narrow windows and scroll access. Hosted Windows screenshots alone do not establish workstation DPI usability.
+
+
+## Focused review workspace (4.4.0)
+
+1. Filter Reports to Pending review for one scanner and month. Open Review pending PDFs. Check that page navigation, zoom and the external PDF viewer show the actual selected saved file.
+2. Verify that Accept stays disabled until a reviewer name and authorization are supplied and the PDF is opened. Accept one candidate with only a subset of checklist items. It should leave pending immediately while the month remains partial.
+3. Undo that decision. The pending report and original checklist state should return. Decline it as another reviewed report: the PDF remains saved and the pending suggestion disappears.
+4. Skip a second PDF: it remains pending and can be revisited. Close the review window during rendering and verify safe cancellation. Close during saving and verify it finishes the save before closing.
+5. Reopen the application. Find accepted/declined reports using their filters; inspect Decision history and undo the latest supported decision. Earlier history must remain. Confirm the readable copy and export use Other Reports/Reviewed for a declined-other report.
+6. Disconnect a scanner and review already saved PDFs offline. This should require no network sign-in. Confirm that the application never marks a clinical PASS or full checklist merely because the report type was accepted.

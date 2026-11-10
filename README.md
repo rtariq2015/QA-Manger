@@ -1,4 +1,4 @@
-# CT QA Manager Pro 4.3.0
+# CT QA Manager Pro 4.4.0
 
 [Download the latest full program, update ZIP, and older-version upgrade helper from Releases](https://github.com/rtariq2015/QA-Manger/releases/latest).
 
@@ -13,6 +13,16 @@ A portable Windows workspace for collecting, reviewing, finding and sharing CT Q
 ![Offline report library with synthetic PDFs](docs/images/offline-library.png)
 
 *Actual browser screenshot of the generated offline library with synthetic PDFs. Both images use demonstration data.*
+
+## View, accept or decline
+
+In Reports, select **Pending review**, filter to a scanner and period, then choose **Review pending PDFs**. Inspect the PDF beside its controls, accept its type or decline the Monthly suggestion, and advance immediately. Decline keeps the PDF as Daily, acceptance tests or another reviewed report. Skip leaves it pending. The workspace supports page navigation, zoom and the normal PDF viewer as a fallback.
+
+Accepted and declined filters keep completed decisions accessible. **Decision history** retains the audit trail and supports undoing the latest decision after restarting; **Undo last decision** is also available during a review session. Saved-file fingerprints and review stamps reject changed PDFs and stale actions. Readable folder copies refresh once on leaving the queue, instead of rebuilding after every accepted report.
+
+Only explicitly checked department items count toward Monthly coverage. Accepting the report type does not infer a printed PASS/FAIL or complete the checklist automatically. The native preview uses the Windows PDF renderer without installing a runtime.
+
+![Native review workspace with a synthetic PDF](docs/images/queue-native-demo.png)
 
 ## Daily workspace, review and offline updates
 

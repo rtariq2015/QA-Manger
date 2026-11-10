@@ -8,9 +8,11 @@ The offline library is also tested in Chromium for searching, no results, reset,
 
 ## Windows validation
 
-The GitHub **Windows validation and visual preview** workflow runs all ten suites under Windows PowerShell 5.1. It also loads WPF and captures five native screens populated only with synthetic demonstration data. Download its `windows-validation` artifact for the JSON results and image. Check the actual workflow result; the existence of the workflow does not mean it passed.
+The GitHub **Windows validation and visual preview** workflow runs all eleven suites under Windows PowerShell 5.1. It also loads WPF and captures six native screens populated only with synthetic demonstration data. Download its `windows-validation` artifact for the JSON results and image. Check the actual workflow result; the existence of the workflow does not mean it passed.
 
 The Linux cloud suite and the dedicated hosted Windows suite have both run. The Windows run additionally exercised native PowerShell 5.1 and DPAPI and rendered WPF. These checks do not establish real scanner authentication, interactive high-DPI behavior, workstation endpoint approval, or hospital SMB performance. Follow `Tests/Windows-Smoke.md` on the approved work computer. The original v4.1.0 reports remain historical evidence; current-run reports live in `Tests/Current`.
+
+The v4.4.0 review suite checks explicit Accept/Decline decisions, checklist boundaries, persistent Undo snapshots, stale decisions, unchanged rescans and reviewed-other browsing and exports. Windows additionally renders an actual synthetic PDF and clicks through the native workspace to verify Skip, Accept, Undo and Decline. These synthetic reports contain no clinical data.
 
 ## Operating limits
 
@@ -18,6 +20,7 @@ The Linux cloud suite and the dedicated hosted Windows suite have both run. The 
 - Scanner access still depends on the workstation's existing network permissions. An unavailable source does not establish missed QA.
 - Reconnection and enumeration run in bounded helper processes. A Windows network read already in progress during a file transfer can still wait for the OS to return before the next safe cancellation checkpoint.
 - The optional PDF reader needs the workstation's existing .NET Framework 4.7.2+ and approval for the bundled DLLs. No runtime is installed or downloaded by the application.
+- The visual preview uses the Windows PDF renderer already supplied with Windows. If endpoint policy blocks it, use the approved default PDF viewer. Preview workers are bounded and do not change the file.
 - OCR is not included. Explicit `Noise: PASS` / `MTF: FAIL` style lines can be extracted with page evidence; actual scanner templates require redacted examples to extend recognition. Unrecognized text stays for review. No department-specific numerical limits are assumed.
 - Receipt, extracted printed results, reviewed classification and complete checklist evidence are distinct. Provisional filename/size grouping alone does not satisfy the Today receipt headline.
 - Fast updates use metadata. Use saved-file integrity audit and the separate scanner-source fingerprint check when deeper verification is needed.

@@ -16,7 +16,7 @@ function Update-QuickQueueControls {
 }
 function Update-QuickQueueZoom {
     if($null -eq $script:ReviewQueue){return};$q=$script:ReviewQueue
-    $width=[math]::Max(240,$q.Controls.PreviewScroll.ViewportWidth-20)
+    $width=[math]::Max(240,$q.Controls.PreviewScroll.ActualWidth-20)
     switch([string]$q.Controls.PreviewZoom.SelectedItem){'100%'{$width=1200}'150%'{$width=1800}}
     $q.Controls.QueuePageImage.Width=$width
 }
@@ -54,6 +54,7 @@ function Show-QuickQueueRecord {
     }
     $c.QueueSkip.Content='Skip for now / next PDF';$c.QueueReportTitle.Text=Get-QaReportTitle $q.Record;$c.QueueStatus.Text='Pending verification'
     $c.PageStatus.Text='Loading page 1...'
+    $c.QueueWhyPending.Text='Why this is pending: '+[string](Value-Or $q.Record ClassificationBasis 'The suggested report type still needs your confirmation.')
     $type=if($q.Record.Category -eq 'Monthly_QA/Pending_Verification'){'Monthly_QA'}elseif($q.Record.Category -eq 'Daily_QA'){'Daily_QA'}else{''}
     $c.QueueType.SelectedValue=$type
     $source=@($script:Config.Sources|Where-Object Scanner -eq $q.Record.Scanner)[0]
@@ -124,9 +125,9 @@ function Complete-QuickQueueWork {
         if($ErrorText -or $Cancelled){$q.Controls.QueueMessage.Text=$(if($ErrorText){$ErrorText}else{'Decision was not saved.'});Update-QuickQueueControls;if($q.CloseWhenIdle){$q.Window.Close()};return $true}
         $changed=@($script:Dashboard.Records|Where-Object Id -eq $q.TargetId)[0]
         $q.BrowseDirty=$true
-        if($q.PendingAction -eq 'Undo'){$q.Undo=$null;$q.Skipped.Remove([string]$changed.Id);Show-QuickQueueRecord -PreferredId ([string]$changed.Id);$q.Controls.QueueMessage.Text='Undo saved. The previous pending state was restored; both audit entries remain.'}
+        if($q.PendingAction -eq 'Undo'){if($q.Undo.Action -eq 'Accept'){$q.Accepted=[math]::Max(0,$q.Accepted-1)}else{$q.Declined=[math]::Max(0,$q.Declined-1)};$q.Undo=$null;$q.Skipped.Remove([string]$changed.Id);Show-QuickQueueRecord -PreferredId ([string]$changed.Id);$q.Controls.QueueMessage.Text='Undo saved. The previous pending state was restored; both audit entries remain.'}
         else{
-            $q.Undo=[pscustomobject]@{RecordId=[string]$changed.Id;ReviewId=[string]$changed.LastReviewId}
+            $q.Undo=[pscustomobject]@{RecordId=[string]$changed.Id;ReviewId=[string]$changed.LastReviewId;Action=$q.PendingAction}
             if($q.PendingAction -eq 'Accept'){$q.Accepted++}else{$q.Declined++}
             Show-QuickQueueRecord
             $q.Controls.QueueMessage.Text=$(if($q.PendingAction -eq 'Accept'){'Accepted and removed from pending.'}else{'Suggestion declined; PDF kept and removed from pending.'})+' Undo last decision is available.'
@@ -156,7 +157,7 @@ function Open-QuickReviewQueue {
     $controls.QueueSkip.Add_Click({$queue=$script:ReviewQueue;if($null -ne $queue.Record){$queue.Skipped[[string]$queue.Record.Id]=$true}else{$queue.Skipped=@{}};Show-QuickQueueRecord})
     $controls.QueueOpenPdf.Add_Click({$queue=$script:ReviewQueue;try{$path=[string]$queue.Record.DestinationPath;if(-not [IO.File]::Exists($path)){throw 'Saved PDF is missing.'};Start-Process -FilePath $path|Out-Null;$queue.Viewed=$true;$queue.Controls.QueueMessage.Text='PDF opened in the normal viewer. Inspect it before accepting or declining.';Update-QuickQueueControls}catch{$queue.Controls.QueueMessage.Text=$_.Exception.Message}})
     $controls.PreviousPage.Add_Click({$script:ReviewQueue.PageNumber--;Start-QuickQueuePreview});$controls.NextPage.Add_Click({$script:ReviewQueue.PageNumber++;Start-QuickQueuePreview})
-    $controls.PreviewZoom.Add_SelectionChanged({Update-QuickQueueZoom});$window.Add_SizeChanged({Update-QuickQueueZoom})
+    $controls.PreviewZoom.Add_SelectionChanged({Update-QuickQueueZoom});$controls.PreviewScroll.Add_SizeChanged({Update-QuickQueueZoom})
     $controls.QueueClose.Add_Click({$script:ReviewQueue.Window.Close()})
     $window.Add_PreviewKeyDown({param($sender,$args) if($args.KeyboardDevice.Modifiers -eq [Windows.Input.ModifierKeys]::Control){if($args.Key -eq [Windows.Input.Key]::Enter -and $script:ReviewQueue.Controls.QueueAccept.IsEnabled){Submit-QuickQueueDecision -Action Accept;$args.Handled=$true}elseif($args.Key -eq [Windows.Input.Key]::D){Open-QuickQueueDeclineMenu;$args.Handled=$true}}})
     $window.Add_Closing({param($sender,$args) $queue=$script:ReviewQueue;if($script:Busy -and $queue.Waiting){$args.Cancel=$true;$queue.CloseWhenIdle=$true;if($queue.Waiting -eq 'PdfPreview'){$script:Worker.Shared.Cancel=$true};$queue.Controls.QueueMessage.Text='Finishing the current safe step before closing...'}})

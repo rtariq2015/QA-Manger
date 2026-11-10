@@ -1417,7 +1417,7 @@ namespace CtQa {
         $script:Window.Dispatcher.Invoke([Action]{$script:Window.UpdateLayout()},[Windows.Threading.DispatcherPriority]::ApplicationIdle)
         if($PreviewPage -eq 'Review'){$script:Controls.ReviewView.ScrollToTop();$script:Window.Dispatcher.Invoke([Action]{$script:Window.UpdateLayout()},[Windows.Threading.DispatcherPriority]::ApplicationIdle)}
         $capture=$script:Window
-        if($PreviewPage -eq 'Queue'){$capture=Open-QuickReviewQueue -DemoSnapshot;$capture.Show();$capture.Dispatcher.Invoke([Action]{$capture.UpdateLayout();Update-QuickQueueZoom},[Windows.Threading.DispatcherPriority]::ApplicationIdle)}
+        if($PreviewPage -eq 'Queue'){$capture=Open-QuickReviewQueue -DemoSnapshot;$capture.Show();$capture.Dispatcher.Invoke([Action]{$capture.UpdateLayout();Update-QuickQueueZoom;$capture.UpdateLayout()},[Windows.Threading.DispatcherPriority]::ApplicationIdle)}
         $bitmap=New-Object Windows.Media.Imaging.RenderTargetBitmap ([int]$capture.ActualWidth),([int]$capture.ActualHeight),96,96,([Windows.Media.PixelFormats]::Pbgra32)
         $bitmap.Render($capture);$encoder=New-Object Windows.Media.Imaging.PngBitmapEncoder
         $encoder.Frames.Add([Windows.Media.Imaging.BitmapFrame]::Create($bitmap))

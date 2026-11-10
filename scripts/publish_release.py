@@ -30,10 +30,12 @@ notes.write_text(f'''Choose the download for your task:
 - **[Full portable program — new installation]({base}CT_QA_Manager_Pro_v{version}_Portable.zip)**: Extract the complete folder and run **Start CT QA Manager.cmd**. This is the clean program package, without development files or archived reports.
 - **[Update ZIP — use inside the app]({base}CT_QA_Manager_Pro_v{version}_Update.zip)**: In version 4.3.0 or later, open **Updates**, choose/drop this ZIP, then install and restart. Your reports and settings stay in place.
 - **[One-time upgrade — older installed versions]({base}CT_QA_Manager_Pro_v{version}_Upgrade.zip)**: Extract separately, close the existing program, run **Install update.cmd**, and select the existing program folder. It also includes **Export diagnostics.cmd**, which can export scrubbed logs while the existing app is open.
-- **[Visual preview]({base}{preview.name})**: Five actual Windows screens using synthetic demonstration data.
+- **[Visual preview]({base}{preview.name})**: Six actual Windows screens using synthetic demonstration data.
 - **[SHA-256 checksums]({base}SHA256SUMS.txt)**.
 
-This release adds clearer scanner connections, pending-file confirmation in Reports, a separate Archive review tab, cached reading progress/pause, offline ZIP updates, and complete retained scrubbed support logs. Log bundles include timings, safe counts/error categories and known older activity fields; they exclude reports, patient text, filenames, paths, usernames, passwords, network addresses and raw logs. Detailed activity begins after installing this version. Logs normally retain up to 90 days / 50 MB. Nothing is uploaded automatically.
+This release adds a focused **View PDF → Accept or Decline → Next** workspace. Accepted and declined suggestions leave pending immediately; skipped PDFs stay pending. Reports remain saved, with Accepted/Declined filters, persistent decision history and audited Undo. Monthly coverage counts only the department items explicitly selected; accepting a report type does not infer clinical PASS/FAIL. Native PDF page previews use the Windows renderer, with the normal viewer available as a fallback. Readable folders refresh once per review session.
+
+The earlier scanner connection improvements, offline ZIP updates and complete retained scrubbed support logs remain included. Nothing is uploaded automatically.
 
 Passwords, workplace network profiles and live report data are excluded from all release assets. Configure scanner access on the work computer. Updates use local files and do not contact GitHub. A previous-program copy is kept under Backups.
 
