@@ -33,7 +33,15 @@ async function api(route, options = {}, authenticated = true) {
   const headers = { ...(authenticated ? { 'X-Qa-Session': ready.token } : {}), ...options.headers };
   return fetch(new URL(route, ready.url), { ...options, headers });
 }
-async function snapshot() { const response = await api('/api/snapshot'); if (!response.ok) return null; return response.json(); }
+async function snapshot() {
+  const response = await api('/api/snapshot');
+  if (!response.ok) {
+    const payload = await response.json().catch(() => ({}));
+    const detail = typeof payload.error === 'string' ? payload.error : payload.error?.message || payload.message || response.statusText;
+    throw new Error('Snapshot HTTP ' + response.status + ': ' + clean(String(detail || 'No error description was returned.').slice(0, 1600)));
+  }
+  return response.json();
+}
 async function waitSnapshot(predicate = () => true) { return until(async () => { const value = await snapshot(); return value && predicate(value) && value; }, 'The saved snapshot did not reach the expected state.'); }
 async function jobs() { const response = await api('/api/jobs'); const value = await response.json(); return value.jobs || value; }
 async function action(request, expected = 'completed') {
