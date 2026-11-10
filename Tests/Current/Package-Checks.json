@@ -1,5 +1,5 @@
 {
-  "checks": 617,
+  "checks": 618,
   "failed": 0,
   "failures": [],
   "scope": "Static package checks only. Windows execution and WPF rendering require Windows."

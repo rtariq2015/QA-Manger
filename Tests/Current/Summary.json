@@ -79,5 +79,5 @@
     "Scope": "Generated offline library with synthetic PDFs",
     "ValidatedVersion": "4.2.0 (offline library unchanged in the updater fixes)"
   },
-  "WindowsEvidence": "Windows/Summary.json validates the earlier UI/base v4.3.0 source. The expanded scrubbed-log workflow is pending."
+  "WindowsEvidence": "Windows/Summary.json (v4.3.0: 159 scenarios, 1043 assertions; complete scrubbed logs, concurrent writers, active-lock exports, DPAPI, offline restart and five WPF screens executed)"
 }

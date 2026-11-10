@@ -2,8 +2,8 @@
     "Version":  "4.3.0",
     "Runtime":  "5.1.26100.33648",
     "WindowsPowerShell51ActuallyRun":  true,
-    "Tests":  11,
-    "Assertions":  52,
+    "Tests":  16,
+    "Assertions":  79,
     "Failed":  0,
     "Results":  [
                     {
@@ -42,7 +42,7 @@
                         "Details":  ""
                     },
                     {
-                        "Name":  "Support events remain bounded and do not change saved report data",
+                        "Name":  "Support events rotate, expire and keep legacy raw files separate",
                         "Result":  "PASS",
                         "Details":  ""
                     },
@@ -53,6 +53,31 @@
                     },
                     {
                         "Name":  "Pending verification includes provisional daily files and clears only on actual confirmation",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "A scrubbed ZIP includes all retained activity and strips injected fields from every entry",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Earlier activity contributes only recognized dates, operations and numeric counts",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Error descriptions become safe categories rather than raw strings",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Concurrent program workers keep every structured event without overwriting each other",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "A failed PDF read stays cached until the destination changes",
                         "Result":  "PASS",
                         "Details":  ""
                     },

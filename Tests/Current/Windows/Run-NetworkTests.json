@@ -2,8 +2,8 @@
     "Version":  "4.3.0",
     "Runtime":  "5.1.26100.33648",
     "WindowsPowerShell51ActuallyRun":  true,
-    "Tests":  12,
-    "Assertions":  41,
+    "Tests":  13,
+    "Assertions":  43,
     "Failed":  0,
     "Results":  [
                     {
@@ -18,6 +18,11 @@
                     },
                     {
                         "Name":  "A local profile replaces examples without changing archive or review settings",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "A local profile never resets a customized username on the same scanner folder",
                         "Result":  "PASS",
                         "Details":  ""
                     },

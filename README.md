@@ -1,5 +1,7 @@
 # CT QA Manager Pro 4.3.0
 
+[Download the latest full program, update ZIP, and older-version upgrade helper from Releases](https://github.com/rtariq2015/QA-Manger/releases/latest).
+
 A portable Windows workspace for collecting, reviewing, finding and sharing CT QA report PDFs. Run it from one folder using the Windows PowerShell 5.1 and WPF components already supplied with Windows. No installer, administrator launch, Python, Git or external PowerShell modules are required for normal use.
 
 ![Native WPF dashboard with synthetic demonstration data](docs/images/dashboard-native-demo.png)
@@ -82,7 +84,7 @@ Use **Create full backup** to save a verified ZIP outside the live archive. **Re
 
 ## Validation and evidence
 
-The v4.3.0 Linux cloud run passed **152 scenarios and 1003 assertions** across ten suites. The hosted Windows run passed **153 scenarios and 1014 assertions**, including the production CMD updater with omitted folder defaults, Windows PowerShell 5.1, DPAPI, native WPF loading and preview generation. A 10,000-record search benchmark measured **0.021 seconds** for a cached filter after **1.38 seconds** to build the index, including first compilation, on this Linux host. These are in-memory measurements, not workstation or SMB performance. Current Linux cloud and browser results are in [Tests/Current](Tests/Current). The [Windows workflow](https://github.com/rtariq2015/QA-Manger/actions/workflows/windows-validation.yml) runs native PowerShell 5.1 suites and a WPF demonstration capture on source changes. [Saved Windows evidence](Tests/Current/Windows) identifies the validated source commit and run. These hosted checks do not establish hospital access or interactive workstation DPI behavior.
+The v4.3.0 Linux cloud run passed **158 scenarios and 1032 assertions** across ten suites. The hosted Windows run passed **159 scenarios and 1043 assertions**, including the production CMD updater with omitted folder defaults, Windows PowerShell 5.1, DPAPI, native WPF loading and preview generation. A 10,000-record search benchmark measured **0.021 seconds** for a cached filter after **1.38 seconds** to build the index, including first compilation, on this Linux host. These are in-memory measurements, not workstation or SMB performance. Current Linux cloud and browser results are in [Tests/Current](Tests/Current). The [Windows workflow](https://github.com/rtariq2015/QA-Manger/actions/workflows/windows-validation.yml) runs native PowerShell 5.1 suites and a WPF demonstration capture on source changes. [Saved Windows evidence](Tests/Current/Windows) identifies the validated source commit and run. These hosted checks do not establish hospital access or interactive workstation DPI behavior.
 
 Actual hospital access, scanner authentication, endpoint restrictions and interactive DPI acceptance still require workstation validation. See [testing and limitations](docs/TESTING.md) and the [Windows checklist](Tests/Windows-Smoke.md).
 
