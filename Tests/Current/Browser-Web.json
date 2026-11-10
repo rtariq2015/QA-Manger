@@ -1,11 +1,11 @@
 {
-  "version": "5.0.0",
+  "version": "5.0.1",
   "syntheticOnly": true,
   "browser": "Chromium via Playwright",
   "browserChannel": "chromium",
   "nativePdfPreviewActuallyRun": false,
-  "tests": 10,
-  "assertions": 236,
+  "tests": 12,
+  "assertions": 292,
   "failed": 0,
   "externalAssetRequests": 0,
   "javascriptErrors": [],
@@ -16,6 +16,14 @@
     },
     {
       "name": "The three-screen interface loads locally without external assets",
+      "result": "PASS"
+    },
+    {
+      "name": "Normal mouse-release clicks keep settings and search fields focused for real keyboard input",
+      "result": "PASS"
+    },
+    {
+      "name": "Connection drafts survive blur, unrelated job completion and scanner switching",
       "result": "PASS"
     },
     {

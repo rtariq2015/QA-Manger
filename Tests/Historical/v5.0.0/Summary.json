@@ -1,0 +1,98 @@
+{
+  "Product": "CT QA Manager Pro",
+  "Version": "5.0.0",
+  "Runtime": "PowerShell 7.4.13 on Linux (development checks; final pinned validation is Windows)",
+  "Tests": 184,
+  "Assertions": 1139,
+  "Failed": 0,
+  "Suites": [
+    {
+      "Name": "Run-BrowseTests",
+      "Tests": 17,
+      "Assertions": 117,
+      "Failed": 0
+    },
+    {
+      "Name": "Run-ConnectionTests",
+      "Tests": 15,
+      "Assertions": 174,
+      "Failed": 0
+    },
+    {
+      "Name": "Run-ExportTests",
+      "Tests": 24,
+      "Assertions": 250,
+      "Failed": 0
+    },
+    {
+      "Name": "Run-MonthlyTests",
+      "Tests": 16,
+      "Assertions": 89,
+      "Failed": 0
+    },
+    {
+      "Name": "Run-NetworkTests",
+      "Tests": 13,
+      "Assertions": 43,
+      "Failed": 0
+    },
+    {
+      "Name": "Run-PdfTests",
+      "Tests": 8,
+      "Assertions": 25,
+      "Failed": 0
+    },
+    {
+      "Name": "Run-PortableTests",
+      "Tests": 16,
+      "Assertions": 45,
+      "Failed": 0
+    },
+    {
+      "Name": "Run-ReviewQueueTests",
+      "Tests": 12,
+      "Assertions": 40,
+      "Failed": 0
+    },
+    {
+      "Name": "Run-SupportTests",
+      "Tests": 16,
+      "Assertions": 78,
+      "Failed": 0
+    },
+    {
+      "Name": "Run-Tests",
+      "Tests": 24,
+      "Assertions": 197,
+      "Failed": 0
+    },
+    {
+      "Name": "Run-UpdateTests",
+      "Tests": 9,
+      "Assertions": 32,
+      "Failed": 0
+    },
+    {
+      "Name": "Run-WebServiceTests",
+      "Tests": 14,
+      "Assertions": 49,
+      "Failed": 0
+    }
+  ],
+  "BrowserEvidence": "Browser-Web.json: separate Linux Chromium run, 10 scenarios / 236 assertions; native Windows rendering was not run there.",
+  "WindowsEvidence": "Windows/Summary.json: 189 native scenarios / 1199 assertions at b468e750188de9aa6c1b5020d0e9fdd702379e71; workflow 42897377290.",
+  "Scope": "Root Current Run-*.json and top-level Tests/Assertions are Linux development results. Pinned final Windows suite and browser results are recorded separately; all use synthetic fixtures only.",
+  "WindowsPowerShell51ActuallyRun": false,
+  "NativeWPFActuallyRun": false,
+  "WindowsDPAPIActuallyRun": false,
+  "BrowserWindowsEvidence": "Browser-Web-Windows.json: 10 real Edge scenarios / 240 assertions, including the native PNG preview and actual host restart.",
+  "WindowsValidation": {
+    "SourceCommit": "b468e750188de9aa6c1b5020d0e9fdd702379e71",
+    "WorkflowRun": "https://github.com/rtariq2015/QA-Manger/actions/runs/42897377290",
+    "PowerShellTests": 189,
+    "PowerShellAssertions": 1199,
+    "BrowserTests": 10,
+    "BrowserAssertions": 240,
+    "Failed": 0
+  }
+}

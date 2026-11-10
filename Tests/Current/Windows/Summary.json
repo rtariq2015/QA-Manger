@@ -1,11 +1,11 @@
 {
-  "Version": "5.0.0",
-  "SourceCommit": "b468e750188de9aa6c1b5020d0e9fdd702379e71",
-  "WorkflowRun": "https://github.com/rtariq2015/QA-Manger/actions/runs/42897377290",
-  "Runtime": "Windows PowerShell 5.1.26100.33648",
+  "Version": "5.0.1",
+  "SourceCommit": "e31f880cfe1345fb8cfafa6000356dccde3aa758",
+  "WorkflowRun": "https://github.com/rtariq2015/QA-Manger/actions/runs/42913290443",
+  "Runtime": "5.1.26100.33648",
   "Host": "GitHub-hosted Windows Server 2025",
-  "Tests": 189,
-  "Assertions": 1199,
+  "Tests": 190,
+  "Assertions": 1206,
   "Failed": 0,
   "Suites": [
     {
@@ -76,8 +76,8 @@
     },
     {
       "Name": "Run-WebServiceTests",
-      "Tests": 15,
-      "Assertions": 52,
+      "Tests": 16,
+      "Assertions": 59,
       "Failed": 0
     }
   ],
@@ -86,20 +86,24 @@
   "NativeWPFCompatibilityActuallyRun": true,
   "NativePdfRendererActuallyRun": true,
   "SelfContainedWindowsWebHostActuallyRun": true,
+  "WorkerRawUtf8PipeTransportActuallyRun": true,
   "BrowserEvidence": "../Browser-Web-Windows.json",
-  "BrowserTests": 10,
-  "BrowserAssertions": 240,
+  "BrowserTests": 12,
+  "BrowserAssertions": 296,
   "BrowserFailed": 0,
   "BrowserChannel": "msedge",
   "NativePngPdfPreviewInBrowserActuallyRun": true,
+  "MouseReleaseAndKeyboardTypingRegressionActuallyRun": true,
+  "UnsavedConnectionDraftRegressionActuallyRun": true,
   "BrowserHostRestartActuallyRun": true,
   "BrowserExternalAssetRequests": 0,
+  "SelfContainedWindowsHostArtifactSHA256": "5ddf4c94b41f6b836ab45baa3c452cf2cb8a444bfc27481e15ce17399df3d0ea",
+  "ValidationArtifactZipSHA256": "a56d7fb55b164f79d097ed83400095bd205fcced18ff90d1948beea89079e3aa",
   "Screens": [
     "Today (HTML)",
     "Reports (HTML)",
     "Settings (HTML)",
     "Reports at 1024x768 (HTML)"
   ],
-  "Scope": "Fresh synthetic-fixture execution at the pinned source. Twelve native PowerShell suites plus a separate real Edge/Kestrel/PowerShell browser run. The browser verified protected local API, rendered native PNG preview, two-button classification, preserved exact core state/PDF bytes, Undo, stale actions, filtered ZIP hashes, restart persistence, safe connection failures and unobstructed small-screen controls. Individual legacy suite Version fields can identify feature introduction; these raw reports are preserved unmodified. No hospital scanner authentication, real clinical data, physical keyboard/IME, workplace endpoint-policy approval or hospital SMB performance was tested.",
-  "SelfContainedWindowsHostArtifactSHA256": "3d5db76e10d4f0227e77fa01a8dc9e605aa9e895eb083104dc4da317d035a302"
+  "Scope": "Fresh synthetic execution at the pinned source. Twelve native PowerShell suites and a separate real Edge/Kestrel/PowerShell browser run. Browser checks cover mouse-release clicks followed by keyboard typing, connection draft retention after blur and job snapshots, password handling, native PNG PDF pages, two-button classification, preserved core/PDF bytes, Undo, stale actions, filtered ZIP hashes, restart persistence and unobstructed small-screen controls. Raw legacy suite Version labels may identify feature introduction; reports are copied unmodified. No real hospital scanner authentication, clinical data, physical keyboard/IME, workplace policy approval or hospital SMB performance was tested."
 }

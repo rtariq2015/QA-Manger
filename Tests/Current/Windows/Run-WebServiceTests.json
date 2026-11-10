@@ -1,8 +1,8 @@
 ﻿{
-    "Version":  "5.0.0",
+    "Version":  "5.0.1",
     "Runtime":  "5.1.26100.33648",
-    "Tests":  15,
-    "Assertions":  52,
+    "Tests":  16,
+    "Assertions":  59,
     "Failed":  0,
     "Results":  [
                     {
@@ -72,6 +72,11 @@
                     },
                     {
                         "Name":  "The web worker records scrubbed action outcomes without retaining request secrets",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Manual scanner folder and sign-in edits survive Save and connect plus later startup",
                         "Result":  "PASS",
                         "Details":  ""
                     },

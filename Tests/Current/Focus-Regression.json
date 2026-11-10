@@ -1,0 +1,56 @@
+{
+  "Product": "CT QA Manager Pro",
+  "TestRunnerVersion": "5.0.1",
+  "SyntheticOnly": true,
+  "ReportedBehavior": "Typing into a connection field works only while the mouse button is held.",
+  "PrimaryCause": "The body element has data-page and was included in a broad navigation selector. The bubbling click on mouse release called showPage and moved keyboard focus to the main workspace.",
+  "SecondaryCause": "Snapshot rendering replaced unsaved connection inputs after focus left them.",
+  "Baseline": {
+    "UIVersion": "5.0.0",
+    "UISourceCommit": "0f00c58ebd49355ec742e8128161d8ee90841b53",
+    "UIScriptSHA256": "2e5f58a796ace22e9714f894bf777d84ff4ee96dca8afb6c427f67f6ca391907",
+    "PublishedUIScriptVerifiedByteForByte": true,
+    "TestRunnerVersion": "5.0.1",
+    "BackendAndHostVersion": "5.0.1",
+    "Isolation": "Original published UI script was tested with the same new local host/backend to isolate the browser input behavior; this is not a complete v5.0.0 binary retest.",
+    "Outcome": "Expected regression reproduced",
+    "Tests": 3,
+    "Assertions": 10,
+    "Failed": 1,
+    "FailedScenario": "Normal mouse-release clicks keep settings and search fields focused for real keyboard input",
+    "FailureMessage": "Error: Folder input accepts keyboard typing after an ordinary released mouse click"
+  },
+  "Fixed": {
+    "Version": "5.0.1",
+    "SourceCommit": "e31f880cfe1345fb8cfafa6000356dccde3aa758",
+    "Tests": 12,
+    "Assertions": 292,
+    "Failed": 0,
+    "BrowserEvidence": "Browser-Web.json",
+    "MouseReleaseAndKeyboardTypingActuallyRun": true,
+    "Fields": [
+      "Connection folder",
+      "Username",
+      "Password",
+      "Report search"
+    ],
+    "ConnectionDraftChecks": [
+      "Typed and pasted nonsecret drafts survive blur and an unrelated Diagnostics job snapshot",
+      "Same-scanner snapshot refresh retains the unsaved DOM password",
+      "Switching scanners clears the password but retains each scanner nonsecret draft",
+      "An actual Save click sends the currently visible draft; an invalid synthetic folder is rejected without scanner access"
+    ]
+  },
+  "WindowsValidation": {
+    "Status": "Passed",
+    "Version": "5.0.1",
+    "SourceCommit": "e31f880cfe1345fb8cfafa6000356dccde3aa758",
+    "WorkflowRun": "https://github.com/rtariq2015/QA-Manger/actions/runs/42913290443",
+    "BrowserTests": 12,
+    "BrowserAssertions": 296,
+    "Failed": 0,
+    "BrowserEvidence": "Browser-Web-Windows.json",
+    "MouseReleaseKeyboardAndDraftChecksActuallyRun": true
+  },
+  "Scope": "Synthetic local reports and typed password canaries only. No real scanner authentication, hospital access or physical keyboard/IME claim."
+}

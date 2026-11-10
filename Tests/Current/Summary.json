@@ -1,77 +1,13 @@
 {
   "Product": "CT QA Manager Pro",
-  "Version": "5.0.0",
-  "Runtime": "PowerShell 7.4.13 on Linux (development checks; final pinned validation is Windows)",
-  "Tests": 184,
-  "Assertions": 1139,
+  "Version": "5.0.1",
+  "ValidationStatus": "Passed: final pinned Windows validation and separately labeled targeted Linux checks",
+  "Runtime": "PowerShell 7.4.13 on Linux (targeted adapter suite only)",
+  "SourceCommit": "e31f880cfe1345fb8cfafa6000356dccde3aa758",
+  "Tests": 14,
+  "Assertions": 49,
   "Failed": 0,
   "Suites": [
-    {
-      "Name": "Run-BrowseTests",
-      "Tests": 17,
-      "Assertions": 117,
-      "Failed": 0
-    },
-    {
-      "Name": "Run-ConnectionTests",
-      "Tests": 15,
-      "Assertions": 174,
-      "Failed": 0
-    },
-    {
-      "Name": "Run-ExportTests",
-      "Tests": 24,
-      "Assertions": 250,
-      "Failed": 0
-    },
-    {
-      "Name": "Run-MonthlyTests",
-      "Tests": 16,
-      "Assertions": 89,
-      "Failed": 0
-    },
-    {
-      "Name": "Run-NetworkTests",
-      "Tests": 13,
-      "Assertions": 43,
-      "Failed": 0
-    },
-    {
-      "Name": "Run-PdfTests",
-      "Tests": 8,
-      "Assertions": 25,
-      "Failed": 0
-    },
-    {
-      "Name": "Run-PortableTests",
-      "Tests": 16,
-      "Assertions": 45,
-      "Failed": 0
-    },
-    {
-      "Name": "Run-ReviewQueueTests",
-      "Tests": 12,
-      "Assertions": 40,
-      "Failed": 0
-    },
-    {
-      "Name": "Run-SupportTests",
-      "Tests": 16,
-      "Assertions": 78,
-      "Failed": 0
-    },
-    {
-      "Name": "Run-Tests",
-      "Tests": 24,
-      "Assertions": 197,
-      "Failed": 0
-    },
-    {
-      "Name": "Run-UpdateTests",
-      "Tests": 9,
-      "Assertions": 32,
-      "Failed": 0
-    },
     {
       "Name": "Run-WebServiceTests",
       "Tests": 14,
@@ -79,20 +15,24 @@
       "Failed": 0
     }
   ],
-  "BrowserEvidence": "Browser-Web.json: separate Linux Chromium run, 10 scenarios / 236 assertions; native Windows rendering was not run there.",
-  "WindowsEvidence": "Windows/Summary.json: 189 native scenarios / 1199 assertions at b468e750188de9aa6c1b5020d0e9fdd702379e71; workflow 42897377290.",
-  "Scope": "Root Current Run-*.json and top-level Tests/Assertions are Linux development results. Pinned final Windows suite and browser results are recorded separately; all use synthetic fixtures only.",
   "WindowsPowerShell51ActuallyRun": false,
   "NativeWPFActuallyRun": false,
   "WindowsDPAPIActuallyRun": false,
-  "BrowserWindowsEvidence": "Browser-Web-Windows.json: 10 real Edge scenarios / 240 assertions, including the native PNG preview and actual host restart.",
+  "BrowserEvidence": "Browser-Web.json: separate actual local-host Chromium run, 12 scenarios / 292 assertions.",
+  "FocusRegressionEvidence": "Focus-Regression.json: explicit published v5.0.0 UI failure and fixed v5.0.1 keyboard/draft checks.",
+  "WindowsEvidence": "Windows/Summary.json: final v5.0.1 source e31f880cfe1345fb8cfafa6000356dccde3aa758, workflow 42913290443, 190 native scenarios / 1206 assertions.",
+  "HistoricalEvidence": "Tests/Historical/v5.0.0 preserves the previous broad Linux and Windows run. Those earlier root Run-*.json reports were removed from Current to avoid presenting them as new execution.",
+  "Scope": "Root Run-WebServiceTests.json and top-level Tests/Assertions identify the new targeted Linux adapter suite only. Browser and complete final Windows suite results are separately counted. Old broad Linux reports remain historical and were not presented as newly rerun.",
+  "BrowserWindowsEvidence": "Browser-Web-Windows.json: real Edge run, 12 scenarios / 296 assertions, native PNG plus mouse-release typing and connection draft checks.",
   "WindowsValidation": {
-    "SourceCommit": "b468e750188de9aa6c1b5020d0e9fdd702379e71",
-    "WorkflowRun": "https://github.com/rtariq2015/QA-Manger/actions/runs/42897377290",
-    "PowerShellTests": 189,
-    "PowerShellAssertions": 1199,
-    "BrowserTests": 10,
-    "BrowserAssertions": 240,
+    "Status": "Passed",
+    "Version": "5.0.1",
+    "SourceCommit": "e31f880cfe1345fb8cfafa6000356dccde3aa758",
+    "WorkflowRun": "https://github.com/rtariq2015/QA-Manger/actions/runs/42913290443",
+    "PowerShellTests": 190,
+    "PowerShellAssertions": 1206,
+    "BrowserTests": 12,
+    "BrowserAssertions": 296,
     "Failed": 0
   }
 }

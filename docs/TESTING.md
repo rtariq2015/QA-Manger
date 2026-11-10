@@ -1,15 +1,21 @@
 # Testing and practical limits
 
-The final v5.0.0 Windows validation passed at source commit `b468e750188de9aa6c1b5020d0e9fdd702379e71` in [workflow run 42897377290](https://github.com/rtariq2015/QA-Manger/actions/runs/42897377290). All test PDFs, scanner folders, identities and password canaries are synthetic. No hospital reports or real credentials were used.
+The final v5.0.1 Windows validation passed at source `e31f880cfe1345fb8cfafa6000356dccde3aa758` in [workflow run 42913290443](https://github.com/rtariq2015/QA-Manger/actions/runs/42913290443). All report PDFs, scanner folders, typed identities and password canaries are synthetic. No hospital reports or real credentials were used.
 
 | Execution | Scenarios | Assertions | Failed | Saved evidence |
 | --- | ---: | ---: | ---: | --- |
-| Windows PowerShell 5.1: twelve native suites | 189 | 1,199 | 0 | [Windows summary](../Tests/Current/Windows/Summary.json) and its unmodified `Run-*.json` reports |
-| Windows Edge: actual self-contained host and PowerShell adapter | 10 | 240 | 0 | [Windows browser report](../Tests/Current/Browser-Web-Windows.json) |
-| Linux PowerShell 7.4.13: development suites | 184 | 1,139 | 0 | [Development summary](../Tests/Current/Summary.json) and root `Run-*.json` reports |
-| Linux Chromium: actual local host and adapter | 10 | 236 | 0 | [Linux browser report](../Tests/Current/Browser-Web.json) |
+| Windows PowerShell 5.1: twelve native suites | 190 | 1,206 | 0 | [Windows summary](../Tests/Current/Windows/Summary.json) and unmodified raw suite reports |
+| Windows Edge: actual self-contained host and adapter | 12 | 296 | 0 | [Windows browser report](../Tests/Current/Browser-Web-Windows.json) |
+| Linux PowerShell 7.4.13: targeted v5.0.1 adapter suite | 14 | 49 | 0 | [Adapter report](../Tests/Current/Run-WebServiceTests.json) |
+| Linux Chromium: actual local host and adapter | 12 | 292 | 0 | [Linux browser report](../Tests/Current/Browser-Web.json) |
 
-The Windows run is the final pinned release validation. Linux results are separately labeled development evidence, not proof of Windows behavior. Some native suites retain older feature-version labels internally; their raw files were copied unchanged from the final successful run. Earlier v4.4.1 evidence is preserved under [Tests/Historical/v4.4.1](../Tests/Historical/v4.4.1).
+The Windows run is the final pinned release validation. Linux reports are separately labeled targeted development checks. The earlier broad v5.0.0 Linux and Windows evidence remains under [Tests/Historical/v5.0.0](../Tests/Historical/v5.0.0); those older root Linux suites were not rerun or relabeled as this patch. Some native raw suite Version fields identify feature introduction and are preserved unchanged from the new successful Windows artifact.
+
+## Exact input regression
+
+[Focus-Regression.json](../Tests/Current/Focus-Regression.json) records a controlled comparison. The test runner is version 5.0.1, but the baseline interface script was copied byte-for-byte from published v5.0.0 commit `0f00c58ebd49355ec742e8128161d8ee90841b53`, running against the same new local host/backend. Its normal mouse-release click followed by actual keyboard typing fails in the folder field. The fixed interface passes that path for the folder, username, password and search fields. This isolates the original browser bug; it is not a complete retest of the old binary.
+
+The new draft scenario types and pastes nonsecret fields, blurs focus, completes a real Diagnostics job and observes the browser snapshot refresh. It verifies draft retention, DOM-only password handling, scanner-switch clearing, and the actual Save payload. The deliberately invalid synthetic folder is rejected without a scanner connection.
 
 ## What the browser run exercised
 
@@ -23,7 +29,7 @@ The browser tests use the real Kestrel host, Windows PowerShell worker, archived
 - A connection failure remains visible, an entered synthetic password does not appear in public job results, and the password input is cleared.
 - At 1024×768, Approve and Disapprove remain visible. Real mouse clicks on Undo and an offline approval after a failed scanner connection are unobstructed by notifications.
 
-The fresh Windows screenshots in [docs/images](images) show Today, Reports, Settings and the smaller Reports layout, using synthetic data only. They are actual interface captures, not design mockups.
+The four v5.0.1 Windows screenshots in [docs/images](images) show Today, Reports, Settings and the 1024×768 Reports layout. They were copied from the final successful workflow and contain only synthetic data; they are actual interface captures, not design mockups.
 
 ## Existing protections retained
 

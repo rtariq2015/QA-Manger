@@ -1,0 +1,105 @@
+{
+  "Version": "5.0.0",
+  "SourceCommit": "b468e750188de9aa6c1b5020d0e9fdd702379e71",
+  "WorkflowRun": "https://github.com/rtariq2015/QA-Manger/actions/runs/42897377290",
+  "Runtime": "Windows PowerShell 5.1.26100.33648",
+  "Host": "GitHub-hosted Windows Server 2025",
+  "Tests": 189,
+  "Assertions": 1199,
+  "Failed": 0,
+  "Suites": [
+    {
+      "Name": "Run-BrowseTests",
+      "Tests": 17,
+      "Assertions": 117,
+      "Failed": 0
+    },
+    {
+      "Name": "Run-ConnectionTests",
+      "Tests": 15,
+      "Assertions": 181,
+      "Failed": 0
+    },
+    {
+      "Name": "Run-ExportTests",
+      "Tests": 24,
+      "Assertions": 250,
+      "Failed": 0
+    },
+    {
+      "Name": "Run-MonthlyTests",
+      "Tests": 16,
+      "Assertions": 89,
+      "Failed": 0
+    },
+    {
+      "Name": "Run-NetworkTests",
+      "Tests": 13,
+      "Assertions": 43,
+      "Failed": 0
+    },
+    {
+      "Name": "Run-PdfTests",
+      "Tests": 8,
+      "Assertions": 25,
+      "Failed": 0
+    },
+    {
+      "Name": "Run-PortableTests",
+      "Tests": 17,
+      "Assertions": 48,
+      "Failed": 0
+    },
+    {
+      "Name": "Run-ReviewQueueTests",
+      "Tests": 14,
+      "Assertions": 83,
+      "Failed": 0
+    },
+    {
+      "Name": "Run-SupportTests",
+      "Tests": 16,
+      "Assertions": 79,
+      "Failed": 0
+    },
+    {
+      "Name": "Run-Tests",
+      "Tests": 24,
+      "Assertions": 197,
+      "Failed": 0
+    },
+    {
+      "Name": "Run-UpdateTests",
+      "Tests": 10,
+      "Assertions": 35,
+      "Failed": 0
+    },
+    {
+      "Name": "Run-WebServiceTests",
+      "Tests": 15,
+      "Assertions": 52,
+      "Failed": 0
+    }
+  ],
+  "WindowsPowerShell51ActuallyRun": true,
+  "WindowsDPAPIActuallyRun": true,
+  "NativeWPFCompatibilityActuallyRun": true,
+  "NativePdfRendererActuallyRun": true,
+  "SelfContainedWindowsWebHostActuallyRun": true,
+  "BrowserEvidence": "../Browser-Web-Windows.json",
+  "BrowserTests": 10,
+  "BrowserAssertions": 240,
+  "BrowserFailed": 0,
+  "BrowserChannel": "msedge",
+  "NativePngPdfPreviewInBrowserActuallyRun": true,
+  "BrowserHostRestartActuallyRun": true,
+  "BrowserExternalAssetRequests": 0,
+  "Screens": [
+    "Today (HTML)",
+    "Reports (HTML)",
+    "Settings (HTML)",
+    "Reports at 1024x768 (HTML)"
+  ],
+  "Scope": "Fresh synthetic-fixture execution at the pinned source. Twelve native PowerShell suites plus a separate real Edge/Kestrel/PowerShell browser run. The browser verified protected local API, rendered native PNG preview, two-button classification, preserved exact core state/PDF bytes, Undo, stale actions, filtered ZIP hashes, restart persistence, safe connection failures and unobstructed small-screen controls. Individual legacy suite Version fields can identify feature introduction; these raw reports are preserved unmodified. No hospital scanner authentication, real clinical data, physical keyboard/IME, workplace endpoint-policy approval or hospital SMB performance was tested.",
+  "SelfContainedWindowsHostArtifactSHA256": "3d5db76e10d4f0227e77fa01a8dc9e605aa9e895eb083104dc4da317d035a302"
+}
