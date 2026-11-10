@@ -152,7 +152,7 @@ function Update-QaWebLibrary {
         if([string]$owned.id -notmatch '^[a-fA-F0-9]{64}$' -or [string]$owned.hash -notmatch '^[a-fA-F0-9]{64}$' -or -not (Test-QaWebRelative ([string]$owned.relative)) -or $byId.ContainsKey([string]$owned.id) -or $used.ContainsKey([string]$owned.relative)){throw 'The readable-library ownership index contains invalid or conflicting entries. It was preserved.'}
         $byId[[string]$owned.id]=$owned;$used[[string]$owned.relative]=[string]$owned.id
     }
-    $selected=@{};foreach($id in $OnlyRecords){$selected[[string]$id]=$true};$rows=if($selected.Count){@($Dashboard.Records|Where-Object{$selected.ContainsKey([string]$_.Id)})}else{@($Dashboard.Records)}
+    $selected=@{};foreach($id in $OnlyRecords){$selected[[string]$id]=$true};$rows=@(if($selected.Count){$Dashboard.Records|Where-Object{$selected.ContainsKey([string]$_.Id)}}else{$Dashboard.Records})
     $metrics=[pscustomobject]@{libraryRoot=$library;copied=0;unchanged=0;total=$rows.Count;completed=0;hashedFiles=0;manifestWrites=0;retired=0;failed=0;cancelled=$false;metadataFastPath=(-not [bool]$Verify)}
     $checked=@{};$dirty=$false;$retire=New-Object 'Collections.Generic.List[object]';$reportsRoot=[IO.Path]::GetFullPath((Join-Path $Config.ArchiveRoot 'Reports')).TrimEnd('\','/')+[IO.Path]::DirectorySeparatorChar
     Set-QaWebProgress $Progress $(if($Verify){'Verifying'}else{'Library'}) 0 $rows.Count
