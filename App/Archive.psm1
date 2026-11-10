@@ -242,7 +242,7 @@ function Read-QaState { param($Paths)
 function Save-QaState { param($State,$Paths)
     $State.UpdatedUtc=[datetime]::UtcNow.ToString('o')
     Write-QaAtomicText $Paths.State ($State | ConvertTo-Json -Depth 12)
-    $csv=if(@($State.Records).Count -gt 0) { @($State.Records) | Select-Object Id,Scanner,ReportDate,ReportTime,Category,ClassificationBasis,OriginalFileName,SourcePath,Hash,Length,RelativePath,DestinationPath,FirstArchived,ConfirmedBy,ConfirmedAt,@{Name='ConfirmedComponents';Expression={@(Get-QaValue $_ 'ConfirmedComponents' $null) -join '; '}},PdfPagesHint | ConvertTo-Csv -NoTypeInformation } else { @('"Id","Scanner","ReportDate","ReportTime","Category","ClassificationBasis","OriginalFileName","SourcePath","Hash","Length","RelativePath","DestinationPath","FirstArchived","ConfirmedBy","ConfirmedAt","ConfirmedComponents","PdfPagesHint"') }
+    $csv=if(@($State.Records).Count -gt 0) { @($State.Records) | Select-Object Id,Scanner,ReportDate,ReportTime,Category,ClassificationBasis,OriginalFileName,SourcePath,Hash,Length,RelativePath,DestinationPath,FirstArchived,ConfirmedBy,ConfirmedAt,ReviewDecision,LastReviewId,@{Name='ConfirmedComponents';Expression={@(Get-QaValue $_ 'ConfirmedComponents' $null) -join '; '}},PdfPagesHint | ConvertTo-Csv -NoTypeInformation } else { @('"Id","Scanner","ReportDate","ReportTime","Category","ClassificationBasis","OriginalFileName","SourcePath","Hash","Length","RelativePath","DestinationPath","FirstArchived","ConfirmedBy","ConfirmedAt","ConfirmedComponents","PdfPagesHint"') }
     Write-QaAtomicText $Paths.Index ($csv -join "`r`n")
     if ([IO.Directory]::Exists($Paths.Transactions)) {
         foreach($f in [IO.Directory]::GetFiles($Paths.Transactions,'*.json')) {
@@ -643,7 +643,7 @@ function Get-QaAttention { param($Config,$State,$Paths)
         $rows=@($State.Records|Where-Object{$_.Scanner -eq $s.Scanner})
         foreach($r in $rows) {
             if ($r.Category -eq 'Monthly_QA/Pending_Verification') { [void]$attention.Add((New-QaIssue $s.Scanner 'MonthlyReview' ($s.Name+' - Possible Monthly report requires verification: '+$r.OriginalFileName) $r.DestinationPath $r.Id)) }
-            elseif($r.Category -eq 'Needs_Review' -or ([string](Get-QaValue $r 'ClassificationBasis' '') -like 'Provisional*' -and -not [string](Get-QaValue $r 'ConfirmedBy' ''))) { [void]$attention.Add((New-QaIssue $s.Scanner 'Classification' ($s.Name+' - Review this report classification: '+$r.OriginalFileName) $r.DestinationPath $r.Id)) }
+            elseif(($r.Category -eq 'Needs_Review' -and -not ([string](Get-QaValue $r ReviewDecision) -eq 'Declined' -and $r.ConfirmedBy -and $r.ConfirmedAt)) -or ([string](Get-QaValue $r 'ClassificationBasis' '') -like 'Provisional*' -and -not [string](Get-QaValue $r 'ConfirmedBy' ''))) { [void]$attention.Add((New-QaIssue $s.Scanner 'Classification' ($s.Name+' - Review this report classification: '+$r.OriginalFileName) $r.DestinationPath $r.Id)) }
         }
         foreach($group in @($rows|Group-Object OriginalFileName|Where-Object{$_.Count -gt 1})) {
             [void]$attention.Add((New-QaIssue $s.Scanner 'DuplicateName' ($s.Name+' - '+$group.Count+' preserved records share the filename '+$group.Name+'. They may be distinct source files or revisions.') (Join-Path $Paths.Reports $s.Scanner)))
@@ -717,6 +717,14 @@ function Get-QaDashboard {
     $legacy=([IO.File]::Exists((Join-Path $paths.Root 'QA_Master_Index_v2.csv')) -and -not [IO.File]::Exists($paths.State))
     return [pscustomobject]@{Records=@($state.Records);MonthlyCoverage=@(Get-QaMonthlyCoverage -Config $Config -Records @($state.Records));Attention=@(Get-QaAttention $Config $state $paths);Scanners=@($scanners.ToArray());SetupComplete=[bool]$state.SetupComplete;TotalReports=@($state.Records).Count;LegacyDetected=$legacy;ArchiveRoot=$paths.Root;IndexPath=$paths.Index;HistoryPath=$paths.History;LastUpdated=$state.UpdatedUtc}
 }
+function Get-QaRecordReviewStamp {
+    [CmdletBinding()]param($Record)
+    $value=[ordered]@{Id=[string](Get-QaValue $Record Id);Hash=[string](Get-QaValue $Record Hash);Category=[string](Get-QaValue $Record Category);Basis=[string](Get-QaValue $Record ClassificationBasis);Reviewer=[string](Get-QaValue $Record ConfirmedBy);TimeTicks=(Get-QaTimestampTicks (Get-QaValue $Record ConfirmedAt));Decision=[string](Get-QaValue $Record ReviewDecision);LastReviewId=[string](Get-QaValue $Record LastReviewId);Components=@(Get-QaValue $Record ConfirmedComponents @())}
+    return Get-QaHashText ($value|ConvertTo-Json -Depth 5 -Compress)
+}
+function Get-QaReviewSnapshot($Record) {
+    return [pscustomobject]@{Version=1;Category=[string](Get-QaValue $Record Category);ClassificationBasis=[string](Get-QaValue $Record ClassificationBasis);ConfirmedBy=[string](Get-QaValue $Record ConfirmedBy);ConfirmedAt=(Get-QaValue $Record ConfirmedAt);ConfirmedComponents=@(Get-QaValue $Record ConfirmedComponents @());ReviewDecision=[string](Get-QaValue $Record ReviewDecision)}
+}
 function Get-QaReviewPlan { param($Config,$State,$Decisions)
     $items=New-Object 'System.Collections.Generic.List[object]';$seen=@{}
     foreach($d in @($Decisions)) {
@@ -725,6 +733,21 @@ function Get-QaReviewPlan { param($Config,$State,$Decisions)
         $found=@($State.Records|Where-Object{$_.Id -eq $id})
         if($found.Count -ne 1){throw 'The selected report no longer exists uniquely in the archive index.'}
         $r=$found[0];$category=[string]$d.Category
+        $action=[string](Get-QaValue $d ReviewAction 'Classify')
+        if($action -notin @('Classify','Accept','Decline','Undo')){throw 'Choose a supported review action.'}
+        $stamp=[string](Get-QaValue $d ExpectedReviewStamp)
+        if(($action -ne 'Classify' -and -not $stamp) -or ($stamp -and $stamp -cne (Get-QaRecordReviewStamp $r))){throw 'This report was reviewed or changed after it was displayed. Reload it before deciding.'}
+        $restore=$null
+        if($action -eq 'Undo'){
+            $latest=@($State.Reviews|Where-Object RecordId -eq $id|Select-Object -Last 1)
+            if($latest.Count -ne 1 -or -not (Get-QaValue $latest[0] ReviewId) -or [string](Get-QaValue $d UndoReviewId) -cne [string](Get-QaValue $latest[0] ReviewId) -or $null -eq $latest[0].PSObject.Properties['PreviousReviewSnapshot']){throw 'Only the latest recorded decision with an undo snapshot can be undone.'}
+            $restore=$latest[0].PreviousReviewSnapshot
+            if($restore.Version -ne 1){throw 'This review snapshot cannot be restored.'}
+            $category=[string]$restore.Category
+        }
+        if($action -eq 'Accept' -and $category -notin @('Daily_QA','Monthly_QA','Acceptance_Tests')){throw 'Accept must confirm a definite report type.'}
+        if($action -eq 'Decline' -and $category -notin @('Daily_QA','Acceptance_Tests','Needs_Review')){throw 'Decline keeps the PDF as Daily QA, an acceptance test, or another reviewed report; it cannot confirm Monthly QA.'}
+
         if($category -notin $script:QaCategories){throw 'Choose a supported QA category.'}
         if([string]::IsNullOrWhiteSpace([string]$d.Reviewer) -or [string]::IsNullOrWhiteSpace([string]$d.Reason)){throw 'Enter the authorized reviewer name and reason before confirming a classification.'}
         if(-not [IO.File]::Exists($r.DestinationPath) -or (Get-QaFileHash $r.DestinationPath) -ne $r.Hash){throw 'The saved PDF is missing or has changed. Run the integrity audit before reviewing it.'}
@@ -733,15 +756,16 @@ function Get-QaReviewPlan { param($Config,$State,$Decisions)
         $source=@($Config.Sources|Where-Object{$_.Scanner -ceq $r.Scanner})[0]
         $reviewMonth=if([string]$r.ReportDate -match '^\d{4}-\d{2}-\d{2}$'){([string]$r.ReportDate).Substring(0,7)}else{(Get-Date).ToString('yyyy-MM')}
         $required=@(Get-QaChecklistForMonth $source $reviewMonth)
-        $declared=@(Get-QaComponentLabels (Get-QaValue $d 'ConfirmedComponents' $null) 'Confirmed report items')
+        $declared=@(Get-QaComponentLabels $(if($null -ne $restore){Get-QaValue $restore ConfirmedComponents @()}else{Get-QaValue $d 'ConfirmedComponents' $null}) 'Confirmed report items')
         if($category -ne 'Monthly_QA' -and $declared.Count -gt 0){throw 'Monthly checklist items can be confirmed only for a reviewed Monthly QA report.'}
         $canonical=New-Object 'System.Collections.Generic.List[string]'
         foreach($component in $declared) {
+            if($null -ne $restore){[void]$canonical.Add([string]$component);continue}
             $match=@($required|Where-Object{$_ -ieq $component})
             if($match.Count -ne 1){throw ('The confirmed item is not in this scanner''s department checklist: '+$component)}
             [void]$canonical.Add([string]$match[0])
         }
-        [void]$items.Add([pscustomobject]@{RecordId=$id;Scanner=$r.Scanner;OriginalFileName=$r.OriginalFileName;OldCategory=$r.Category;Category=$category;Reviewer=[string]$d.Reviewer;Reason=[string]$d.Reason;Hash=$r.Hash;SourcePath=$r.SourcePath;ConfirmedComponents=[object[]]$canonical.ToArray()})
+        [void]$items.Add([pscustomobject]@{RecordId=$id;Scanner=$r.Scanner;OriginalFileName=$r.OriginalFileName;OldCategory=$r.Category;Category=$category;Reviewer=[string]$d.Reviewer;Reason=[string]$d.Reason;Hash=$r.Hash;SourcePath=$r.SourcePath;ConfirmedComponents=[object[]]$canonical.ToArray();ReviewAction=$action;PreviousReviewSnapshot=(Get-QaReviewSnapshot $r);RestoreSnapshot=$restore;ReviewId=[guid]::NewGuid().ToString('N')})
     }
     if($items.Count -eq 0){throw 'Select at least one report to review.'}
     $summary=New-QaSummary;$summary.Total=$items.Count;$summary.Description=($items.Count.ToString()+' classification decision(s) ready for review.')
@@ -753,8 +777,16 @@ function Invoke-QaReview { param($Config,$State,$Paths,$Decisions,$Summary)
         $old=@($State.Records|Where-Object{$_.Id -eq $item.RecordId})[0]
         $r=$old|Select-Object *;$r.Category=$item.Category;$r.ClassificationBasis='Authorized review: '+$item.Reason;$r.ConfirmedBy=$item.Reviewer;$r.ConfirmedAt=[datetime]::UtcNow.ToString('o')
         Set-QaValue $r 'ConfirmedComponents' ([object[]]@($item.ConfirmedComponents))
+        if($item.ReviewAction -eq 'Undo'){
+            foreach($field in @('ClassificationBasis','ConfirmedBy','ConfirmedAt','ReviewDecision')){Set-QaValue $r $field (Get-QaValue $item.RestoreSnapshot $field)}
+        }else{
+            $decision=if($item.ReviewAction -eq 'Decline'){'Declined'}elseif($item.Category -in @('Daily_QA','Monthly_QA','Acceptance_Tests')){'Accepted'}else{'Pending'}
+            Set-QaValue $r ReviewDecision $decision
+        }
+        Set-QaValue $r LastReviewId $item.ReviewId
+
         $r.RelativePath=Get-QaRelativeTarget $r $r.Hash;$r.DestinationPath=Join-Path $Paths.Reports $r.RelativePath
-        $review=[pscustomobject]@{RecordId=$r.Id;Hash=$r.Hash;From=$old.Category;To=$r.Category;Reviewer=$item.Reviewer;Reason=$item.Reason;TimeUtc=$r.ConfirmedAt;PreviousPath=$old.DestinationPath;NewPath=$r.DestinationPath;PreviousRelativePath=$old.RelativePath;NewRelativePath=$r.RelativePath;HistoryRelativePath='';ConfirmedComponents=[object[]]@($r.ConfirmedComponents)}
+        $review=[pscustomobject]@{ReviewId=$item.ReviewId;ReviewAction=$item.ReviewAction;PreviousReviewSnapshot=$item.PreviousReviewSnapshot;NewReviewSnapshot=(Get-QaReviewSnapshot $r);RecordId=$r.Id;Hash=$r.Hash;From=$old.Category;To=$r.Category;Reviewer=$item.Reviewer;Reason=$item.Reason;TimeUtc=[datetime]::UtcNow.ToString('o');PreviousPath=$old.DestinationPath;NewPath=$r.DestinationPath;PreviousRelativePath=$old.RelativePath;NewRelativePath=$r.RelativePath;HistoryRelativePath='';ConfirmedComponents=[object[]]@($r.ConfirmedComponents)}
         Assert-QaNoReparse $r.DestinationPath $Paths.Root
         if(-not $r.DestinationPath.Equals($old.DestinationPath,[StringComparison]::OrdinalIgnoreCase)) {
             $token=[guid]::NewGuid().ToString('N');$stage=Join-Path $Paths.Staging ($token+'.partial')
@@ -936,4 +968,4 @@ function Invoke-QaOperation {
         return [pscustomobject]@{Mode=$Mode;Summary=$summary;Scanners=@($state.Scanners);Attention=@(Get-QaAttention $Config $state $paths);Records=@($state.Records);MonthlyCoverage=@(Get-QaMonthlyCoverage -Config $Config -Records @($state.Records));SetupComplete=[bool]$state.SetupComplete}
     } finally { if($null -ne $lock){$lock.Dispose()} }
 }
-Export-ModuleMember -Function Get-QaDefaultConfig,Read-QaConfig,Save-QaConfig,Get-QaDashboard,Invoke-QaOperation,Get-QaMonthlyCoverage,Get-QaChecklistForMonth
+Export-ModuleMember -Function Get-QaDefaultConfig,Read-QaConfig,Save-QaConfig,Get-QaDashboard,Invoke-QaOperation,Get-QaMonthlyCoverage,Get-QaChecklistForMonth,Get-QaRecordReviewStamp

@@ -39,6 +39,30 @@ function Select-QaReviewGroups {
 function Test-QaReportPending {
     [CmdletBinding()]param($Record)
     $category=[string](Get-QaReviewValue $Record Category)
+    if($category -notin @('Monthly_QA','Monthly_QA/Pending_Verification') -and [string](Get-QaReviewValue $Record ReviewDecision) -eq 'Declined' -and (Get-QaReviewValue $Record ConfirmedBy) -and (Get-QaReviewValue $Record ConfirmedAt)){return $false}
     return ($category -in @('Needs_Review','Monthly_QA/Pending_Verification') -or ([string](Get-QaReviewValue $Record ClassificationBasis) -like 'Provisional*' -and -not [string](Get-QaReviewValue $Record ConfirmedBy)))
 }
-Export-ModuleMember -Function Get-QaReviewGroups,Select-QaReviewGroups,Test-QaReportPending
+function Get-QaReportReviewStatus {
+    [CmdletBinding()]param($Record)
+    if(Test-QaReportPending $Record){return 'Pending'}
+    if((Get-QaReviewValue $Record ConfirmedBy) -and (Get-QaReviewValue $Record ConfirmedAt)){
+        if([string](Get-QaReviewValue $Record ReviewDecision) -eq 'Declined'){return 'Declined'}
+        return 'Accepted'
+    }
+    return 'Organized'
+}
+function New-QaQuickReviewDecision {
+    [CmdletBinding()]param($Record,[ValidateSet('Accept','Decline')][string]$Action,[string]$Category,[string]$Reviewer,[bool]$Viewed,[bool]$Authorized,[string[]]$Components=@())
+    if(-not $Viewed -or -not $Authorized -or [string]::IsNullOrWhiteSpace($Reviewer)){throw 'View the PDF and enter the authorized reviewer name before accepting or declining.'}
+    if(-not (Test-QaReportPending $Record)){throw 'This report is no longer pending. Reload the review list.'}
+    Import-Module (Join-Path $PSScriptRoot 'Archive.psm1')
+    $reason=if($Action -eq 'Accept'){'Accepted report type after viewing the saved PDF.'}else{'Declined the suggested Monthly label after viewing the PDF; retained with the selected report type.'}
+    return [pscustomobject]@{RecordId=[string]$Record.Id;Hash=[string]$Record.Hash;Category=$Category;Reviewer=$Reviewer.Trim();Reason=$reason;ConfirmedComponents=@($Components);ReviewAction=$Action;ExpectedReviewStamp=(Get-QaRecordReviewStamp $Record)}
+}
+function New-QaUndoReviewDecision {
+    [CmdletBinding()]param($Record,[string]$ReviewId,[string]$Reviewer)
+    if(-not $ReviewId -or [string]::IsNullOrWhiteSpace($Reviewer)){throw 'An authorized reviewer and the latest decision are required to undo.'}
+    Import-Module (Join-Path $PSScriptRoot 'Archive.psm1')
+    return [pscustomobject]@{RecordId=[string]$Record.Id;Hash=[string]$Record.Hash;Category=[string]$Record.Category;Reviewer=$Reviewer.Trim();Reason='Undo the latest review decision and restore the previous report state.';ReviewAction='Undo';UndoReviewId=$ReviewId;ExpectedReviewStamp=(Get-QaRecordReviewStamp $Record);ConfirmedComponents=@()}
+}
+Export-ModuleMember -Function Get-QaReviewGroups,Select-QaReviewGroups,Test-QaReportPending,Get-QaReportReviewStatus,New-QaQuickReviewDecision,New-QaUndoReviewDecision

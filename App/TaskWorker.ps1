@@ -1,4 +1,4 @@
-﻿[CmdletBinding()]param([ValidateSet('Probe','Reconnect','ReadPdf','SourceHash','Inventory')][string]$Action,[string]$InputPath,[string]$OutputPath)
+﻿[CmdletBinding()]param([ValidateSet('Probe','Reconnect','ReadPdf','SourceHash','Inventory','PreviewPdf')][string]$Action,[string]$InputPath,[string]$OutputPath)
 Set-StrictMode -Version 2.0
 $ErrorActionPreference='Stop'
 try {
@@ -13,6 +13,10 @@ try {
         'Reconnect' {
             Import-Module (Join-Path $PSScriptRoot 'Network.psm1') -Force
             $value=Reconnect-QaScanner -Scanner $request.Scanner -Credential $request.Credential -InWorker
+        }
+        'PreviewPdf' {
+            Import-Module (Join-Path $PSScriptRoot 'PdfPreview.psm1') -Force
+            $value=Get-QaPdfPreviewPage -Config $request.Config -RecordId $request.RecordId -PageNumber ([int]$request.PageNumber)
         }
         'ReadPdf' {
             Import-Module (Join-Path $PSScriptRoot 'PdfReader.psm1') -Force
