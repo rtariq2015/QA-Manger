@@ -185,6 +185,25 @@ Scenario 'An upgrade verifies package files and preserves local settings and dat
     }finally{$ErrorActionPreference=$previousPreference}
     Check ($LASTEXITCODE -ne 0 -and [IO.File]::ReadAllText((Join-Path $target 'App/Example.psm1')) -eq '# new program') 'Checksum mismatch rejected without replacing working program'
 }
+if([Environment]::OSVersion.Platform -eq [PlatformID]::Win32NT){
+    Scenario 'The production application CMD starts quietly from a folder containing spaces and parentheses' {
+        $folder=Join-Path $TestRoot 'Launcher test (portable)';[void][IO.Directory]::CreateDirectory((Join-Path $folder 'App'))
+        $launcher=Join-Path $folder 'Start CT QA Manager.cmd'
+        [IO.File]::WriteAllBytes($launcher,[IO.File]::ReadAllBytes((Join-Path $ProductRoot 'Start CT QA Manager.cmd')))
+        $stub='param([switch]$PortableLaunch)'+"`r`n"+'if(-not $PortableLaunch){exit 7}'+"`r`n"+'Write-Output "Synthetic application launcher reached PowerShell"'+"`r`n"+'exit 0'
+        [IO.File]::WriteAllText((Join-Path $folder 'App/Start.ps1'),$stub,(New-Object Text.UTF8Encoding $true))
+        $info=New-Object Diagnostics.ProcessStartInfo;$info.FileName=$env:ComSpec;$info.Arguments='/d /c ""'+$launcher+'""';$info.UseShellExecute=$false;$info.CreateNoWindow=$true;$info.RedirectStandardOutput=$true;$info.RedirectStandardError=$true
+        $process=[Diagnostics.Process]::Start($info)
+        try{
+            if(-not $process.WaitForExit(20000)){try{$process.Kill()}catch{};throw 'The application CMD did not finish within its test timeout.'}
+            $output=$process.StandardOutput.ReadToEnd()+$process.StandardError.ReadToEnd()
+            Check ($process.ExitCode -eq 0) 'The exact application CMD reaches PowerShell successfully'
+            Check ([string]::IsNullOrWhiteSpace($output)) 'CMD does not print a corrupt first command or echo application paths and arguments'
+            $startup=[IO.File]::ReadAllText((Join-Path $folder 'Logs/Startup.log'))
+            Check ($startup -like '*Synthetic application launcher reached PowerShell*') 'Normal startup logging is retained'
+        }finally{$process.Dispose()}
+    }
+}
 $failed=@($script:Results|Where-Object Result -eq 'FAIL').Count
 $report=[pscustomobject]@{Version='4.3.0';Runtime=$PSVersionTable.PSVersion.ToString();Platform=[Environment]::OSVersion.ToString();WindowsPowerShell51ActuallyRun=($PSVersionTable.PSVersion.Major -eq 5);Tests=$script:Results.Count;Assertions=$script:Assertions;Failed=$failed;Results=@($script:Results.ToArray());SyntheticScenario=$TestRoot}
 if($OutputPath){$report|ConvertTo-Json -Depth 12|Set-Content -LiteralPath $OutputPath -Encoding UTF8}

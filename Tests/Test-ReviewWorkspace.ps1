@@ -26,6 +26,18 @@ function Start-Work {
 . (Join-Path $ProductRoot 'App/ReviewQueueUi.ps1')
 Refresh-Dashboard;$script:InitialRecord=$script:Dashboard.Records[0]
 $script:Window=Load-Window ([IO.File]::ReadAllText((Join-Path $ProductRoot 'App/MainWindow.xaml')))
+$script:HelpInvocations=0
+function Show-Help {$script:HelpInvocations++}
+$mainKeyCall=$ast.Find({param($node) $node -is [Management.Automation.Language.InvokeMemberExpressionAst] -and $node.Member.Value -eq 'Add_PreviewKeyDown' -and $node.Expression.Extent.Text -eq '$script:Window'},$true)
+$keyBody=$mainKeyCall.Arguments[0].ScriptBlock.Extent.Text
+$script:Window.Add_PreviewKeyDown([scriptblock]::Create($keyBody.Substring(1,$keyBody.Length-2)))
+function Raise-NativeKey($Control,[Windows.Input.Key]$Key) {
+    $source=[Windows.PresentationSource]::FromVisual($Control)
+    $keyEvent=New-Object Windows.Input.KeyEventArgs([Windows.Input.Keyboard]::PrimaryDevice,$source,0,$Key)
+    $keyEvent.RoutedEvent=[Windows.Input.Keyboard]::PreviewKeyDownEvent
+    $Control.RaiseEvent($keyEvent)
+    return $keyEvent
+}
 $script:Window.Show();$script:Window.Dispatcher.Invoke([Action]{$script:Window.UpdateLayout()},[Windows.Threading.DispatcherPriority]::ApplicationIdle)
 $script:Clock=[Diagnostics.Stopwatch]::StartNew();$timer=New-Object Windows.Threading.DispatcherTimer;$timer.Interval=[timespan]::FromMilliseconds(200)
 $timer.Add_Tick({
@@ -36,7 +48,22 @@ $timer.Add_Tick({
    0 {
     Check ($q.Viewed -and $null -ne $q.Controls.QueuePageImage.Source) 'The actual workspace displays the rendered PDF'
     Check (-not $q.Controls.QueueAccept.IsEnabled) 'Accept stays disabled until the reviewer authorizes the session'
-    $q.Controls.QueueReviewer.Text='Synthetic UI reviewer';$q.Controls.QueueAuthorized.IsChecked=$true;Update-QuickQueueControls
+    $plainKey=Raise-NativeKey $script:Window ([Windows.Input.Key]::A)
+    Check (-not $plainKey.Handled) 'Normal main-window keys reach their target without an event-argument error'
+    $helpKey=Raise-NativeKey $script:Window ([Windows.Input.Key]::F1)
+    Check ($helpKey.Handled -and $script:HelpInvocations -eq 1) 'The production F1 handler receives and marks the actual native key event'
+    [void]$q.Controls.QueueReviewer.Focus()
+    foreach($letter in "Synthetic O'Neil-Test".ToCharArray()) {
+        $typedKey=Raise-NativeKey $q.Controls.QueueReviewer ([Windows.Input.Key]::A)
+        Check (-not $typedKey.Handled) 'Reviewer typing traverses the native preview-key route without consuming ordinary input'
+        $q.Controls.QueueReviewer.AppendText([string]$letter)
+    }
+    [void](Raise-NativeKey $q.Controls.QueueReviewer ([Windows.Input.Key]::Back))
+    $q.Controls.QueueReviewer.Text=$q.Controls.QueueReviewer.Text.Substring(0,$q.Controls.QueueReviewer.Text.Length-1)
+    $q.Controls.QueueReviewer.AppendText('t')
+    Check ($q.Controls.QueueReviewer.Text -eq "Synthetic O'Neil-Test") 'Reviewer name, apostrophe, hyphen and backspace editing survive the actual keyboard handlers'
+    Check (-not $q.Controls.QueueAccept.IsEnabled) 'Typing a name alone does not authorize review'
+    $q.Controls.QueueAuthorized.IsChecked=$true;Update-QuickQueueControls
     Check $q.Controls.QueueAccept.IsEnabled 'Viewing plus reviewer authorization enables Accept'
     $q.Controls.QueueSkip.RaiseEvent((New-Object Windows.RoutedEventArgs([Windows.Controls.Button]::ClickEvent)))
     Check ((Test-QaReportPending $script:Dashboard.Records[0]) -and $null -eq $q.Record) 'Skip clears the current session item without changing pending status'

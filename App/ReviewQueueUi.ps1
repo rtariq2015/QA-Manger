@@ -86,7 +86,7 @@ function Open-QuickQueueDeclineMenu {
     $menu=New-Object Windows.Controls.ContextMenu
     foreach($choice in @(@{Label='Not Monthly - save as Daily QA';Value='Daily_QA'},@{Label='Not Monthly - acceptance test';Value='Acceptance_Tests'},@{Label='Not Monthly - keep as another reviewed report';Value='Needs_Review'})){
         $item=New-Object Windows.Controls.MenuItem;$item.Header=$choice.Label;$item.Tag=$choice.Value
-        $item.Add_Click({param($sender,$args) Submit-QuickQueueDecision -Action Decline -Category ([string]$sender.Tag)})
+        $item.Add_Click({param($sender,$eventArgs) Submit-QuickQueueDecision -Action Decline -Category ([string]$sender.Tag)})
         [void]$menu.Items.Add($item)
     }
     $menu.PlacementTarget=$q.Controls.QueueDecline;$menu.IsOpen=$true
@@ -159,8 +159,8 @@ function Open-QuickReviewQueue {
     $controls.PreviousPage.Add_Click({$script:ReviewQueue.PageNumber--;Start-QuickQueuePreview});$controls.NextPage.Add_Click({$script:ReviewQueue.PageNumber++;Start-QuickQueuePreview})
     $controls.PreviewZoom.Add_SelectionChanged({Update-QuickQueueZoom});$controls.PreviewScroll.Add_SizeChanged({Update-QuickQueueZoom})
     $controls.QueueClose.Add_Click({$script:ReviewQueue.Window.Close()})
-    $window.Add_PreviewKeyDown({param($sender,$args) if($args.KeyboardDevice.Modifiers -eq [Windows.Input.ModifierKeys]::Control){if($args.Key -eq [Windows.Input.Key]::Enter -and $script:ReviewQueue.Controls.QueueAccept.IsEnabled){Submit-QuickQueueDecision -Action Accept;$args.Handled=$true}elseif($args.Key -eq [Windows.Input.Key]::D){Open-QuickQueueDeclineMenu;$args.Handled=$true}}})
-    $window.Add_Closing({param($sender,$args) $queue=$script:ReviewQueue;if($script:Busy -and $queue.Waiting){$args.Cancel=$true;$queue.CloseWhenIdle=$true;if($queue.Waiting -eq 'PdfPreview'){$script:Worker.Shared.Cancel=$true};$queue.Controls.QueueMessage.Text='Finishing the current safe step before closing...'}})
+    $window.Add_PreviewKeyDown({param($sender,$eventArgs) if($eventArgs.KeyboardDevice.Modifiers -eq [Windows.Input.ModifierKeys]::Control){if($eventArgs.Key -eq [Windows.Input.Key]::Enter -and $script:ReviewQueue.Controls.QueueAccept.IsEnabled){Submit-QuickQueueDecision -Action Accept;$eventArgs.Handled=$true}elseif($eventArgs.Key -eq [Windows.Input.Key]::D){Open-QuickQueueDeclineMenu;$eventArgs.Handled=$true}}})
+    $window.Add_Closing({param($sender,$eventArgs) $queue=$script:ReviewQueue;if($script:Busy -and $queue.Waiting){$eventArgs.Cancel=$true;$queue.CloseWhenIdle=$true;if($queue.Waiting -eq 'PdfPreview'){$script:Worker.Shared.Cancel=$true};$queue.Controls.QueueMessage.Text='Finishing the current safe step before closing...'}})
     if($DemoSnapshot){$controls.QueueReviewer.Text='Synthetic reviewer';Show-QuickQueueRecord;return $window}
     $window.Add_ContentRendered({if($null -eq $script:ReviewQueue.Record){Show-QuickQueueRecord}})
     [void]$window.ShowDialog();$script:SessionReviewer=$controls.QueueReviewer.Text.Trim();$dirty=$q.BrowseDirty;$controls.QueuePageImage.Source=$null;$script:ReviewQueue=$null
@@ -187,8 +187,8 @@ function Show-ReportDecisionHistory {
     $latest=$null;if($history.Count){$latest=$history[-1]}
     $canUndo=($null -ne $latest -and [string](Value-Or $latest ReviewId) -eq [string](Value-Or $record LastReviewId) -and $null -ne (Value-Or $latest PreviousReviewSnapshot $null))
     $d.FindName('Undo').IsEnabled=$canUndo;$d.Tag=@{Record=$record;Latest=$latest;Decision=$null}
-    $d.FindName('Close').Add_Click({param($sender,$args) [Windows.Window]::GetWindow($sender).Close()})
-    $d.FindName('Undo').Add_Click({param($sender,$args) $parent=[Windows.Window]::GetWindow($sender)
+    $d.FindName('Close').Add_Click({param($sender,$eventArgs) [Windows.Window]::GetWindow($sender).Close()})
+    $d.FindName('Undo').Add_Click({param($sender,$eventArgs) $parent=[Windows.Window]::GetWindow($sender)
         if($parent.FindName('Authorized').IsChecked -ne $true -or -not $parent.FindName('Reviewer').Text.Trim()){[void][Windows.MessageBox]::Show($parent,'Enter your name and confirm authorization before undoing.','Reviewer needed');return}
         try{$parent.Tag.Decision=New-QaUndoReviewDecision -Record $parent.Tag.Record -ReviewId $parent.Tag.Latest.ReviewId -Reviewer $parent.FindName('Reviewer').Text;$parent.DialogResult=$true}catch{[void][Windows.MessageBox]::Show($parent,$_.Exception.Message,'Cannot undo')}
     })

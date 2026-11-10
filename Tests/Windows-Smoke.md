@@ -67,3 +67,10 @@ The following checks apply to the added report tools and still require real Wind
 4. Skip a second PDF: it remains pending and can be revisited. Close the review window during rendering and verify safe cancellation. Close during saving and verify it finishes the save before closing.
 5. Reopen the application. Find accepted/declined reports using their filters; inspect Decision history and undo the latest supported decision. Earlier history must remain. Confirm the readable copy and export use Other Reports/Reviewed for a declined-other report.
 6. Disconnect a scanner and review already saved PDFs offline. This should require no network sign-in. Confirm that the application never marks a clinical PASS or full checklist merely because the report type was accepted.
+
+
+## Reviewer keyboard regression (4.4.1)
+
+With the approved work copy, open Review pending PDFs and type a reviewer name containing spaces, an apostrophe or a hyphen. Edit it with Backspace. Confirm that no Handled/KeyboardDevice/Key error appears, and that authorization is still required before Accept becomes available. Check F1 help from the main window, update ZIP drag-and-drop, and safe closing while a worker is active. The hosted regression raises native routed WPF key events and edits the name field; physical keyboard/IME behavior still needs this workstation check.
+
+Double-click Start CT QA Manager.cmd. Normal startup should not print the launcher commands or a corrupt first-line command. The Windows regression executes the exact CMD in a synthetic folder containing spaces and parentheses with a harmless PowerShell stub.

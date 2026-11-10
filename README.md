@@ -1,4 +1,4 @@
-# CT QA Manager Pro 4.4.0
+# CT QA Manager Pro 4.4.1
 
 [Download the latest full program, update ZIP, and older-version upgrade helper from Releases](https://github.com/rtariq2015/QA-Manger/releases/latest).
 
@@ -13,6 +13,10 @@ A portable Windows workspace for collecting, reviewing, finding and sharing CT Q
 ![Offline report library with synthetic PDFs](docs/images/offline-library.png)
 
 *Actual browser screenshot of the generated offline library with synthetic PDFs. Both images use demonstration data.*
+
+## Reviewer input crash fixed (4.4.1)
+
+The patch fixes a crash triggered by typing a reviewer name. Keyboard, drag-and-drop, close and dispatcher handlers now preserve their actual event arguments instead of binding PowerShell's automatic `$args` variable. The startup CMD is BOM-free so Windows recognizes `@echo off` and keeps normal launch quiet. Existing reports, settings and review history stay in place.
 
 ## View, accept or decline
 

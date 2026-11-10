@@ -33,7 +33,9 @@ notes.write_text(f'''Choose the download for your task:
 - **[Visual preview]({base}{preview.name})**: Six actual Windows screens using synthetic demonstration data.
 - **[SHA-256 checksums]({base}SHA256SUMS.txt)**.
 
-This release adds a focused **View PDF → Accept or Decline → Next** workspace. Accepted and declined suggestions leave pending immediately; skipped PDFs stay pending. Reports remain saved, with Accepted/Declined filters, persistent decision history and audited Undo. Monthly coverage counts only the department items explicitly selected; accepting a report type does not infer clinical PASS/FAIL. Native PDF page previews use the Windows renderer, with the normal viewer available as a fallback. Readable folders refresh once per review session.
+This patch fixes the crash when typing a reviewer name, and corrects the startup CMD encoding so Windows recognizes the first command. Keyboard, drag-and-drop, close and error handlers preserve the supplied event arguments. Regression checks cover native routed keyboard events, reviewer editing, F1, quiet CMD startup and the existing review workflow.
+
+The application includes a focused **View PDF → Accept or Decline → Next** workspace. Accepted and declined suggestions leave pending immediately; skipped PDFs stay pending. Reports remain saved, with Accepted/Declined filters, persistent decision history and audited Undo. Monthly coverage counts only the department items explicitly selected; accepting a report type does not infer clinical PASS/FAIL. Native PDF page previews use the Windows renderer, with the normal viewer available as a fallback. Readable folders refresh once per review session.
 
 The earlier scanner connection improvements, offline ZIP updates and complete retained scrubbed support logs remain included. Nothing is uploaded automatically.
 

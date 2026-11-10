@@ -55,3 +55,8 @@ Support ZIPs rebuild every included activity record from fixed operation/outcome
 Privacy tests inject private canaries into arbitrary fields, legacy details, PDF evidence and unknown statuses, inspect every ZIP entry, and verify three concurrent workers retain sixty events. Windows tests run the standalone ZIP export while the application lock is held. The .NET Framework compression assemblies are loaded explicitly. Per-PDF events record only safe aliases/counts, and automatic reading pauses when its queue is empty. Failed reads stay cached until the destination changes or a manual retry is requested.
 
 The Releases workflow publishes only generic clean assets after checking that the recorded native Windows run succeeded and that its runtime source matches the release commit. It rejects any private local profile in the build checkout. Uploaded assets are first attached to a draft, then published together. Release checksums detect corruption; they are not a publisher signature.
+
+
+## Reviewer input patch (4.4.1)
+
+The review regression now exercises native routed key events before appending each character, Backspace, reviewer names with punctuation and the production F1 handler. A cross-platform test executes the actual dispatcher handler with an error event and verifies that it marks that event handled and preserves the original message. The launcher test executes the production CMD with a harmless PowerShell stub and verifies quiet startup plus its normal Startup.log. These tests address paths missed when the earlier test set the reviewer TextBox text directly. They do not claim to automate a physical keyboard or IME.

@@ -1,7 +1,7 @@
 """Build a standalone gallery of synthetic native Windows screenshots."""
 import argparse,base64,html
 from pathlib import Path
-parser=argparse.ArgumentParser();parser.add_argument('--output',required=True);parser.add_argument('--version',default='4.4.0');args=parser.parse_args()
+parser=argparse.ArgumentParser();parser.add_argument('--output',required=True);parser.add_argument('--version',default='4.4.1');args=parser.parse_args()
 root=Path(__file__).resolve().parents[1]
 screens=[('dashboard','Dashboard'),('connections','Connections & settings'),('review','Archive review'),('reports','Reports & confirmation'),('queue','View, accept or decline'),('updates','Offline updates')]
 buttons=''.join(f'<button onclick="show({i})">{html.escape(label)}</button>' for i,(name,label) in enumerate(screens))

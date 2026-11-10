@@ -24,6 +24,16 @@ function Decide($Fixture,[string]$Action='Accept',[string]$Category='Monthly_QA'
     [void](Invoke-QaOperation -Config $Fixture.Config -Mode Reclassify -Decisions @($decision))
     return @((Get-QaDashboard $Fixture.Config).Records|Where-Object Id -eq $Fixture.Record.Id)[0]
 }
+Scenario 'The production dispatcher handler preserves event arguments and reports the original error' {
+    $startAst=[Management.Automation.Language.Parser]::ParseFile((Join-Path $ProductRoot 'App/Start.ps1'),[ref]$null,[ref]$null)
+    $call=$startAst.Find({param($node) $node -is [Management.Automation.Language.InvokeMemberExpressionAst] -and $node.Member.Value -eq 'Add_UnhandledException'},$true)
+    $body=$call.Arguments[0].ScriptBlock.Extent.Text;$handler=[scriptblock]::Create($body.Substring(1,$body.Length-2))
+    $script:OriginalEventMessage='';function Show-Note {param($Text,$Title,$IsError) $script:OriginalEventMessage=$Text}
+    $event=[pscustomobject]@{Handled=$false;Exception=(New-Object InvalidOperationException 'Synthetic action error')}
+    & $handler $null $event
+    Check $event.Handled 'The supplied event, not the automatic arguments array, is marked handled'
+    Check ($script:OriginalEventMessage -eq 'Synthetic action error') 'The original error survives the handler rather than becoming a missing Handled-property failure'
+}
 Scenario 'Quick decisions require PDF review, reviewer identity and authorization' {
     $f=New-QueueFixture 'Authorization'
     foreach($case in @(@{Viewed=$false;Authorized=$true;Reviewer='Synthetic'},@{Viewed=$true;Authorized=$false;Reviewer='Synthetic'},@{Viewed=$true;Authorized=$true;Reviewer=''})){
@@ -147,7 +157,7 @@ if([Environment]::OSVersion.Platform -eq [PlatformID]::Win32NT){
 
 }
 $failed=@($script:Results|Where-Object Result -eq 'FAIL').Count
-$report=[pscustomobject]@{Version='4.4.0';Runtime=$PSVersionTable.PSVersion.ToString();WindowsPowerShell51ActuallyRun=($PSVersionTable.PSVersion.Major -eq 5);NativePdfPreviewActuallyRun=$script:NativePreviewActuallyRun;Tests=$script:Results.Count;Assertions=$script:Assertions;Failed=$failed;Results=@($script:Results.ToArray());Scope='Synthetic saved PDFs: accept, decline, exact undo snapshots, stale decisions, source preservation, unchanged rescans and native Windows PDF page rendering.'}
+$report=[pscustomobject]@{Version='4.4.1';Runtime=$PSVersionTable.PSVersion.ToString();WindowsPowerShell51ActuallyRun=($PSVersionTable.PSVersion.Major -eq 5);NativePdfPreviewActuallyRun=$script:NativePreviewActuallyRun;Tests=$script:Results.Count;Assertions=$script:Assertions;Failed=$failed;Results=@($script:Results.ToArray());Scope='Synthetic saved PDFs: accept, decline, exact undo snapshots, stale decisions, source preservation, unchanged rescans and native Windows PDF page rendering.'}
 if($OutputPath){$report|ConvertTo-Json -Depth 12|Set-Content $OutputPath -Encoding UTF8}
 Write-Host ('Result: '+($report.Tests-$failed)+'/'+$report.Tests+' scenarios; '+$report.Assertions+' assertions.')
 Remove-Item $TestRoot -Recurse -Force

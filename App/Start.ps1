@@ -233,11 +233,11 @@ function Choose-ReportYears {
         [void]$checks.Add($check);[void]$d.FindName('YearsList').Children.Add($check)
     }
     $d.Tag=@{Checks=@($checks.ToArray());Action=''}
-    $d.FindName('SelectAll').Add_Click({param($sender,$args) $parent=[Windows.Window]::GetWindow($sender);foreach($check in $parent.Tag.Checks){$check.IsChecked=$true}})
-    $d.FindName('Clear').Add_Click({param($sender,$args) $parent=[Windows.Window]::GetWindow($sender);foreach($check in $parent.Tag.Checks){$check.IsChecked=$false}})
-    $d.FindName('Cancel').Add_Click({param($sender,$args) [Windows.Window]::GetWindow($sender).DialogResult=$false})
-    $d.FindName('AllYears').Add_Click({param($sender,$args) $parent=[Windows.Window]::GetWindow($sender);$parent.Tag.Action='All';$parent.DialogResult=$true})
-    $d.FindName('Apply').Add_Click({param($sender,$args) $parent=[Windows.Window]::GetWindow($sender);if(@($parent.Tag.Checks | Where-Object {$_.IsChecked -eq $true}).Count -eq 0){[void][Windows.MessageBox]::Show($parent,'Check at least one year, or choose Use all years.','Choose years');return};$parent.Tag.Action='Selected';$parent.DialogResult=$true})
+    $d.FindName('SelectAll').Add_Click({param($sender,$eventArgs) $parent=[Windows.Window]::GetWindow($sender);foreach($check in $parent.Tag.Checks){$check.IsChecked=$true}})
+    $d.FindName('Clear').Add_Click({param($sender,$eventArgs) $parent=[Windows.Window]::GetWindow($sender);foreach($check in $parent.Tag.Checks){$check.IsChecked=$false}})
+    $d.FindName('Cancel').Add_Click({param($sender,$eventArgs) [Windows.Window]::GetWindow($sender).DialogResult=$false})
+    $d.FindName('AllYears').Add_Click({param($sender,$eventArgs) $parent=[Windows.Window]::GetWindow($sender);$parent.Tag.Action='All';$parent.DialogResult=$true})
+    $d.FindName('Apply').Add_Click({param($sender,$eventArgs) $parent=[Windows.Window]::GetWindow($sender);if(@($parent.Tag.Checks | Where-Object {$_.IsChecked -eq $true}).Count -eq 0){[void][Windows.MessageBox]::Show($parent,'Check at least one year, or choose Use all years.','Choose years');return};$parent.Tag.Action='Selected';$parent.DialogResult=$true})
     if($d.ShowDialog() -eq $true){
         $script:UpdatingFilters=$true
         try {
@@ -335,8 +335,8 @@ function Show-Help {
         $d.FindName('HelpStepTwo').Text='2. The app checks scanners and shows a preview of the reports.'
         $d.FindName('HelpStepThree').Text='3. Click Confirm and copy reports. After that, use Update Reports.'
     }
-    $d.FindName('Close').Add_Click({param($sender,$args) [Windows.Window]::GetWindow($sender).DialogResult=$false})
-    $d.FindName('FindReports').Add_Click({param($sender,$args) [Windows.Window]::GetWindow($sender).DialogResult=$true})
+    $d.FindName('Close').Add_Click({param($sender,$eventArgs) [Windows.Window]::GetWindow($sender).DialogResult=$false})
+    $d.FindName('FindReports').Add_Click({param($sender,$eventArgs) [Windows.Window]::GetWindow($sender).DialogResult=$true})
     if([IO.File]::Exists((Join-Path $PSScriptRoot 'Reference/Siemens_QA_Guide.html'))){$d.FindName('QaGuide').Visibility=[Windows.Visibility]::Visible}
     $d.FindName('QaGuide').Add_Click({Open-QaReportGuide})
     if($d.ShowDialog() -eq $true){Show-Page Reports}
@@ -439,8 +439,8 @@ function Show-ReportText {
     $matching=@($script:Dashboard.Records | Where-Object {[string]$_.Id -eq $script:ReadingRecordId})
     $d.Tag=$null;if($matching.Count -eq 1){$d.Tag=$matching[0]}
     $d.FindName('OpenPdf').IsEnabled=($null -ne $d.Tag)
-    $d.FindName('OpenPdf').Add_Click({param($sender,$args) $parent=[Windows.Window]::GetWindow($sender);if($null -ne $parent.Tag){Safe-Open ([string]$parent.Tag.DestinationPath)}})
-    $d.FindName('Close').Add_Click({param($sender,$args) [Windows.Window]::GetWindow($sender).Close()})
+    $d.FindName('OpenPdf').Add_Click({param($sender,$eventArgs) $parent=[Windows.Window]::GetWindow($sender);if($null -ne $parent.Tag){Safe-Open ([string]$parent.Tag.DestinationPath)}})
+    $d.FindName('Close').Add_Click({param($sender,$eventArgs) [Windows.Window]::GetWindow($sender).Close()})
     $script:Controls.StatusText.Text='Report text is ready. The saved report label has not been changed.'
     [void]$d.ShowDialog()
 }
@@ -618,8 +618,8 @@ function Add-Scanner {
     $used=@($script:Config.Sources | ForEach-Object {[string]$_.DriveLetter})
     $available=@($letters | Where-Object {$used -notcontains $_})
     $d.FindName('Drive').ItemsSource=$available;$d.FindName('Drive').SelectedIndex=0
-    $d.FindName('Cancel').Add_Click({param($sender,$args) [Windows.Window]::GetWindow($sender).DialogResult=$false})
-    $d.FindName('Add').Add_Click({param($sender,$args) $parent=[Windows.Window]::GetWindow($sender);if(-not $parent.FindName('Name').Text.Trim() -or -not $parent.FindName('Path').Text.Trim() -or -not $parent.FindName('Username').Text.Trim()){[void][Windows.MessageBox]::Show($parent,'Enter the scanner name, network folder, and username.','Connection details needed');return};$parent.DialogResult=$true})
+    $d.FindName('Cancel').Add_Click({param($sender,$eventArgs) [Windows.Window]::GetWindow($sender).DialogResult=$false})
+    $d.FindName('Add').Add_Click({param($sender,$eventArgs) $parent=[Windows.Window]::GetWindow($sender);if(-not $parent.FindName('Name').Text.Trim() -or -not $parent.FindName('Path').Text.Trim() -or -not $parent.FindName('Username').Text.Trim()){[void][Windows.MessageBox]::Show($parent,'Enter the scanner name, network folder, and username.','Connection details needed');return};$parent.DialogResult=$true})
     if($d.ShowDialog() -ne $true){$d.FindName('Password').Clear();return}
     try{
         $name=$d.FindName('Name').Text.Trim()
@@ -673,9 +673,9 @@ function Fill-Settings {
         $ed.Row=$row
         $script:ScannerEditors[[string]$source.Scanner]=$ed
         $ed.Forget.Tag=[string]$source.Scanner
-        $ed.Forget.Add_Click({param($sender,$args) try{Remove-QaSavedCredential -AppRoot $script:AppRoot -ScannerId ([string]$sender.Tag) | Out-Null;$editor=$script:ScannerEditors[[string]$sender.Tag];$editor.Password.Clear();$editor.SavedStatus.Text='Saved sign-in removed. Existing Windows connections are not disconnected.';$sender.IsEnabled=$false}catch{Show-Note $_.Exception.Message 'Saved sign-in could not be removed' $true}})
+        $ed.Forget.Add_Click({param($sender,$eventArgs) try{Remove-QaSavedCredential -AppRoot $script:AppRoot -ScannerId ([string]$sender.Tag) | Out-Null;$editor=$script:ScannerEditors[[string]$sender.Tag];$editor.Password.Clear();$editor.SavedStatus.Text='Saved sign-in removed. Existing Windows connections are not disconnected.';$sender.IsEnabled=$false}catch{Show-Note $_.Exception.Message 'Saved sign-in could not be removed' $true}})
         $ed.SaveConnect.Tag=[string]$source.Scanner
-        $ed.SaveConnect.Add_Click({param($sender,$args) if(Save-Settings -CredentialScannerId ([string]$sender.Tag)){Start-Work -Mode Reconnect -Plan ([pscustomobject]@{ScannerId=[string]$sender.Tag})}})
+        $ed.SaveConnect.Add_Click({param($sender,$eventArgs) if(Save-Settings -CredentialScannerId ([string]$sender.Tag)){Start-Work -Mode Reconnect -Plan ([pscustomobject]@{ScannerId=[string]$sender.Tag})}})
         if($script:ConnectionFeedback.ContainsKey([string]$source.Scanner)){$ed.ConnectionResult.Text=$script:ConnectionFeedback[[string]$source.Scanner].Message}
         Set-CredentialStatusLabel $source $ed
         [void]$script:Controls.ScannerSettingsPanel.Children.Add($row)
@@ -891,7 +891,7 @@ function Show-Preview {
     foreach($connection in @(Value-Or $Result ConnectionResults @())){if($connection.Status -ne 'Connected'){[void]$warnings.Add(([string]$connection.Scanner+': '+[string]$connection.Message))}}
     $dialog.FindName('PreviewConnections').Text=(@($warnings|Select-Object -Unique) -join "`r`n")
     $dialog.FindName('Reconnect').Visibility=$(if($warnings.Count -and $ApplyMode -eq 'Import'){[Windows.Visibility]::Visible}else{[Windows.Visibility]::Collapsed})
-    $dialog.FindName('Reconnect').Add_Click({param($sender,$args) $parent=[Windows.Window]::GetWindow($sender);$parent.Tag='Reconnect';$parent.DialogResult=$false})
+    $dialog.FindName('Reconnect').Add_Click({param($sender,$eventArgs) $parent=[Windows.Window]::GetWindow($sender);$parent.Tag='Reconnect';$parent.DialogResult=$false})
     Add-RecordLabels $plan.Items
     $dialog.FindName('PreviewGrid').ItemsSource=@($plan.Items)
     if ($ApplyMode -eq 'Reclassify') {
@@ -924,8 +924,8 @@ function Show-Credentials {
     $d.FindName('CredentialTitle').Text='Connect to '+$Name
     $d.FindName('Username').Text=$Username
     $d.FindName('Failure').Text=$Failure
-    $d.FindName('Skip').Add_Click({param($sender,$args) [Windows.Window]::GetWindow($sender).DialogResult=$false})
-    $d.FindName('Connect').Add_Click({param($sender,$args) $parent=[Windows.Window]::GetWindow($sender); if($parent.FindName('Username').Text.Trim() -and $parent.FindName('Password').SecurePassword.Length -gt 0){$parent.DialogResult=$true}})
+    $d.FindName('Skip').Add_Click({param($sender,$eventArgs) [Windows.Window]::GetWindow($sender).DialogResult=$false})
+    $d.FindName('Connect').Add_Click({param($sender,$eventArgs) $parent=[Windows.Window]::GetWindow($sender); if($parent.FindName('Username').Text.Trim() -and $parent.FindName('Password').SecurePassword.Length -gt 0){$parent.DialogResult=$true}})
     if($d.ShowDialog() -eq $true) {
         $secure=$d.FindName('Password').SecurePassword.Copy()
         $cred=New-Object System.Management.Automation.PSCredential($d.FindName('Username').Text.Trim(),$secure)
@@ -1018,16 +1018,16 @@ function Review-SelectedReport {
     $monthly=([string]$record.Category -eq 'Monthly_QA')
     $d.FindName('ChecklistControls').IsEnabled=$monthly
     $d.FindName('ChecklistModeNote').Text=$(if($monthly){'Only your explicit selections are saved. PDF text suggestions do not select items.'}else{'Choose a confirmed Monthly QA report type to record checklist items.'})
-    $d.FindName('Category').Add_SelectionChanged({param($sender,$args)
+    $d.FindName('Category').Add_SelectionChanged({param($sender,$eventArgs)
         $parent=[Windows.Window]::GetWindow($sender)
         $monthly=([string]$sender.SelectedValue -eq 'Monthly_QA')
         $parent.FindName('ChecklistControls').IsEnabled=$monthly
         $parent.FindName('ChecklistModeNote').Text=$(if($monthly){'Only your explicit selections are saved. PDF text suggestions do not select items.'}else{'Checklist items are recorded only for a confirmed Monthly QA report.'})
     })
-    $d.FindName('SelectAllComponents').Add_Click({param($sender,$args) $parent=[Windows.Window]::GetWindow($sender);foreach($check in $parent.Tag.Checks){$check.IsChecked=$true}})
-    $d.FindName('Open').Add_Click({param($sender,$args) $parent=[Windows.Window]::GetWindow($sender);Safe-Open ([string]$parent.Tag.Record.DestinationPath)})
-    $d.FindName('Cancel').Add_Click({param($sender,$args) [Windows.Window]::GetWindow($sender).DialogResult=$false})
-    $d.FindName('Preview').Add_Click({param($sender,$args)
+    $d.FindName('SelectAllComponents').Add_Click({param($sender,$eventArgs) $parent=[Windows.Window]::GetWindow($sender);foreach($check in $parent.Tag.Checks){$check.IsChecked=$true}})
+    $d.FindName('Open').Add_Click({param($sender,$eventArgs) $parent=[Windows.Window]::GetWindow($sender);Safe-Open ([string]$parent.Tag.Record.DestinationPath)})
+    $d.FindName('Cancel').Add_Click({param($sender,$eventArgs) [Windows.Window]::GetWindow($sender).DialogResult=$false})
+    $d.FindName('Preview').Add_Click({param($sender,$eventArgs)
         $parent=[Windows.Window]::GetWindow($sender)
         if($parent.FindName('Authorized').IsChecked -eq $true -and $parent.FindName('Reviewer').Text.Trim() -and $parent.FindName('Reason').Text.Trim()){$parent.DialogResult=$true}
         else{[void][Windows.MessageBox]::Show($parent,'Enter your reviewer name and reason, and confirm that you are authorized and have checked this PDF and any selected items.','Confirmation information needed')}
@@ -1094,7 +1094,7 @@ function Prepare-UpdatePackage {
         $script:PreparedUpdate=$plan
         Write-QaSupportEvent -AppRoot $script:AppRoot -Operation OfflineUpdate -Outcome Completed -Counts @{Files=$plan.Files}
         $script:Controls.UpdatePackagePath.Text=$Path
-        $script:Controls.UpdatePackageSummary.Text=('Current: 4.4.0 / Selected: '+$plan.Version+' / '+$plan.Files+' checked program files. Reports and saved settings stay in place.')
+        $script:Controls.UpdatePackageSummary.Text=('Current: 4.4.1 / Selected: '+$plan.Version+' / '+$plan.Files+' checked program files. Reports and saved settings stay in place.')
         $script:Controls.InstallUpdateButton.IsEnabled=$true
     }catch{$script:Controls.UpdatePackagePath.Text='The package could not be checked.';$script:Controls.UpdatePackageSummary.Text=$_.Exception.Message;Show-Note $_.Exception.Message 'Update file needs attention' $true}
 }
@@ -1136,9 +1136,9 @@ function Open-ReviewGroup {
     $d=New-Dialog 'Archive review details' $content 860 600
     $d.FindName('Title').Text=$group.Message;$d.FindName('NextStep').Text=$group.NextStep
     $d.FindName('Items').ItemsSource=@($group.Items)
-    $d.FindName('Open').Add_Click({param($sender,$args) $parent=[Windows.Window]::GetWindow($sender);$selected=$parent.FindName('Items').SelectedItem;if($null -ne $selected){$parent.Tag=$selected;$parent.DialogResult=$true}})
-    $d.FindName('Settings').Add_Click({param($sender,$args) $parent=[Windows.Window]::GetWindow($sender);$parent.Tag='Settings';$parent.DialogResult=$true})
-    $d.FindName('Close').Add_Click({param($sender,$args) [Windows.Window]::GetWindow($sender).DialogResult=$false})
+    $d.FindName('Open').Add_Click({param($sender,$eventArgs) $parent=[Windows.Window]::GetWindow($sender);$selected=$parent.FindName('Items').SelectedItem;if($null -ne $selected){$parent.Tag=$selected;$parent.DialogResult=$true}})
+    $d.FindName('Settings').Add_Click({param($sender,$eventArgs) $parent=[Windows.Window]::GetWindow($sender);$parent.Tag='Settings';$parent.DialogResult=$true})
+    $d.FindName('Close').Add_Click({param($sender,$eventArgs) [Windows.Window]::GetWindow($sender).DialogResult=$false})
     if($d.ShowDialog() -eq $true){if($d.Tag -is [string]){Show-QaSettings -ScannerId ([string]$group.Scanner)}else{Open-AttentionItem -Item $d.Tag}}
 }
 function Save-SupportReport {
@@ -1174,8 +1174,8 @@ function Open-AttentionItem {
     $d=New-Dialog 'QA attention details' $content 700 440
     $d.Tag=$path; $d.FindName('Details').Text=$message
     $d.FindName('Open').IsEnabled=([bool]$path)
-    $d.FindName('Open').Add_Click({param($sender,$args) $parent=[Windows.Window]::GetWindow($sender);$p=[string]$parent.Tag;if([IO.Path]::GetExtension($p) -eq '.pdf'){Safe-Open $p}else{Safe-Open $p -Folder}})
-    $d.FindName('Close').Add_Click({param($sender,$args) [Windows.Window]::GetWindow($sender).Close()})
+    $d.FindName('Open').Add_Click({param($sender,$eventArgs) $parent=[Windows.Window]::GetWindow($sender);$p=[string]$parent.Tag;if([IO.Path]::GetExtension($p) -eq '.pdf'){Safe-Open $p}else{Safe-Open $p -Folder}})
+    $d.FindName('Close').Add_Click({param($sender,$eventArgs) [Windows.Window]::GetWindow($sender).Close()})
     [void]$d.ShowDialog()
 }
 
@@ -1225,8 +1225,8 @@ try {
     $script:Controls.ReportsGrid.Add_SelectionChanged({Show-SelectedReportHelp})
     $script:Controls.ChooseUpdateButton.Add_Click({Choose-UpdatePackage})
     $script:Controls.InstallUpdateButton.Add_Click({Install-PreparedUpdate})
-    $script:Controls.UpdateDropZone.Add_DragOver({param($sender,$args) $args.Effects=[Windows.DragDropEffects]::None;if($args.Data.GetDataPresent([Windows.DataFormats]::FileDrop)){$args.Effects=[Windows.DragDropEffects]::Copy};$args.Handled=$true})
-    $script:Controls.UpdateDropZone.Add_Drop({param($sender,$args) if($args.Data.GetDataPresent([Windows.DataFormats]::FileDrop)){$files=@($args.Data.GetData([Windows.DataFormats]::FileDrop));if($files.Count -eq 1){Prepare-UpdatePackage ([string]$files[0])}else{Show-Note 'Drop one update ZIP at a time.'}};$args.Handled=$true})
+    $script:Controls.UpdateDropZone.Add_DragOver({param($sender,$eventArgs) $eventArgs.Effects=[Windows.DragDropEffects]::None;if($eventArgs.Data.GetDataPresent([Windows.DataFormats]::FileDrop)){$eventArgs.Effects=[Windows.DragDropEffects]::Copy};$eventArgs.Handled=$true})
+    $script:Controls.UpdateDropZone.Add_Drop({param($sender,$eventArgs) if($eventArgs.Data.GetDataPresent([Windows.DataFormats]::FileDrop)){$files=@($eventArgs.Data.GetData([Windows.DataFormats]::FileDrop));if($files.Count -eq 1){Prepare-UpdatePackage ([string]$files[0])}else{Show-Note 'Drop one update ZIP at a time.'}};$eventArgs.Handled=$true})
     $script:Controls.SourceAuditButton.Add_Click({Start-Work -Mode SourceAudit})
     $script:Controls.AnalyzeButton.Add_Click({$script:LastAnalysis=[datetime]::Now;Start-Work -Mode Analysis})
     $script:Controls.CompatibilityButton.Add_Click({Start-Work -Mode Compatibility})
@@ -1288,7 +1288,7 @@ try {
     $script:Controls.ReviewReportButton.Add_Click({Review-SelectedReport})
     $script:Controls.ReviewHistoryButton.Add_Click({Show-ReportDecisionHistory})
     $script:Controls.AttentionList.Add_MouseDoubleClick({Open-ReviewGroup})
-    $script:Controls.AttentionList.Add_PreviewKeyDown({param($sender,$args) if($args.Key -eq [Windows.Input.Key]::Enter){Open-ReviewGroup;$args.Handled=$true}})
+    $script:Controls.AttentionList.Add_PreviewKeyDown({param($sender,$eventArgs) if($eventArgs.Key -eq [Windows.Input.Key]::Enter){Open-ReviewGroup;$eventArgs.Handled=$true}})
     $script:Controls.SaveSettingsButton.Add_Click({[void](Save-Settings)})
     $script:Controls.BrowseArchiveButton.Add_Click({$p=Choose-Folder 'Choose the archive parent location' $script:Controls.ArchivePath.Text;if($p){$script:Controls.ArchivePath.Text=$p}})
     $script:Controls.ImportConnectionsButton.Add_Click({
@@ -1375,7 +1375,7 @@ try {
             Start-Work -Mode BrowseRefresh
         }
     })
-    $script:Window.Add_Closing({param($sender,$args) if($script:Busy){$args.Cancel=$true;$script:Worker.Shared.Cancel=$true;$script:Controls.StatusText.Text='Finishing the current safe checkpoint. Close again when the operation has stopped.';Show-Note 'A report operation is still running. Cancellation has been requested. Please leave this window open until the current safe checkpoint finishes.' 'Finishing safely'}})
+    $script:Window.Add_Closing({param($sender,$eventArgs) if($script:Busy){$eventArgs.Cancel=$true;$script:Worker.Shared.Cancel=$true;$script:Controls.StatusText.Text='Finishing the current safe checkpoint. Close again when the operation has stopped.';Show-Note 'A report operation is still running. Cancellation has been requested. Please leave this window open until the current safe checkpoint finishes.' 'Finishing safely'}})
     $script:MonitorTimer=New-Object Windows.Threading.DispatcherTimer
     $script:MonitorTimer.Interval=[timespan]::FromSeconds(60)
     $script:MonitorTimer.Add_Tick({
@@ -1385,8 +1385,8 @@ try {
         if([bool](Value-Or $script:Config AutoAnalyze $true) -and $script:AnalysisPending -gt 0 -and ([datetime]::Now-$script:LastAnalysis).TotalMinutes -ge 5){$script:LastAnalysis=[datetime]::Now;Start-Work -Mode Analysis}
     })
     $script:Window.Add_Closed({if(-not $script:DemoPreview){Write-QaSupportEvent -AppRoot $script:AppRoot -Operation Shutdown -Outcome Completed};if($null -ne $script:PreparedUpdate -and -not $script:UpdateLaunching){try{Remove-QaUpdateStage -AppRoot $script:AppRoot -StageRoot $script:PreparedUpdate.StageRoot}catch{}};$script:Timer.Stop();$script:MonitorTimer.Stop();$script:SearchTimer.Stop();if(-not $script:DemoPreview){$script:ProgramLock.Dispose()}})
-    $script:Window.Add_PreviewKeyDown({param($sender,$args) if($args.Key -eq [Windows.Input.Key]::F1){Show-Help;$args.Handled=$true}})
-    $script:Window.Dispatcher.Add_UnhandledException({param($sender,$args) $args.Handled=$true;Show-Note $args.Exception.Message 'Application action needs attention' $true})
+    $script:Window.Add_PreviewKeyDown({param($sender,$eventArgs) if($eventArgs.Key -eq [Windows.Input.Key]::F1){Show-Help;$eventArgs.Handled=$true}})
+    $script:Window.Dispatcher.Add_UnhandledException({param($sender,$eventArgs) $eventArgs.Handled=$true;Show-Note $eventArgs.Exception.Message 'Application action needs attention' $true})
     if($PortableLaunch) {
         try {
             Add-Type -TypeDefinition @'
