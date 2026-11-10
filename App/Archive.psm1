@@ -90,6 +90,8 @@ function Assert-QaConfig { param($Config)
         $drive=New-Object IO.DriveInfo([IO.Path]::GetPathRoot($archiveFull))
         if ($drive.DriveType -eq [IO.DriveType]::Network) { throw 'Choose a local archive folder. Network and mapped scanner drives are read-only sources.' }
     }
+    $interval=[int](Get-QaValue $Config 'MonitorMinutes' 15)
+    if($interval -ne 0 -and ($interval -lt 5 -or $interval -gt 240)){throw 'Check interval must be 0, or 5 through 240 minutes.'}
     if($null -ne $Config.PSObject.Properties['AutoUpdateOnOpen'] -and $Config.AutoUpdateOnOpen -isnot [bool]){throw 'Update on opening must be enabled or disabled.'}
     if (@($Config.Sources).Count -lt 1 -or @($Config.Sources).Count -gt 20) { throw 'Configure between 1 and 20 scanner connections.' }
     $ids=@{};$names=@{};$letters=@{};$sourcePaths=@{}
@@ -100,6 +102,8 @@ function Assert-QaConfig { param($Config)
         $displayName=([string]$s.Name).Trim()
         if ([string]::IsNullOrWhiteSpace($displayName) -or $displayName.Length -gt 64 -or $displayName -match '[\x00-\x1f]' -or $names.ContainsKey($displayName)) { throw 'Give each scanner a different display name of 1 through 64 characters.' }
         $names[$displayName]=$true
+        $due=[int](Get-QaValue $s 'MonthlyDueDay' 0);if($due -lt 0 -or $due -gt 31){throw 'Monthly due day must be 0 through 31.'}
+        foreach($exception in @(Get-QaValue $s 'ExcludedDates' @())){$day=[datetime]::MinValue;if(-not [datetime]::TryParseExact([string]$exception,'yyyy-MM-dd',[Globalization.CultureInfo]::InvariantCulture,[Globalization.DateTimeStyles]::None,[ref]$day)){throw 'Daily exceptions must use yyyy-MM-dd.'}}
         $username=[string](Get-QaValue $s 'Username' 'SCANNER_USERNAME')
         if ($username.Length -gt 256 -or $username -match '[\x00-\x1f]') { throw 'The scanner username contains unsupported characters or is too long.' }
         if ([string]::IsNullOrWhiteSpace([string]$s.Path) -or -not [IO.Path]::IsPathRooted([string]$s.Path)) { throw ('Choose an absolute source folder for '+$s.Name+'.') }
@@ -130,8 +134,14 @@ function Assert-QaConfig { param($Config)
 function Read-QaConfig {
     [CmdletBinding()]param([Parameter(Mandatory=$true)][string]$AppRoot)
     $path=Join-Path (Join-Path $AppRoot 'Config') 'Settings.json'
+    $local=Join-Path (Join-Path $AppRoot 'Config') 'Settings.local.json';if([IO.File]::Exists($local)){$path=$local}
     if ([IO.File]::Exists($path)) { $c=[IO.File]::ReadAllText($path) | ConvertFrom-Json; Set-QaValue $c 'AppRoot' ([IO.Path]::GetFullPath($AppRoot)); if ([string]::IsNullOrWhiteSpace([string]$c.ArchiveRoot) -or [string]$c.ArchiveRoot -eq '.') { $c.ArchiveRoot=[IO.Path]::GetFullPath($AppRoot) } }
     else { $c=Get-QaDefaultConfig -AppRoot $AppRoot }
+    if(-not [IO.Path]::IsPathRooted([string]$c.ArchiveRoot)) {
+        $resolved=[IO.Path]::GetFullPath((Join-Path $AppRoot ([string]$c.ArchiveRoot)))
+        if(-not $resolved.StartsWith(([IO.Path]::GetFullPath($AppRoot).TrimEnd('\','/')+[IO.Path]::DirectorySeparatorChar),[StringComparison]::OrdinalIgnoreCase)){throw 'A relative archive path must stay within the application folder.'}
+        $c.ArchiveRoot=$resolved
+    }
     foreach ($source in @($c.Sources)) { if ($null -eq $source.PSObject.Properties['Username']) { Set-QaValue $source 'Username' 'SCANNER_USERNAME' };if ($null -eq $source.PSObject.Properties['PreviousPaths']) { Set-QaValue $source 'PreviousPaths' ([object[]]@()) };if ($null -eq $source.PSObject.Properties['MonthlyChecklist']) { Set-QaValue $source 'MonthlyChecklist' ([object[]]@()) } }
     if($null -eq $c.PSObject.Properties['AutoUpdateOnOpen']){Set-QaValue $c 'AutoUpdateOnOpen' $true}
     Assert-QaConfig $c
@@ -143,6 +153,7 @@ function Save-QaConfig {
     if($null -eq $Config.PSObject.Properties['AutoUpdateOnOpen']){Set-QaValue $Config 'AutoUpdateOnOpen' $true}
     Assert-QaConfig $Config
     $settingsPath=Join-Path (Join-Path $AppRoot 'Config') 'Settings.json'
+    $local=Join-Path (Join-Path $AppRoot 'Config') 'Settings.local.json';if([IO.File]::Exists($local)){$settingsPath=$local}
     Assert-QaNoReparse $settingsPath
     $oldSources=@()
     if ([IO.File]::Exists($settingsPath)) {
@@ -160,6 +171,20 @@ function Save-QaConfig {
             foreach($root in $roots) { if(-not $root.Equals($currentRoot,[StringComparison]::OrdinalIgnoreCase) -and -not $known.ContainsKey($root)){$known[$root]=$true;[void]$retained.Add($root)} }
         }
         Set-QaValue $source 'PreviousPaths' ([object[]]$retained.ToArray())
+        if($old.Count -eq 1) {
+            $oldItems=@(Get-QaComponentLabels (Get-QaValue $old[0] 'MonthlyChecklist' $null))
+            $newItems=@(Get-QaComponentLabels (Get-QaValue $source 'MonthlyChecklist' $null))
+            $versions=@(Get-QaValue $old[0] 'MonthlyChecklistHistory' @())
+            if(($oldItems -join '|') -cne ($newItems -join '|')) {
+                $effective=[string](Get-QaValue $source 'ChecklistEffectiveMonth' (Get-Date).ToString('yyyy-MM'))
+                $d=[datetime]::MinValue
+                if(-not [datetime]::TryParseExact($effective,'yyyy-MM',[Globalization.CultureInfo]::InvariantCulture,[Globalization.DateTimeStyles]::None,[ref]$d)){throw 'Checklist effective month must use yyyy-MM.'}
+                if(-not $versions.Count){$versions=@([pscustomobject]@{EffectiveMonth='0001-01';Components=[object[]]$oldItems})}
+                if(@($versions|Where-Object{$_.EffectiveMonth -ge $effective}).Count){throw 'Choose a checklist effective month after the previous version. Existing historical rules are preserved.'}
+                $versions+=@([pscustomobject]@{EffectiveMonth=$effective;Components=[object[]]$newItems})
+            }
+            if($versions.Count){Set-QaValue $source 'MonthlyChecklistHistory' ([object[]]$versions)}
+        }
     }
     Assert-QaConfig $Config
     # Validate saved report ownership before replacing settings. Removing or changing
@@ -170,7 +195,9 @@ function Save-QaConfig {
     Set-QaValue $Config 'AppRoot' ([IO.Path]::GetFullPath($AppRoot))
     $saved=$Config|Select-Object * -ExcludeProperty AppRoot
     if ([IO.Path]::GetFullPath([string]$Config.ArchiveRoot).TrimEnd('\','/').Equals([IO.Path]::GetFullPath($AppRoot).TrimEnd('\','/'),[StringComparison]::OrdinalIgnoreCase)) { $saved.ArchiveRoot='.' }
-    Write-QaAtomicText (Join-Path (Join-Path $AppRoot 'Config') 'Settings.json') ($saved | ConvertTo-Json -Depth 8)
+    $prefix=[IO.Path]::GetFullPath($AppRoot).TrimEnd('\','/')+[IO.Path]::DirectorySeparatorChar
+    if(([string]$Config.ArchiveRoot).StartsWith($prefix,[StringComparison]::OrdinalIgnoreCase)){$saved.ArchiveRoot=([string]$Config.ArchiveRoot).Substring($prefix.Length)}
+    Write-QaAtomicText $settingsPath ($saved | ConvertTo-Json -Depth 16)
     return $Config
 }
 function Get-QaPaths { param($Config)
@@ -246,7 +273,7 @@ function Get-QaClassification { param($Source,[string]$Name,[long]$Length,[strin
         $parsed=[datetime]::MinValue
         if ([datetime]::TryParseExact(($m.Groups['date'].Value+' '+$m.Groups['time'].Value),'yyyy-MM-dd HH-mm-ss',[Globalization.CultureInfo]::InvariantCulture,[Globalization.DateTimeStyles]::None,[ref]$parsed) -and $parsed -le (Get-Date).AddDays(1)) {
             $date=$parsed.ToString('yyyy-MM-dd');$time=$parsed.ToString('HH:mm:ss');$kind=$m.Groups['kind'].Value
-            if ($kind -match '(?i)(^|_)DAILY($|_)') { $category='Daily_QA';$basis='Explicit Daily filename; PDF test results are not interpreted.' }
+            if ($kind -match '(?i)(^|_)DAILY($|_)|^(ID_)?QUALITYDAILY$') { $category='Daily_QA';$basis='Explicit Daily filename; PDF test results are not interpreted.' }
             elseif ($kind -match '(?i)(IEC|DHHS)?ACCEPTANCE') { $category='Acceptance_Tests';$basis='Acceptance filename; PDF test results are not interpreted.' }
             elseif ($kind -match '(?i)(^|_)MONTHLY($|_)|CONSTANCY_.+') { $category='Monthly_QA/Pending_Verification';$basis='Filename suggests extended or Monthly testing; authorized review required.' }
             elseif ($kind -match '(?i)^(ID_)?QUALITY_CONSTANCY$') {
@@ -298,7 +325,7 @@ function Get-QaRelativeTarget { param($Entry,[string]$Hash)
 function New-QaIssue { param([string]$Scanner,[string]$Type,[string]$Message,[string]$Path='',[string]$RecordId='')
     return [pscustomobject]@{Id=(Get-QaHashText ($Scanner+'|'+$Type+'|'+$Message+'|'+$RecordId));Scanner=$Scanner;Type=$Type;Message=$Message;Path=$Path;RecordId=$RecordId}
 }
-function Get-QaInventory { param($Config,$State,$Progress,$Summary)
+function Get-QaInventory { param($Config,$State,$Progress,$Summary,[switch]$InWorker)
     $items=New-Object 'System.Collections.Generic.List[object]';$statuses=New-Object 'System.Collections.Generic.List[object]';$issues=New-Object 'System.Collections.Generic.List[object]'
     $cache=@{}
     foreach($r in @($State.Records)) { $key=Get-QaSourceKey $r.Scanner $r.SourcePath; $cache[$key]=$r }
@@ -309,7 +336,27 @@ function Get-QaInventory { param($Config,$State,$Progress,$Summary)
         $old=@($State.Scanners | Where-Object {$_.Scanner -eq $s.Scanner} | Select-Object -First 1)
         $last=if($old.Count){[string]$old[0].LastSuccessfulUpdate}else{''}
         $status=[pscustomobject]@{Scanner=$s.Scanner;Name=$s.Name;Status='Connected';Message='Scanner folder is accessible.';Count=@($State.Records|Where-Object{$_.Scanner -eq $s.Scanner}).Count;SavedReports=@($State.Records|Where-Object{$_.Scanner -eq $s.Scanner}).Count;LastSuccessfulUpdate=$last;CheckedUtc=[datetime]::UtcNow.ToString('o')}
+        if(-not $InWorker -and ([string]$s.Path).StartsWith('\\')) {
+            Import-Module (Join-Path $PSScriptRoot 'Process.psm1')
+            try {
+                $single=$Config|Select-Object *;$single.Sources=@($s)
+                $snapshot=Invoke-QaIsolatedTask Inventory ([pscustomobject]@{Config=$single;State=$State}) -TimeoutSeconds 60 -Progress $Progress
+                foreach($item in @($snapshot.Inventory.Items)){[void]$items.Add($item)}
+                foreach($row in @($snapshot.Inventory.Scanners)){[void]$statuses.Add($row)}
+                foreach($issue in @($snapshot.Inventory.Issues)){[void]$issues.Add($issue)}
+                foreach($field in @('Total','Unchanged','NewOrChanged','Deferred','Pending')){$Summary.$field+=[int]$snapshot.Summary.$field}
+            } catch {
+                $status.Status='Unavailable';$status.Message=$_.Exception.Message
+                [void]$statuses.Add($status);[void]$issues.Add((New-QaIssue $s.Scanner 'Connection' ($s.Name+' - Scanner scan timed out, was cancelled, or is unavailable.') $s.Path))
+                if(Test-QaCancel $Progress){$Summary.Cancelled=$true}
+            }
+            continue
+        }
         try {
+            if(-not $InWorker -and ([string]$s.Path).StartsWith('\\')) {
+                Import-Module (Join-Path $PSScriptRoot 'Process.psm1')
+                if(-not (Invoke-QaIsolatedTask Probe ([pscustomobject]@{Path=$s.Path}) -TimeoutSeconds 10 -Progress $Progress)){throw 'Scanner folder is unavailable or access is denied.'}
+            }
             Assert-QaNoReparse ([string]$s.Path)
             if (-not [IO.Directory]::Exists([string]$s.Path)) { throw 'The scanner folder is missing, offline, or access is denied.' }
             $queue=New-Object 'System.Collections.Generic.Queue[string]';$queue.Enqueue([string]$s.Path)
@@ -441,6 +488,8 @@ function Copy-QaVerified { param($Entry,$Source,$State,$Paths,$Progress,$Summary
     $token=[guid]::NewGuid().ToString('N');$stage=Join-Path $Paths.Staging ($token+'.partial');$input=$null;$output=$null;$hash=$null
     try {
         $input=[IO.File]::Open($Entry.SourcePath,[IO.FileMode]::Open,[IO.FileAccess]::Read,[IO.FileShare]::Read)
+        $drive=New-Object IO.DriveInfo([IO.Path]::GetPathRoot($Paths.Root))
+        if($drive.AvailableFreeSpace -lt (2*[long]$Entry.Length+104857600)){throw 'Not enough free storage for this PDF and its readable copy.'}
         $output=[IO.File]::Open($stage,[IO.FileMode]::CreateNew,[IO.FileAccess]::Write,[IO.FileShare]::None)
         $sha=[Security.Cryptography.SHA256]::Create()
         try {
@@ -533,6 +582,12 @@ function Get-QaMonthlyCoverage {
     foreach($source in @($Config.Sources)) {
         if(-not [bool]$source.ExpectedMonthly){continue}
         $rows=@($Records|Where-Object{$null -ne $_ -and $_.Scanner -ceq $source.Scanner})
+        $latest=@{}
+        foreach($record in $rows){
+            $sourceKey=[string](Get-QaValue $record 'SourcePath' (Get-QaValue $record 'Id' ''))
+            if(-not $latest.ContainsKey($sourceKey) -or (Get-QaTimestampTicks (Get-QaValue $record 'FirstArchived' '')) -ge (Get-QaTimestampTicks (Get-QaValue $latest[$sourceKey] 'FirstArchived' ''))){$latest[$sourceKey]=$record}
+        }
+        $rows=@($latest.Values)
         $required=@(Get-QaComponentLabels (Get-QaValue $source 'MonthlyChecklist' $null))
         $monthsToCheck=@($selectedMonths.ToArray())
         if(-not $explicit) {
@@ -546,6 +601,11 @@ function Get-QaMonthlyCoverage {
             $monthsToCheck=@();for($month=$firstMonth;$month -lt $thisMonth;$month=$month.AddMonths(1)){$monthsToCheck+=@($month.ToString('yyyy-MM'))}
         }
         foreach($month in $monthsToCheck) {
+            $history=@(Get-QaValue $source 'MonthlyChecklistHistory' @())
+            if($history.Count) {
+                $version=@($history|Where-Object{$_.EffectiveMonth -le $month}|Sort-Object EffectiveMonth -Descending|Select-Object -First 1)
+                $required=@(if($version.Count){Get-QaComponentLabels $version[0].Components})
+            }
             $monthRows=@($rows|Where-Object{[string]$_.ReportDate -match '^\d{4}-\d{2}-\d{2}$' -and ([string]$_.ReportDate).StartsWith($month+'-',[StringComparison]::Ordinal)})
             $confirmed=@($monthRows|Where-Object{$_.Category -eq 'Monthly_QA' -and (Get-QaValue $_ 'ConfirmedBy') -and (Get-QaValue $_ 'ConfirmedAt') -and [string](Get-QaValue $_ 'Hash') -match '^[0-9A-Fa-f]{64}$'})
             $pending=@($monthRows|Where-Object{$_.Category -eq 'Monthly_QA/Pending_Verification'})
@@ -599,6 +659,7 @@ function Get-QaAttention { param($Config,$State,$Paths)
             for($day=$start;$day -lt (Get-Date).Date;$day=$day.AddDays(1)) {
                 if ($s.DailySchedule -eq 'Weekdays' -and $day.DayOfWeek -in @('Saturday','Sunday')){continue}
                 $key=$day.ToString('yyyy-MM-dd')
+                if(@(Get-QaValue $s 'ExcludedDates' @()) -contains $key){continue}
                 if (-not $daily.ContainsKey($key)) {
                     if ($pending.ContainsKey($key)) { [void]$attention.Add((New-QaIssue $s.Scanner 'DailyReview' ($s.Name+' - Daily archive coverage for '+$key+' awaits report classification.') $pending[$key].DestinationPath $pending[$key].Id)) }
                     else { [void]$attention.Add((New-QaIssue $s.Scanner 'DailyGap' ($s.Name+' - No Daily QA archive report found for '+$key+'. Check the local schedule and scanner records.') (Join-Path (Join-Path (Join-Path $Paths.Reports $s.Scanner) $day.ToString('yyyy')) $day.ToString('MM')))) }

@@ -169,6 +169,7 @@ Run-Test 'A changed source revision cannot inherit reviewed components for earli
     Assert-Equal 'Monthly_QA/Pending_Verification' $new.Category 'New report bytes require new Monthly confirmation'
     Assert-Equal 0 @(Get-TestComponents $new).Count 'New content inherits no reviewed components'
     Assert-Equal 'NeedsConfirmation' (Get-MonthlyRow $f.Config @($new)).Status 'New content alone cannot satisfy checklist'
+    Assert-Equal 'NeedsConfirmation' (Get-MonthlyRow $f.Config $records).Status 'Retained prior revision cannot mask the current unreviewed revision'
     $old=@($records|Where-Object{$_.Hash -eq $reviewed.Hash})[0]
     Assert-ComponentSet @('MTF','Slice Thickness') @(Get-TestComponents $old) 'Exact prior reviewed bytes retain their independent evidence'
 }

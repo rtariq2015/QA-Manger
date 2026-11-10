@@ -1,0 +1,58 @@
+﻿{
+  "Version": 4,
+  "ArchiveRoot": ".",
+  "LookbackDays": 60,
+  "MonthlyLookbackMonths": 12,
+  "MinimumFileAgeSeconds": 120,
+  "SetupComplete": false,
+  "AutoUpdateOnOpen": true,
+  "Sources": [
+    {
+      "Scanner": "CT_Edge",
+      "Name": "CT Edge",
+      "Path": "\\\\CT-EDGE\\Reports\\ConstancyReports",
+      "DriveLetter": "K",
+      "DailySchedule": "AllDays",
+      "ExpectedMonthly": true,
+      "ActiveFrom": "",
+      "MonthlyThresholdKB": 70,
+      "Username": "SCANNER_USERNAME",
+      "PreviousPaths": [],
+      "MonthlyChecklist": [],
+      "MonthlyDueDay": 0,
+      "ExcludedDates": []
+    },
+    {
+      "Scanner": "CT_Flash",
+      "Name": "CT Flash",
+      "Path": "\\\\CT-FLASH\\Reports\\ConstancyReports",
+      "DriveLetter": "J",
+      "DailySchedule": "AllDays",
+      "ExpectedMonthly": true,
+      "ActiveFrom": "",
+      "MonthlyThresholdKB": 85,
+      "Username": "SCANNER_USERNAME",
+      "PreviousPaths": [],
+      "MonthlyChecklist": [],
+      "MonthlyDueDay": 0,
+      "ExcludedDates": []
+    },
+    {
+      "Scanner": "MDP_Building",
+      "Name": "MDP Building",
+      "Path": "\\\\MDP-SCANNER\\Reports\\ConstancyReports",
+      "DriveLetter": "Y",
+      "DailySchedule": "AllDays",
+      "ExpectedMonthly": true,
+      "ActiveFrom": "",
+      "MonthlyThresholdKB": 85,
+      "Username": "SCANNER_USERNAME",
+      "PreviousPaths": [],
+      "MonthlyChecklist": [],
+      "MonthlyDueDay": 0,
+      "ExcludedDates": []
+    }
+  ],
+  "MonitorMinutes": 15,
+  "AutoAnalyze": true
+}

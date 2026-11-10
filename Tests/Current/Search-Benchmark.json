@@ -1,0 +1,8 @@
+{
+  "Records": 10000,
+  "Matched": 10000,
+  "IndexBuildSeconds": 1.3790935,
+  "CachedFilterSeconds": 0.0211029,
+  "PreviousFilterSeconds": 18.3720691,
+  "Scope": "Synthetic in-memory filtering only; not a Windows UI or SMB benchmark"
+}

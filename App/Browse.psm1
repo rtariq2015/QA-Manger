@@ -112,7 +112,8 @@ function Get-QaBrowseBase { param($Record)
     $dateText=if($valid){$date.ToString('yyyy-MM-dd')}else{'Undated'}
     $time=if([string]$Record.ReportTime -match '^\d{2}:\d{2}:\d{2}$'){([string]$Record.ReportTime).Replace(':','-')}else{'Time unknown'}
     $folder=Join-Path (Join-Path (Join-Path $scanner $year) $month) (Get-QaBrowseCategoryFolder ([string]$Record.Category))
-    return [pscustomobject]@{Folder=$folder;Name=($scanner+' - '+$dateText+' - '+$time+' - '+$category)}
+    $original=ConvertTo-QaBrowsePathLabel ([IO.Path]::GetFileNameWithoutExtension([string]$Record.OriginalFileName))
+    return [pscustomobject]@{Folder=$folder;Name=($dateText+' - '+$time+' - '+$original+' - '+$category)}
 }
 function Get-QaBrowseTarget { param($Record,$Existing,$Used)
     $base=Get-QaBrowseBase $Record
@@ -329,6 +330,8 @@ function Invoke-QaBrowseRefresh {
         $summary.Description=($summary.Exported.ToString()+' readable copies created; '+$summary.Unchanged+' unchanged; '+$summary.Failed+' need attention.')
         if($summary.Cancelled){$summary.Description='Browsing refresh cancelled safely. Verified copies are preserved; refresh again to continue.'}
         elseif($summary.Failed -gt 0){$summary.Description+=' '+$issues[0].Message}
+        Import-Module (Join-Path $PSScriptRoot 'Navigator.psm1')
+        Write-QaNavigator -Paths $paths -Ledger $ledger -Records @($displayRecords.ToArray()) -Summary $summary
         Set-QaBrowseProgress $Progress $summary.Description 100
         return [pscustomobject]@{Mode='BrowseRefresh';DestinationPath=$paths.Browse;Summary=$summary;Issues=@($issues.ToArray())}
     }finally{Close-QaBrowseHandle $lock}

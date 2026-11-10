@@ -112,8 +112,14 @@ function Reconnect-QaScanner {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory=$true)][object]$Scanner,
-        [System.Management.Automation.PSCredential]$Credential
+        [System.Management.Automation.PSCredential]$Credential,
+        [switch]$InWorker
     )
+    if(-not $InWorker -and [Environment]::OSVersion.Platform -eq [PlatformID]::Win32NT) {
+        Import-Module (Join-Path $PSScriptRoot 'Process.psm1')
+        try{return (Invoke-QaIsolatedTask Reconnect ([pscustomobject]@{Scanner=$Scanner;Credential=$Credential}) -TimeoutSeconds 15)}
+        catch{return (New-QaConnectionResult $Scanner 'Unavailable' 'Connection timed out or was blocked. Saved reports remain available; existing sessions were left intact.')}
+    }
     $path = [string]$Scanner.Path
     $letter = ([string]$Scanner.DriveLetter).Trim().TrimEnd(':').ToUpperInvariant()
     if ($path -notmatch '^\\\\[^\\]+\\[^\\]+' -or $letter -notmatch '^[A-Z]$' -or $path.IndexOf([char]0) -ge 0) {

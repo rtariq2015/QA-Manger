@@ -1,46 +1,67 @@
-# CT QA Manager Pro
+# CT QA Manager Pro 4.2.0
 
-Portable CT quality-assurance report manager for Windows, built with Windows PowerShell 5.1 and native WPF. **v4.1.0** is the current source baseline, imported from `CT_QA_Manager_Pro_v4.1.0.zip`. The earlier v4.0.0 import remains in Git history.
+A portable Windows workspace for collecting, reviewing, finding and sharing CT QA report PDFs. Run it from one folder using the Windows PowerShell 5.1 and WPF components already supplied with Windows. No installer, administrator launch, Python, Git or external PowerShell modules are required for normal use.
 
-## Run without installing software
+![Offline report library with synthetic PDFs](docs/images/offline-library.png)
 
-1. Choose **Code → Download ZIP** on GitHub and extract the complete folder to a user-writable local folder.
-2. Double-click **Start CT QA Manager.cmd**. Keep `App`, `Config`, and the launcher together, including the bundled `App/Lib` files.
-3. Configure authorized scanner shares and usernames in the application, then complete **First-Time Setup** using an approved local archive folder.
+*Actual screenshot of the generated offline report library with synthetic data. Native Windows dashboard captures and Windows test results are produced by the [Windows validation workflow](https://github.com/rtariq2015/QA-Manger/actions/workflows/windows-validation.yml); see its artifacts and actual run status.*
 
-Normal use requires no installer, administrator launch, Python, Git, or third-party PowerShell modules. It uses Windows PowerShell 5.1 and native WPF supplied with Windows. The optional bundled PDF text reader requires .NET Framework 4.7.2 or newer already on the workstation. The app does not install or download runtimes. Workstation policy may require IT approval or script signing; the launcher preserves execution policy.
+## Start on Windows
 
-The repository uses generic scanner hostnames and `SCANNER_USERNAME` placeholders. Configure the real connections in your deployed copy.
+1. Choose **Code → Download ZIP** and extract the complete folder to a writable local location.
+2. Double-click **Start CT QA Manager.cmd**.
+3. Configure your approved scanner paths and usernames, then preview and confirm First-Time Setup.
 
-## Features in v4.1.0
+The optional bundled PDF text reader needs .NET Framework 4.7.2+ already on the workstation. Follow IT approval/signing requirements. The application preserves execution policy and does not install or download components.
 
-- Incremental, verified PDF archiving with import previews, recovery, and manual integrity audits.
-- Report search by scanner, date, and type, with ZIP exports and an offline HTML summary.
-- Independent readable folders organized by scanner, year, month, and report type.
-- Editable scanner connections and optional Windows DPAPI-encrypted sign-ins.
-- Department-configured Monthly checklist evidence and explicit report review.
-- Local PDF text extraction using bundled PdfPig libraries; OCR is not included.
-- One update when opening the app after setup, enabled by default and configurable in Settings. No service or scheduled task is installed.
+## Your everyday view
 
-Scanner PDFs remain read-only. Archive and export destinations must be local-disk or USB folders. See the [User Guide](User%20Guide.html) for the full workflow and [Siemens QA reference](App/Reference/Siemens_QA_Guide.html) for report terminology. Download and open HTML documents locally to view their formatting.
+- **Today:** see which scheduled Daily PDFs were received, separately from extracted printed results. Provisional classification does not count as confirmed Daily receipt.
+- **This month:** see reviewed checklist coverage, department due dates and missing evidence. One combined PDF or several separate PDFs can contribute reviewed items.
+- **Local analysis:** extract explicit printed PASS/FAIL lines with page evidence. Unrecognized formats stay for review; no numerical tolerances or clinical decisions are invented.
+- **Background checks:** optional checks every 5–240 minutes while the window is open, with local analysis in batches. Set interval to 0 to pause updates. Nothing runs after closing the app.
+- **Find and export:** filter saved PDFs and create verified ZIP packages. Saved-report search stays available during scanner checks.
+- **Protect:** check this computer, inspect free storage, verify saved PDFs or scanner source fingerprints, and create/restore a complete verified backup.
 
-## Import and validation
+## All persistent workspace files together
 
-All 53 supplied files are included, including the bundled DLLs, their licenses, and three synthetic PDF fixtures. Workplace addresses and the suggested username were replaced with placeholders in `App/Archive.psm1`, `App/Start.ps1`, `Config/Settings.json`, and `User Guide.html`. The other 49 supplied files are byte-for-byte unchanged.
+```text
+CT QA Manager/
+  App/                         Program and bundled PDF libraries
+  Config/
+    Settings.json              Generic distribution baseline
+    Settings.local.json        Your settings (created locally; ignored by Git)
+    Credentials/               Optional Windows-protected sign-ins
+  Data/                        New installations' default archive
+    Reports/                   Managed, verified PDFs
+    Browse Reports/            Ordinary PDFs for manual use
+      Open Reports.html        Searchable offline library
+      Report list.csv
+      CT Edge/2026/11 November/
+        Daily QA/
+        Monthly QA/Confirmed/
+        Monthly QA/Pending Verification/
+    .ctqa/                     Index, reviews, recovery and cached analysis
+  Backups/                     Verified backup destination / previous program
+  Logs/
+```
 
-The package verifier passed **465 static checks** during this import. The supplied reports record **104 scenarios and 797 assertions** on PowerShell 7.4.19 on Linux; those suites were not rerun during import. Windows PowerShell 5.1 execution, native WPF rendering, DPAPI, scanner authentication, and workstation policy still need Windows acceptance testing.
+Readable PDFs can be opened, copied or dragged without the application. Copy the entire **Browse Reports** folder to keep offline links working. A full backup also preserves the application's metadata and review evidence. Choose approved separate storage for protection from drive failure.
 
-- [Windows acceptance checklist](Tests/Windows-Smoke.md)
-- [Supplied validation report](Tests/Validation.html) and [test summary](Tests/Test-Summary.json)
-- [Original ZIP hashes](Tests/SHA256SUMS.txt) and [sanitized repository import hashes](Tests/Repository-SHA256SUMS.txt)
-- [Bundled library provenance and licenses](App/Lib/PdfPig/README.txt)
+New archives use a relative Data location so the folder can move. Existing custom archive locations are preserved. Close the app before moving it. Saved Windows sign-ins may need re-entry on another computer.
 
-The repository's original standalone README is retained in [docs/Previous-README.md](docs/Previous-README.md) for historical reference. Use this README and the supplied source as the current description.
+## Safe updates and recovery
 
-## Tracking updates
+For later updates, close the app and run **Update CT QA Manager.cmd** from your current installation, then select a separately extracted new release. The updater verifies App/launcher/guide checksums, preserves local settings and data, and keeps the previous program in Backups. The release's manifest is at `Tests/Repository-SHA256SUMS.txt`.
 
-Use this repository as the source of truth. Commit and push each completed update to record its changes. Downloaded work-computer copies do not synchronize automatically with GitHub.
+Use **Create full backup** to save a verified ZIP outside the live archive. **Restore to new folder** never overwrites an existing workspace and verifies all restored files. Backups include program files, configuration, reports, analysis and review metadata; saved credentials are excluded.
 
-Keep development separate from the deployed application and live archive. `Config/Settings.json` is a tracked, generic baseline; keep workstation-specific settings in the deployed copy. Do not commit real reports, credentials, archive indexes, or logs. The repository remains private.
+## Validation and evidence
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for development checks and portability requirements. A project license has not been selected; bundled third-party libraries retain their own licenses.
+The cloud run passed **119 scenarios** across seven suites. A 10,000-record search benchmark measured **0.021 seconds** for a cached filter after **1.38 seconds** to build the index, including first compilation, on this Linux host. These are in-memory measurements, not workstation or SMB performance. Current Linux cloud and browser results are in [Tests/Current](Tests/Current). The [Windows workflow](https://github.com/rtariq2015/QA-Manger/actions/workflows/windows-validation.yml) runs native PowerShell 5.1 suites and attempts a WPF demonstration capture on push. Its status and artifacts are the source for Windows evidence.
+
+Actual hospital access, scanner authentication, endpoint restrictions and interactive DPI acceptance still require workstation validation. See [testing and limitations](docs/TESTING.md) and the [Windows checklist](Tests/Windows-Smoke.md).
+
+[User guide](User%20Guide.html) · [Siemens QA reference](App/Reference/Siemens_QA_Guide.html) · [Changes](CHANGELOG.md) · [Development](CONTRIBUTING.md)
+
+HTML guides are best viewed after downloading. The repository uses generic connection placeholders. Keep real reports, local configuration, credentials and logs out of Git. No project license has been selected; bundled libraries retain their own licenses and notices in `App/Lib/PdfPig`.

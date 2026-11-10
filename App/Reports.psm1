@@ -58,28 +58,10 @@ function Select-QaReports {
         [AllowEmptyCollection()][object[]]$Records=@(),[string]$Scanner='All',
         [ValidateRange(0,9999)][int]$Year=0,[ValidateRange(0,12)][int]$Month=0,
         [string]$Category='All',[string]$Query='',
-        [AllowEmptyCollection()][ValidateRange(1,9999)][int[]]$Years=@()
+        [AllowEmptyCollection()][ValidateRange(1,9999)][int[]]$Years=@(),$Index=$null
     )
-    $queryText=$Query.Trim()
-    $matches=New-Object 'System.Collections.Generic.List[object]'
-    foreach($record in @($Records)) {
-        if($null -eq $record){continue}
-        if($Scanner -and $Scanner -ne 'All' -and [string]$record.Scanner -ne $Scanner){continue}
-        if($Category -and $Category -ne 'All' -and [string]$record.Category -ne $Category){continue}
-        $date=Get-QaReportDate $record
-        # A nonempty multi-year selection takes precedence over the legacy Year parameter.
-        if(@($Years).Count -gt 0){if($null -eq $date -or $Years -notcontains $date.Year){continue}}
-        elseif($Year -ne 0 -and ($null -eq $date -or $date.Year -ne $Year)){continue}
-        if($Month -ne 0 -and ($null -eq $date -or $date.Month -ne $Month)){continue}
-        if($queryText) {
-            $monthName=if($null -ne $date){$date.ToString('MMMM',[Globalization.CultureInfo]::InvariantCulture)}else{''}
-            $text=(Get-QaReportTitle $record)+' '+[string](Get-QaReportValue $record 'OriginalFileName')+' '+[string](Get-QaReportValue $record 'ReportDate')+' '+[string](Get-QaReportValue $record 'ReportTime')+' '+[string]$record.Scanner+' '+[string]$record.Category+' '+$monthName
-            if($text.IndexOf($queryText,[StringComparison]::OrdinalIgnoreCase) -lt 0){continue}
-        }
-        [void]$matches.Add($record)
-    }
-    # Return the original objects, without changing categories, titles or saved paths.
-    return @($matches.ToArray()|Sort-Object ReportDate,ReportTime,Scanner,OriginalFileName,Id)
+    if($null -eq $Index){Import-Module (Join-Path $PSScriptRoot 'Search.psm1');$Index=New-QaSearchIndex -Records $Records}
+    return $Index.Find($Scanner,$Year,$Month,$Category,$Query,$Years)
 }
 function Test-QaExportCancelled { param($Progress)
     return ($null -ne $Progress -and $Progress.ContainsKey('Cancel') -and [bool]$Progress.Cancel)

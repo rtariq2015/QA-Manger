@@ -1,0 +1,136 @@
+{
+  "Product": "CT QA Manager Pro",
+  "Suite": "Reports filters and ZIP export",
+  "TimestampUtc": "2026-11-10T12:22:58.2694299Z",
+  "Runtime": "7.4.13",
+  "Platform": "Unix 6.18.57.0",
+  "WindowsPowerShell51ActuallyRun": false,
+  "Tests": 24,
+  "Assertions": 250,
+  "Passed": 24,
+  "Skipped": 0,
+  "Failed": 0,
+  "Results": [
+    {
+      "Name": "Filters preserve identities and isolate December of the chosen year",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "Pending and confirmed Monthly filters stay distinct; human queries match visible labels",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "Selected December export reads every ZIP PDF back and preserves duplicate report names",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "Multiple checked years override the legacy year filter and intersect the chosen month",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "Offline HTML summary counts selected reports and links to every ZIP PDF safely",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "Offline HTML escapes malicious display text and URI-encodes PDF link segments",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "Archived PDFs can be exported while all scanner source folders are unavailable",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "Exported Monthly coverage uses selected PDFs rather than the full archive and preserves component evidence",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "An empty selection cannot produce an empty misleading ZIP",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "Unknown report IDs cannot silently produce an incomplete export",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "Repeated selected IDs are refused or safely deduplicated",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "A corrupted archived PDF aborts export without finalizing a ZIP",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "A missing archived PDF aborts export without finalizing a ZIP",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "Export never overwrites an existing ZIP",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "Output inside Reports, archive internals, or scanner sources is rejected before writing",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "A linked output directory cannot redirect the export to another folder",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "A linked archived report folder is rejected even when its PDF hash matches",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "Tampered report paths cannot escape the archive during export",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "Malicious original filenames never create ZIP traversal entries",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "An active archive writer lock blocks export and leaves no finalized ZIP",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "Cancellation after the first written export buffer removes the partial ZIP and permits a safe retry",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "Tampered scanner labels cannot create ZIP traversal paths",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "A Monthly category without review evidence cannot be exported as confirmed Monthly QA",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "Static UI controls, filter bindings, export selection, and worker source remain connected",
+      "Result": "PASS",
+      "Details": ""
+    }
+  ],
+  "FixturesKept": false
+}
