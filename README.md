@@ -4,6 +4,10 @@ A portable offline HTML interface built on the original Windows archive, network
 
 [Download the program, offline update or upgrade helper from Releases](https://github.com/rtariq2015/QA-Manger/releases/latest).
 
+![Reports, PDF review and exports in the tested Windows browser interface, using synthetic demonstration data](docs/images/reports-web-demo.png)
+
+The release includes an offline visual preview with Today, Reports and Settings screenshots. These are actual Windows interface captures using synthetic data.
+
 ## The original program, with a new browser interface
 
 **Today** shows daily receipt, scanner status and department Monthly evidence. **Reports** combines PDF preview, scanner/year/month/type/status/search filters, whole-year or multiple-year selection, and prominent ZIP exports with a readable summary and CSV inventory. **Settings** holds scanner profiles/sign-ins, archive location, department settings, backups/restore, reading, offline ZIP updates and scrubbed support logs.

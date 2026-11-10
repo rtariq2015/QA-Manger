@@ -1,0 +1,97 @@
+{
+  "Version": "4.4.1",
+  "SourceCommit": "7d197d6a2f4a38c9f3ecefa1d95cef67cc9eca24",
+  "WorkflowRun": "https://github.com/rtariq2015/QA-Manger/actions/runs/42878879406",
+  "Runtime": "Windows PowerShell 5.1.26100.33648",
+  "Host": "GitHub-hosted Windows Server 2025",
+  "Tests": 174,
+  "Assertions": 1137,
+  "Failed": 0,
+  "WindowsPowerShell51ActuallyRun": true,
+  "NativeWPFActuallyRun": true,
+  "WindowsDPAPIActuallyRun": true,
+  "NativePdfRendererActuallyRun": true,
+  "ReviewWorkspaceDecisionsActuallyRun": true,
+  "NativeRoutedKeyboardEventsAndReviewerEditingActuallyRun": true,
+  "ProductionF1HandlerActuallyRun": true,
+  "ProductionDispatcherEventHandlerActuallyRun": true,
+  "ProductionApplicationCmdQuietStartupActuallyRun": true,
+  "OfflineUpdateLockWaitAndRestartActuallyRun": true,
+  "Screens": [
+    "Dashboard",
+    "Connections and settings",
+    "Archive review",
+    "Reports",
+    "Offline updates",
+    "PDF review workspace"
+  ],
+  "Suites": [
+    {
+      "Name": "Run-BrowseTests",
+      "Tests": 17,
+      "Assertions": 117,
+      "Failed": 0
+    },
+    {
+      "Name": "Run-ConnectionTests",
+      "Tests": 15,
+      "Assertions": 181,
+      "Failed": 0
+    },
+    {
+      "Name": "Run-ExportTests",
+      "Tests": 24,
+      "Assertions": 250,
+      "Failed": 0
+    },
+    {
+      "Name": "Run-MonthlyTests",
+      "Tests": 16,
+      "Assertions": 89,
+      "Failed": 0
+    },
+    {
+      "Name": "Run-NetworkTests",
+      "Tests": 13,
+      "Assertions": 43,
+      "Failed": 0
+    },
+    {
+      "Name": "Run-PdfTests",
+      "Tests": 8,
+      "Assertions": 25,
+      "Failed": 0
+    },
+    {
+      "Name": "Run-PortableTests",
+      "Tests": 17,
+      "Assertions": 48,
+      "Failed": 0
+    },
+    {
+      "Name": "Run-ReviewQueueTests",
+      "Tests": 14,
+      "Assertions": 83,
+      "Failed": 0
+    },
+    {
+      "Name": "Run-SupportTests",
+      "Tests": 16,
+      "Assertions": 79,
+      "Failed": 0
+    },
+    {
+      "Name": "Run-Tests",
+      "Tests": 24,
+      "Assertions": 187,
+      "Failed": 0
+    },
+    {
+      "Name": "Run-UpdateTests",
+      "Tests": 10,
+      "Assertions": 35,
+      "Failed": 0
+    }
+  ],
+  "Scope": "Synthetic fixtures only. Native WPF routed key events, reviewer edits with apostrophe/hyphen/backspace, production F1 and dispatcher handlers, exact application CMD with a harmless stub, actual PDF rendering, review decisions and all prior regression suites. Physical keyboard/IME, hospital access and workplace endpoint policy are not simulated."
+}

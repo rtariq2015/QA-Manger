@@ -1,14 +1,10 @@
 {
   "Product": "CT QA Manager Pro",
-  "Version": "4.4.1",
-  "SourceCommit": "7d197d6a2f4a38c9f3ecefa1d95cef67cc9eca24",
-  "Runtime": "PowerShell 7.4.13 on Linux",
-  "Tests": 170,
-  "Assertions": 1080,
+  "Version": "5.0.0",
+  "Runtime": "PowerShell 7.4.13 on Linux (development checks; final pinned validation is Windows)",
+  "Tests": 184,
+  "Assertions": 1139,
   "Failed": 0,
-  "WindowsPowerShell51ActuallyRun": false,
-  "NativeWPFActuallyRun": false,
-  "WindowsDPAPIActuallyRun": false,
   "Suites": [
     {
       "Name": "Run-BrowseTests",
@@ -67,7 +63,7 @@
     {
       "Name": "Run-Tests",
       "Tests": 24,
-      "Assertions": 187,
+      "Assertions": 197,
       "Failed": 0
     },
     {
@@ -75,8 +71,28 @@
       "Tests": 9,
       "Assertions": 32,
       "Failed": 0
+    },
+    {
+      "Name": "Run-WebServiceTests",
+      "Tests": 14,
+      "Assertions": 49,
+      "Failed": 0
     }
   ],
-  "WindowsEvidence": "Windows/Summary.json: 174 scenarios / 1137 assertions, native routed keyboard events, reviewer editing, F1 and quiet application CMD startup.",
-  "HistoricalSearchBenchmark": "Search-Benchmark.json was executed for v4.2.0 and was not rerun for this input patch."
+  "BrowserEvidence": "Browser-Web.json: separate Linux Chromium run, 10 scenarios / 236 assertions; native Windows rendering was not run there.",
+  "WindowsEvidence": "Windows/Summary.json: 189 native scenarios / 1199 assertions at b468e750188de9aa6c1b5020d0e9fdd702379e71; workflow 42897377290.",
+  "Scope": "Root Current Run-*.json and top-level Tests/Assertions are Linux development results. Pinned final Windows suite and browser results are recorded separately; all use synthetic fixtures only.",
+  "WindowsPowerShell51ActuallyRun": false,
+  "NativeWPFActuallyRun": false,
+  "WindowsDPAPIActuallyRun": false,
+  "BrowserWindowsEvidence": "Browser-Web-Windows.json: 10 real Edge scenarios / 240 assertions, including the native PNG preview and actual host restart.",
+  "WindowsValidation": {
+    "SourceCommit": "b468e750188de9aa6c1b5020d0e9fdd702379e71",
+    "WorkflowRun": "https://github.com/rtariq2015/QA-Manger/actions/runs/42897377290",
+    "PowerShellTests": 189,
+    "PowerShellAssertions": 1199,
+    "BrowserTests": 10,
+    "BrowserAssertions": 240,
+    "Failed": 0
+  }
 }

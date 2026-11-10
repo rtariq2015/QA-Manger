@@ -1,30 +1,12 @@
 {
-  "Version": "4.4.1",
-  "SourceCommit": "7d197d6a2f4a38c9f3ecefa1d95cef67cc9eca24",
-  "WorkflowRun": "https://github.com/rtariq2015/QA-Manger/actions/runs/42878879406",
+  "Version": "5.0.0",
+  "SourceCommit": "b468e750188de9aa6c1b5020d0e9fdd702379e71",
+  "WorkflowRun": "https://github.com/rtariq2015/QA-Manger/actions/runs/42897377290",
   "Runtime": "Windows PowerShell 5.1.26100.33648",
   "Host": "GitHub-hosted Windows Server 2025",
-  "Tests": 174,
-  "Assertions": 1137,
+  "Tests": 189,
+  "Assertions": 1199,
   "Failed": 0,
-  "WindowsPowerShell51ActuallyRun": true,
-  "NativeWPFActuallyRun": true,
-  "WindowsDPAPIActuallyRun": true,
-  "NativePdfRendererActuallyRun": true,
-  "ReviewWorkspaceDecisionsActuallyRun": true,
-  "NativeRoutedKeyboardEventsAndReviewerEditingActuallyRun": true,
-  "ProductionF1HandlerActuallyRun": true,
-  "ProductionDispatcherEventHandlerActuallyRun": true,
-  "ProductionApplicationCmdQuietStartupActuallyRun": true,
-  "OfflineUpdateLockWaitAndRestartActuallyRun": true,
-  "Screens": [
-    "Dashboard",
-    "Connections and settings",
-    "Archive review",
-    "Reports",
-    "Offline updates",
-    "PDF review workspace"
-  ],
   "Suites": [
     {
       "Name": "Run-BrowseTests",
@@ -83,7 +65,7 @@
     {
       "Name": "Run-Tests",
       "Tests": 24,
-      "Assertions": 187,
+      "Assertions": 197,
       "Failed": 0
     },
     {
@@ -91,7 +73,33 @@
       "Tests": 10,
       "Assertions": 35,
       "Failed": 0
+    },
+    {
+      "Name": "Run-WebServiceTests",
+      "Tests": 15,
+      "Assertions": 52,
+      "Failed": 0
     }
   ],
-  "Scope": "Synthetic fixtures only. Native WPF routed key events, reviewer edits with apostrophe/hyphen/backspace, production F1 and dispatcher handlers, exact application CMD with a harmless stub, actual PDF rendering, review decisions and all prior regression suites. Physical keyboard/IME, hospital access and workplace endpoint policy are not simulated."
+  "WindowsPowerShell51ActuallyRun": true,
+  "WindowsDPAPIActuallyRun": true,
+  "NativeWPFCompatibilityActuallyRun": true,
+  "NativePdfRendererActuallyRun": true,
+  "SelfContainedWindowsWebHostActuallyRun": true,
+  "BrowserEvidence": "../Browser-Web-Windows.json",
+  "BrowserTests": 10,
+  "BrowserAssertions": 240,
+  "BrowserFailed": 0,
+  "BrowserChannel": "msedge",
+  "NativePngPdfPreviewInBrowserActuallyRun": true,
+  "BrowserHostRestartActuallyRun": true,
+  "BrowserExternalAssetRequests": 0,
+  "Screens": [
+    "Today (HTML)",
+    "Reports (HTML)",
+    "Settings (HTML)",
+    "Reports at 1024x768 (HTML)"
+  ],
+  "Scope": "Fresh synthetic-fixture execution at the pinned source. Twelve native PowerShell suites plus a separate real Edge/Kestrel/PowerShell browser run. The browser verified protected local API, rendered native PNG preview, two-button classification, preserved exact core state/PDF bytes, Undo, stale actions, filtered ZIP hashes, restart persistence, safe connection failures and unobstructed small-screen controls. Individual legacy suite Version fields can identify feature introduction; these raw reports are preserved unmodified. No hospital scanner authentication, real clinical data, physical keyboard/IME, workplace endpoint-policy approval or hospital SMB performance was tested.",
+  "SelfContainedWindowsHostArtifactSHA256": "3d5db76e10d4f0227e77fa01a8dc9e605aa9e895eb083104dc4da317d035a302"
 }

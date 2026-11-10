@@ -1,62 +1,59 @@
 # Testing and practical limits
 
-The cloud development scenario uses generated PDFs and local folders representing three scanners. No real scanner reports, credentials, or clinical records are used.
+The final v5.0.0 Windows validation passed at source commit `b468e750188de9aa6c1b5020d0e9fdd702379e71` in [workflow run 42897377290](https://github.com/rtariq2015/QA-Manger/actions/runs/42897377290). All test PDFs, scanner folders, identities and password canaries are synthetic. No hospital reports or real credentials were used.
 
-The synthetic tests cover receipt calendars, explicit printed results, separate Monthly component PDFs, combined PDFs, changed report revisions, unavailable sources, cancelled transfers, interrupted transactions, corrupted reports, readable folders, exports, backup verification, rejected tampered backups, restore into a new folder, folder moves, saved configuration and verified upgrades.
+| Execution | Scenarios | Assertions | Failed | Saved evidence |
+| --- | ---: | ---: | ---: | --- |
+| Windows PowerShell 5.1: twelve native suites | 189 | 1,199 | 0 | [Windows summary](../Tests/Current/Windows/Summary.json) and its unmodified `Run-*.json` reports |
+| Windows Edge: actual self-contained host and PowerShell adapter | 10 | 240 | 0 | [Windows browser report](../Tests/Current/Browser-Web-Windows.json) |
+| Linux PowerShell 7.4.13: development suites | 184 | 1,139 | 0 | [Development summary](../Tests/Current/Summary.json) and root `Run-*.json` reports |
+| Linux Chromium: actual local host and adapter | 10 | 236 | 0 | [Linux browser report](../Tests/Current/Browser-Web.json) |
 
-The offline library is also tested in Chromium for searching, no results, reset, relative links and actual PDF targets. The README image is a screenshot of this generated library with synthetic files.
+The Windows run is the final pinned release validation. Linux results are separately labeled development evidence, not proof of Windows behavior. Some native suites retain older feature-version labels internally; their raw files were copied unchanged from the final successful run. Earlier v4.4.1 evidence is preserved under [Tests/Historical/v4.4.1](../Tests/Historical/v4.4.1).
 
-## Windows validation
+## What the browser run exercised
 
-The GitHub **Windows validation and visual preview** workflow runs all eleven suites under Windows PowerShell 5.1. It also loads WPF and captures six native screens populated only with synthetic demonstration data. Download its `windows-validation` artifact for the JSON results and image. Check the actual workflow result; the existence of the workflow does not mean it passed.
+The browser tests use the real Kestrel host, Windows PowerShell worker, archived synthetic PDFs and durable organization state. They do not mock the application API.
 
-The Linux cloud suite and the dedicated hosted Windows suite have both run. The Windows run additionally exercised native PowerShell 5.1 and DPAPI and rendered WPF. These checks do not establish real scanner authentication, interactive high-DPI behavior, workstation endpoint approval, or hospital SMB performance. Follow `Tests/Windows-Smoke.md` on the approved work computer. The original v4.1.0 reports remain historical evidence; current-run reports live in `Tests/Current`.
+- Missing session authentication, hostile origins, unsupported shell-style actions and invalid PDF/page identifiers are rejected.
+- Today, Reports and Settings load without external interface assets or JavaScript errors. Windows renders an actual PNG page through the native PDF renderer; the report verifies that rendering ran.
+- Approve has no reviewer-name form or second confirmation. Undo restores pending; Disapprove retains the PDF under Other. Every decision preserves original PDF and scanner-source hashes, the exact core archive-state bytes, existing reviewer fields and checklist evidence.
+- A stale approval cannot overwrite a newer decision. Organization decisions and Undo metadata survive a full host restart; the previous process token is rejected.
+- Scanner/type filters drive a ZIP containing exactly the matching PDFs, each checked against its original SHA-256, plus an offline summary.
+- A connection failure remains visible, an entered synthetic password does not appear in public job results, and the password input is cleared.
+- At 1024×768, Approve and Disapprove remain visible. Real mouse clicks on Undo and an offline approval after a failed scanner connection are unobstructed by notifications.
 
-The v4.4.0 review suite checks explicit Accept/Decline decisions, checklist boundaries, persistent Undo snapshots, stale decisions, unchanged rescans and reviewed-other browsing and exports. Windows additionally renders an actual synthetic PDF and clicks through the native workspace to verify Skip, Accept, Undo and Decline. These synthetic reports contain no clinical data.
+The fresh Windows screenshots in [docs/images](images) show Today, Reports, Settings and the smaller Reports layout, using synthetic data only. They are actual interface captures, not design mockups.
 
-## Operating limits
+## Existing protections retained
 
-- Checks and reminders run only while the application window is open. There is no service, installed task, or closed-app notification.
-- Scanner access still depends on the workstation's existing network permissions. An unavailable source does not establish missed QA.
-- Reconnection and enumeration run in bounded helper processes. A Windows network read already in progress during a file transfer can still wait for the OS to return before the next safe cancellation checkpoint.
-- The optional PDF reader needs the workstation's existing .NET Framework 4.7.2+ and approval for the bundled DLLs. No runtime is installed or downloaded by the application.
-- The visual preview uses the Windows PDF renderer already supplied with Windows. If endpoint policy blocks it, use the approved default PDF viewer. Preview workers are bounded and do not change the file.
-- OCR is not included. Explicit `Noise: PASS` / `MTF: FAIL` style lines can be extracted with page evidence; actual scanner templates require redacted examples to extend recognition. Unrecognized text stays for review. No department-specific numerical limits are assumed.
-- Receipt, extracted printed results, reviewed classification and complete checklist evidence are distinct. Provisional filename/size grouping alone does not satisfy the Today receipt headline.
-- Fast updates use metadata. Use saved-file integrity audit and the separate scanner-source fingerprint check when deeper verification is needed.
-- Cached analysis is derived data keyed by PDF fingerprint. Changed files require new analysis; review labels remain independent.
-- Same-drive readable copies and same-drive backups do not protect against drive failure. Keep a verified backup on approved separate storage.
-- Saved sign-ins are Windows account/workstation bound and excluded from full backups. Re-enter them after moving to another computer.
-- The updater verifies package integrity, preserves local settings/data, and keeps the previous App folder. Obtain release packages from this repository; checksums alone do not authenticate an unknown publisher.
-- SHA-256 manifests and review history detect ordinary inconsistencies; they are not a signed, tamper-proof audit system.
+The native suites continue to exercise archive/source preservation, changed revisions, writer locks, stale decisions, interrupted-copy recovery, cancellation, separate/combined Monthly component evidence, readable copies, exports, verified backup/restore, configuration portability, path/collision handling, protected Windows credentials, CMD launchers and offline update/restart behavior.
 
-The Windows runs exposed and helped fix managed/readable path-length failures and duplicate-name suffix handling. The application keeps managed names compact and shortens readable filenames when needed; original names remain in the index and offline inventory. Very long workspace roots can still exceed Windows PowerShell 5.1 path limits; choose a short local folder.
+The v5 adapter tests additionally cover classification-only sidecar history, unchanged-import persistence, preserved core clinical evidence, owned readable-library copies, rejection of modified PDFs, ZIP fingerprints and JSON worker transport. Browser classification is separate from formal QA verification: clicking Approve does not fabricate a clinical reviewer, printed PASS/FAIL or completed Monthly checklist.
 
-## Network update tests (4.2.1)
+Support exports reconstruct allowlisted counts, operation outcomes, timings and Windows error numbers. Privacy tests use synthetic canaries to check that passwords, report text, filenames, paths, usernames, network addresses and raw logs do not enter shareable bundles. Full retained structured logs normally keep up to 90 days / 50 MB. Nothing is uploaded automatically.
 
-`Tests/Run-NetworkTests.ps1` uses synthetic profiles and mocked Windows network API boundaries to check share-root authentication, complete folder paths, occupied letters, mapping races, native error numbers, preserved data and profile privacy. These tests do not contact hospital scanner addresses or authenticate with real passwords. A private network profile is deliberately absent from this repository. The real workstation must still verify share access.
+## Reproducing checks
 
-## Updater startup regression (4.2.2)
+The development environment needs the .NET SDK to build the host and Node/Playwright for browser tests. These are build/test tools, not installations required on the work computer.
 
-The network suite launches the tracked `Apply CT QA Network Update.cmd` through Windows CMD and Windows PowerShell 5.1, omits `SourceFolder`, and supplies the target noninteractively. Source and target paths contain spaces, and the working directory is unrelated. It also launches the normal upgrader without `TargetFolder`. This catches startup errors caused by evaluating `$PSScriptRoot` before the script body. Report preservation, archive settings, and previous-program copies are asserted after the update. Interactive folder-picker clicks and app relaunch still require the workstation check.
+The Windows validation workflow builds the self-contained Windows host, executes the native suites with Windows PowerShell 5.1, and runs:
 
-## Review, support and offline update validation (4.3.0)
+```text
+node Tests/Web/run-all.cjs --windows --output artifacts/web
+```
 
-`Run-SupportTests.ps1` verifies that hundreds of historical findings are grouped without changing the originals, provisional Daily files remain in the pending verification filter, rejected credentials do not trigger an automatic prompt loop, and only accepted credentials are eligible for remembering. Diagnostic canaries cover free text, filenames, paths, usernames, unknown statuses, raw logs, report fingerprints and extracted evidence. Exports rebuild an allowlisted summary and can run while the application lock is held; the Windows test also starts the production diagnostic CMD.
+That command creates a new synthetic workspace, launches the packaged host, runs Edge against it, restarts the host, and checks saved results. `Tests/Web/New-WebFixture.ps1` refuses an existing fixture destination. Browser output, generated report ZIPs and screenshots contain synthetic data. The work-computer smoke checks are listed in [Windows-Smoke.md](../Tests/Windows-Smoke.md).
 
-`Run-UpdateTests.ps1` checks isolated staging, complete manifests, unexpected files, ZIP traversal/ADS/reserved names, duplicate paths, links, modified staged files, protected data/settings, rollback copies and safe cleanup. The helper waits for a released application lock; a still-held lock stops installation. Windows additionally verifies that the normal launcher is started after the successful update. Checksums do not authenticate a publisher.
+## Practical limits
 
-The actual clean release was also used to upgrade a synthetic v4.2.2 installation. Existing settings, encrypted-credential-file preservation sentinel, data and custom archive files retained their byte hashes, a previous-program copy was created, and the packaged standalone diagnostic collector worked against the upgraded installation. This test does not authenticate the sentinel or contact a scanner. Clean packages exclude development folders; private profiles and passwords are excluded from generic update packages. The five recorded WPF screens are synthetic previews, not captures of a clinical workstation.
-
-## Complete scrubbed log bundle
-
-Support ZIPs rebuild every included activity record from fixed operation/outcome/error enums and numeric count/timing fields. They include all retained structured events rather than only the 200-event summary. Owned logs rotate at 1 MB, normally retain up to 90 days and have a 50 MB aggregate cap; a named mutex serializes worker writes. Existing Activity.csv files contribute only recognized dates, operation names and numeric counts when readable and within 20 MB. Free-text details and raw startup/activity logs never enter the bundle.
-
-Privacy tests inject private canaries into arbitrary fields, legacy details, PDF evidence and unknown statuses, inspect every ZIP entry, and verify three concurrent workers retain sixty events. Windows tests run the standalone ZIP export while the application lock is held. The .NET Framework compression assemblies are loaded explicitly. Per-PDF events record only safe aliases/counts, and automatic reading pauses when its queue is empty. Failed reads stay cached until the destination changes or a manual retry is requested.
-
-The Releases workflow publishes only generic clean assets after checking that the recorded native Windows run succeeded and that its runtime source matches the release commit. It rejects any private local profile in the build checkout. Uploaded assets are first attached to a draft, then published together. Release checksums detect corruption; they are not a publisher signature.
-
-
-## Reviewer input patch (4.4.1)
-
-The review regression now exercises native routed key events before appending each character, Backspace, reviewer names with punctuation and the production F1 handler. A cross-platform test executes the actual dispatcher handler with an error event and verifies that it marks that event handled and preserves the original message. The launcher test executes the production CMD with a harmless PowerShell stub and verifies quiet startup plus its normal Startup.log. These tests address paths missed when the earlier test set the reviewer TextBox text directly. They do not claim to automate a physical keyboard or IME.
+- The shipped web host includes its runtime; it still depends on the existing Windows PowerShell 5.1 and native Windows components used by the original application. Endpoint policy can block an executable, scripts, local browser access or scanner shares. Hosted tests cannot approve hospital policy or establish real network access.
+- Scanner collection needs the hospital's internal network. Saved reports, classification, search and export work locally. An unavailable scanner or missing archived PDF does not establish a clinical QA failure.
+- The interface is served on loopback, not as a public or hospital-LAN website. Core interface assets are bundled; no internet connection or automatic report upload is required.
+- Automatic checks run only while the local app is running. There is no installed service, scheduled task or closed-app notification. Use the app's close action to stop its local helper.
+- PDF analysis reuses cached content fingerprints. OCR is not included. Unrecognized or incomplete text stays for review, and no department-specific numerical limits are assumed. Receipt, document classification, extracted printed results and formal checklist evidence remain separate.
+- Network enumeration and PDF rendering have bounded workers, but a Windows file read already in progress may still wait for the operating system before a safe cancellation checkpoint.
+- The readable library is a convenience copy backed by the existing verified archive and history. Same-drive copies/backups do not protect against drive loss. Keep an approved separate backup.
+- Windows-encrypted scanner sign-ins can need re-entry after moving to another Windows user or computer. Updates preserve existing local settings and data; do not manually replace the archive with a fresh program folder.
+- Update manifests detect inconsistent files; they do not authenticate an unknown publisher. Existing history is not a signed, tamper-proof audit system. Very long Windows paths can still require a shorter workspace location.
+- Native routed-key and browser interaction checks are not physical keyboard/IME, manual folder-picker, workstation DPI or real hospital performance tests. Run the approved workstation checks before relying on a new deployment.
