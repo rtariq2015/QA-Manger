@@ -88,10 +88,12 @@ function ConvertTo-QaBrowsePathLabel { param([string]$Text)
     if($safe -match '^(?i)(CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])($|\.)'){$safe='Scanner '+$safe}
     return $safe
 }
-function Get-QaBrowseCategory { param([string]$Category)
+function Get-QaBrowseCategory { param([string]$Category,$Record=$null)
+    if($Category -eq 'Needs_Review' -and [string](Get-QaBrowseValue $Record ReviewDecision) -eq 'Declined' -and (Get-QaBrowseValue $Record ConfirmedBy) -and (Get-QaBrowseValue $Record ConfirmedAt)){return 'Other report - reviewed'}
     switch($Category){'Daily_QA'{'Daily QA'}'Monthly_QA'{'Monthly QA - Confirmed'}'Monthly_QA/Pending_Verification'{'Monthly QA - Pending Verification'}'Acceptance_Tests'{'Acceptance Tests'}'Needs_Review'{'Needs Review'}default{throw 'Unknown QA category in browsing record.'}}
 }
-function Get-QaBrowseCategoryFolder { param([string]$Category)
+function Get-QaBrowseCategoryFolder { param([string]$Category,$Record=$null)
+    if($Category -eq 'Needs_Review' -and [string](Get-QaBrowseValue $Record ReviewDecision) -eq 'Declined' -and (Get-QaBrowseValue $Record ConfirmedBy) -and (Get-QaBrowseValue $Record ConfirmedAt)){return 'Other Reports/Reviewed'}
     switch($Category) {
         'Daily_QA' {'Daily QA'}
         'Monthly_QA' {Join-Path 'Monthly QA' 'Confirmed'}
@@ -104,14 +106,14 @@ function Get-QaBrowseCategoryFolder { param([string]$Category)
 function Get-QaBrowseBase { param($Record)
     $scanner=[string](Get-QaBrowseValue $Record 'ScannerPathLabel')
     if(-not $scanner){$scanner=ConvertTo-QaBrowsePathLabel (Get-QaBrowseScanner ([string]$Record.Scanner) ([string](Get-QaBrowseValue $Record 'ScannerName')))}
-    $category=Get-QaBrowseCategory ([string]$Record.Category)
+    $category=Get-QaBrowseCategory ([string]$Record.Category) $Record
     if($Record.Category -eq 'Monthly_QA' -and (-not(Get-QaBrowseValue $Record 'ConfirmedBy') -or -not(Get-QaBrowseValue $Record 'ConfirmedAt'))){throw 'A Monthly report lacks reviewed confirmation evidence. Review its classification before creating a browsing copy.'}
     $date=[datetime]::MinValue;$valid=[datetime]::TryParseExact([string]$Record.ReportDate,'yyyy-MM-dd',[Globalization.CultureInfo]::InvariantCulture,[Globalization.DateTimeStyles]::None,[ref]$date)
     $year=if($valid){$date.ToString('yyyy')}else{'Unknown Date'}
     $month=if($valid){$date.ToString('MM MMMM',[Globalization.CultureInfo]::InvariantCulture)}else{'Needs Review'}
     $dateText=if($valid){$date.ToString('yyyy-MM-dd')}else{'Undated'}
     $time=if([string]$Record.ReportTime -match '^\d{2}:\d{2}:\d{2}$'){([string]$Record.ReportTime).Replace(':','-')}else{'Time unknown'}
-    $folder=Join-Path (Join-Path (Join-Path $scanner $year) $month) (Get-QaBrowseCategoryFolder ([string]$Record.Category))
+    $folder=Join-Path (Join-Path (Join-Path $scanner $year) $month) (Get-QaBrowseCategoryFolder ([string]$Record.Category) $Record)
     $original=ConvertTo-QaBrowsePathLabel ([IO.Path]::GetFileNameWithoutExtension([string]$Record.OriginalFileName))
     return [pscustomobject]@{Folder=$folder;Name=($dateText+' - '+$time+' - '+$original+' - '+$category)}
 }

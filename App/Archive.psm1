@@ -242,7 +242,7 @@ function Read-QaState { param($Paths)
 function Save-QaState { param($State,$Paths)
     $State.UpdatedUtc=[datetime]::UtcNow.ToString('o')
     Write-QaAtomicText $Paths.State ($State | ConvertTo-Json -Depth 12)
-    $csv=if(@($State.Records).Count -gt 0) { @($State.Records) | Select-Object Id,Scanner,ReportDate,ReportTime,Category,ClassificationBasis,OriginalFileName,SourcePath,Hash,Length,RelativePath,DestinationPath,FirstArchived,ConfirmedBy,ConfirmedAt,ReviewDecision,LastReviewId,@{Name='ConfirmedComponents';Expression={@(Get-QaValue $_ 'ConfirmedComponents' $null) -join '; '}},PdfPagesHint | ConvertTo-Csv -NoTypeInformation } else { @('"Id","Scanner","ReportDate","ReportTime","Category","ClassificationBasis","OriginalFileName","SourcePath","Hash","Length","RelativePath","DestinationPath","FirstArchived","ConfirmedBy","ConfirmedAt","ConfirmedComponents","PdfPagesHint"') }
+    $csv=if(@($State.Records).Count -gt 0) { @($State.Records) | Select-Object Id,Scanner,ReportDate,ReportTime,Category,ClassificationBasis,OriginalFileName,SourcePath,Hash,Length,RelativePath,DestinationPath,FirstArchived,ConfirmedBy,ConfirmedAt,ReviewDecision,LastReviewId,@{Name='ConfirmedComponents';Expression={@(Get-QaValue $_ 'ConfirmedComponents' $null) -join '; '}},PdfPagesHint | ConvertTo-Csv -NoTypeInformation } else { @('"Id","Scanner","ReportDate","ReportTime","Category","ClassificationBasis","OriginalFileName","SourcePath","Hash","Length","RelativePath","DestinationPath","FirstArchived","ConfirmedBy","ConfirmedAt","ConfirmedComponents","ReviewDecision","LastReviewId","PdfPagesHint"') }
     Write-QaAtomicText $Paths.Index ($csv -join "`r`n")
     if ([IO.Directory]::Exists($Paths.Transactions)) {
         foreach($f in [IO.Directory]::GetFiles($Paths.Transactions,'*.json')) {
@@ -550,7 +550,7 @@ function Copy-QaVerified { param($Entry,$Source,$State,$Paths,$Progress,$Summary
         }
         $record=[pscustomobject]@{Id=$id;Scanner=$Entry.Scanner;ReportDate=$Entry.ReportDate;ReportTime=$Entry.ReportTime;OriginalFileName=$Entry.OriginalFileName;SourcePath=$Entry.SourcePath;SourceKey=(Get-QaSourceKey $Entry.Scanner $Entry.SourcePath);Hash=$hash;Length=[long]$Entry.Length;SourceLastWriteUtc=$Entry.SourceLastWriteUtc;RelativePath=$relative;DestinationPath=$target;DestinationLastWriteUtc='';Category=$Entry.Category;ClassificationBasis=$Entry.ClassificationBasis;FirstArchived=[datetime]::UtcNow.ToString('o');ConfirmedBy='';ConfirmedAt='';ConfirmedComponents=@();PdfPagesHint=[int]$pdf.Pages}
         if ($existing.Count -gt 0) {
-            $old=$existing[0];$record.Category=$old.Category;$record.ClassificationBasis=$old.ClassificationBasis;$record.ConfirmedBy=$old.ConfirmedBy;$record.ConfirmedAt=$old.ConfirmedAt;$record.FirstArchived=$old.FirstArchived;Set-QaValue $record 'ConfirmedComponents' ([object[]]@(Get-QaComponentLabels (Get-QaValue $old 'ConfirmedComponents' $null) 'Reviewed report items'))
+            $old=$existing[0];$record.Category=$old.Category;$record.ClassificationBasis=$old.ClassificationBasis;$record.ConfirmedBy=$old.ConfirmedBy;$record.ConfirmedAt=$old.ConfirmedAt;$record.FirstArchived=$old.FirstArchived;Set-QaValue $record 'ConfirmedComponents' ([object[]]@(Get-QaComponentLabels (Get-QaValue $old 'ConfirmedComponents' $null) 'Reviewed report items'));foreach($field in @('ReviewDecision','LastReviewId')){Set-QaValue $record $field (Get-QaValue $old $field)}
             $aliasHistory=New-Object 'System.Collections.Generic.List[string]'
             foreach($priorPath in @(Get-QaValue $old 'SourceAliases' $null)){if($null -ne $priorPath -and -not $aliasHistory.Contains([string]$priorPath)){[void]$aliasHistory.Add([string]$priorPath)}}
             if(-not ([string]$old.SourcePath).Equals([string]$Entry.SourcePath,[StringComparison]::OrdinalIgnoreCase) -and -not $aliasHistory.Contains([string]$old.SourcePath)){[void]$aliasHistory.Add([string]$old.SourcePath)}
@@ -563,7 +563,7 @@ function Copy-QaVerified { param($Entry,$Source,$State,$Paths,$Progress,$Summary
         $record.DestinationLastWriteUtc=(Get-Item -LiteralPath $target).LastWriteTimeUtc.ToString('o')
         if ($existing.Count -gt 0) {
             # Keep review of the exact same bytes when repairing a damaged saved copy.
-            $old=$existing[0];$record.Category=$old.Category;$record.ClassificationBasis=$old.ClassificationBasis;$record.ConfirmedBy=$old.ConfirmedBy;$record.ConfirmedAt=$old.ConfirmedAt;$record.FirstArchived=$old.FirstArchived;Set-QaValue $record 'ConfirmedComponents' ([object[]]@(Get-QaComponentLabels (Get-QaValue $old 'ConfirmedComponents' $null) 'Reviewed report items'))
+            $old=$existing[0];$record.Category=$old.Category;$record.ClassificationBasis=$old.ClassificationBasis;$record.ConfirmedBy=$old.ConfirmedBy;$record.ConfirmedAt=$old.ConfirmedAt;$record.FirstArchived=$old.FirstArchived;Set-QaValue $record 'ConfirmedComponents' ([object[]]@(Get-QaComponentLabels (Get-QaValue $old 'ConfirmedComponents' $null) 'Reviewed report items'));foreach($field in @('ReviewDecision','LastReviewId')){Set-QaValue $record $field (Get-QaValue $old $field)}
             $State.Records=@($State.Records|Where-Object{$_.Id -ne $id})+@($record)
         } else { Add-QaRecord $State $record }
     } finally {
@@ -715,7 +715,7 @@ function Get-QaDashboard {
         else{[void]$scanners.Add([pscustomobject]@{Scanner=$s.Scanner;Name=$s.Name;Status='Unknown';Message='Connection has not been checked. Run Setup or Update Reports.';Count=$count;SavedReports=$count;LastSuccessfulUpdate='';CheckedUtc=''})}
     }
     $legacy=([IO.File]::Exists((Join-Path $paths.Root 'QA_Master_Index_v2.csv')) -and -not [IO.File]::Exists($paths.State))
-    return [pscustomobject]@{Records=@($state.Records);MonthlyCoverage=@(Get-QaMonthlyCoverage -Config $Config -Records @($state.Records));Attention=@(Get-QaAttention $Config $state $paths);Scanners=@($scanners.ToArray());SetupComplete=[bool]$state.SetupComplete;TotalReports=@($state.Records).Count;LegacyDetected=$legacy;ArchiveRoot=$paths.Root;IndexPath=$paths.Index;HistoryPath=$paths.History;LastUpdated=$state.UpdatedUtc}
+    return [pscustomobject]@{Records=@($state.Records);Reviews=@($state.Reviews);MonthlyCoverage=@(Get-QaMonthlyCoverage -Config $Config -Records @($state.Records));Attention=@(Get-QaAttention $Config $state $paths);Scanners=@($scanners.ToArray());SetupComplete=[bool]$state.SetupComplete;TotalReports=@($state.Records).Count;LegacyDetected=$legacy;ArchiveRoot=$paths.Root;IndexPath=$paths.Index;HistoryPath=$paths.History;LastUpdated=$state.UpdatedUtc}
 }
 function Get-QaRecordReviewStamp {
     [CmdletBinding()]param($Record)

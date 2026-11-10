@@ -18,7 +18,8 @@ function ConvertTo-QaPathLabel { param([string]$Text)
     if($safe -match '^(?i)(CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])($|\.)'){$safe='Scanner '+$safe}
     return $safe
 }
-function Get-QaCategoryLabel { param([string]$Category)
+function Get-QaCategoryLabel { param([string]$Category,$Record=$null)
+    if($Category -eq 'Needs_Review' -and [string](Get-QaReportValue $Record ReviewDecision) -eq 'Declined' -and (Get-QaReportValue $Record ConfirmedBy) -and (Get-QaReportValue $Record ConfirmedAt)){return 'Other report - reviewed'}
     switch($Category) {
         'Daily_QA' {'Daily QA'}
         'Monthly_QA' {'Monthly QA - Confirmed'}
@@ -27,7 +28,8 @@ function Get-QaCategoryLabel { param([string]$Category)
         default {'Needs Review'}
     }
 }
-function Get-QaCategoryFolder { param([string]$Category)
+function Get-QaCategoryFolder { param([string]$Category,$Record=$null)
+    if($Category -eq 'Needs_Review' -and [string](Get-QaReportValue $Record ReviewDecision) -eq 'Declined' -and (Get-QaReportValue $Record ConfirmedBy) -and (Get-QaReportValue $Record ConfirmedAt)){return 'Other Reports/Reviewed'}
     switch($Category) {
         'Daily_QA' {'Daily QA'}
         'Monthly_QA' {'Monthly QA/Confirmed'}
@@ -46,7 +48,7 @@ function Get-QaReportDate { param($Record)
 function Get-QaReportTitle {
     [CmdletBinding()]param([Parameter(Mandatory=$true)]$Record)
     $scanner=Get-QaScannerLabel ([string]$Record.Scanner) ([string](Get-QaReportValue $Record 'ScannerName'))
-    $category=Get-QaCategoryLabel ([string]$Record.Category)
+    $category=Get-QaCategoryLabel ([string]$Record.Category) $Record
     $date=Get-QaReportDate $Record
     $dateText=if($null -ne $date){$date.ToString('MMM dd, yyyy',[Globalization.CultureInfo]::InvariantCulture)}else{'Undated report'}
     $time=[string](Get-QaReportValue $Record 'ReportTime')
@@ -114,7 +116,7 @@ function Assert-QaZipEntryName { param([string]$Name)
 function Get-QaZipEntryPath { param($Record,$Used)
     $scanner=[string](Get-QaReportValue $Record 'ScannerPathLabel')
     if(-not $scanner){$scanner=ConvertTo-QaPathLabel (Get-QaScannerLabel ([string]$Record.Scanner) ([string](Get-QaReportValue $Record 'ScannerName')))}
-    $category=Get-QaCategoryLabel ([string]$Record.Category)
+    $category=Get-QaCategoryLabel ([string]$Record.Category) $Record
     $date=Get-QaReportDate $Record
     $year=if($null -ne $date){$date.ToString('yyyy')}else{'Unknown Date'}
     $month=if($null -ne $date){$date.ToString('MM MMMM',[Globalization.CultureInfo]::InvariantCulture)}else{'Needs Review'}
@@ -122,7 +124,7 @@ function Get-QaZipEntryPath { param($Record,$Used)
     $time=[string](Get-QaReportValue $Record 'ReportTime')
     $timeText=if($time -match '^\d{2}:\d{2}:\d{2}$'){$time.Replace(':','-')}else{'Time unknown'}
     $base=$scanner+' - '+$dateText+' - '+$timeText+' - '+$category
-    $folder=$scanner+'/'+$year+'/'+$month+'/'+(Get-QaCategoryFolder ([string]$Record.Category))+'/'
+    $folder=$scanner+'/'+$year+'/'+$month+'/'+(Get-QaCategoryFolder ([string]$Record.Category) $Record)+'/'
     $path=$folder+$base+'.pdf'
     if($Used.ContainsKey($path)) {
         # Separate legitimate sessions and revisions without exposing archive hash folders.
@@ -340,7 +342,7 @@ function Invoke-QaExport {
                 $hash=([BitConverter]::ToString($sha.Hash)).Replace('-','')
                 if($hash -ne $r.Hash){throw ('SHA-256 did not match for '+$r.OriginalFileName+'. Run the integrity audit before exporting.')}
             } finally {Close-QaExportResources -Resources @($output,$input,$sha)}
-            [void]$manifest.Add([pscustomobject]@{RecordId=[string]$r.Id;Scanner=(Get-QaScannerLabel ([string]$r.Scanner) ([string](Get-QaReportValue $r 'ScannerName')));ReportTitle=(Get-QaReportTitle $r);OriginalFileName=[string]$r.OriginalFileName;ExportPath=$entryPath;QACategory=(Get-QaCategoryLabel ([string]$r.Category));Hash=[string]$r.Hash;ReportDate=[string]$r.ReportDate;ReportTime=[string]$r.ReportTime;ConfirmedComponents=(Get-QaReportComponentText $r)})
+            [void]$manifest.Add([pscustomobject]@{RecordId=[string]$r.Id;Scanner=(Get-QaScannerLabel ([string]$r.Scanner) ([string](Get-QaReportValue $r 'ScannerName')));ReportTitle=(Get-QaReportTitle $r);OriginalFileName=[string]$r.OriginalFileName;ExportPath=$entryPath;QACategory=(Get-QaCategoryLabel ([string]$r.Category) $r);Hash=[string]$r.Hash;ReportDate=[string]$r.ReportDate;ReportTime=[string]$r.ReportTime;ConfirmedComponents=(Get-QaReportComponentText $r);ReviewDecision=[string](Get-QaReportValue $r ReviewDecision)})
         }
         $csvRows=@($manifest.ToArray()|ForEach-Object{
             $cells=[ordered]@{}

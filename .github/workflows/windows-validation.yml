@@ -47,6 +47,8 @@ jobs:
           if ($LASTEXITCODE -ne 0) { exit 1 }
           & powershell.exe -NoProfile -STA -File .\App\Start.ps1 -DemoPreview -PreviewPage Updates -ScreenshotPath .\artifacts\windows\updates-native-demo.png
           if ($LASTEXITCODE -ne 0) { exit 1 }
+          & powershell.exe -NoProfile -STA -File .\App\Start.ps1 -DemoPreview -PreviewPage Queue -ScreenshotPath .\artifacts\windows\queue-native-demo.png
+          if ($LASTEXITCODE -ne 0) { exit 1 }
       - name: Save test results and image
         if: always()
         uses: actions/upload-artifact@v4

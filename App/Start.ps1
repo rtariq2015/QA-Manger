@@ -1,6 +1,6 @@
 ﻿# Native WPF front end. Windows PowerShell 5.1; no execution-policy changes.
 [CmdletBinding()]
-param([switch]$ValidateLayout,[switch]$PortableLaunch,[switch]$DemoPreview,[string]$ScreenshotPath="",[ValidateSet('Dashboard','Advanced','Review','Reports','Updates')][string]$PreviewPage='Dashboard')
+param([switch]$ValidateLayout,[switch]$PortableLaunch,[switch]$DemoPreview,[string]$ScreenshotPath="",[ValidateSet('Dashboard','Advanced','Review','Reports','Updates','Queue')][string]$PreviewPage='Dashboard')
 Set-StrictMode -Version 2.0
 $ErrorActionPreference = 'Stop'
 $script:AppRoot = Split-Path -Parent $PSScriptRoot
@@ -24,6 +24,8 @@ $script:AttemptedCredentials=@{}
 $script:RememberPending=@{}
 $script:ReconnectTarget=''
 $script:ReviewGroups=@()
+$script:ReviewQueue=$null
+$script:SessionReviewer=''
 $script:PreparedUpdate=$null
 $script:UpdateLaunching=$false
 $script:AnalysisPending=0
@@ -56,6 +58,10 @@ function Add-RecordLabels {
         if($scannerNames.ContainsKey($scanner)){$name=$scannerNames[$scanner]}
         Add-Member -InputObject $row -NotePropertyName ScannerName -NotePropertyValue $name -Force
         Add-Member -InputObject $row -NotePropertyName CategoryLabel -NotePropertyValue $(if([string](Value-Or $row Category) -eq 'Daily_QA' -and (Test-QaReportPending $row)){'Daily QA type - needs confirmation'}else{Get-CategoryLabel ([string](Value-Or $row Category))}) -Force
+        $status=Get-QaReportReviewStatus $row
+        Add-Member -InputObject $row -NotePropertyName ReviewStatusLabel -NotePropertyValue $(if($status -eq 'Pending'){'Pending review'}else{$status}) -Force
+        Add-Member -InputObject $row -NotePropertyName ReviewStatusColor -NotePropertyValue $(switch($status){'Pending'{'#F4C779'}'Accepted'{'#45D8AE'}'Declined'{'#9FB5CA'}default{'#8FAAC4'}}) -Force
+        if($status -eq 'Declined' -and $row.Category -eq 'Needs_Review'){$row.CategoryLabel='Other report / reviewed'}
         if($null -ne $row.PSObject.Properties['Id']){Add-Member -InputObject $row -NotePropertyName ReportTitle -NotePropertyValue (Get-QaReportTitle -Record $row) -Force}
     }
 }
@@ -79,7 +85,8 @@ function Show-Note {
     if($script:DemoPreview){throw ($Title+': '+$Text)}
     $icon = [System.Windows.MessageBoxImage]::Information
     if ($IsError) { $icon = [System.Windows.MessageBoxImage]::Warning }
-    [void][System.Windows.MessageBox]::Show($script:Window,$Text,$Title,[System.Windows.MessageBoxButton]::OK,$icon)
+    $owner=$script:Window;if($null -ne $script:ReviewQueue -and $script:ReviewQueue.Window.IsVisible){$owner=$script:ReviewQueue.Window}
+    [void][System.Windows.MessageBox]::Show($owner,$Text,$Title,[System.Windows.MessageBoxButton]::OK,$icon)
 }
 function Load-Window {
     param([string]$Xaml)
@@ -181,6 +188,8 @@ function Initialize-ReportFilters {
         [void]$categories.Add([pscustomobject]@{Value='All';Label='All QA types'})
         foreach($category in @('Daily_QA','Monthly_QA','Monthly_QA/Pending_Verification','Acceptance_Tests','Needs_Review')){[void]$categories.Add([pscustomobject]@{Value=$category;Label=(Get-CategoryLabel $category)})}
         $script:Controls.CategoryFilter.ItemsSource=@($categories.ToArray());$script:Controls.CategoryFilter.SelectedIndex=0
+        $script:Controls.ReviewStatusFilter.ItemsSource=@([pscustomobject]@{Value='All';Label='All review states'},[pscustomobject]@{Value='Pending';Label='Pending review'},[pscustomobject]@{Value='Accepted';Label='Accepted'},[pscustomobject]@{Value='Declined';Label='Declined suggestions'})
+        $script:Controls.ReviewStatusFilter.SelectedIndex=0
         $script:Controls.YearFilter.ItemsSource=@([pscustomobject]@{Value=0;Label='All years'});$script:Controls.YearFilter.SelectedIndex=0
     } finally {$script:UpdatingFilters=$false}
 }
@@ -254,7 +263,7 @@ function Get-ReportFilters {
 }
 function Get-ReportFilterSummary {
     $labels=New-Object 'System.Collections.Generic.List[string]'
-    foreach($control in @('ScannerFilter','YearFilter','MonthFilter','CategoryFilter')){[void]$labels.Add([string](Value-Or $script:Controls[$control].SelectedItem Label 'All'))}
+    foreach($control in @('ScannerFilter','YearFilter','MonthFilter','CategoryFilter','ReviewStatusFilter')){[void]$labels.Add([string](Value-Or $script:Controls[$control].SelectedItem Label 'All'))}
     if($script:PendingOnly){[void]$labels.Add('Needs confirmation only')}
     if($script:Controls.ReportSearch.Text.Trim()){[void]$labels.Add('Search: '+$script:Controls.ReportSearch.Text.Trim())}
     return ($labels -join ' / ')
@@ -262,7 +271,7 @@ function Get-ReportFilterSummary {
 function Clear-ReportFilters {
     $script:UpdatingFilters=$true
     try {
-        foreach($control in @('ScannerFilter','YearFilter','MonthFilter','CategoryFilter')){$script:Controls[$control].SelectedIndex=0}
+        foreach($control in @('ScannerFilter','YearFilter','MonthFilter','CategoryFilter','ReviewStatusFilter')){$script:Controls[$control].SelectedIndex=0}
         $script:Controls.ReportSearch.Text='';$script:PendingOnly=$false;$script:SelectedYears=@()
     } finally {$script:UpdatingFilters=$false}
     Refresh-ReportYears;Refresh-Reports
@@ -271,7 +280,9 @@ function Refresh-Reports {
     if($script:UpdatingFilters -or $null -eq $script:Dashboard){return}
     $filter=Get-ReportFilters
     $rows=@(Select-QaReports -Records @($script:Dashboard.Records) -Scanner $filter.Scanner -Year $filter.Year -Years $filter.Years -Month $filter.Month -Category $filter.Category -Query $filter.Query -Index $script:ReportSearchIndex)
-    if($script:PendingOnly){$rows=@($rows | Where-Object {Test-QaReportPending $_})}
+    $state=[string]$script:Controls.ReviewStatusFilter.SelectedValue
+    if($script:PendingOnly -and $state -eq 'All'){$state='Pending';$script:Controls.ReviewStatusFilter.SelectedValue='Pending'}
+    if($state -and $state -ne 'All'){$rows=@($rows | Where-Object {(Get-QaReportReviewStatus $_) -eq $state})}
     $script:FilteredReports=$rows
     $script:Controls.ReportsGrid.ItemsSource=$rows
     $script:Controls.ReportCount.Text=('{0:N0} matching reports' -f $rows.Count)
@@ -472,6 +483,7 @@ function Initialize-DemoDashboard {
     }
     $records+=@([pscustomobject]@{Id=('4'*64);Scanner='CT_Edge';ReportDate=((Get-Date).ToString('yyyy-MM')+'-01');ReportTime='08:00:00';Category='Monthly_QA';OriginalFileName='Synthetic_combined_monthly.pdf';SourcePath='Synthetic-Edge-monthly';FirstArchived=[datetime]::UtcNow.ToString('o');Hash=('4'*64);DestinationPath='';ConfirmedComponents=@('MTF','Slice thickness');ConfirmedBy='Synthetic reviewer';ConfirmedAt=[datetime]::UtcNow.ToString('o')})
     $records+=@([pscustomobject]@{Id=('5'*64);Scanner='CT_Flash';ReportDate=((Get-Date).ToString('yyyy-MM')+'-01');ReportTime='08:00:00';Category='Monthly_QA';OriginalFileName='Synthetic_MTF_component.pdf';SourcePath='Synthetic-Flash-monthly';FirstArchived=[datetime]::UtcNow.ToString('o');Hash=('5'*64);DestinationPath='';ConfirmedComponents=@('MTF');ConfirmedBy='Synthetic reviewer';ConfirmedAt=[datetime]::UtcNow.ToString('o')})
+    $records+=@([pscustomobject]@{Id=('6'*64);Scanner='CT_Flash';ReportDate=((Get-Date).ToString('yyyy-MM')+'-03');ReportTime='08:10:00';Category='Monthly_QA/Pending_Verification';OriginalFileName='Synthetic_Monthly_Constancy.pdf';SourcePath='Synthetic-Flash-candidate';FirstArchived=[datetime]::UtcNow.ToString('o');Hash=('6'*64);DestinationPath='';ConfirmedComponents=@();ConfirmedBy='';ConfirmedAt=''})
     $demoIssues=@([pscustomobject]@{Scanner='MDP_Building';Type='Connection';Message='Synthetic example: the reports folder is unavailable. Saved reports remain accessible.';Path='';RecordId=''})
     foreach($source in $script:Config.Sources){foreach($day in 1..60){$demoIssues+=@([pscustomobject]@{Scanner=$source.Scanner;Type='DailyGap';Message=('Synthetic archive example: daily PDF not found for '+(Get-Date).AddDays(-$day).ToString('yyyy-MM-dd'));Path='';RecordId=''})}}
     $script:Dashboard=[pscustomobject]@{SetupComplete=$true;Records=$records;Scanners=$scanners;Attention=$demoIssues;TotalReports=$records.Count;LegacyDetected=$false;ArchiveRoot=$script:AppRoot;LastUpdated=[datetime]::UtcNow.ToString('o')}
@@ -734,7 +746,7 @@ function Save-Settings {
 function Set-Busy {
     param([bool]$Busy)
     $script:Busy=$Busy
-    foreach ($name in @('SetupButton','UpdateButton','SaveSettingsButton','ReconnectButton','AuditButton','ReclassifyButton','ReviewReportButton','AdoptLegacyButton','BrowseArchiveButton','ExportReportsButton','ReviewPendingButton','ClearFiltersButton','ReadReportTextButton','BrowseReportsButton','OpenFolderButton','AnalyzeButton','BackupButton','RestoreButton','CompatibilityButton','RetryAnalysisButton','SourceAuditButton','ImportConnectionsButton','ManageConnectionsButton','CoverageSettingsButton','MonthlySettingsButton','ChooseUpdateButton','InstallUpdateButton')) { $script:Controls[$name].IsEnabled=(-not $Busy) }
+    foreach ($name in @('SetupButton','UpdateButton','SaveSettingsButton','ReconnectButton','AuditButton','ReclassifyButton','ReviewReportButton','ReviewHistoryButton','QuickReviewButton','AdoptLegacyButton','BrowseArchiveButton','ExportReportsButton','ReviewPendingButton','ClearFiltersButton','ReadReportTextButton','BrowseReportsButton','OpenFolderButton','AnalyzeButton','BackupButton','RestoreButton','CompatibilityButton','RetryAnalysisButton','SourceAuditButton','ImportConnectionsButton','ManageConnectionsButton','CoverageSettingsButton','MonthlySettingsButton','ChooseUpdateButton','InstallUpdateButton')) { $script:Controls[$name].IsEnabled=(-not $Busy) }
     $script:Controls.AdvancedView.IsEnabled=(-not $Busy)
     # Searching an immutable saved snapshot remains available during network checks.
     $script:Controls.ReportFilters.IsEnabled=$true
@@ -742,6 +754,7 @@ function Set-Busy {
     if(-not $Busy){$script:Controls.ExportReportsButton.IsEnabled=(@($script:FilteredReports).Count -gt 0)}
     $script:Controls.CancelButton.Visibility=$(if($Busy){[Windows.Visibility]::Visible}else{[Windows.Visibility]::Collapsed})
     $script:Controls.WorkProgress.Visibility=$(if($Busy){[Windows.Visibility]::Visible}else{[Windows.Visibility]::Collapsed})
+    Update-QuickQueueControls
     if($Busy -and $script:CurrentMode -eq 'Update'){$script:Controls.StepOne.Text='1. Wait for report update'}
 }
 function Start-Work {
@@ -774,6 +787,9 @@ try {
  } elseif($mode -eq 'Analysis') {
   Import-Module (Join-Path $appRoot 'App\Insights.psm1') -Force
   $progress.Result=Invoke-QaAnalysis -Config $config -Progress $progress
+ } elseif ($mode -eq 'PdfPreview') {
+  Import-Module (Join-Path $appRoot 'App\Process.psm1') -Force
+  $progress.Result=Invoke-QaIsolatedTask PreviewPdf ([pscustomobject]@{Config=$config;RecordId=[string]$plan.RecordId;PageNumber=[int]$plan.PageNumber}) -TimeoutSeconds 30 -Progress $progress
  } elseif ($mode -eq 'PdfRead') {
   Import-Module (Join-Path $appRoot 'App\PdfReader.psm1') -Force -ErrorAction Stop
   Import-Module (Join-Path $appRoot 'App\Process.psm1') -Force
@@ -1038,10 +1054,10 @@ function Show-QaSettings {
 }
 function Show-SelectedReportHelp {
     $record=$script:Controls.ReportsGrid.SelectedItem
-    if($null -eq $record){$script:Controls.SelectedReportHelp.Text='Select a saved report. Open its PDF, then Review / confirm to record its correct type and verified checklist items.';return}
+    if($null -eq $record){$script:Controls.SelectedReportHelp.Text='Select a saved report. Choose Review pending PDFs for View, Accept or Decline. Use Edit report details for corrections and history.';return}
     $category=[string](Value-Or $record Category)
-    $pending=($category -in @('Needs_Review','Monthly_QA/Pending_Verification') -or ([string](Value-Or $record ClassificationBasis) -like 'Provisional*' -and -not [string](Value-Or $record ConfirmedBy)))
-    $script:Controls.SelectedReportHelp.Text=$(if($pending){'Saved PDF - pending verification. Open the PDF, then Review / confirm selected report. Confirm its type and only checklist items supported by the PDF.'}else{'Saved PDF - '+(Get-CategoryLabel $category)+'. Open it to inspect the evidence, or Review / confirm to correct its label. Text reading and reviewed confirmation are separate.'})
+    $pending=Test-QaReportPending $record
+    $script:Controls.SelectedReportHelp.Text=$(if($pending){'Saved PDF - pending verification. Choose Review pending PDFs. Inspect the PDF, then Accept or Decline; only confirm checklist items supported by the PDF.'}else{'Saved PDF - '+(Get-CategoryLabel $category)+'. Open it to inspect the evidence, or Edit report details to correct its label. Text reading and reviewed confirmation are separate.'})
 }
 function Review-TodayReports {
     $selected=$script:Controls.TodayGrid.SelectedItem
@@ -1078,7 +1094,7 @@ function Prepare-UpdatePackage {
         $script:PreparedUpdate=$plan
         Write-QaSupportEvent -AppRoot $script:AppRoot -Operation OfflineUpdate -Outcome Completed -Counts @{Files=$plan.Files}
         $script:Controls.UpdatePackagePath.Text=$Path
-        $script:Controls.UpdatePackageSummary.Text=('Current: 4.3.0 / Selected: '+$plan.Version+' / '+$plan.Files+' checked program files. Reports and saved settings stay in place.')
+        $script:Controls.UpdatePackageSummary.Text=('Current: 4.4.0 / Selected: '+$plan.Version+' / '+$plan.Files+' checked program files. Reports and saved settings stay in place.')
         $script:Controls.InstallUpdateButton.IsEnabled=$true
     }catch{$script:Controls.UpdatePackagePath.Text='The package could not be checked.';$script:Controls.UpdatePackageSummary.Text=$_.Exception.Message;Show-Note $_.Exception.Message 'Update file needs attention' $true}
 }
@@ -1162,6 +1178,8 @@ function Open-AttentionItem {
     $d.FindName('Close').Add_Click({param($sender,$args) [Windows.Window]::GetWindow($sender).Close()})
     [void]$d.ShowDialog()
 }
+
+. (Join-Path $PSScriptRoot 'ReviewQueueUi.ps1')
 
 try {
     if($env:OS -ne 'Windows_NT') { throw 'CT QA Manager Pro requires Windows and Windows PowerShell 5.1 with WPF.' }
@@ -1262,10 +1280,13 @@ try {
     $script:Controls.BrowseReportsButton.Add_Click({Open-BrowseReports})
     $script:Controls.ReadReportTextButton.Add_Click({Read-SelectedReportText})
     if([IO.File]::Exists((Join-Path $PSScriptRoot 'PdfReader.psm1'))){$script:Controls.ReadReportTextButton.Visibility=[Windows.Visibility]::Visible}
-    $script:Controls.ReviewPendingButton.Add_Click({$script:PendingOnly=(-not $script:PendingOnly);Refresh-Reports})
+    $script:Controls.ReviewStatusFilter.Add_SelectionChanged({if($script:UpdatingFilters){return};$script:PendingOnly=($script:Controls.ReviewStatusFilter.SelectedValue -eq 'Pending');if($script:Controls.ReviewStatusFilter.SelectedValue -in @('Accepted','Declined')){$script:Controls.CategoryFilter.SelectedValue='All'};Refresh-Reports})
+    $script:Controls.ReviewPendingButton.Add_Click({$script:Controls.ReviewStatusFilter.SelectedValue=$(if($script:PendingOnly){'All'}else{'Pending'})})
+    $script:Controls.QuickReviewButton.Add_Click({Open-QuickReviewQueue})
     $script:Controls.OpenReportButton.Add_Click({if($null -ne $script:Controls.ReportsGrid.SelectedItem){Safe-Open ([string]$script:Controls.ReportsGrid.SelectedItem.DestinationPath)}else{Show-Note 'Select a saved report first.'}})
     $script:Controls.ReportsGrid.Add_MouseDoubleClick({if($null -ne $script:Controls.ReportsGrid.SelectedItem){Safe-Open ([string]$script:Controls.ReportsGrid.SelectedItem.DestinationPath)}})
     $script:Controls.ReviewReportButton.Add_Click({Review-SelectedReport})
+    $script:Controls.ReviewHistoryButton.Add_Click({Show-ReportDecisionHistory})
     $script:Controls.AttentionList.Add_MouseDoubleClick({Open-ReviewGroup})
     $script:Controls.AttentionList.Add_PreviewKeyDown({param($sender,$args) if($args.Key -eq [Windows.Input.Key]::Enter){Open-ReviewGroup;$args.Handled=$true}})
     $script:Controls.SaveSettingsButton.Add_Click({[void](Save-Settings)})
@@ -1310,6 +1331,7 @@ try {
             foreach($key in @('Analyzed','Failed','Cached','Pending')){if($null -ne $result -and $null -ne $result.PSObject.Properties[$key]){$counts[$key]=$result.$key}}
             Write-QaSupportEvent -AppRoot $script:AppRoot -Operation $mode -Outcome $(if($errorText){'Failed'}elseif($cancelled){'Cancelled'}else{'Completed'}) -DurationMs $script:OperationClock.ElapsedMilliseconds -ErrorKind (Get-QaSupportErrorKind $errorText) -Counts $counts
         }
+        if(Complete-QuickQueueWork -Mode $mode -Result $result -ErrorText $errorText -Cancelled $cancelled){return}
         if($mode -eq 'Reconnect' -and ($cancelled -or $errorText)){$script:RememberPending=@{}}
         if($cancelled -and -not $errorText){
             $script:AfterReconnect=''
@@ -1357,7 +1379,7 @@ try {
     $script:MonitorTimer=New-Object Windows.Threading.DispatcherTimer
     $script:MonitorTimer.Interval=[timespan]::FromSeconds(60)
     $script:MonitorTimer.Add_Tick({
-        if($script:Busy -or -not $script:Dashboard.SetupComplete){return}
+        if($script:Busy -or $null -ne $script:ReviewQueue -or -not $script:Dashboard.SetupComplete){return}
         $minutes=[int](Value-Or $script:Config MonitorMinutes 15)
         if($minutes -gt 0 -and ([datetime]::Now-$script:LastMonitor).TotalMinutes -ge $minutes){$script:LastMonitor=[datetime]::Now;Start-Work -Mode Update;return}
         if([bool](Value-Or $script:Config AutoAnalyze $true) -and $script:AnalysisPending -gt 0 -and ([datetime]::Now-$script:LastAnalysis).TotalMinutes -ge 5){$script:LastAnalysis=[datetime]::Now;Start-Work -Mode Analysis}
@@ -1389,15 +1411,18 @@ namespace CtQa {
         $script:Controls.TodayDate.Text+=' / SYNTHETIC DEMONSTRATION'
         $script:Controls.WelcomeText.Text='Synthetic sample data. No real scanner reports or credentials are shown.'
         $script:Window.MaxHeight=2200;$script:Window.Height=1650;$script:Window.MaxWidth=1600;$script:Window.Width=1280
-        if($PreviewPage -ne 'Dashboard'){Show-Page $PreviewPage}
+        if($PreviewPage -notin @('Dashboard','Queue')){Show-Page $PreviewPage}
         $script:Window.Show()
         # Pump the dispatcher so hosted Windows applies size changes and paints controls before capture.
         $script:Window.Dispatcher.Invoke([Action]{$script:Window.UpdateLayout()},[Windows.Threading.DispatcherPriority]::ApplicationIdle)
         if($PreviewPage -eq 'Review'){$script:Controls.ReviewView.ScrollToTop();$script:Window.Dispatcher.Invoke([Action]{$script:Window.UpdateLayout()},[Windows.Threading.DispatcherPriority]::ApplicationIdle)}
-        $bitmap=New-Object Windows.Media.Imaging.RenderTargetBitmap ([int]$script:Window.ActualWidth),([int]$script:Window.ActualHeight),96,96,([Windows.Media.PixelFormats]::Pbgra32)
-        $bitmap.Render($script:Window);$encoder=New-Object Windows.Media.Imaging.PngBitmapEncoder
+        $capture=$script:Window
+        if($PreviewPage -eq 'Queue'){$capture=Open-QuickReviewQueue -DemoSnapshot;$capture.Show();$capture.Dispatcher.Invoke([Action]{$capture.UpdateLayout();Update-QuickQueueZoom},[Windows.Threading.DispatcherPriority]::ApplicationIdle)}
+        $bitmap=New-Object Windows.Media.Imaging.RenderTargetBitmap ([int]$capture.ActualWidth),([int]$capture.ActualHeight),96,96,([Windows.Media.PixelFormats]::Pbgra32)
+        $bitmap.Render($capture);$encoder=New-Object Windows.Media.Imaging.PngBitmapEncoder
         $encoder.Frames.Add([Windows.Media.Imaging.BitmapFrame]::Create($bitmap))
         $stream=[IO.File]::Create([IO.Path]::GetFullPath($ScreenshotPath));try{$encoder.Save($stream)}finally{$stream.Dispose()}
+        if($PreviewPage -eq 'Queue'){$capture.Close();$script:ReviewQueue=$null}
         $script:Window.Close();exit 0
     }
     $script:Timer.Start()

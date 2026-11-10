@@ -36,7 +36,9 @@ function Get-QaPdfPreviewPage {
         $options.DestinationWidth=[uint32][math]::Max(1,[math]::Round($page.Size.Width*$scale))
         $options.DestinationHeight=[uint32][math]::Max(1,[math]::Round($page.Size.Height*$scale))
         $stream=New-Object Windows.Storage.Streams.InMemoryRandomAccessStream
-        [System.WindowsRuntimeSystemExtensions]::AsTask($page.RenderToStreamAsync($stream,$options)).GetAwaiter().GetResult()
+        $render=$page.RenderToStreamAsync($stream,$options)
+        $asAction=@([System.WindowsRuntimeSystemExtensions].GetMethods()|Where-Object{$_.Name -eq 'AsTask' -and -not $_.IsGenericMethod -and $_.GetParameters().Count -eq 1 -and $_.GetParameters()[0].ParameterType.Name -eq 'IAsyncAction'})[0]
+        $renderTask=$asAction.Invoke($null,@($render));[void]$renderTask.GetAwaiter().GetResult()
         if($stream.Size -gt 16777216){throw 'This preview is too large. Open the saved PDF in its normal viewer.'}
         $reader=New-Object Windows.Storage.Streams.DataReader($stream.GetInputStreamAt(0))
         $loaded=Wait-QaWindowsOperation ($reader.LoadAsync([uint32]$stream.Size)) ([uint32])

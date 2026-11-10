@@ -16,7 +16,9 @@ function Write-QaNavigator {
         $original=ConvertTo-QaNavigatorHtml $record.OriginalFileName
         $labels=@{'Daily_QA'='Daily QA';'Monthly_QA'='Monthly QA / Confirmed';'Monthly_QA/Pending_Verification'='Monthly QA / Needs review';'Needs_Review'='Needs review';'Acceptance_Tests'='Acceptance tests'}
         $category=ConvertTo-QaNavigatorHtml $labels[[string]$record.Category]
-        $tagClass=if($record.Category -in @('Monthly_QA/Pending_Verification','Needs_Review')){'tag pending'}else{'tag'}
+        $declined=($null -ne $record.PSObject.Properties['ReviewDecision'] -and $record.ReviewDecision -eq 'Declined' -and $record.ConfirmedBy -and $record.ConfirmedAt)
+        if($declined -and $record.Category -eq 'Needs_Review'){$category='Other report / reviewed'}
+        $tagClass=if(-not $declined -and $record.Category -in @('Monthly_QA/Pending_Verification','Needs_Review')){'tag pending'}else{'tag'}
         [void]$rows.Append('<tr><td>'+$scanner+'</td><td>'+$date+'</td><td><a href="'+$href+'">'+$original+'</a><small>'+ (ConvertTo-QaNavigatorHtml $record.ReportTime)+'</small></td><td><span class="'+$tagClass+'">'+$category+'</span></td></tr>')
         $name=[string]$record.OriginalFileName;if($name -match '^[=+@\-\t\r]'){$name="'"+$name}
         [void]$csv.Add([pscustomobject]@{Scanner=$record.ScannerName;Date=$record.ReportDate;Time=$record.ReportTime;OriginalFilename=$name;Category=$record.Category;RelativePath=$entry.RelativePath;SHA256=$entry.Hash})
