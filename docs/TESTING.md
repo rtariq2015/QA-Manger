@@ -8,7 +8,7 @@ The offline library is also tested in Chromium for searching, no results, reset,
 
 ## Windows validation
 
-The GitHub **Windows validation and visual preview** workflow runs all eight suites under Windows PowerShell 5.1. It also loads WPF and captures a native dashboard populated only with synthetic demonstration data. Download its `windows-validation` artifact for the JSON results and image. Check the actual workflow result; the existence of the workflow does not mean it passed.
+The GitHub **Windows validation and visual preview** workflow runs all ten suites under Windows PowerShell 5.1. It also loads WPF and captures five native screens populated only with synthetic demonstration data. Download its `windows-validation` artifact for the JSON results and image. Check the actual workflow result; the existence of the workflow does not mean it passed.
 
 The Linux cloud suite and the dedicated hosted Windows suite have both run. The Windows run additionally exercised native PowerShell 5.1 and DPAPI and rendered WPF. These checks do not establish real scanner authentication, interactive high-DPI behavior, workstation endpoint approval, or hospital SMB performance. Follow `Tests/Windows-Smoke.md` on the approved work computer. The original v4.1.0 reports remain historical evidence; current-run reports live in `Tests/Current`.
 
@@ -36,3 +36,11 @@ The Windows runs exposed and helped fix managed/readable path-length failures an
 ## Updater startup regression (4.2.2)
 
 The network suite launches the tracked `Apply CT QA Network Update.cmd` through Windows CMD and Windows PowerShell 5.1, omits `SourceFolder`, and supplies the target noninteractively. Source and target paths contain spaces, and the working directory is unrelated. It also launches the normal upgrader without `TargetFolder`. This catches startup errors caused by evaluating `$PSScriptRoot` before the script body. Report preservation, archive settings, and previous-program copies are asserted after the update. Interactive folder-picker clicks and app relaunch still require the workstation check.
+
+## Review, support and offline update validation (4.3.0)
+
+`Run-SupportTests.ps1` verifies that hundreds of historical findings are grouped without changing the originals, provisional Daily files remain in the pending verification filter, rejected credentials do not trigger an automatic prompt loop, and only accepted credentials are eligible for remembering. Diagnostic canaries cover free text, filenames, paths, usernames, unknown statuses, raw logs, report fingerprints and extracted evidence. Exports rebuild an allowlisted summary and can run while the application lock is held; the Windows test also starts the production diagnostic CMD.
+
+`Run-UpdateTests.ps1` checks isolated staging, complete manifests, unexpected files, ZIP traversal/ADS/reserved names, duplicate paths, links, modified staged files, protected data/settings, rollback copies and safe cleanup. The helper waits for a released application lock; a still-held lock stops installation. Windows additionally verifies that the normal launcher is started after the successful update. Checksums do not authenticate a publisher.
+
+The actual clean release was also used to upgrade a synthetic v4.2.2 installation. Existing settings, encrypted-credential-file preservation sentinel, data and custom archive files retained their byte hashes, a previous-program copy was created, and the packaged standalone diagnostic collector worked against the upgraded installation. This test does not authenticate the sentinel or contact a scanner. Clean packages exclude development folders; private profiles and passwords are excluded from generic update packages. The five recorded WPF screens are synthetic previews, not captures of a clinical workstation.

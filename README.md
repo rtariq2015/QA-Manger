@@ -6,6 +6,8 @@ A portable Windows workspace for collecting, reviewing, finding and sharing CT Q
 
 *Native WPF preview rendered on hosted Windows with synthetic scanner data.*
 
+[Connections and settings](docs/images/connections-native-demo.png) · [Archive review](docs/images/review-native-demo.png) · [Reports and confirmation](docs/images/reports-native-demo.png) · [Offline updates](docs/images/updates-native-demo.png)
+
 ![Offline report library with synthetic PDFs](docs/images/offline-library.png)
 
 *Actual browser screenshot of the generated offline library with synthetic PDFs. Both images use demonstration data.*
@@ -80,10 +82,14 @@ Use **Create full backup** to save a verified ZIP outside the live archive. **Re
 
 ## Validation and evidence
 
-The v4.2.2 Linux cloud run passed **132 scenarios and 906 assertions** across eight suites. The hosted Windows run passed **132 scenarios and 913 assertions**, including the production CMD updater with omitted folder defaults, Windows PowerShell 5.1, DPAPI, native WPF loading and preview generation. A 10,000-record search benchmark measured **0.021 seconds** for a cached filter after **1.38 seconds** to build the index, including first compilation, on this Linux host. These are in-memory measurements, not workstation or SMB performance. Current Linux cloud and browser results are in [Tests/Current](Tests/Current). The [Windows workflow](https://github.com/rtariq2015/QA-Manger/actions/workflows/windows-validation.yml) runs native PowerShell 5.1 suites and a WPF demonstration capture on source changes. [Saved Windows evidence](Tests/Current/Windows) identifies the validated source commit and run. These hosted checks do not establish hospital access or interactive workstation DPI behavior.
+The v4.3.0 Linux cloud run passed **152 scenarios and 1003 assertions** across ten suites. The hosted Windows run passed **153 scenarios and 1014 assertions**, including the production CMD updater with omitted folder defaults, Windows PowerShell 5.1, DPAPI, native WPF loading and preview generation. A 10,000-record search benchmark measured **0.021 seconds** for a cached filter after **1.38 seconds** to build the index, including first compilation, on this Linux host. These are in-memory measurements, not workstation or SMB performance. Current Linux cloud and browser results are in [Tests/Current](Tests/Current). The [Windows workflow](https://github.com/rtariq2015/QA-Manger/actions/workflows/windows-validation.yml) runs native PowerShell 5.1 suites and a WPF demonstration capture on source changes. [Saved Windows evidence](Tests/Current/Windows) identifies the validated source commit and run. These hosted checks do not establish hospital access or interactive workstation DPI behavior.
 
 Actual hospital access, scanner authentication, endpoint restrictions and interactive DPI acceptance still require workstation validation. See [testing and limitations](docs/TESTING.md) and the [Windows checklist](Tests/Windows-Smoke.md).
 
 [User guide](User%20Guide.html) · [Siemens QA reference](App/Reference/Siemens_QA_Guide.html) · [Changes](CHANGELOG.md) · [Development](CONTRIBUTING.md)
 
 HTML guides are best viewed after downloading. The repository uses generic connection placeholders. Keep real reports, local configuration, credentials and logs out of Git. No project license has been selected; bundled libraries retain their own licenses and notices in `App/Lib/PdfPig`.
+
+## Build clean end-user releases
+
+Run `python scripts/build_release.py --output-dir <output-folder>` on the development machine. Python is build-time only. The portable and offline update ZIPs contain runtime files, baseline settings, a user guide and package metadata/checksums. They exclude repository documentation, tests, workflows and development instructions. The one-time upgrade ZIP supplies separate install and diagnostic launchers for older versions. A local profile may be supplied through `--private-profile`; it enters only the private Work Portable ZIP and never the generic update. Password fields are rejected. Existing installations use the one-time upgrade and retain their current configuration and archives. Future updates use the in-app Updates tab.

@@ -79,5 +79,5 @@
     "Scope": "Generated offline library with synthetic PDFs",
     "ValidatedVersion": "4.2.0 (offline library unchanged in the updater fixes)"
   },
-  "WindowsEvidence": "Windows/Summary.json (prior v4.2.2 until the v4.3.0 native workflow completes)"
+  "WindowsEvidence": "Windows/Summary.json (v4.3.0: 153 scenarios, 1014 assertions; native PowerShell 5.1, DPAPI, launchers, offline update restart and five WPF screens executed)"
 }
