@@ -1,7 +1,9 @@
-﻿[CmdletBinding()]param([string]$TargetFolder,[string]$SourceFolder=(Split-Path -Parent $PSScriptRoot),[switch]$NoLaunch)
+﻿[CmdletBinding()]param([string]$TargetFolder,[string]$SourceFolder,[switch]$NoLaunch)
 Set-StrictMode -Version 2.0
 $ErrorActionPreference='Stop'
 try {
+    # Windows PowerShell -File may evaluate parameter defaults before PSScriptRoot exists.
+    if([string]::IsNullOrWhiteSpace($SourceFolder)){$SourceFolder=Split-Path -Parent $PSScriptRoot}
     if(-not $TargetFolder) {
         Add-Type -AssemblyName System.Windows.Forms
         $picker=New-Object Windows.Forms.FolderBrowserDialog

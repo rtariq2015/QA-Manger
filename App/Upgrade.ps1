@@ -1,7 +1,9 @@
-﻿[CmdletBinding()]param([string]$SourceFolder,[string]$TargetFolder=(Split-Path -Parent $PSScriptRoot))
+﻿[CmdletBinding()]param([string]$SourceFolder,[string]$TargetFolder)
 Set-StrictMode -Version 2.0
 $ErrorActionPreference='Stop'
 try {
+    # Resolve this only after Windows PowerShell has entered the script body.
+    if([string]::IsNullOrWhiteSpace($TargetFolder)){$TargetFolder=Split-Path -Parent $PSScriptRoot}
     if(-not $SourceFolder) {
         Add-Type -AssemblyName System.Windows.Forms
         $picker=New-Object Windows.Forms.FolderBrowserDialog;$picker.Description='Select the complete extracted NEW release folder containing App and Tests.'

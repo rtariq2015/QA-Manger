@@ -1,5 +1,11 @@
 # Changes
 
+## 4.2.2
+
+- Fix the Windows PowerShell `-File` startup failure caused by resolving `$PSScriptRoot` in parameter defaults in both update helpers.
+- Track the password-free network update launcher and exercise its real CMD launch path with spaces, an unrelated working directory, and omitted source/target defaults.
+- Preserve reports, customized archive location, previous program backups, and secure password entry.
+
 ## 4.2.1
 
 - Apply private connection profiles locally without publishing scanner addresses or passwords.

@@ -1,4 +1,4 @@
-# CT QA Manager Pro 4.2.1
+# CT QA Manager Pro 4.2.2
 
 A portable Windows workspace for collecting, reviewing, finding and sharing CT QA report PDFs. Run it from one folder using the Windows PowerShell 5.1 and WPF components already supplied with Windows. No installer, administrator launch, Python, Git or external PowerShell modules are required for normal use.
 
@@ -9,6 +9,10 @@ A portable Windows workspace for collecting, reviewing, finding and sharing CT Q
 ![Offline report library with synthetic PDFs](docs/images/offline-library.png)
 
 *Actual browser screenshot of the generated offline library with synthetic PDFs. Both images use demonstration data.*
+
+## Updater launch fix
+
+Version 4.2.2 fixes folder discovery when the network updater is double-clicked under Windows PowerShell 5.1. The updater resolves its own location after startup, so it works from another working directory and from folders containing spaces. Re-extract the corrected package into a separate folder and run **Apply CT QA Network Update.cmd**, then select the existing installation. Passwords are never bundled.
 
 ## Network setup update
 

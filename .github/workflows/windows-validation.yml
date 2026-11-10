@@ -9,6 +9,7 @@ on:
       - 'Tests/Verify-Package.py'
       - '.github/workflows/**'
       - 'Start CT QA Manager.cmd'
+      - 'Apply CT QA Network Update.cmd'
       - 'Update CT QA Manager.cmd' 
   workflow_dispatch:
 permissions:

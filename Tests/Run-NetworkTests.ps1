@@ -57,8 +57,9 @@ Scenario 'Profiles containing a password are rejected without changing local set
     $caught=$false;try{Set-QaConnectionProfile $workspace $profilePath|Out-Null}catch{$caught=$true}
     Check ($caught -and (Get-FileHash $local).Hash -eq $before) 'No secret-bearing profile imported'
 }
-Scenario 'The repair helper updates an existing installation and retains its data and archive choice' {
-    $source=Join-Path $testRoot 'NewRelease';$target=Join-Path $testRoot 'ExistingInstall'
+function Test-RepairFixture {
+    param([switch]$UseLauncherDefaults)
+    $fixture=Join-Path $testRoot ([guid]::NewGuid().ToString('N'));$source=Join-Path $fixture 'New Release With Spaces';$target=Join-Path $fixture 'Existing Install With Spaces'
     foreach($folder in @($source,$target)){foreach($child in @('App','Config','Data')){[void][IO.Directory]::CreateDirectory((Join-Path $folder $child))}}
     foreach($name in @('Upgrade.ps1','Workspace.psm1','Network.psm1','ApplyNetworkUpdate.ps1')){Copy-Item -LiteralPath (Join-Path $root ('App/'+$name)) -Destination (Join-Path $source ('App/'+$name))}
     foreach($name in @('Start CT QA Manager.cmd','Update CT QA Manager.cmd','User Guide.html')){Copy-Item -LiteralPath (Join-Path $root $name) -Destination (Join-Path $source $name);Copy-Item -LiteralPath (Join-Path $root $name) -Destination (Join-Path $target $name)}
@@ -67,17 +68,42 @@ Scenario 'The repair helper updates an existing installation and retains its dat
     $settings|ConvertTo-Json -Depth 12|Set-Content -LiteralPath (Join-Path $target 'Config/Settings.local.json') -Encoding UTF8
     [IO.File]::WriteAllText((Join-Path $target 'Data/review-evidence.txt'),'Synthetic existing evidence')
     $profile|ConvertTo-Json -Depth 12|Set-Content -LiteralPath (Join-Path $source 'Config/NetworkProfile.local.json') -Encoding UTF8
+    Copy-Item -LiteralPath (Join-Path $root 'Apply CT QA Network Update.cmd') -Destination $source
     [void][IO.Directory]::CreateDirectory((Join-Path $source 'Tests'))
     $manifest=@(Get-ChildItem $source -Recurse -File|ForEach-Object{(Get-FileHash $_.FullName).Hash+'  '+$_.FullName.Substring($source.Length+1).Replace('\','/')})
     [IO.File]::WriteAllLines((Join-Path $source 'Tests/Repository-SHA256SUMS.txt'),$manifest)
-    & (Get-Process -Id $PID).Path -NoProfile -File (Join-Path $source 'App/ApplyNetworkUpdate.ps1') -TargetFolder $target -SourceFolder $source -NoLaunch > (Join-Path $testRoot 'repair.log') 2>&1
-    Check ($LASTEXITCODE -eq 0) 'Repair helper succeeded'
+    Push-Location ([IO.Path]::GetTempPath())
+    try {
+        if($UseLauncherDefaults -and [Environment]::OSVersion.Platform -eq [PlatformID]::Win32NT) {
+            # Same production CMD and powershell.exe -File startup as a double-click.
+            # Select the target noninteractively; EOF releases the usual pause.
+            $command='""'+(Join-Path $source 'Apply CT QA Network Update.cmd')+'" -TargetFolder "'+$target+'" -NoLaunch < nul"'
+            & $env:ComSpec /d /s /c $command > (Join-Path $fixture 'repair.log') 2>&1
+        } elseif($UseLauncherDefaults) {
+            & (Get-Process -Id $PID).Path -NoProfile -File (Join-Path $source 'App/ApplyNetworkUpdate.ps1') -TargetFolder $target -NoLaunch > (Join-Path $fixture 'repair.log') 2>&1
+        } else {
+            & (Get-Process -Id $PID).Path -NoProfile -File (Join-Path $source 'App/ApplyNetworkUpdate.ps1') -TargetFolder $target -SourceFolder $source -NoLaunch > (Join-Path $fixture 'repair.log') 2>&1
+        }
+        Check ($LASTEXITCODE -eq 0) 'Repair helper succeeded'
+    } finally {Pop-Location}
     $saved=Get-Content (Join-Path $target 'Config/Settings.local.json') -Raw|ConvertFrom-Json
     Check ($saved.Sources[0].Path -eq $scanner.Path) 'Private profile applied to the existing installation'
     Check ($saved.ArchiveRoot -eq 'Keep-This-Archive' -and $saved.SetupComplete) 'Archive choice and completed setup preserved'
     Check ([IO.File]::ReadAllText((Join-Path $target 'Data/review-evidence.txt')) -eq 'Synthetic existing evidence') 'Existing data retained'
     Check (@(Get-ChildItem (Join-Path $target 'Backups') -Recurse -Filter OldProgram.txt).Count -eq 1) 'Previous program retained'
+    if($UseLauncherDefaults) {
+        Push-Location ([IO.Path]::GetTempPath())
+        try {
+            & (Get-Process -Id $PID).Path -NoProfile -File (Join-Path $target 'App/Upgrade.ps1') -SourceFolder $source > (Join-Path $fixture 'upgrade.log') 2>&1
+            Check ($LASTEXITCODE -eq 0) 'Normal updater also resolves its default target inside the script'
+        } finally {Pop-Location}
+        Check ([IO.File]::ReadAllText((Join-Path $target 'Data/review-evidence.txt')) -eq 'Synthetic existing evidence') 'Default-target upgrade retained existing data'
+        $afterUpgrade=Get-Content (Join-Path $target 'Config/Settings.local.json') -Raw|ConvertFrom-Json
+        Check ($afterUpgrade.ArchiveRoot -eq 'Keep-This-Archive') 'Default-target upgrade retained archive location'
+    }
 }
+Scenario 'The repair helper updates an existing installation and retains its data and archive choice' {Test-RepairFixture}
+Scenario 'Production launcher resolves default folders from another working directory with spaces in paths' {Test-RepairFixture -UseLauncherDefaults}
 # Test actual reconnect decisions with synthetic API boundaries: never contact a real scanner.
 $module=Get-Module Network
 & $module {
@@ -126,7 +152,7 @@ Scenario 'Authentication, session conflicts and folder permission errors retain 
     Check ($result.Status -eq 'Unavailable' -and $result.Message -like '*accepted*denied*') 'Post-authentication ACL denial does not repeatedly request a password'
 }
 $failed=@($script:Results|Where-Object Result -eq 'FAIL').Count
-$report=[pscustomobject]@{Version='4.2.1';Runtime=$PSVersionTable.PSVersion.ToString();WindowsPowerShell51ActuallyRun=($PSVersionTable.PSVersion.Major -eq 5);Tests=$script:Results.Count;Assertions=$script:Assertions;Failed=$failed;Results=@($script:Results.ToArray());Scope='Synthetic profiles and mocked native connection boundaries only. Hospital SMB access was not tested.'}
+$report=[pscustomobject]@{Version='4.2.2';Runtime=$PSVersionTable.PSVersion.ToString();WindowsPowerShell51ActuallyRun=($PSVersionTable.PSVersion.Major -eq 5);Tests=$script:Results.Count;Assertions=$script:Assertions;Failed=$failed;Results=@($script:Results.ToArray());Scope='Synthetic profiles and mocked native connection boundaries only. Hospital SMB access was not tested.'}
 if($OutputPath){$report|ConvertTo-Json -Depth 12|Set-Content -LiteralPath $OutputPath -Encoding UTF8}
 Write-Host ('Result: '+($report.Tests-$failed)+'/'+$report.Tests+' scenarios; '+$report.Assertions+' assertions.')
 Remove-Item -LiteralPath $testRoot -Recurse -Force
