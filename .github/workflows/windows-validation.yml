@@ -45,7 +45,7 @@ jobs:
           $failed = $false
           foreach ($name in @('Run-WebServiceTests','Run-ReviewQueueTests','Run-UpdateTests','Run-SupportTests','Run-NetworkTests','Run-Tests','Run-ExportTests','Run-ConnectionTests','Run-BrowseTests','Run-MonthlyTests','Run-PdfTests','Run-PortableTests')) {
             & powershell.exe -NoProfile -File ".\Tests\$name.ps1" -OutputPath ".\artifacts\windows\$name.json"
-            if ($LASTEXITCODE -ne 0) { $failed = $true }
+            if ($LASTEXITCODE -ne 0) { $failed = $true; break }
           }
           if ($failed) { exit 1 }
       - name: Load native WPF and capture synthetic dashboard
@@ -67,7 +67,7 @@ jobs:
           & powershell.exe -NoProfile -STA -File .\App\Start.ps1 -DemoPreview -PreviewPage Queue -ScreenshotPath .\artifacts\windows\queue-native-demo.png
           if ($LASTEXITCODE -ne 0) { exit 1 }
       - name: Browser tests with the real offline host
-        if: always()
+        if: success()
         shell: powershell
         run: |
           $env:PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD='1'

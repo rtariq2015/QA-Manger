@@ -22,7 +22,7 @@ The host binds only `127.0.0.1`, selecting an available port by default. It does
 
 The browser opens `/#session=TOKEN`, exchanges the fragment token with `POST /api/session`, and receives an HttpOnly SameSite=Strict cookie for PDF frames. API calls also accept `X-Qa-Session`. Host and Origin checks reject foreign websites. There is no broad CORS allowance. Only static app assets are public; no untrusted remote content is loaded.
 
-Worker requests are streamed as UTF-8 JSON over standard input to Windows PowerShell and results return over standard output. Scanner passwords are not written to request files, command arguments, jobs or logs. `/api/jobs` contains only status, results and fixed operation names. Job mutations are serialized; read-only snapshots and saved PDF views remain separate. The worker uses the existing archive guards and revision-preserving operations.
+Worker requests are streamed as UTF-8 JSON over standard input to Windows PowerShell and results return over standard output. Named `stdin` / `stdout` transport arguments are used for Windows PowerShell 5.1 compatibility. Scanner passwords are not written to request files, command arguments, jobs or logs. `/api/jobs` contains only status, results and fixed operation names. Job mutations are serialized; read-only snapshots and saved PDF views remain separate. The worker uses the existing archive guards and revision-preserving operations.
 
 API summary:
 

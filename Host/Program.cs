@@ -251,7 +251,7 @@ sealed class WorkerBridge(string root, string powerShell) {
         var info = new ProcessStartInfo(powerShell) { UseShellExecute = false, CreateNoWindow = true, RedirectStandardInput = true, RedirectStandardOutput = true, RedirectStandardError = true, StandardInputEncoding = new UTF8Encoding(false), StandardOutputEncoding = new UTF8Encoding(false), StandardErrorEncoding = new UTF8Encoding(false), WorkingDirectory = root };
         foreach (var arg in new[] { "-NoLogo", "-NoProfile" }) info.ArgumentList.Add(arg);
         if (OperatingSystem.IsWindows()) info.ArgumentList.Add("-STA");
-        foreach (var arg in new[] { "-File", Path.Combine(root, "App", "WebWorker.ps1"), "-AppRoot", root, "-InputPath", "-", "-OutputPath", "-" }) info.ArgumentList.Add(arg);
+        foreach (var arg in new[] { "-File", Path.Combine(root, "App", "WebWorker.ps1"), "-AppRoot", root, "-InputPath", "stdin", "-OutputPath", "stdout" }) info.ArgumentList.Add(arg);
         using var process = Process.Start(info) ?? throw new WorkerException("Windows could not start the local file helper. Check workstation policy.");
         var outputTask = process.StandardOutput.ReadToEndAsync(cancellationToken);
         var errorTask = process.StandardError.ReadToEndAsync(cancellationToken);

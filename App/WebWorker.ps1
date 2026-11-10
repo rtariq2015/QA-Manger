@@ -4,7 +4,7 @@ Set-StrictMode -Version 2.0
 $ErrorActionPreference='Stop';$WarningPreference='SilentlyContinue';$ProgressPreference='SilentlyContinue';$InformationPreference='SilentlyContinue'
 $operation='';$clock=[Diagnostics.Stopwatch]::StartNew()
 try{
-    $text=if($InputPath -eq '-'){
+    $text=if($InputPath -in @('-','stdin')){
         # Read the redirected pipe directly. Resetting Console.InputEncoding on
         # Windows PowerShell 5.1 can invalidate its cached text input reader.
         $inputStream=[Console]::OpenStandardInput();$reader=New-Object IO.StreamReader($inputStream,(New-Object Text.UTF8Encoding($false,$true)),$true,4096)
@@ -25,7 +25,7 @@ try{
     if($message -match 'changed|stale|already organized|no longer'){$kind='Conflict'}elseif($message -match 'unsupported|Choose|Select|Enter|requires|Invalid'){$kind='Input'}elseif($message -match 'already running|already open'){$kind='Busy'}
     $response=[pscustomobject]@{success=$false;error=[pscustomobject]@{message=$message;kind=$kind;code=$code}}
 }
-if($OutputPath -eq '-'){
+if($OutputPath -in @('-','stdout')){
     $bytes=(New-Object Text.UTF8Encoding $false).GetBytes(($response|ConvertTo-Json -Depth 40 -Compress));$outputStream=[Console]::OpenStandardOutput()
     try{$outputStream.Write($bytes,0,$bytes.Length);$outputStream.Flush()}finally{$outputStream.Dispose()}
 }else{
