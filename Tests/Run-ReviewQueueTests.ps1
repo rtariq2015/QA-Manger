@@ -92,6 +92,37 @@ Scenario 'A normal scanner update preserves the declined decision for unchanged 
     Check ($after.Id -eq $record.Id -and (Get-QaReportReviewStatus $after) -eq 'Declined') 'Unchanged report is not added back to pending'
     Check ((Get-FileHash $f.SourcePath).Hash -eq $f.SourceHash) 'Source PDF unchanged'
 }
+
+Scenario 'Declined PDFs export and browse as reviewed reports instead of unresolved suggestions' {
+    Import-Module (Join-Path $ProductRoot 'App/Reports.psm1') -Force
+    Import-Module (Join-Path $ProductRoot 'App/Browse.psm1') -Force
+    $f=New-QueueFixture 'ReviewedExport';$record=Decide $f -Action Decline -Category Needs_Review
+    $browse=Invoke-QaBrowseRefresh -Config $f.Config
+    Check ($browse.Summary.Failed -eq 0) 'Readable copy refresh succeeds'
+    $browseRoot=Join-Path $f.Config.ArchiveRoot 'Browse Reports'
+    $copied=@(Get-ChildItem $browseRoot -Filter '*.pdf' -Recurse|Where-Object{$_.FullName -match 'Other Reports[\\/]Reviewed'})
+    Check ($copied.Count -eq 1 -and (Get-FileHash $copied[0].FullName).Hash -eq $record.Hash) 'Declined-other PDF uses Reviewed folder and retains identical bytes'
+    Check ((Get-QaReportTitle $record) -like '*Other report - reviewed') 'Display title no longer asks to review resolved item'
+    $html=[IO.File]::ReadAllText((Join-Path $browseRoot 'Open Reports.html'))
+    Check ($html -like '*Other report / reviewed*') 'Offline library reflects completed review'
+    $zip=Join-Path $TestRoot 'Reviewed-export.zip'
+    $export=Invoke-QaExport -Config $f.Config -RecordIds @($record.Id) -DestinationPath $zip
+    Check ($export.Summary.Failed -eq 0 -and [IO.File]::Exists($zip)) 'Report remains exportable after decline'
+    Add-Type -AssemblyName System.IO.Compression.FileSystem
+    $archive=[IO.Compression.ZipFile]::OpenRead($zip)
+    try{Check (@($archive.Entries|Where-Object{$_.FullName -match 'Other Reports/Reviewed/.*\.pdf$'}).Count -eq 1) 'Export folder clearly says Reviewed'}finally{$archive.Dispose()}
+}
+Scenario 'Undo invalidates old pending actions even when the category returns to its original value' {
+    $f=New-QueueFixture 'StaleAfterUndo';$old=New-QaQuickReviewDecision $f.Record Accept Monthly_QA 'Synthetic reviewer' $true $true
+    $record=Decide $f
+    $undo=New-QaUndoReviewDecision $record $record.LastReviewId 'Synthetic reviewer'
+    [void](Invoke-QaOperation $f.Config -Mode Reclassify -Decisions @($undo))
+    $caught=$false;try{Invoke-QaOperation $f.Config -Mode Reclassify -Decisions @($old)|Out-Null}catch{$caught=$true}
+    Check $caught 'An old button action cannot overwrite newer audited actions'
+    $dashboard=Get-QaDashboard $f.Config
+    Check ($dashboard.Reviews.Count -eq 2 -and (Test-QaReportPending $dashboard.Records[0])) 'History survives a fresh reload and stale action leaves pending state intact'
+}
+
 if([Environment]::OSVersion.Platform -eq [PlatformID]::Win32NT){
     Scenario 'The Windows PDF renderer produces an in-memory page without installing components' {
         $f=New-QueueFixture 'NativePreview'
@@ -103,6 +134,17 @@ if([Environment]::OSVersion.Platform -eq [PlatformID]::Win32NT){
         if($OutputPath){[IO.File]::WriteAllBytes((Join-Path (Split-Path -Parent ([IO.Path]::GetFullPath($OutputPath))) 'synthetic-pdf-preview.png'),$bytes)}
         $script:NativePreviewActuallyRun=$true
     }
+    Scenario 'Native workspace clicks persist Accept, Undo, Decline and Skip with immediate queue updates' {
+        $f=New-QueueFixture 'NativeWorkspace';$configPath=Join-Path $TestRoot 'workspace-config.xml';$uiResult=Join-Path $TestRoot 'workspace-result.json'
+        $f.Config|Export-Clixml -LiteralPath $configPath -Depth 18 -Encoding UTF8
+        & (Get-Process -Id $PID).Path -NoProfile -STA -File (Join-Path $PSScriptRoot 'Test-ReviewWorkspace.ps1') -ConfigPath $configPath -OutputPath $uiResult
+        $exit=$LASTEXITCODE;Check ([IO.File]::Exists($uiResult)) 'Native click test produces a result'
+        $result=Get-Content $uiResult -Raw|ConvertFrom-Json
+        Check ($exit -eq 0) ('Native click test process completes: '+$result.Error)
+        Check $result.Passed ('Real review workspace actions: '+$result.Error)
+        $script:Assertions+=[int]$result.Assertions
+    }
+
 }
 $failed=@($script:Results|Where-Object Result -eq 'FAIL').Count
 $report=[pscustomobject]@{Version='4.4.0';Runtime=$PSVersionTable.PSVersion.ToString();WindowsPowerShell51ActuallyRun=($PSVersionTable.PSVersion.Major -eq 5);NativePdfPreviewActuallyRun=$script:NativePreviewActuallyRun;Tests=$script:Results.Count;Assertions=$script:Assertions;Failed=$failed;Results=@($script:Results.ToArray());Scope='Synthetic saved PDFs: accept, decline, exact undo snapshots, stale decisions, source preservation, unchanged rescans and native Windows PDF page rendering.'}

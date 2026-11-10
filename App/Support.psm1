@@ -1,7 +1,7 @@
 ﻿# Shareable support data is rebuilt from an allowlist. Never bundle raw logs or reports.
 Set-StrictMode -Version 2.0
 $ErrorActionPreference='Stop'
-$script:Operations=@('Startup','Reconnect','SetupPreview','Preview','Update','Import','Analysis','PdfRead','BrowseRefresh','Export','SourceAudit','Compatibility','Backup','Restore','Audit','Reclassify','ReclassifyPreview','AdoptLegacy','RetryAnalysis','Shutdown','Settings','Diagnostics','OfflineUpdate')
+$script:Operations=@('Startup','Reconnect','SetupPreview','Preview','Update','Import','Analysis','PdfPreview','PdfRead','BrowseRefresh','Export','SourceAudit','Compatibility','Backup','Restore','Audit','Reclassify','ReclassifyPreview','AdoptLegacy','RetryAnalysis','Shutdown','Settings','Diagnostics','OfflineUpdate')
 $script:Outcomes=@('Started','Completed','Failed','Cancelled')
 $script:ErrorKinds=@('None','Authentication','AccessDenied','Network','Timeout','PolicyBlocked','PackageInvalid','FileIO','Unknown')
 $script:CountFields=@('Total','NewOrChanged','Unchanged','Pending','Deferred','Copied','Failed','Verified','Analyzed','Cached','Scanners','SavedReports','ReviewItems','Events','Files','AutoReadingEnabled','ReadErrors','Truncated','PrintedPass','PrintedFailure','NeedsReview')
