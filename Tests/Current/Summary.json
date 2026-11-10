@@ -1,38 +1,82 @@
 {
   "Product": "CT QA Manager Pro",
-  "Version": "5.0.1",
-  "ValidationStatus": "Passed: final pinned Windows validation and separately labeled targeted Linux checks",
-  "Runtime": "PowerShell 7.4.13 on Linux (targeted adapter suite only)",
-  "SourceCommit": "e31f880cfe1345fb8cfafa6000356dccde3aa758",
-  "Tests": 14,
-  "Assertions": 49,
+  "Version": "5.1.0",
+  "ValidationStatus": "Passed: final pinned Windows validation and separately labeled targeted Linux development checks",
+  "Runtime": "PowerShell 7.4.13 on Linux; Chromium via Playwright against the real local host",
+  "SourceCommit": "0c20b818542c819c601c85af314b727bb9159558",
+  "Tests": 56,
+  "Assertions": 317,
   "Failed": 0,
   "Suites": [
     {
+      "Name": "Run-Tests",
+      "Tests": 24,
+      "Assertions": 197,
+      "Failed": 0
+    },
+    {
+      "Name": "Run-PdfTests",
+      "Tests": 11,
+      "Assertions": 39,
+      "Failed": 0
+    },
+    {
       "Name": "Run-WebServiceTests",
-      "Tests": 14,
-      "Assertions": 49,
+      "Tests": 21,
+      "Assertions": 81,
       "Failed": 0
     }
   ],
+  "LinuxLargeLibrary": {
+    "Evidence": "Large-Library-Linux.json",
+    "Records": 1367,
+    "Tests": 4,
+    "Assertions": 5463,
+    "Failed": 0,
+    "ColdManifestWrites": 1,
+    "ColdHashOperations": 2734,
+    "WarmManifestWrites": 0,
+    "WarmHashOperations": 0
+  },
+  "LinuxBrowser": {
+    "Evidence": "Browser-Web.json",
+    "Tests": 12,
+    "Assertions": 292,
+    "Failed": 0,
+    "NativeWindowsPdfRendererActuallyRun": false
+  },
+  "LinuxLargeBrowser": {
+    "Evidence": "Browser-Large-Linux.json",
+    "Records": 1367,
+    "Tests": 4,
+    "Assertions": 27328,
+    "Failed": 0
+  },
   "WindowsPowerShell51ActuallyRun": false,
   "NativeWPFActuallyRun": false,
   "WindowsDPAPIActuallyRun": false,
-  "BrowserEvidence": "Browser-Web.json: separate actual local-host Chromium run, 12 scenarios / 292 assertions.",
-  "FocusRegressionEvidence": "Focus-Regression.json: explicit published v5.0.0 UI failure and fixed v5.0.1 keyboard/draft checks.",
-  "WindowsEvidence": "Windows/Summary.json: final v5.0.1 source e31f880cfe1345fb8cfafa6000356dccde3aa758, workflow 42913290443, 190 native scenarios / 1206 assertions.",
-  "HistoricalEvidence": "Tests/Historical/v5.0.0 preserves the previous broad Linux and Windows run. Those earlier root Run-*.json reports were removed from Current to avoid presenting them as new execution.",
-  "Scope": "Root Run-WebServiceTests.json and top-level Tests/Assertions identify the new targeted Linux adapter suite only. Browser and complete final Windows suite results are separately counted. Old broad Linux reports remain historical and were not presented as newly rerun.",
-  "BrowserWindowsEvidence": "Browser-Web-Windows.json: real Edge run, 12 scenarios / 296 assertions, native PNG plus mouse-release typing and connection draft checks.",
   "WindowsValidation": {
     "Status": "Passed",
-    "Version": "5.0.1",
-    "SourceCommit": "e31f880cfe1345fb8cfafa6000356dccde3aa758",
-    "WorkflowRun": "https://github.com/rtariq2015/QA-Manger/actions/runs/42913290443",
-    "PowerShellTests": 190,
-    "PowerShellAssertions": 1206,
+    "Version": "5.1.0",
+    "SourceCommit": "0c20b818542c819c601c85af314b727bb9159558",
+    "WorkflowRun": "https://github.com/rtariq2015/QA-Manger/actions/runs/42923789148",
+    "PowerShellTests": 200,
+    "PowerShellAssertions": 1256,
     "BrowserTests": 12,
     "BrowserAssertions": 296,
+    "LargeLibraryTests": 4,
+    "LargeLibraryAssertions": 5463,
+    "LargeBrowserTests": 4,
+    "LargeBrowserAssertions": 27328,
+    "Failed": 0
+  },
+  "HistoricalEvidence": "Tests/Historical/v5.0.1 preserves the previous complete evidence set, including the explicit old-UI focus regression proof. Tests/Historical/v5.0.0 preserves earlier broad development runs.",
+  "Scope": "Top-level Tests/Assertions and native-run flags describe the three targeted Linux PowerShell reports only. Final Windows execution is independently counted in WindowsValidation and Windows/Summary.json. Linux large-library and browser workloads are separately counted; these development runs preceded the final PowerShell 5.1 array-representation compatibility fix, which the final Windows run exercises. No hospital network, reports or real credentials were used.",
+  "LinuxSourceCommit": "dc3dcb6b49ee2643fdd27bd8c7380dcf266ad20e",
+  "LinuxAdapterFinalArrayFixRerun": {
+    "SourceCommit": "0c20b818542c819c601c85af314b727bb9159558",
+    "Tests": 21,
+    "Assertions": 81,
     "Failed": 0
   }
 }

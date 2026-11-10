@@ -1,11 +1,11 @@
 {
-  "Version": "5.0.1",
-  "SourceCommit": "e31f880cfe1345fb8cfafa6000356dccde3aa758",
-  "WorkflowRun": "https://github.com/rtariq2015/QA-Manger/actions/runs/42913290443",
+  "Version": "5.1.0",
+  "SourceCommit": "0c20b818542c819c601c85af314b727bb9159558",
+  "WorkflowRun": "https://github.com/rtariq2015/QA-Manger/actions/runs/42923789148",
   "Runtime": "5.1.26100.33648",
   "Host": "GitHub-hosted Windows Server 2025",
-  "Tests": 190,
-  "Assertions": 1206,
+  "Tests": 200,
+  "Assertions": 1256,
   "Failed": 0,
   "Suites": [
     {
@@ -40,8 +40,8 @@
     },
     {
       "Name": "Run-PdfTests",
-      "Tests": 8,
-      "Assertions": 25,
+      "Tests": 11,
+      "Assertions": 39,
       "Failed": 0
     },
     {
@@ -65,7 +65,7 @@
     {
       "Name": "Run-Tests",
       "Tests": 24,
-      "Assertions": 197,
+      "Assertions": 201,
       "Failed": 0
     },
     {
@@ -76,8 +76,8 @@
     },
     {
       "Name": "Run-WebServiceTests",
-      "Tests": 16,
-      "Assertions": 59,
+      "Tests": 23,
+      "Assertions": 91,
       "Failed": 0
     }
   ],
@@ -93,17 +93,29 @@
   "BrowserFailed": 0,
   "BrowserChannel": "msedge",
   "NativePngPdfPreviewInBrowserActuallyRun": true,
-  "MouseReleaseAndKeyboardTypingRegressionActuallyRun": true,
-  "UnsavedConnectionDraftRegressionActuallyRun": true,
-  "BrowserHostRestartActuallyRun": true,
   "BrowserExternalAssetRequests": 0,
-  "SelfContainedWindowsHostArtifactSHA256": "5ddf4c94b41f6b836ab45baa3c452cf2cb8a444bfc27481e15ce17399df3d0ea",
-  "ValidationArtifactZipSHA256": "a56d7fb55b164f79d097ed83400095bd205fcced18ff90d1948beea89079e3aa",
+  "LargeLibraryEvidence": "../Large-Library-Windows.json",
+  "LargeLibraryTests": 4,
+  "LargeLibraryAssertions": 5463,
+  "LargeLibraryFailed": 0,
+  "LargeBrowserEvidence": "../Browser-Large-Windows.json",
+  "LargeBrowserTests": 4,
+  "LargeBrowserAssertions": 27328,
+  "LargeBrowserFailed": 0,
+  "SyntheticLargeLibraryRecords": 1367,
+  "ColdManifestWrites": 1,
+  "ColdHashOperations": 2734,
+  "WarmManifestWrites": 0,
+  "WarmHashOperations": 0,
+  "SelfContainedWindowsHostArtifactSHA256": "44fe235cc4b00954ca06e8a0edefaa55045aa0edfa1f121a0d31d4b3b0ce1bc9",
+  "ValidationArtifactZipSHA256": "922dbad2a3b485e575930b1076b43754877657a02e24572c6ae40a3e37844507",
   "Screens": [
     "Today (HTML)",
     "Reports (HTML)",
     "Settings (HTML)",
-    "Reports at 1024x768 (HTML)"
+    "Reports at 1024x768 (HTML)",
+    "Large pending review library (HTML)",
+    "Active Refresh progress (HTML)"
   ],
-  "Scope": "Fresh synthetic execution at the pinned source. Twelve native PowerShell suites and a separate real Edge/Kestrel/PowerShell browser run. Browser checks cover mouse-release clicks followed by keyboard typing, connection draft retention after blur and job snapshots, password handling, native PNG PDF pages, two-button classification, preserved core/PDF bytes, Undo, stale actions, filtered ZIP hashes, restart persistence and unobstructed small-screen controls. Raw legacy suite Version labels may identify feature introduction; reports are copied unmodified. No real hospital scanner authentication, clinical data, physical keyboard/IME, workplace policy approval or hospital SMB performance was tested."
+  "Scope": "Final pinned source executed with fresh synthetic Windows fixtures. Twelve native PowerShell suites, real Edge/Kestrel/PowerShell browser checks, and separate 1,367-PDF library and browser workloads all passed. Large tests cover automatic versus pending classifications, preserved prior decisions and clinical evidence, batched ownership commits, zero-hash/zero-write warm refresh, explicit integrity checks, live progress, duplicate Refresh coalescing, cooperative cancellation, browser reload recovery and support ZIP download during an active update. A deterministic barrier is inserted only in a disposable fixture copy. Raw suite reports are unmodified. No hospital authentication, real clinical data, workplace policy approval or hospital SMB performance was tested."
 }

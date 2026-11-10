@@ -1,0 +1,63 @@
+{
+  "version": "5.0.1",
+  "syntheticOnly": true,
+  "browser": "Chromium via Playwright",
+  "browserChannel": "msedge",
+  "nativePdfPreviewActuallyRun": true,
+  "tests": 12,
+  "assertions": 296,
+  "failed": 0,
+  "externalAssetRequests": 0,
+  "javascriptErrors": [],
+  "results": [
+    {
+      "name": "The local API rejects missing authentication, hostile origins and arbitrary actions",
+      "result": "PASS"
+    },
+    {
+      "name": "The three-screen interface loads locally without external assets",
+      "result": "PASS"
+    },
+    {
+      "name": "Normal mouse-release clicks keep settings and search fields focused for real keyboard input",
+      "result": "PASS"
+    },
+    {
+      "name": "Connection drafts survive blur, unrelated job completion and scanner switching",
+      "result": "PASS"
+    },
+    {
+      "name": "The PDF preview returns the selected verified local report",
+      "result": "PASS"
+    },
+    {
+      "name": "Approve removes one pending suggestion without names or confirmation dialogs",
+      "result": "PASS"
+    },
+    {
+      "name": "Undo restores pending and Disapprove keeps the PDF as Other",
+      "result": "PASS"
+    },
+    {
+      "name": "A stale approval cannot overwrite a later organization decision",
+      "result": "PASS"
+    },
+    {
+      "name": "Filtering and export use the matching saved PDFs",
+      "result": "PASS"
+    },
+    {
+      "name": "Saved organization decisions survive a full host restart",
+      "result": "PASS"
+    },
+    {
+      "name": "Connection failures remain visible and job records do not expose entered passwords",
+      "result": "PASS"
+    },
+    {
+      "name": "The interface remains usable at a smaller workstation size",
+      "result": "PASS"
+    }
+  ],
+  "scope": "Actual local host, PowerShell adapter and synthetic archived PDFs. Does not establish hospital network access or workstation endpoint-policy approval."
+}

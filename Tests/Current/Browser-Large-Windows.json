@@ -1,0 +1,29 @@
+{
+  "version": "5.1.0",
+  "syntheticOnly": true,
+  "records": 1367,
+  "tests": 4,
+  "assertions": 27328,
+  "failed": 0,
+  "externalAssetRequests": 0,
+  "javascriptErrors": [],
+  "results": [
+    {
+      "name": "The full library shows known reports as automatic and reserves review for 217 uncertain PDFs",
+      "result": "PASS"
+    },
+    {
+      "name": "An active Refresh reports real progress, merges duplicate requests and permits offline browsing after reload",
+      "result": "PASS"
+    },
+    {
+      "name": "Cancel stops the real import cooperatively without continuing into library generation or losing evidence",
+      "result": "PASS"
+    },
+    {
+      "name": "A subsequent unchanged Refresh finishes after reload and reuses cached readable PDFs",
+      "result": "PASS"
+    }
+  ],
+  "scope": "Real local host, worker, archive loop and browser. A disposable copied Set-QaProgress checkpoint supplies a deterministic barrier; the real cooperative cancellation and production persistence run unchanged."
+}

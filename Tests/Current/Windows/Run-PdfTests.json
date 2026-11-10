@@ -1,16 +1,26 @@
 ﻿{
     "Product":  "CT QA Manager Pro",
     "Feature":  "Portable PDF text reader",
-    "TimestampUtc":  "2026-11-10T22:22:15.0419952Z",
+    "TimestampUtc":  "2026-11-10T23:32:40.8798219Z",
     "Runtime":  "5.1.26100.33648",
     "Platform":  "Microsoft Windows NT 10.0.26100.0",
     "WindowsPowerShell51ActuallyRun":  true,
-    "Tests":  8,
-    "Assertions":  25,
+    "Tests":  11,
+    "Assertions":  39,
     "Failed":  0,
     "Results":  [
                     {
                         "Name":  "Compressed multi-page PDF text is read locally without changing classification or bytes",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Reading one PDF does not rebuild the dashboard and retains the configured scanner label",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Selected-record lookup still rejects an unsafe unrelated archive record and releases the lock",
                         "Result":  "PASS",
                         "Details":  ""
                     },
@@ -46,6 +56,11 @@
                     },
                     {
                         "Name":  "Cancelled reading and unknown report selections have no side effects",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Background analysis reports its actual bounded queue and reuses all cached results",
                         "Result":  "PASS",
                         "Details":  ""
                     }

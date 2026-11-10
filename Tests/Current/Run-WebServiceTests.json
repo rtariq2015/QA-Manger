@@ -1,8 +1,8 @@
 {
-  "Version": "5.0.1",
+  "Version": "5.1.0",
   "Runtime": "7.4.13",
-  "Tests": 14,
-  "Assertions": 49,
+  "Tests": 21,
+  "Assertions": 81,
   "Failed": 0,
   "Results": [
     {
@@ -72,6 +72,41 @@
     },
     {
       "Name": "The web worker records scrubbed action outcomes without retaining request secrets",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "Standard Daily and explicit Monthly document names are organized automatically without human approval",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "Saved user decisions and valid legacy reviews take precedence over automatic grouping",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "Readable-library refresh batches its ledger and reuses only verified metadata matches",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "Full verification catches edited bytes even when length and write time were restored",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "A cancelled library batch commits completed ownership and resumes without duplicate copies",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "Pre-upgrade approvals retain their decisions and Undo restores their original pending state",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "Concurrent edits cannot seed a verified source or readable-file metadata cache",
       "Result": "PASS",
       "Details": ""
     }
