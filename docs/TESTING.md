@@ -32,3 +32,7 @@ The Windows runs exposed and helped fix managed/readable path-length failures an
 ## Network update tests (4.2.1)
 
 `Tests/Run-NetworkTests.ps1` uses synthetic profiles and mocked Windows network API boundaries to check share-root authentication, complete folder paths, occupied letters, mapping races, native error numbers, preserved data and profile privacy. These tests do not contact hospital scanner addresses or authenticate with real passwords. A private network profile is deliberately absent from this repository. The real workstation must still verify share access.
+
+## Updater startup regression (4.2.2)
+
+The network suite launches the tracked `Apply CT QA Network Update.cmd` through Windows CMD and Windows PowerShell 5.1, omits `SourceFolder`, and supplies the target noninteractively. Source and target paths contain spaces, and the working directory is unrelated. It also launches the normal upgrader without `TargetFolder`. This catches startup errors caused by evaluating `$PSScriptRoot` before the script body. Report preservation, archive settings, and previous-program copies are asserted after the update. Interactive folder-picker clicks and app relaunch still require the workstation check.

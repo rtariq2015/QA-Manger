@@ -1,5 +1,5 @@
 ﻿{
-    "Version":  "4.2.1",
+    "Version":  "4.2.2",
     "Runtime":  "5.1.26100.33648",
     "Platform":  "Microsoft Windows NT 10.0.26100.0",
     "WindowsPowerShell51ActuallyRun":  true,
@@ -88,5 +88,5 @@
                         "Details":  ""
                     }
                 ],
-    "SyntheticScenario":  "C:\\Users\\runneradmin\\AppData\\Local\\Temp\\CTQA_PortableTests_69a952421992474181e98285f0a251ca"
+    "SyntheticScenario":  "C:\\Users\\runneradmin\\AppData\\Local\\Temp\\CTQA_PortableTests_eec2f89f1cf847e886e76f8cebe889e4"
 }

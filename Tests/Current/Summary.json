@@ -67,6 +67,6 @@
     "Scope": "Generated offline library with synthetic PDFs",
     "ValidatedVersion": "4.2.0 (offline library unchanged in the updater fixes)"
   },
-  "WindowsEvidence": "Windows/Summary.json (prior v4.2.1 until current Windows run completes)",
-  "SourceCommit": "1ad469235c156fc6659fc82151455ca233ef9fe3"
+  "WindowsEvidence": "Windows/Summary.json (v4.2.2: 132 scenarios, 913 assertions; real CMD launch, omitted updater defaults, PowerShell 5.1, DPAPI and native WPF executed)",
+  "SourceCommit": "8ff17987d18fa061dcc8928c8b1a14da1ba0e6d8"
 }
