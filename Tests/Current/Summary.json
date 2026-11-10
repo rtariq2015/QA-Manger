@@ -2,8 +2,8 @@
   "Product": "CT QA Manager Pro",
   "Version": "4.3.0",
   "Runtime": "PowerShell 7.4.13 on Linux",
-  "Tests": 152,
-  "Assertions": 1003,
+  "Tests": 158,
+  "Assertions": 1032,
   "Failed": 0,
   "WindowsPowerShell51ActuallyRun": false,
   "NativeWPFActuallyRun": false,
@@ -35,8 +35,8 @@
     },
     {
       "Name": "Run-NetworkTests",
-      "Tests": 12,
-      "Assertions": 41,
+      "Tests": 13,
+      "Assertions": 43,
       "Failed": 0
     },
     {
@@ -53,8 +53,8 @@
     },
     {
       "Name": "Run-SupportTests",
-      "Tests": 11,
-      "Assertions": 51,
+      "Tests": 16,
+      "Assertions": 78,
       "Failed": 0
     },
     {
@@ -79,5 +79,5 @@
     "Scope": "Generated offline library with synthetic PDFs",
     "ValidatedVersion": "4.2.0 (offline library unchanged in the updater fixes)"
   },
-  "WindowsEvidence": "Windows/Summary.json (v4.3.0: 153 scenarios, 1014 assertions; native PowerShell 5.1, DPAPI, launchers, offline update restart and five WPF screens executed)"
+  "WindowsEvidence": "Windows/Summary.json validates the earlier UI/base v4.3.0 source. The expanded scrubbed-log workflow is pending."
 }

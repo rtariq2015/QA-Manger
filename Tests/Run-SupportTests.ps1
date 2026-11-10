@@ -96,12 +96,17 @@ Scenario 'Safe operation history excludes arbitrary old log content and injected
     Check (-not ($report|ConvertTo-Json -Depth 12).Contains($canary)) 'Arbitrary raw logs and fields omitted'
     $caught=$false;try{Write-QaSupportEvent -AppRoot $workspace -Operation $canary -Outcome Completed}catch{$caught=$true};Check $caught 'Only known operations accepted'
 }
-Scenario 'Support events remain bounded and do not change saved report data' {
-    $log=Join-Path $workspace 'Logs/Support-events.jsonl';[IO.File]::WriteAllText($log,('x'*270000))
+Scenario 'Support events rotate, expire and keep legacy raw files separate' {
+    $folder=Join-Path $workspace 'Logs/Scrubbed';[void][IO.Directory]::CreateDirectory($folder)
+    $legacy=Join-Path $workspace 'Logs/Support-events.jsonl';[IO.File]::WriteAllText($legacy,('x'*270000));$before=(Get-FileHash $legacy).Hash
+    $old=Join-Path $folder 'ctqa-20000101.jsonl';[IO.File]::WriteAllText($old,'Synthetic expired log')
+    $full=Join-Path $folder ('ctqa-'+[datetime]::UtcNow.ToString('yyyyMMdd')+'.jsonl');[IO.File]::WriteAllText($full,('x'*1050000))
     Write-QaSupportEvent -AppRoot $workspace -Operation Update -Outcome Completed
-    Check ((Get-Item $log).Length -lt 262144) 'Oversized log trimmed'
-    Check ((Get-QaSupportReport $workspace $config $dashboard).RecentOperations.Count -eq 1) 'New event retained after trim'
-    Check ($dashboard.Records.Count -eq 2 -and $issues.Count -eq 385) 'Saved data not modified'
+    Check (-not [IO.File]::Exists($old)) 'Expired owned event file removed'
+    Check ((Get-FileHash $legacy).Hash -eq $before) 'Legacy log left unchanged'
+    Check (@(Get-ChildItem $folder -Filter '*-001.jsonl').Count -eq 1) 'Full current event file rotated'
+    Check ((Get-QaSupportReport $workspace $config $dashboard).RecentOperations.Count -eq 1) 'New event retained after rotation'
+    Check ($dashboard.Records.Count -eq 2 -and $issues.Count -eq 385) 'Report data unchanged'
 }
 Scenario 'Standalone diagnostics work against an installation with an active application lock' {
     [IO.File]::WriteAllText((Join-Path $workspace 'Start CT QA Manager.cmd'),'Synthetic existing launcher')
@@ -112,6 +117,10 @@ Scenario 'Standalone diagnostics work against an installation with an active app
         & (Get-Process -Id $PID).Path -NoProfile -File (Join-Path $root 'App/ExportDiagnostics.ps1') -AppRoot $workspace -OutputPath $output -NoOpen > (Join-Path $testRoot 'standalone.log') 2>&1
         Check ($LASTEXITCODE -eq 0 -and [IO.File]::Exists($output)) 'Export works while application lock is held'
         Check ((Get-FileHash (Join-Path $workspace 'Config/Settings.local.json')).Hash -eq $before) 'Existing settings unchanged'
+        $bundle=Join-Path $workspace 'Logs/Support/Standalone.zip'
+        & (Get-Process -Id $PID).Path -NoProfile -File (Join-Path $root 'App/ExportDiagnostics.ps1') -AppRoot $workspace -OutputPath $bundle -NoOpen > (Join-Path $testRoot 'bundle.log') 2>&1
+        Check ($LASTEXITCODE -eq 0 -and [IO.File]::Exists($bundle)) 'Full scrubbed ZIP also exports while the application is open'
+
         if([Environment]::OSVersion.Platform -eq [PlatformID]::Win32NT){
             $output=Join-Path $workspace 'Logs/Support/Launcher.json';$p=New-Object Diagnostics.Process;$p.StartInfo=New-Object Diagnostics.ProcessStartInfo
             $p.StartInfo.FileName=$env:ComSpec;$p.StartInfo.Arguments='/d /s /c ""'+(Join-Path $root 'Export CT QA Diagnostics.cmd')+'" -AppRoot "'+$workspace+'" -OutputPath "'+$output+'" -NoOpen < nul"';$p.StartInfo.UseShellExecute=$false;$p.StartInfo.RedirectStandardOutput=$true;$p.StartInfo.RedirectStandardError=$true
@@ -125,6 +134,69 @@ Scenario 'Pending verification includes provisional daily files and clears only 
     $record.ConfirmedBy='Synthetic authorized reviewer';Check (-not (Test-QaReportPending $record)) 'Reviewed daily type is no longer pending'
     $record.Category='Monthly_QA/Pending_Verification';Check (Test-QaReportPending $record) 'Monthly candidate remains pending'
     $record.Category='Needs_Review';Check (Test-QaReportPending $record) 'Unclassified report is pending'
+}
+Scenario 'A scrubbed ZIP includes all retained activity and strips injected fields from every entry' {
+    $folder=Join-Path $workspace 'Logs/Scrubbed';[void][IO.Directory]::CreateDirectory($folder)
+    $file=Join-Path $folder ('ctqa-'+[datetime]::UtcNow.ToString('yyyyMMdd')+'-050.jsonl')
+    $lines=New-Object 'System.Collections.Generic.List[string]'
+    foreach($n in 1..250){$event=[pscustomobject]@{TimeUtc=[datetime]::UtcNow.AddMilliseconds($n).ToString('o');Operation='Analysis';Outcome='Completed';NativeCode=0;DurationMs=123;ScannerNumber=1;ErrorKind='None';Message=$canary;Password=$canary;Counts=[pscustomobject]@{Analyzed=20;Cached=100;Filename=$canary}};[void]$lines.Add(($event|ConvertTo-Json -Depth 6 -Compress))}
+    [IO.File]::WriteAllLines($file,[string[]]$lines.ToArray())
+    $output=Join-Path $workspace 'Logs/Support/All-Scrubbed-Logs.zip'
+    Check ((Export-QaSupportBundle -AppRoot $workspace -Config $config -Dashboard $dashboard -DestinationPath $output) -eq $output) 'Bundle saved'
+    Add-Type -AssemblyName System.IO.Compression.FileSystem;$archive=[IO.Compression.ZipFile]::OpenRead($output)
+    try{
+        Check ($archive.Entries.Count -eq 3) 'Only summary, scrubbed activity and readme included'
+        $activity='';foreach($entry in $archive.Entries){$reader=New-Object IO.StreamReader($entry.Open());try{$text=$reader.ReadToEnd();Check (-not $text.Contains($canary)) 'No injected private field or text in any ZIP entry';if($entry.FullName -eq 'Scrubbed-Activity.jsonl'){$activity=$text}}finally{$reader.Dispose()}}
+        $events=@($activity -split '\r?\n'|Where-Object{$_}|ForEach-Object{$_|ConvertFrom-Json})
+        Check ($events.Count -gt 250) 'Full retained history included beyond the 200-event summary limit'
+        $timed=@($events|Where-Object{$_.Operation -eq 'Analysis' -and $_.DurationMs -eq 123})
+        Check ($timed.Count -eq 250 -and $timed[0].Counts.Analyzed -eq 20 -and $timed[0].ScannerNumber -eq 1) 'Useful timing, counts and scanner aliases retained'
+        Check ($events[0].SchemaVersion -eq 2) 'Events reconstructed into the controlled schema'
+    }finally{$archive.Dispose()}
+    $caught=$false;try{Export-QaSupportBundle $workspace $config $dashboard $output|Out-Null}catch{$caught=$true};Check $caught 'Existing bundle is never overwritten'
+    $caught=$false;try{Export-QaSupportBundle $workspace $config $dashboard (Join-Path $workspace 'Config/unsafe.zip')|Out-Null}catch{$caught=$true};Check $caught 'Bundle destination protects settings'
+    Check (@(Get-ChildItem (Join-Path $workspace 'Logs/Support') -Filter '*.tmp').Count -eq 0) 'No partial bundle remains'
+}
+Scenario 'Earlier activity contributes only recognized dates, operations and numeric counts' {
+    $path=Join-Path $config.ArchiveRoot 'Activity.csv'
+    @([pscustomobject]@{TimeUtc=[datetime]::UtcNow.ToString('o');Action='Update';Copied=12;Unchanged=3;Verified=0;Failed=1;Details=$canary},[pscustomobject]@{TimeUtc=[datetime]::UtcNow.ToString('o');Action=$canary;Copied=9;Unchanged=0;Verified=0;Failed=0;Details=$canary})|Export-Csv $path -NoTypeInformation -Encoding UTF8
+    $report=Get-QaSupportReport $workspace $config $dashboard
+    Check (-not ($report|ConvertTo-Json -Depth 12).Contains($canary)) 'Legacy details and unknown action names excluded'
+    Check (@($report.RecentOperations|Where-Object{$_.Operation -eq 'Update' -and $_.Counts.Contains('Copied') -and $_.Counts['Copied'] -eq 12}).Count -eq 1) 'Recognized legacy import counts recovered'
+    $output=Join-Path $workspace 'Logs/Support/Legacy-scrubbed.zip';[void](Export-QaSupportBundle $workspace $config $dashboard $output)
+    $archive=[IO.Compression.ZipFile]::OpenRead($output)
+    try{$reader=New-Object IO.StreamReader($archive.GetEntry('Scrubbed-Activity.jsonl').Open());try{$text=$reader.ReadToEnd();Check (-not $text.Contains($canary) -and $text.Contains('"Copied":12')) 'Legacy counts also included safely in the full ZIP'}finally{$reader.Dispose()}}finally{$archive.Dispose()}
+}
+Scenario 'Error descriptions become safe categories rather than raw strings' {
+    Check ((Get-QaSupportErrorKind -NativeCode 1326) -eq 'Authentication') 'Authentication code mapped'
+    Check ((Get-QaSupportErrorKind -NativeCode 5) -eq 'AccessDenied') 'Access denial mapped'
+    Check ((Get-QaSupportErrorKind -Message ('Timeout '+$canary)) -eq 'Timeout') 'Private description produces a fixed error category'
+    Write-QaSupportEvent -AppRoot $workspace -Operation Update -Outcome Failed -DurationMs 200 -ErrorKind $canary -Counts @{Failed=1;Password=$canary}
+    $text=Get-QaSupportReport $workspace $config $dashboard|ConvertTo-Json -Depth 12
+    Check (-not $text.Contains($canary)) 'Unknown error kind and count fields cannot leak strings'
+}
+
+Scenario 'Concurrent program workers keep every structured event without overwriting each other' {
+    $scriptPath=Join-Path $testRoot 'ConcurrentLogger.ps1'
+    [IO.File]::WriteAllText($scriptPath,'param([string]$ModulePath,[string]$Folder);Import-Module $ModulePath -Force;foreach($n in 1..20){Write-QaSupportEvent -AppRoot $Folder -Operation Settings -Outcome Completed -DurationMs 234 -Counts @{Scanners=3}}')
+    $processes=New-Object 'System.Collections.Generic.List[object]'
+    try{
+        foreach($n in 1..3){$p=New-Object Diagnostics.Process;$p.StartInfo=New-Object Diagnostics.ProcessStartInfo;$p.StartInfo.FileName=(Get-Process -Id $PID).Path;$p.StartInfo.Arguments='-NoProfile -File "'+$scriptPath+'" -ModulePath "'+(Join-Path $root 'App/Support.psm1')+'" -Folder "'+$workspace+'"';$p.StartInfo.UseShellExecute=$false;$p.StartInfo.RedirectStandardOutput=$true;$p.StartInfo.RedirectStandardError=$true;[void]$p.Start();[void]$processes.Add([pscustomobject]@{Process=$p;Output=$p.StandardOutput.ReadToEndAsync();Error=$p.StandardError.ReadToEndAsync()})}
+        foreach($job in $processes){if(-not $job.Process.WaitForExit(30000)){$job.Process.Kill();throw 'Concurrent logger timeout'};Check ($job.Process.ExitCode -eq 0) ('Worker completed: '+$job.Output.Result+$job.Error.Result)}
+        $events=@(& (Get-Module Support) {param($path) Get-QaSupportEvents -AppRoot $path -All} $workspace)
+        Check (@($events|Where-Object{$_.Operation -eq 'Settings' -and $_.DurationMs -eq 234}).Count -eq 60) 'All sixty concurrent events retained'
+    }finally{foreach($job in $processes){$job.Process.Dispose()}}
+}
+
+Scenario 'A failed PDF read stays cached until the destination changes' {
+    Import-Module (Join-Path $root 'App/Insights.psm1') -Force
+    $fingerprint='b'*64;$missing=Join-Path $workspace 'Data/missing-synthetic.pdf'
+    $record=[pscustomobject]@{Hash=$fingerprint;DestinationPath=$missing;DestinationLastWriteUtc=[datetime]::UtcNow.ToString('o')}
+    $cache=[pscustomobject]@{ParserVersion=1;Hash=$fingerprint;Status='ReadError';Truncated=$true;Findings=@();SavedWriteTicks=[IO.File]::GetLastWriteTimeUtc($missing).Ticks;ReaderMessage=$canary}
+    $cache|ConvertTo-Json -Depth 6|Set-Content (Join-Path $config.ArchiveRoot ('.ctqa/analysis/'+$fingerprint+'.json')) -Encoding UTF8
+    Check ((Get-QaSavedAnalysis $config $record).Status -eq 'ReadError') 'Unchanged missing destination does not enter an automatic retry loop'
+    [IO.File]::WriteAllText($missing,'%PDF-1.4 synthetic restored destination')
+    Check ($null -eq (Get-QaSavedAnalysis $config $record)) 'Restored or changed destination becomes eligible for a fresh read'
 }
 Scenario 'Real connection-result handling avoids repeated prompts and remembers only accepted sign-ins' {
     $tokens=$null;$parseErrors=$null;$ast=[Management.Automation.Language.Parser]::ParseFile((Join-Path $root 'App/Start.ps1'),[ref]$tokens,[ref]$parseErrors)
@@ -140,7 +212,7 @@ Scenario 'Real connection-result handling avoids repeated prompts and remembers 
     function Start-Work {param($Mode,$Credentials,$Plan) $script:ReconnectCalls++}
     function Show-Note {param($Text,$Title,$IsError) $script:LastNote=$Text}
     function Refresh-Dashboard {}
-    function Write-QaSupportEvent {param($AppRoot,$Operation,$Outcome,$NativeCode)}
+    function Write-QaSupportEvent {param($AppRoot,$Operation,$Outcome,$NativeCode,$DurationMs,$ScannerNumber,$ErrorKind,$Counts)}
     function Set-CredentialStatusLabel {param($Source,$Editor)}
     function Save-QaSavedCredential {param($AppRoot,$ScannerId,$ExpectedPath,$Credential) $script:SaveCalls++}
     $result=[pscustomobject]@{Connections=@([pscustomobject]@{Scanner=$id;Status='CredentialsRequired';NativeCode=1326;Message='Windows error 1326.'})}

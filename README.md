@@ -14,7 +14,7 @@ A portable Windows workspace for collecting, reviewing, finding and sharing CT Q
 
 ## Daily workspace, review and offline updates
 
-Version 4.3.0 moves scanner status to the top, adds a dedicated Archive review tab with grouped checks, makes pending report confirmation explicit in Reports, and simplifies scanner sign-ins. Automatic PDF reading displays cached/pending counts and can be paused. Save a support JSON in the app, or use the standalone diagnostic tool against an existing open installation; the export excludes reports, filenames, network addresses, usernames, credentials and raw logs.
+Version 4.3.0 moves scanner status to the top, adds a dedicated Archive review tab with grouped checks, makes pending report confirmation explicit in Reports, and simplifies scanner sign-ins. Automatic PDF reading displays cached/pending counts and can be paused. Export a scrubbed support ZIP in the app, or use the standalone diagnostic tool against an existing open installation; the export includes all retained structured activity while excluding reports, filenames, network addresses, usernames, credentials and raw logs. Logs include operation starts/outcomes, durations, scanner ordinals, aggregate counts and fixed error categories, with 90-day/50 MB retention. Reading stops scheduling automatic batches when its queue is empty.
 
 The Updates tab accepts a clean offline update ZIP by file picker or drag-and-drop. The checked package is staged separately; installation waits for the app to close and preserves reports, settings, sign-ins and previous-program backups. Checksums detect corruption, not package authorship. End-user portable and update ZIPs exclude repository documentation, GitHub workflows, tests and development files.
 

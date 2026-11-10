@@ -36,6 +36,8 @@ try {
         while($ancestor){if(([IO.File]::GetAttributes($ancestor) -band [IO.FileAttributes]::ReparsePoint) -ne 0){throw 'Linked update paths are unsupported.'};$ancestor=[IO.Path]::GetDirectoryName($ancestor)}
         if(-not $hashes.ContainsKey($relative) -or (Get-FileHash -LiteralPath $file.FullName -Algorithm SHA256).Hash -ne $hashes[$relative]){throw ('Update file differs from the release manifest: '+$relative)}
     }
+    $upgradeClock=[Diagnostics.Stopwatch]::StartNew()
+    if([IO.File]::Exists((Join-Path $PSScriptRoot 'Support.psm1'))){Import-Module (Join-Path $PSScriptRoot 'Support.psm1') -Force;Write-QaSupportEvent -AppRoot $target -Operation OfflineUpdate -Outcome Started}
     Import-Module (Join-Path $PSScriptRoot 'Workspace.psm1') -Force
     [void](Initialize-QaWorkspace $target)
     $stage=Join-Path $target ('.update-'+[guid]::NewGuid().ToString('N'))
@@ -60,6 +62,7 @@ try {
         }
         Write-Output ('Program updated. Settings, credentials, data and logs were preserved. Previous App folder: '+$backup)
         Write-Output 'Open the normal launcher. To roll back, close the app and restore the previous App folder.'
+        if(Get-Command Write-QaSupportEvent -ErrorAction SilentlyContinue){Write-QaSupportEvent -AppRoot $target -Operation OfflineUpdate -Outcome Completed -DurationMs $upgradeClock.ElapsedMilliseconds -Counts @{Files=$files.Count}}
         if($null -ne $guard){$guard.Dispose();$guard=$null}
         if($LaunchAfter){Start-Process -FilePath (Join-Path $target 'Start CT QA Manager.cmd') -WorkingDirectory $target|Out-Null}
         if($StageRoot){try{Import-Module (Join-Path $PSScriptRoot 'Updates.psm1') -Force;Remove-QaUpdateStage -AppRoot $target -StageRoot $StageRoot}catch{Write-Output 'The checked staging folder can be removed after the update.'}}

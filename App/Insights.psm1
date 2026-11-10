@@ -1,6 +1,7 @@
 ﻿Set-StrictMode -Version 2.0
 $ErrorActionPreference='Stop'
 Import-Module (Join-Path $PSScriptRoot 'Archive.psm1')
+Import-Module (Join-Path $PSScriptRoot 'Support.psm1')
 
 function Get-QaInsightValue {param($Object,[string]$Name,$Default=$null)
     if($null -ne $Object -and $null -ne $Object.PSObject.Properties[$Name]){return $Object.$Name};return $Default
@@ -25,6 +26,9 @@ function Get-QaSavedAnalysis {
     if([IO.File]::Exists($path)) {
         try {
             $row=[IO.File]::ReadAllText($path)|ConvertFrom-Json
+            # Keep a failed read cached until that destination changes or a manual retry.
+            # A missing/corrupt destination can differ from the index's original timestamp.
+            if($row.ParserVersion -eq 1 -and $row.Hash -eq $Record.Hash -and $row.Status -eq 'ReadError' -and $null -ne $row.PSObject.Properties['SavedWriteTicks'] -and [long]$row.SavedWriteTicks -eq [IO.File]::GetLastWriteTimeUtc($Record.DestinationPath).Ticks){return $row}
             $expected=Get-QaInsightValue $Record 'DestinationLastWriteUtc' ''
             $valid=$true
             if($expected){$stamp=if($expected -is [datetime]){$expected}else{[datetime]::Parse([string]$expected,[Globalization.CultureInfo]::InvariantCulture,[Globalization.DateTimeStyles]::RoundtripKind)};$valid=([IO.File]::GetLastWriteTimeUtc($Record.DestinationPath).Ticks -eq $stamp.ToUniversalTime().Ticks)}
@@ -44,6 +48,8 @@ function Invoke-QaAnalysis {
         if($null -ne (Get-QaSavedAnalysis $Config $record)){$skipped++;continue}
         if(($done+$failed) -ge $Limit){break}
         if($null -ne $Progress){$Progress.Message='Reading saved PDF '+($done+$failed+1)+' of up to '+$Limit+' locally...'}
+        $readClock=[Diagnostics.Stopwatch]::StartNew();$source=@($Config.Sources|Where-Object Scanner -eq $record.Scanner|Select-Object -First 1);$number=0;if($source.Count){$number=1+[Array]::IndexOf([object[]]$Config.Sources,$source[0])}
+        Write-QaSupportEvent -AppRoot $Config.AppRoot -Operation PdfRead -Outcome Started -ScannerNumber $number
         try {
             $read=Invoke-QaIsolatedTask -Action ReadPdf -InputObject ([pscustomobject]@{Config=$Config;RecordId=$record.Id}) -TimeoutSeconds 60 -Progress $Progress
             $row=ConvertFrom-QaReportText -Text $read.Text -Truncated ([bool]$read.Truncated)
@@ -52,8 +58,10 @@ function Invoke-QaAnalysis {
             $row|Add-Member SavedWriteTicks ([IO.File]::GetLastWriteTimeUtc($record.DestinationPath).Ticks) -Force
             Write-QaAnalysisFile -Root $root -Hash $record.Hash -Value $row
             $done++
+            Write-QaSupportEvent -AppRoot $Config.AppRoot -Operation PdfRead -Outcome Completed -ScannerNumber $number -DurationMs $readClock.ElapsedMilliseconds -Counts @{Analyzed=1;Truncated=[int][bool]$row.Truncated;PrintedPass=[int]($row.Status -eq 'ReportedPass');PrintedFailure=[int]($row.Status -eq 'ReportedFailure');NeedsReview=[int]($row.Status -eq 'NeedsReview')}
         } catch {
-            if($null -ne $Progress -and $Progress.Cancel){break}
+            if($null -ne $Progress -and $Progress.Cancel){Write-QaSupportEvent -AppRoot $Config.AppRoot -Operation PdfRead -Outcome Cancelled -ScannerNumber $number -DurationMs $readClock.ElapsedMilliseconds;break}
+            Write-QaSupportEvent -AppRoot $Config.AppRoot -Operation PdfRead -Outcome Failed -ScannerNumber $number -DurationMs $readClock.ElapsedMilliseconds -ErrorKind (Get-QaSupportErrorKind $_.Exception.Message) -Counts @{ReadErrors=1}
             $failed++
             # Retain failures visibly; users can explicitly retry after fixing components.
             $row=[pscustomobject]@{ParserVersion=1;Hash=$record.Hash;Status='ReadError';Truncated=$true;Findings=@();ReadUtc=[datetime]::UtcNow.ToString('o');ReaderMessage=$_.Exception.Message}
@@ -62,7 +70,7 @@ function Invoke-QaAnalysis {
         }
     }
     $cancelled=($null -ne $Progress -and [bool]$Progress.Cancel)
-    return [pscustomobject]@{Mode='Analysis';Summary=[pscustomobject]@{Description=($done.ToString()+' PDFs analyzed; '+$skipped+' cached; '+$failed+' need review. No reviewed labels changed.');Cancelled=$cancelled};Analyzed=$done;Failed=$failed}
+    return [pscustomobject]@{Mode='Analysis';Summary=[pscustomobject]@{Description=($done.ToString()+' PDFs analyzed; '+$skipped+' cached; '+$failed+' need review. No reviewed labels changed.');Cancelled=$cancelled};Analyzed=$done;Failed=$failed;Cached=$skipped;Pending=[math]::Max(0,(@($dashboard.Records).Count-$done-$failed-$skipped))}
 }
 function Write-QaAnalysisFile {
     param([string]$Root,[string]$Hash,$Value)

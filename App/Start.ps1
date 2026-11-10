@@ -26,6 +26,7 @@ $script:ReconnectTarget=''
 $script:ReviewGroups=@()
 $script:PreparedUpdate=$null
 $script:UpdateLaunching=$false
+$script:AnalysisPending=0
 $script:ConsoleHandle = [intptr]::Zero
 $script:StartupHandled = $false
 $script:LastMonitor=[datetime]::Now
@@ -491,6 +492,7 @@ function Refresh-Dashboard {
         $script:Controls.TodayGrid.ItemsSource=@($today.Scanners)
         $script:Controls.MonthlyGrid.ItemsSource=@(Get-QaMonthOverview -Config $script:Config -Dashboard $script:Dashboard)
         $reading=Get-QaAnalysisProgress -Config $script:Config -Records @($script:Dashboard.Records)
+        $script:AnalysisPending=$reading.Pending
         $script:Controls.ReadingProgressLabel.Text=($reading.Cached.ToString()+' of '+$reading.Total+' PDFs have cached reading results; '+$reading.Pending+' waiting, '+$reading.Errors+' need a manual retry. Up to 20 new PDFs per batch.')
         $script:Controls.ToggleReadingButton.Content=$(if([bool](Value-Or $script:Config AutoAnalyze $true)){'Pause automatic PDF reading'}else{'Enable automatic PDF reading'})
         $minutes=[int](Value-Or $script:Config MonitorMinutes 15)
@@ -722,6 +724,7 @@ function Save-Settings {
         if (@($cfg.Sources | Group-Object DriveLetter | Where-Object Count -gt 1).Count) { throw 'Use a different preferred drive letter for each scanner.' }
         Save-QaConfig -AppRoot $script:AppRoot -Config $cfg | Out-Null
         $script:Config=$cfg
+        Write-QaSupportEvent -AppRoot $script:AppRoot -Operation Settings -Outcome Completed -Counts @{Scanners=@($script:Config.Sources).Count}
         Save-EditedCredentials -ScannerId $CredentialScannerId;Refresh-ScannerFilterOptions
         Refresh-Dashboard
         $script:Controls.StatusText.Text='Advanced settings saved.'
@@ -749,6 +752,8 @@ function Start-Work {
         foreach($key in $Credentials.Keys){$script:AttemptedCredentials[[string]$key]=$true}
     }
     $script:CurrentMode=$Mode
+    $script:OperationClock=[Diagnostics.Stopwatch]::StartNew()
+    if(-not $script:DemoPreview){Write-QaSupportEvent -AppRoot $script:AppRoot -Operation $Mode -Outcome Started}
     $shared=[hashtable]::Synchronized(@{Message='Preparing your request...'; Percent=0; Cancel=$false; Done=$false; Error=''; Result=$null})
     $runspace=[RunspaceFactory]::CreateRunspace(); $runspace.ApartmentState='MTA'; $runspace.ThreadOptions='ReuseThread'; $runspace.Open()
     $ps=[PowerShell]::Create(); $ps.Runspace=$runspace
@@ -802,7 +807,9 @@ try {
     try{$cred=Get-QaSavedCredential -AppRoot $appRoot -ScannerId ([string]$scanner.Scanner) -ExpectedUsername ([string]$scanner.Username) -ExpectedPath ([string]$scanner.Path)}
     catch{[void]$connectionWarnings.Add(([string]$scanner.Name+' - Saved sign-in could not be read. Enter the password again in Advanced settings.'));$cred=$null}
    }
-   [void]$results.Add((Reconnect-QaScanner -Scanner $scanner -Credential $cred))
+   $connectionClock=[Diagnostics.Stopwatch]::StartNew();$connectionResult=Reconnect-QaScanner -Scanner $scanner -Credential $cred
+   $connectionResult|Add-Member DurationMs ([long]$connectionClock.ElapsedMilliseconds) -Force
+   [void]$results.Add($connectionResult)
    $i++; $progress.Percent=[int](100*$i/[math]::Max(1,$connectionSources.Count))
   }
   $progress.Result=[pscustomobject]@{Connections=@($results.ToArray());ConnectionWarnings=@($connectionWarnings.ToArray())}
@@ -924,7 +931,7 @@ function Finish-Connections {
         $feedback=[pscustomobject]@{Scanner=[string]$connection.Scanner;Status=[string]$connection.Status;Message=[string]$connection.Message;NativeCode=[int](Value-Or $connection NativeCode 0);CheckedUtc=[datetime]::UtcNow}
         $script:ConnectionFeedback[[string]$connection.Scanner]=$feedback
         if($script:ScannerEditors.ContainsKey([string]$connection.Scanner)){$script:ScannerEditors[[string]$connection.Scanner].ConnectionResult.Text=[string]$connection.Message}
-        Write-QaSupportEvent -AppRoot $script:AppRoot -Operation Reconnect -Outcome $(if($connection.Status -eq 'Connected'){'Completed'}else{'Failed'}) -NativeCode $feedback.NativeCode
+        Write-QaSupportEvent -AppRoot $script:AppRoot -Operation Reconnect -Outcome $(if($connection.Status -eq 'Connected'){'Completed'}else{'Failed'}) -NativeCode $feedback.NativeCode -DurationMs ([long](Value-Or $connection DurationMs 0)) -ScannerNumber (1+[Array]::IndexOf([object[]]$script:Config.Sources,$sourceMatch[0])) -ErrorKind $(if($connection.Status -eq 'Connected'){'None'}else{Get-QaSupportErrorKind -Message ([string]$connection.Message) -NativeCode $feedback.NativeCode})
         if($script:RememberPending.ContainsKey([string]$connection.Scanner)){
             $pending=$script:RememberPending[[string]$connection.Scanner]
             if($connection.Status -eq 'Connected' -and $sourceMatch.Count){try{[void](Save-QaSavedCredential -AppRoot $script:AppRoot -ScannerId ([string]$connection.Scanner) -ExpectedPath ([string]$sourceMatch[0].Path) -Credential $pending);Set-CredentialStatusLabel $sourceMatch[0] $script:ScannerEditors[[string]$connection.Scanner]}catch{[void]$lines.Add('The connection succeeded, but the sign-in was not remembered. Check the saved username in Advanced settings.')}}
@@ -1050,6 +1057,7 @@ function Toggle-PdfReading {
         Save-QaConfig -AppRoot $script:AppRoot -Config $copy|Out-Null;$script:Config=Read-QaConfig -AppRoot $script:AppRoot
         $script:Controls.AutoAnalyze.IsChecked=$enabled
         if(-not $enabled -and $script:Busy -and $script:CurrentMode -eq 'Analysis'){$script:Worker.Shared.Cancel=$true}
+        Write-QaSupportEvent -AppRoot $script:AppRoot -Operation Settings -Outcome Completed -Counts @{AutoReadingEnabled=[int]$enabled}
         Refresh-Dashboard
         $script:Controls.StatusText.Text=$(if($enabled){'Automatic text reading enabled. New or changed PDFs are read in small batches while open.'}else{'Automatic text reading paused. Saved reports and cached results remain available.'})
     }catch{Show-Note $_.Exception.Message 'PDF reading setting could not be saved' $true}
@@ -1068,6 +1076,7 @@ function Prepare-UpdatePackage {
         $script:Controls.UpdatePackagePath.Text='Checking the selected ZIP...'
         $plan=New-QaUpdateStage -AppRoot $script:AppRoot -ZipPath $Path
         $script:PreparedUpdate=$plan
+        Write-QaSupportEvent -AppRoot $script:AppRoot -Operation OfflineUpdate -Outcome Completed -Counts @{Files=$plan.Files}
         $script:Controls.UpdatePackagePath.Text=$Path
         $script:Controls.UpdatePackageSummary.Text=('Current: 4.3.0 / Selected: '+$plan.Version+' / '+$plan.Files+' checked program files. Reports and saved settings stay in place.')
         $script:Controls.InstallUpdateButton.IsEnabled=$true
@@ -1081,6 +1090,7 @@ function Install-PreparedUpdate {
         if([Windows.MessageBox]::Show($script:Window,('Install version '+$plan.Version+' and restart? The app will close. Your archive and settings will be preserved, and the previous program will be kept in Backups.'),'Install update',[Windows.MessageBoxButton]::YesNo,[Windows.MessageBoxImage]::Question) -ne [Windows.MessageBoxResult]::Yes){return}
         $arguments='-NoLogo -NoProfile -STA -File "'+(Join-Path $plan.SourceFolder 'App/Upgrade.ps1')+'" -SourceFolder "'+$plan.SourceFolder+'" -TargetFolder "'+$script:AppRoot+'" -WaitForApp -LaunchAfter -StageRoot "'+$plan.StageRoot+'"'
         Start-Process -FilePath (Join-Path $PSHOME 'powershell.exe') -ArgumentList $arguments -WorkingDirectory $script:AppRoot|Out-Null
+        Write-QaSupportEvent -AppRoot $script:AppRoot -Operation OfflineUpdate -Outcome Started -Counts @{Files=$plan.Files}
         $script:UpdateLaunching=$true
         $script:Window.Close()
     }catch{Show-Note $_.Exception.Message 'Update could not start' $true}
@@ -1118,11 +1128,11 @@ function Open-ReviewGroup {
 function Save-SupportReport {
     try {
         $folder=Join-Path $script:AppRoot 'Logs/Support';[void][IO.Directory]::CreateDirectory($folder)
-        $dialog=New-Object Microsoft.Win32.SaveFileDialog;$dialog.Filter='Support report (*.json)|*.json';$dialog.FileName='CTQA-Support-'+(Get-Date).ToString('yyyyMMdd-HHmmss')+'.json';$dialog.InitialDirectory=$folder
+        $dialog=New-Object Microsoft.Win32.SaveFileDialog;$dialog.Filter='Scrubbed support logs (*.zip)|*.zip';$dialog.FileName='CTQA-Support-'+(Get-Date).ToString('yyyyMMdd-HHmmss')+'.zip';$dialog.InitialDirectory=$folder
         if(-not $dialog.ShowDialog($script:Window)){return}
         $mode='';if($script:Busy){$mode=$script:CurrentMode}
-        $path=Export-QaSupportReport -AppRoot $script:AppRoot -Config $script:Config -Dashboard $script:Dashboard -DestinationPath $dialog.FileName -ConnectionResults @($script:ConnectionFeedback.Values) -CurrentOperation $mode
-        Show-Note ('Support report saved to:'+"`r`n"+$path+"`r`n`r`n"+'You can share this JSON file for troubleshooting. It contains counts, QA archive date ranges and error numbers. No passwords, usernames, network addresses, filenames, PDF contents or raw logs are included. Scanner 1, 2, 3 follow your configured scanner order.') 'Shareable support report'
+        $path=Export-QaSupportBundle -AppRoot $script:AppRoot -Config $script:Config -Dashboard $script:Dashboard -DestinationPath $dialog.FileName -ConnectionResults @($script:ConnectionFeedback.Values) -CurrentOperation $mode
+        Show-Note ('Support report saved to:'+"`r`n"+$path+"`r`n`r`n"+'You can share this ZIP for troubleshooting. It includes the summary and ALL retained scrubbed activity: operation timings, results, counts and error numbers. Logs normally cover up to 90 days with a 50 MB limit. Nothing is uploaded automatically. No passwords, usernames, network addresses, filenames, PDF contents or raw logs are included. Scanner 1, 2, 3 follow your configured scanner order.') 'Scrubbed support logs'
     }catch{Show-Note $_.Exception.Message 'Support report could not be saved' $true}
 }
 
@@ -1293,9 +1303,13 @@ try {
         $errorText=[string]$worker.Shared.Error; $result=$worker.Shared.Result; $mode=$script:CurrentMode; $cancelled=[bool]$worker.Shared.Cancel
         try { [void]$worker.PowerShell.EndInvoke($worker.Handle); if(-not $errorText -and $worker.PowerShell.HadErrors){$errorText=($worker.PowerShell.Streams.Error | Out-String)} } catch {$errorText=$_.Exception.Message}
         finally {$worker.PowerShell.Dispose();$worker.Runspace.Dispose();$script:Worker=$null;Set-Busy $false;$script:Controls.CancelButton.IsEnabled=$true}
-        if(-not $script:DemoPreview){Write-QaSupportEvent -AppRoot $script:AppRoot -Operation $mode -Outcome $(if($errorText){'Failed'}elseif($cancelled){'Cancelled'}else{'Completed'})}
         $completedSummary=Value-Or $result Summary $null
         if($null -ne $completedSummary -and $null -ne $completedSummary.PSObject.Properties['Cancelled']){$cancelled=[bool]$completedSummary.Cancelled}
+        if(-not $script:DemoPreview){
+            $counts=@{};foreach($key in @('Total','NewOrChanged','Unchanged','Pending','Deferred','Copied','Failed','Verified')){if($null -ne $completedSummary -and $null -ne $completedSummary.PSObject.Properties[$key]){$counts[$key]=$completedSummary.$key}}
+            foreach($key in @('Analyzed','Failed','Cached','Pending')){if($null -ne $result -and $null -ne $result.PSObject.Properties[$key]){$counts[$key]=$result.$key}}
+            Write-QaSupportEvent -AppRoot $script:AppRoot -Operation $mode -Outcome $(if($errorText){'Failed'}elseif($cancelled){'Cancelled'}else{'Completed'}) -DurationMs $script:OperationClock.ElapsedMilliseconds -ErrorKind (Get-QaSupportErrorKind $errorText) -Counts $counts
+        }
         if($mode -eq 'Reconnect' -and ($cancelled -or $errorText)){$script:RememberPending=@{}}
         if($cancelled -and -not $errorText){
             $script:AfterReconnect=''
@@ -1346,9 +1360,9 @@ try {
         if($script:Busy -or -not $script:Dashboard.SetupComplete){return}
         $minutes=[int](Value-Or $script:Config MonitorMinutes 15)
         if($minutes -gt 0 -and ([datetime]::Now-$script:LastMonitor).TotalMinutes -ge $minutes){$script:LastMonitor=[datetime]::Now;Start-Work -Mode Update;return}
-        if([bool](Value-Or $script:Config AutoAnalyze $true) -and ([datetime]::Now-$script:LastAnalysis).TotalMinutes -ge 5){$script:LastAnalysis=[datetime]::Now;Start-Work -Mode Analysis}
+        if([bool](Value-Or $script:Config AutoAnalyze $true) -and $script:AnalysisPending -gt 0 -and ([datetime]::Now-$script:LastAnalysis).TotalMinutes -ge 5){$script:LastAnalysis=[datetime]::Now;Start-Work -Mode Analysis}
     })
-    $script:Window.Add_Closed({if($null -ne $script:PreparedUpdate -and -not $script:UpdateLaunching){try{Remove-QaUpdateStage -AppRoot $script:AppRoot -StageRoot $script:PreparedUpdate.StageRoot}catch{}};$script:Timer.Stop();$script:MonitorTimer.Stop();$script:SearchTimer.Stop();if(-not $script:DemoPreview){$script:ProgramLock.Dispose()}})
+    $script:Window.Add_Closed({if(-not $script:DemoPreview){Write-QaSupportEvent -AppRoot $script:AppRoot -Operation Shutdown -Outcome Completed};if($null -ne $script:PreparedUpdate -and -not $script:UpdateLaunching){try{Remove-QaUpdateStage -AppRoot $script:AppRoot -StageRoot $script:PreparedUpdate.StageRoot}catch{}};$script:Timer.Stop();$script:MonitorTimer.Stop();$script:SearchTimer.Stop();if(-not $script:DemoPreview){$script:ProgramLock.Dispose()}})
     $script:Window.Add_PreviewKeyDown({param($sender,$args) if($args.Key -eq [Windows.Input.Key]::F1){Show-Help;$args.Handled=$true}})
     $script:Window.Dispatcher.Add_UnhandledException({param($sender,$args) $args.Handled=$true;Show-Note $args.Exception.Message 'Application action needs attention' $true})
     if($PortableLaunch) {
@@ -1389,6 +1403,7 @@ namespace CtQa {
     $script:Timer.Start()
     [void]$script:Window.ShowDialog()
 } catch {
+    if(-not $script:DemoPreview){try{Import-Module (Join-Path $PSScriptRoot 'Support.psm1') -Force;Write-QaSupportEvent -AppRoot $script:AppRoot -Operation Startup -Outcome Failed -ErrorKind (Get-QaSupportErrorKind $_.Exception.Message)}catch{}}
     if($script:ConsoleHandle -ne [intptr]::Zero){try{[void][CtQa.NativeWindow]::ShowWindow($script:ConsoleHandle,5)}catch{}}
     if($ValidateLayout -or $DemoPreview){Write-Error ($_.Exception.Message+' / '+$_.ScriptStackTrace);exit 1}
     $message='CT QA Manager Pro could not start.'+"`r`n`r`n"+$_.Exception.Message+"`r`n`r`nExtract the complete application folder. If scripts are blocked, ask hospital IT to approve the package; do not change execution policy."

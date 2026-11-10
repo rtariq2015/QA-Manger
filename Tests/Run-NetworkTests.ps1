@@ -39,6 +39,14 @@ Scenario 'A local profile replaces examples without changing archive or review s
     Check ([IO.File]::Exists($local+'.before-network-profile.bak')) 'Prior local settings retained'
     Check ((Set-QaConnectionProfile $workspace $profilePath).Applied -eq 0) 'Repeated application makes no change'
 }
+Scenario 'A local profile never resets a customized username on the same scanner folder' {
+    $local=Join-Path $workspace 'Config/Settings.local.json';$current=Get-Content $local -Raw|ConvertFrom-Json
+    $current.Sources[0].Username='OtherSyntheticUser';$current|ConvertTo-Json -Depth 16|Set-Content $local -Encoding UTF8
+    [void](Initialize-QaWorkspace $workspace);$after=Get-Content $local -Raw|ConvertFrom-Json
+    Check ($after.Sources[0].Path -eq $scanner.Path -and $after.Sources[0].Username -eq 'OtherSyntheticUser') 'Custom username preserved after reopening'
+    [void](Set-QaConnectionProfile $workspace $profilePath -ReplaceExisting)
+    Check ((Get-Content $local -Raw|ConvertFrom-Json).Sources[0].Username -eq $scanner.Username) 'Only an explicit apply changes the customized username'
+}
 Scenario 'Automatic profile loading preserves customized connections; explicit apply retains their previous root' {
     $local=Join-Path $workspace 'Config/Settings.local.json';$settings=Get-Content $local -Raw|ConvertFrom-Json
     $settings.Sources[0].Path='\\OTHER-SYNTHETIC\DifferentShare\Reports';$settings.Sources[0].Username='OtherSyntheticUser'

@@ -47,7 +47,9 @@ function Set-QaConnectionProfile {
         $sources=@($settings.Sources|Where-Object{$_.Scanner -ceq $id})
         if($sources.Count -ne 1){[void]$skipped.Add($id);continue};$source=$sources[0]
         $same=([string]$source.Path).TrimEnd('\').Equals($location.Path,[StringComparison]::OrdinalIgnoreCase)
-        if(-not $ReplaceExisting -and -not $same -and -not (Test-QaPlaceholderConnection $source)){[void]$skipped.Add($id);continue}
+        $oldUsername=if($null -ne $source.PSObject.Properties['Username']){[string]$source.Username}else{''}
+        $factory=(Test-QaPlaceholderConnection $source) -and $oldUsername -in @('','SCANNER_USERNAME')
+        if(-not $ReplaceExisting -and -not $factory -and (-not $same -or $oldUsername -cne $username)){[void]$skipped.Add($id);continue}
         $matched++
         $oldPath=[string]$source.Path
         $oldUsername=if($null -ne $source.PSObject.Properties['Username']){[string]$source.Username}else{''}

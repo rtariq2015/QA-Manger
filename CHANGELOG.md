@@ -5,7 +5,8 @@
 - Move scanner status to the top and group historical review items in their own Archive review tab without removing details.
 - Clarify saved PDFs, pending report types, cached text reading, and printed results. Review / confirm selected files in Reports.
 - Simplify connections, add per-scanner Save & reconnect, remember successful prompt sign-ins, and stop automatic password retry loops.
-- Add shareable diagnostics and a standalone export that works while the application is open; use allowlisted summaries instead of raw logs.
+- Add a scrubbed support ZIP and standalone export that work while the application is open. Include all retained structured activity, timings, counts and fixed error categories; exclude raw logs, passwords, paths and report contents. Retain up to 90 days / 50 MB with serialized cross-process writes.
+- Log per-PDF processing outcomes and stop automatic batch scheduling when all saved PDFs have current cached results.
 - Add offline ZIP updates with staging, file checks, bounded shutdown waits, automatic restart, rollback copies, and clean end-user packages.
 
 ## 4.2.2

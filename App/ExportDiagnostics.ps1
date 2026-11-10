@@ -7,8 +7,8 @@ try {
     Import-Module (Join-Path $PSScriptRoot 'Archive.psm1') -Force
     Import-Module (Join-Path $PSScriptRoot 'Support.psm1') -Force
     $config=Read-QaConfig -AppRoot $AppRoot;$dashboard=Get-QaDashboard -Config $config
-    if(-not $OutputPath){Add-Type -AssemblyName PresentationFramework;$dialog=New-Object Microsoft.Win32.SaveFileDialog;$dialog.Filter='Support report (*.json)|*.json';$dialog.FileName='CTQA-Support-'+(Get-Date).ToString('yyyyMMdd-HHmmss')+'.json';$folder=Join-Path $AppRoot 'Logs/Support';[void][IO.Directory]::CreateDirectory($folder);$dialog.InitialDirectory=$folder;if(-not $dialog.ShowDialog()){exit 0};$OutputPath=$dialog.FileName}
-    $result=Export-QaSupportReport -AppRoot $AppRoot -Config $config -Dashboard $dashboard -DestinationPath $OutputPath
+    if(-not $OutputPath){Add-Type -AssemblyName PresentationFramework;$dialog=New-Object Microsoft.Win32.SaveFileDialog;$dialog.Filter='Scrubbed support logs (*.zip)|*.zip';$dialog.FileName='CTQA-Support-'+(Get-Date).ToString('yyyyMMdd-HHmmss')+'.zip';$folder=Join-Path $AppRoot 'Logs/Support';[void][IO.Directory]::CreateDirectory($folder);$dialog.InitialDirectory=$folder;if(-not $dialog.ShowDialog()){exit 0};$OutputPath=$dialog.FileName}
+    if([IO.Path]::GetExtension($OutputPath) -eq '.zip'){$result=Export-QaSupportBundle -AppRoot $AppRoot -Config $config -Dashboard $dashboard -DestinationPath $OutputPath}else{$result=Export-QaSupportReport -AppRoot $AppRoot -Config $config -Dashboard $dashboard -DestinationPath $OutputPath}
     Write-Output ('Shareable support report saved: '+$result)
     Write-Output 'No passwords, network addresses, usernames, PDFs, filenames, raw logs or extracted text were included.'
     if(-not $NoOpen){Start-Process explorer.exe -ArgumentList ('/select,"'+$result+'"')|Out-Null}
