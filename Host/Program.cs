@@ -112,8 +112,8 @@ app.MapPost("/api/update", async (HttpContext context) => {
         return Results.BadRequest(new { error = "Choose one update ZIP smaller than 256 MB." });
     var folder = SafeFiles.PrivateDirectory(Path.Combine(root, "Data", ".web-uploads"));
     var path = Path.Combine(folder, Guid.NewGuid().ToString("N") + ".zip");
-    await using (var output = new FileStream(path, FileMode.CreateNew, FileAccess.Write, FileShare.None)) await file.CopyToAsync(output, context.RequestAborted);
     try {
+        await using (var output = new FileStream(path, FileMode.CreateNew, FileAccess.Write, FileShare.None)) await file.CopyToAsync(output, context.RequestAborted);
         var job = state.Queue(new JsonObject { ["action"] = "PrepareUpdate", ["path"] = path, ["zipPath"] = path }, app.Lifetime.ApplicationStopping, null, path);
         return Results.Json(new { id = job.Id }, statusCode: 202);
     } catch { File.Delete(path); throw; }
@@ -152,10 +152,17 @@ origin = app.Services.GetRequiredService<IServer>().Features.Get<IServerAddresse
 // Kestrel starts on an OS-selected loopback port. No URL ACL, service or firewall rule is created.
 var ready = JsonSerializer.Serialize(new { url = origin, token, pid = Environment.ProcessId, version = "5.0.0" });
 SafeFiles.WritePrivate(readyPath, ready);
+var browserStartup = Stopwatch.StartNew();
+var startupFailed = 0;
 Console.WriteLine("CT QA Manager is running locally. Close it using Settings when finished.");
 if (!settings.NoBrowser) {
-    try { Process.Start(new ProcessStartInfo(origin + "/#session=" + token) { UseShellExecute = true }); }
-    catch { Console.WriteLine("The browser could not open automatically. Restart the program using its normal launcher."); }
+    try { Process.Start(new ProcessStartInfo(origin + "/#session=" + token) { UseShellExecute = true })?.Dispose(); }
+    catch {
+        await app.StopAsync();
+        try { File.Delete(readyPath); } catch { }
+        await app.DisposeAsync();
+        throw new InvalidOperationException("The browser could not open. Check the workstation default browser or use Start CT QA Manager.cmd classic. No background session was left running.");
+    }
 }
 _ = Task.Run(async () => {
     try {
@@ -169,6 +176,11 @@ _ = Task.Run(async () => {
     try {
         using var timer = new PeriodicTimer(TimeSpan.FromSeconds(30));
         while (await timer.WaitForNextTickAsync(app.Lifetime.ApplicationStopping)) {
+            if (!settings.NoBrowser && state.LastHeartbeat == DateTimeOffset.MinValue && browserStartup.Elapsed > TimeSpan.FromSeconds(90)) {
+                Interlocked.Exchange(ref startupFailed, 1);
+                app.Lifetime.StopApplication();
+                break;
+            }
             var saved = state.Snapshot;
             if (!state.Busy && DateTimeOffset.UtcNow - state.LastHeartbeat < TimeSpan.FromSeconds(90) && saved?["setupComplete"]?.GetValue<bool>() == true) {
                 var monitor = saved?["settings"]?["monitorMinutes"]?.GetValue<int>() ?? 0;
@@ -183,6 +195,8 @@ _ = Task.Run(async () => {
 });
 try { await app.WaitForShutdownAsync(); }
 finally { state.Stop(); try { File.Delete(readyPath); } catch { } await app.DisposeAsync(); }
+if (Volatile.Read(ref startupFailed) != 0)
+    throw new InvalidOperationException("The browser did not connect to the local interface within 90 seconds. Check the default browser and workstation local-access policy, or use Start CT QA Manager.cmd classic. The background session was stopped.");
 
 static void LaunchClassic(string root) {
     var classic = Path.Combine(root, "App", "Start.ps1"); SafeFiles.RequireDirect(classic);

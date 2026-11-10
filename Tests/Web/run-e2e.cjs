@@ -243,6 +243,10 @@ function verifyArchivePreserved() {
       const disapprove = await page.locator('#disapprove-button').boundingBox();
       check(disapprove && disapprove.y >= 0 && disapprove.y + disapprove.height <= 768, 'Disapprove stays visible beside Approve without scrolling');
       await page.screenshot({ path: path.join(output, 'reports-small-web-demo.png'), fullPage: true });
+      await page.locator('#approve-button').click();
+      await waitSnapshot(s => s.records.some(record => record.id === pending.id && !record.pending && /^approved$/i.test(record.decision)));
+      check(true, 'A scanner connection failure does not obstruct approving another saved PDF offline');
+      verifyArchivePreserved();
       check(errors.length === 0, 'No JavaScript page errors occurred'); check(externalRequests.length === 0, 'No internet asset request was attempted');
     });
   } catch (error) { if (page) try { await page.screenshot({ path: path.join(output, 'failure-web-demo.png'), fullPage: true }); } catch {} if (!results.some(r => r.result === 'FAIL')) results.push({ name: 'Test setup or completion', result: 'FAIL', details: clean(error.stack || error.message) }); process.exitCode = 1; }

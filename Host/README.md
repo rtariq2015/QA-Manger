@@ -16,7 +16,7 @@ For a development run, build then launch with:
 dotnet Host/bin/Debug/net10.0/CTQa.Host.dll --root PATH_TO_WORKSPACE --powershell PATH_TO_POWERSHELL --no-browser
 ```
 
-The application must have its `App/Web/` assets and `App/WebWorker.ps1`. Runtime configuration stays in the selected workspace. `Data/web-ready.json` contains the selected loopback URL and a per-launch session token; its ACL permits only the current user. It is deleted during normal shutdown. Do not upload or commit this file. The host never prints the token.
+The application must have its `App/Web/` assets and `App/WebWorker.ps1`. Runtime configuration stays in the selected workspace. `Data/web-ready.json` contains the selected loopback URL and a per-launch session token; its ACL permits only the current user. It is deleted during normal shutdown. Do not upload or commit this file. The host never prints the token. During a normal browser launch it allows 90 seconds for the first browser heartbeat; if the browser is blocked or cannot connect, it stops, removes the ready file and reports a visible launcher error. `--no-browser` development runs skip that browser-start check.
 
 The host binds only `127.0.0.1`, selecting an available port by default. It does not register HTTP.sys namespaces, add firewall rules or require administrator launch. Endpoint policy can still block the executable or local browser connection. The previous WPF interface remains the fallback through the fixed OpenClassic action or the main launcher's `classic` argument.
 
