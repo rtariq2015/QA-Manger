@@ -115,7 +115,7 @@ function Get-QaBrowseBase { param($Record)
     $original=ConvertTo-QaBrowsePathLabel ([IO.Path]::GetFileNameWithoutExtension([string]$Record.OriginalFileName))
     return [pscustomobject]@{Folder=$folder;Name=($dateText+' - '+$time+' - '+$original+' - '+$category)}
 }
-function Get-QaBrowseTarget { param($Record,$Existing,$Used)
+function Get-QaBrowseTarget { param($Record,$Existing,$Used,[string]$BrowseRoot='')
     $base=Get-QaBrowseBase $Record
     if($null -ne $Existing -and [string]$Existing.Category -eq [string]$Record.Category) {
         $prior=[string]$Existing.RelativePath
@@ -124,6 +124,10 @@ function Get-QaBrowseTarget { param($Record,$Existing,$Used)
         }
     }
     $relative=Join-Path $base.Folder ($base.Name+'.pdf');$counter=2
+    if($BrowseRoot -and (Join-Path $BrowseRoot $relative).Length -gt 245){
+        $base.Name=([string]$Record.ReportDate)+'_'+(([string]$Record.ReportTime).Replace(':','-'))+'_'+([string]$Record.Id).Substring(0,10)
+        $relative=Join-Path $base.Folder ($base.Name+'.pdf')
+    }
     while($Used.ContainsKey($relative) -and $Used[$relative] -ne [string]$Record.Id){$relative=Join-Path $base.Folder ($base.Name+' - Report '+$counter+'.pdf');$counter++}
     $Used[$relative]=[string]$Record.Id;return $relative
 }
@@ -315,7 +319,7 @@ function Invoke-QaBrowseRefresh {
             $n++;Set-QaBrowseProgress $Progress ('Refreshing readable report '+$n+' of '+$records.Count) (100*$n/[math]::Max(1,$records.Count))
             $existing=$null;if($existingById.ContainsKey([string]$record.Id)){$existing=$existingById[[string]$record.Id]}
             try {
-                $relative=Get-QaBrowseTarget $record $existing $used
+                $relative=Get-QaBrowseTarget $record $existing $used $paths.Browse
                 Copy-QaBrowseReport $record $relative $existing $ledger $paths $Progress $summary
             }catch{
                 if(Test-QaBrowseCancelled $Progress){$summary.Cancelled=$true;break}

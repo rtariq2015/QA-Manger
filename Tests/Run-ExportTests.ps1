@@ -352,7 +352,7 @@ Run-Test 'A linked archived report folder is rejected even when its PDF hash mat
     try{$r=Invoke-QaExport -Config $f.Config -RecordIds @($f.Records.Id) -DestinationPath $path;$rejected=($r.Summary.Failed -gt 0 -or $r.Summary.Cancelled)}catch{$rejected=$true}
     Assert-True $rejected 'Linked report parent rejected'
     Assert-NoExportFile $f $path
-    Assert-Equal $f.Records[0].Hash (Get-FileHash -LiteralPath (Join-Path $target $f.Records[0].OriginalFileName) -Algorithm SHA256).Hash 'Linked target bytes unchanged'
+    Assert-Equal $f.Records[0].Hash (Get-FileHash -LiteralPath (Join-Path $target ([IO.Path]::GetFileName($f.Records[0].DestinationPath))) -Algorithm SHA256).Hash 'Linked target bytes unchanged'
 }
 Run-Test 'Tampered report paths cannot escape the archive during export'{
     $f=New-ExportFixture 'EscapedRecord';$path=Join-Path $f.Output 'escaped-record.zip'

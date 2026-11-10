@@ -48,7 +48,7 @@ Scenario 'Local background analysis works with scanner folders offline and uses 
 }
 Scenario 'Readable folders preserve all PDFs and build a movable offline library' {
     $result=Invoke-QaBrowseRefresh $cfg
-    Check ($result.Summary.Failed -eq 0) 'Readable folders refreshed'
+    Check ($result.Summary.Failed -eq 0) ('Readable folders refreshed: '+$result.Summary.Description)
     $html=Join-Path $cfg.ArchiveRoot 'Browse Reports/Open Reports.html'
     Check ([IO.File]::Exists($html)) 'Offline navigator exists'
     $text=[IO.File]::ReadAllText($html)
@@ -142,6 +142,16 @@ Scenario 'A bounded inventory worker returns a read-only snapshot' {
     Check (@($snapshot.Inventory.Items).Count -gt 0) 'Read-only snapshot collected outside the UI process'
     [IO.Directory]::Move($source.Path,($source.Path+'.offline'))
 }
+Scenario 'Historical reviews use the checklist effective for the report month' {
+    $config=New-TestConfig 'HistoricalReview';$source=$config.Sources[0]
+    $source|Add-Member MonthlyChecklist @('Slice thickness') -Force
+    $source|Add-Member MonthlyChecklistHistory @([pscustomobject]@{EffectiveMonth='0001-01';Components=@('MTF')},[pscustomobject]@{EffectiveMonth='2099-01';Components=@('Slice thickness')}) -Force
+    [void](Add-Report $config 'CT_Edge' 'Quality_Constancy_MTF' $today '06-00-00' 95000)
+    [void](Import-Fixture $config);$record=@((Get-QaDashboard $config).Records)[0]
+    [void](Invoke-QaOperation $config -Mode Reclassify -Decisions @([pscustomobject]@{RecordId=$record.Id;Category='Monthly_QA';Reviewer='Synthetic historical reviewer';Reason='Checked against effective checklist';ConfirmedComponents=@('MTF')}))
+    $row=@(Get-QaMonthlyCoverage $config -Months @($month)|Where-Object{$_.Scanner -eq 'CT_Edge'})[0]
+    Check ($row.Status -eq 'Complete') 'Historical reviewer can confirm an item even when later rules differ'
+}
 Scenario 'An upgrade verifies package files and preserves local settings and data' {
     $release=Join-Path $TestRoot 'Update Source';$target=Join-Path $TestRoot 'Existing Program'
     foreach($folder in @($release,$target)){[void][IO.Directory]::CreateDirectory((Join-Path $folder 'App'));[void][IO.Directory]::CreateDirectory((Join-Path $folder 'Config'));[void][IO.Directory]::CreateDirectory((Join-Path $folder 'Data'))}
@@ -160,7 +170,10 @@ Scenario 'An upgrade verifies package files and preserves local settings and dat
     Check ([IO.File]::ReadAllText((Join-Path $target 'Config/Settings.local.json')) -match 'synthetic scanner configuration') 'Local configuration preserved'
     Check (@(Get-ChildItem (Join-Path $target 'Backups') -Recurse -Filter Example.psm1).Count -eq 1) 'Previous program retained for rollback'
     [IO.File]::WriteAllText((Join-Path $release 'App/Example.psm1'),'tampered release')
+    $previousPreference=$ErrorActionPreference
+    try{$ErrorActionPreference='Continue'
     & (Get-Process -Id $PID).Path -NoProfile -File (Join-Path $ProductRoot 'App/Upgrade.ps1') -SourceFolder $release -TargetFolder $target > (Join-Path $TestRoot 'rejected-upgrade.log') 2>&1
+    }finally{$ErrorActionPreference=$previousPreference}
     Check ($LASTEXITCODE -ne 0 -and [IO.File]::ReadAllText((Join-Path $target 'App/Example.psm1')) -eq '# new program') 'Checksum mismatch rejected without replacing working program'
 }
 $failed=@($script:Results|Where-Object Result -eq 'FAIL').Count

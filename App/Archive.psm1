@@ -320,7 +320,10 @@ function Get-QaRelativeTarget { param($Entry,[string]$Hash)
     if ($name -ne $Entry.OriginalFileName -or $name -match '[<>:"/\\|?*]' -or $name.EndsWith('.') -or $name.EndsWith(' ')) { throw 'The report filename is not safe for a Windows archive.' }
     $relative=$parts[0]
     for($i=1;$i -lt $parts.Count;$i++) { $relative=Join-Path $relative $parts[$i] }
-    return Join-Path $relative $name
+    # Keep managed paths compact for Windows PowerShell 5.1. Original filenames stay in the index and readable view.
+    $stamp=if($Entry.ReportDate){[string]$Entry.ReportDate}else{'Undated'}
+    $time=([string]$Entry.ReportTime).Replace(':','-');if(-not $time){$time='Time-unknown'}
+    return Join-Path $relative ($stamp+'_'+$time+'.pdf')
 }
 function New-QaIssue { param([string]$Scanner,[string]$Type,[string]$Message,[string]$Path='',[string]$RecordId='')
     return [pscustomobject]@{Id=(Get-QaHashText ($Scanner+'|'+$Type+'|'+$Message+'|'+$RecordId));Scanner=$Scanner;Type=$Type;Message=$Message;Path=$Path;RecordId=$RecordId}
@@ -532,7 +535,7 @@ function Copy-QaVerified { param($Entry,$Source,$State,$Paths,$Progress,$Summary
             }
             # Same identity can be repaired into a new verified location without overwriting damaged bytes.
             $relative=Get-QaRelativeTarget $Entry $hash
-            $relative=Join-Path ([IO.Path]::GetDirectoryName($relative)) ('Recovered_'+$token.Substring(0,8)+'_'+$Entry.OriginalFileName)
+            $relative=Join-Path ([IO.Path]::GetDirectoryName($relative)) ('Recovered_'+$token.Substring(0,8)+'.pdf')
         } else { $relative=Get-QaRelativeTarget $Entry $hash }
         $target=Join-Path $Paths.Reports $relative
         if ($target.Length -gt 245 -and [Environment]::OSVersion.Platform -eq [PlatformID]::Win32NT) { throw 'The archive path is too long for Windows PowerShell 5.1. Choose a shorter archive folder.' }
@@ -563,6 +566,14 @@ function Copy-QaVerified { param($Entry,$Source,$State,$Paths,$Progress,$Summary
         # Uncommitted partials are harmless and removed only from our private staging folder.
         if ([IO.File]::Exists($stage) -and -not [IO.File]::Exists((Join-Path $Paths.Transactions ($token+'.json')))) { [IO.File]::Delete($stage) }
     }
+}
+function Get-QaChecklistForMonth {
+    [CmdletBinding()]param($Source,[string]$Month)
+    $history=@(Get-QaValue $Source 'MonthlyChecklistHistory' @())
+    if(-not $history.Count){return @(Get-QaComponentLabels (Get-QaValue $Source 'MonthlyChecklist' $null))}
+    $version=@($history|Where-Object{$_.EffectiveMonth -le $Month}|Sort-Object EffectiveMonth -Descending|Select-Object -First 1)
+    if($version.Count){return @(Get-QaComponentLabels $version[0].Components)}
+    return @()
 }
 function Get-QaMonthlyCoverage {
     [CmdletBinding()]param([Parameter(Mandatory=$true)]$Config,[AllowEmptyCollection()][object[]]$Records=@(),[string[]]$Months=@())
@@ -601,11 +612,7 @@ function Get-QaMonthlyCoverage {
             $monthsToCheck=@();for($month=$firstMonth;$month -lt $thisMonth;$month=$month.AddMonths(1)){$monthsToCheck+=@($month.ToString('yyyy-MM'))}
         }
         foreach($month in $monthsToCheck) {
-            $history=@(Get-QaValue $source 'MonthlyChecklistHistory' @())
-            if($history.Count) {
-                $version=@($history|Where-Object{$_.EffectiveMonth -le $month}|Sort-Object EffectiveMonth -Descending|Select-Object -First 1)
-                $required=@(if($version.Count){Get-QaComponentLabels $version[0].Components})
-            }
+            $required=@(Get-QaChecklistForMonth $source $month)
             $monthRows=@($rows|Where-Object{[string]$_.ReportDate -match '^\d{4}-\d{2}-\d{2}$' -and ([string]$_.ReportDate).StartsWith($month+'-',[StringComparison]::Ordinal)})
             $confirmed=@($monthRows|Where-Object{$_.Category -eq 'Monthly_QA' -and (Get-QaValue $_ 'ConfirmedBy') -and (Get-QaValue $_ 'ConfirmedAt') -and [string](Get-QaValue $_ 'Hash') -match '^[0-9A-Fa-f]{64}$'})
             $pending=@($monthRows|Where-Object{$_.Category -eq 'Monthly_QA/Pending_Verification'})
@@ -719,7 +726,8 @@ function Get-QaReviewPlan { param($Config,$State,$Decisions)
         $declaredHash=[string](Get-QaValue $d 'Hash')
         if($declaredHash -and $declaredHash -ne $r.Hash){throw 'The review refers to a different report hash. Reopen the report and review the current saved bytes.'}
         $source=@($Config.Sources|Where-Object{$_.Scanner -ceq $r.Scanner})[0]
-        $required=@(Get-QaComponentLabels (Get-QaValue $source 'MonthlyChecklist' $null))
+        $reviewMonth=if([string]$r.ReportDate -match '^\d{4}-\d{2}-\d{2}$'){([string]$r.ReportDate).Substring(0,7)}else{(Get-Date).ToString('yyyy-MM')}
+        $required=@(Get-QaChecklistForMonth $source $reviewMonth)
         $declared=@(Get-QaComponentLabels (Get-QaValue $d 'ConfirmedComponents' $null) 'Confirmed report items')
         if($category -ne 'Monthly_QA' -and $declared.Count -gt 0){throw 'Monthly checklist items can be confirmed only for a reviewed Monthly QA report.'}
         $canonical=New-Object 'System.Collections.Generic.List[string]'
@@ -923,4 +931,4 @@ function Invoke-QaOperation {
         return [pscustomobject]@{Mode=$Mode;Summary=$summary;Scanners=@($state.Scanners);Attention=@(Get-QaAttention $Config $state $paths);Records=@($state.Records);MonthlyCoverage=@(Get-QaMonthlyCoverage -Config $Config -Records @($state.Records));SetupComplete=[bool]$state.SetupComplete}
     } finally { if($null -ne $lock){$lock.Dispose()} }
 }
-Export-ModuleMember -Function Get-QaDefaultConfig,Read-QaConfig,Save-QaConfig,Get-QaDashboard,Invoke-QaOperation,Get-QaMonthlyCoverage
+Export-ModuleMember -Function Get-QaDefaultConfig,Read-QaConfig,Save-QaConfig,Get-QaDashboard,Invoke-QaOperation,Get-QaMonthlyCoverage,Get-QaChecklistForMonth

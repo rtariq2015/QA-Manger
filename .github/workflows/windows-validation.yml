@@ -2,6 +2,14 @@ name: Windows validation and visual preview
 on:
   push:
     branches: [main]
+    paths:
+      - 'App/**'
+      - 'Config/**'
+      - 'Tests/**/*.ps1'
+      - 'Tests/Verify-Package.py'
+      - '.github/workflows/**'
+      - 'Start CT QA Manager.cmd'
+      - 'Update CT QA Manager.cmd' 
   workflow_dispatch:
 permissions:
   contents: read

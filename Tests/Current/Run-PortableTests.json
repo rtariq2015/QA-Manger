@@ -3,8 +3,8 @@
   "Runtime": "7.4.13",
   "Platform": "Unix 6.18.57.0",
   "WindowsPowerShell51ActuallyRun": false,
-  "Tests": 15,
-  "Assertions": 43,
+  "Tests": 16,
+  "Assertions": 44,
   "Failed": 0,
   "Results": [
     {
@@ -74,6 +74,11 @@
     },
     {
       "Name": "A bounded inventory worker returns a read-only snapshot",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "Historical reviews use the checklist effective for the report month",
       "Result": "PASS",
       "Details": ""
     },

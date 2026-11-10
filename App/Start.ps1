@@ -896,7 +896,8 @@ function Review-SelectedReport {
     if($null -eq $record){Show-Note 'Select a saved report first.';return}
     $source=@($script:Config.Sources | Where-Object {[string]$_.Scanner -eq [string]$record.Scanner})
     if($source.Count -ne 1){Show-Note 'This report does not have a unique scanner connection in settings.' 'Scanner settings need attention' $true;return}
-    $required=[string[]]@(Value-Or $source[0] MonthlyChecklist @())
+    $reviewMonth=if([string]$record.ReportDate -match '^\d{4}-\d{2}-\d{2}$'){([string]$record.ReportDate).Substring(0,7)}else{(Get-Date).ToString('yyyy-MM')}
+    $required=[string[]]@(Get-QaChecklistForMonth $source[0] $reviewMonth)
     $previous=[string[]]@(Value-Or $record ConfirmedComponents @())
     $content=@'
 <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
@@ -1174,9 +1175,12 @@ namespace CtQa {
     if($ScreenshotPath){
         if(-not $script:DemoPreview){throw 'Screenshots require DemoPreview to avoid capturing workplace data.'}
         $script:Window.Title='CT QA Manager Pro - SYNTHETIC DEMONSTRATION'
+        $script:Controls.TodayDate.Text+=' / SYNTHETIC DEMONSTRATION'
+        $script:Controls.WelcomeText.Text='Synthetic sample data. No real scanner reports or credentials are shown.'
+        $script:Window.MaxHeight=2200;$script:Window.Height=1650;$script:Window.MaxWidth=1600;$script:Window.Width=1280
         $script:Window.Show();$script:Window.UpdateLayout()
-        $bitmap=New-Object Windows.Media.Imaging.RenderTargetBitmap ([int]$script:Window.ActualWidth),([int]$script:Window.ActualHeight),96,96,([Windows.Media.PixelFormats]::Pbgra32)
-        $bitmap.Render($script:Window);$encoder=New-Object Windows.Media.Imaging.PngBitmapEncoder
+        $bitmap=New-Object Windows.Media.Imaging.RenderTargetBitmap ([int]$script:Window.Content.ActualWidth),([int]$script:Window.Content.ActualHeight),96,96,([Windows.Media.PixelFormats]::Pbgra32)
+        $bitmap.Render($script:Window.Content);$encoder=New-Object Windows.Media.Imaging.PngBitmapEncoder
         $encoder.Frames.Add([Windows.Media.Imaging.BitmapFrame]::Create($bitmap))
         $stream=[IO.File]::Create([IO.Path]::GetFullPath($ScreenshotPath));try{$encoder.Save($stream)}finally{$stream.Dispose()}
         $script:Window.Close();exit 0
