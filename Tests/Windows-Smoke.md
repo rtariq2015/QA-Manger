@@ -1,6 +1,6 @@
-# Windows workstation validation still required
+# Workstation acceptance still required
 
-The archive tests can execute on PowerShell 7 on Linux. That does **not** establish that Windows PowerShell 5.1, WPF rendering, Windows network authentication, or hospital endpoint policy works. Perform these checks on an approved Windows workstation before department use. The test runner creates its own synthetic PDFs in a temporary folder; it never points at the scanners.
+Current cloud results include PowerShell 7 on Linux and a separate hosted Windows PowerShell 5.1 run; see `Current/Windows/Summary.json`. That does **not** establish that Windows PowerShell 5.1, WPF rendering, Windows network authentication, or hospital endpoint policy works. Perform these checks on an approved Windows workstation before department use. The test runner creates its own synthetic PDFs in a temporary folder; it never points at the scanners.
 
 1. Extract the entire ZIP into a normal user-writable Desktop folder. Keep all subfolders together. Use a direct, user-writable local Windows disk or removable USB archive; network/UNC archives and mapped network destinations are deliberately rejected so an archive cannot alias a scanner source. Launch the clearly named root launcher. Startup failures must remain visible. Do not change execution policy or endpoint protection to make it run; use hospital IT approval where required.
 2. In Windows PowerShell 5.1, run the test script below from the extracted product folder. No administrator rights or third-party test framework is required. Confirm the JSON says `WindowsPowerShell51ActuallyRun: true`, every scenario passes, and `Failed: 0`.

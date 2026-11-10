@@ -10,7 +10,7 @@ The offline library is also tested in Chromium for searching, no results, reset,
 
 The GitHub **Windows validation and visual preview** workflow runs all seven suites under Windows PowerShell 5.1. It also loads WPF and captures a native dashboard populated only with synthetic demonstration data. Download its `windows-validation` artifact for the JSON results and image. Check the actual workflow result; the existence of the workflow does not mean it passed.
 
-The Linux cloud suite does not establish Windows WPF rendering, DPAPI, native scanner authentication, high-DPI behavior, endpoint approval, or SMB performance. Follow `Tests/Windows-Smoke.md` on the approved work computer. The original v4.1.0 reports remain historical evidence; current-run reports live in `Tests/Current`.
+The Linux cloud suite and the dedicated hosted Windows suite have both run. The Windows run additionally exercised native PowerShell 5.1 and DPAPI and rendered WPF. These checks do not establish real scanner authentication, interactive high-DPI behavior, workstation endpoint approval, or hospital SMB performance. Follow `Tests/Windows-Smoke.md` on the approved work computer. The original v4.1.0 reports remain historical evidence; current-run reports live in `Tests/Current`.
 
 ## Operating limits
 
@@ -26,3 +26,5 @@ The Linux cloud suite does not establish Windows WPF rendering, DPAPI, native sc
 - Saved sign-ins are Windows account/workstation bound and excluded from full backups. Re-enter them after moving to another computer.
 - The updater verifies package integrity, preserves local settings/data, and keeps the previous App folder. Obtain release packages from this repository; checksums alone do not authenticate an unknown publisher.
 - SHA-256 manifests and review history detect ordinary inconsistencies; they are not a signed, tamper-proof audit system.
+
+The Windows runs exposed and helped fix managed/readable path-length failures and duplicate-name suffix handling. The application keeps managed names compact and shortens readable filenames when needed; original names remain in the index and offline inventory. Very long workspace roots can still exceed Windows PowerShell 5.1 path limits; choose a short local folder.

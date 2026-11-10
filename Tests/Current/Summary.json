@@ -60,5 +60,6 @@
     "Browser": "Chromium 151",
     "Scope": "Generated offline library with synthetic PDFs"
   },
-  "WindowsEvidence": "See Windows validation and visual preview workflow status and artifacts."
+  "WindowsEvidence": "Windows/Summary.json",
+  "PassingWindowsRun": "https://github.com/rtariq2015/QA-Manger/actions/runs/42821364359"
 }
