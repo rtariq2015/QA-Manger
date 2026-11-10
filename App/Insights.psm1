@@ -37,17 +37,29 @@ function Get-QaSavedAnalysis {
     }
     return $null
 }
+function Set-QaAnalysisWorkProgress {
+    param($Progress,[int]$Completed,[int]$Total)
+    if($null -eq $Progress){return}
+    $values=@{Stage='Analyzing';Completed=$Completed;Total=$Total;Percent=$(if($Total -gt 0){100.0*$Completed/$Total}else{-1});Message=('Reading saved PDF text: '+$Completed+' of '+$Total+' in this batch.')}
+    foreach($key in $values.Keys){if($Progress -is [Collections.IDictionary]){$Progress[$key]=$values[$key]}else{$Progress|Add-Member -NotePropertyName $key -NotePropertyValue $values[$key] -Force}}
+}
 function Invoke-QaAnalysis {
     [CmdletBinding()]param($Config,$Progress=$null,[int]$Limit=20)
     Import-Module (Join-Path $PSScriptRoot 'Process.psm1')
     $dashboard=Get-QaDashboard -Config $Config;$done=0;$skipped=0;$failed=0
     $root=Join-Path $Config.ArchiveRoot '.ctqa/analysis'
-    # Hash-based analysis is derived data; saving it never changes reviewed labels.
-    foreach($record in @($dashboard.Records|Sort-Object ReportDate -Descending)) {
+    # Determine this bounded batch once, without reopening already cached PDF text.
+    $candidates=New-Object 'Collections.Generic.List[object]'
+    Set-QaAnalysisWorkProgress $Progress 0 0
+    foreach($record in @($dashboard.Records|Sort-Object ReportDate -Descending)){
         if($null -ne $Progress -and $Progress.Cancel){break}
         if($null -ne (Get-QaSavedAnalysis $Config $record)){$skipped++;continue}
-        if(($done+$failed) -ge $Limit){break}
-        if($null -ne $Progress){$Progress.Message='Reading saved PDF '+($done+$failed+1)+' of up to '+$Limit+' locally...'}
+        if($candidates.Count -lt [math]::Max(0,$Limit)){[void]$candidates.Add($record)}
+    }
+    # Hash-based analysis is derived data; saving it never changes reviewed labels.
+    foreach($record in $candidates) {
+        if($null -ne $Progress -and $Progress.Cancel){break}
+        Set-QaAnalysisWorkProgress $Progress ($done+$failed) $candidates.Count
         $readClock=[Diagnostics.Stopwatch]::StartNew();$source=@($Config.Sources|Where-Object Scanner -eq $record.Scanner|Select-Object -First 1);$number=0;if($source.Count){$number=1+[Array]::IndexOf([object[]]$Config.Sources,$source[0])}
         Write-QaSupportEvent -AppRoot $Config.AppRoot -Operation PdfRead -Outcome Started -ScannerNumber $number
         try {
@@ -69,6 +81,7 @@ function Invoke-QaAnalysis {
             Write-QaAnalysisFile -Root $root -Hash $record.Hash -Value $row
         }
     }
+    Set-QaAnalysisWorkProgress $Progress ($done+$failed) $candidates.Count
     $cancelled=($null -ne $Progress -and [bool]$Progress.Cancel)
     return [pscustomobject]@{Mode='Analysis';Summary=[pscustomobject]@{Description=($done.ToString()+' PDFs analyzed; '+$skipped+' cached; '+$failed+' need review. No reviewed labels changed.');Cancelled=$cancelled};Analyzed=$done;Failed=$failed;Cached=$skipped;Pending=[math]::Max(0,(@($dashboard.Records).Count-$done-$failed-$skipped))}
 }

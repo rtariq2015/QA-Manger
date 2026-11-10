@@ -256,8 +256,13 @@ function Add-QaHistory { param($Paths,[string]$Mode,$Summary,[string]$Message)
     if ([IO.File]::Exists($Paths.History)) { $row | Export-Csv -LiteralPath $Paths.History -Append -NoTypeInformation -Encoding UTF8 }
     else { $row | Export-Csv -LiteralPath $Paths.History -NoTypeInformation -Encoding UTF8 }
 }
-function Set-QaProgress { param($Progress,[string]$Message,[double]$Percent=-1)
-    if ($null -ne $Progress) { $Progress.Message=$Message; $Progress.Percent=$Percent }
+function Set-QaProgress { param($Progress,[string]$Message,[double]$Percent=-1,[string]$Stage='',[long]$Completed=-1,[long]$Total=-1)
+    if ($null -ne $Progress) {
+        Set-QaValue $Progress 'Message' $Message;Set-QaValue $Progress 'Percent' $Percent
+        if($Stage){Set-QaValue $Progress 'Stage' $Stage}
+        if($Completed -ge 0){Set-QaValue $Progress 'Completed' $Completed}
+        if($Total -ge 0){Set-QaValue $Progress 'Total' $Total}
+    }
 }
 function Test-QaCancel { param($Progress)
     return ($null -ne $Progress -and [bool](Get-QaValue $Progress 'Cancel' $false))
@@ -335,7 +340,7 @@ function Get-QaInventory { param($Config,$State,$Progress,$Summary,[switch]$InWo
     $sourceNo=0
     foreach($s in $Config.Sources) {
         if (Test-QaCancel $Progress) { $Summary.Cancelled=$true; break }
-        $sourceNo++;Set-QaProgress $Progress ('Connecting to '+$s.Name+'...') (30*($sourceNo-1)/[math]::Max(1,@($Config.Sources).Count))
+        $sourceNo++;Set-QaProgress $Progress ('Connecting to '+$s.Name+'...') (30*($sourceNo-1)/[math]::Max(1,@($Config.Sources).Count)) -Stage 'Connecting' -Completed ($sourceNo-1) -Total @($Config.Sources).Count
         $old=@($State.Scanners | Where-Object {$_.Scanner -eq $s.Scanner} | Select-Object -First 1)
         $last=if($old.Count){[string]$old[0].LastSuccessfulUpdate}else{''}
         $status=[pscustomobject]@{Scanner=$s.Scanner;Name=$s.Name;Status='Connected';Message='Scanner folder is accessible.';Count=@($State.Records|Where-Object{$_.Scanner -eq $s.Scanner}).Count;SavedReports=@($State.Records|Where-Object{$_.Scanner -eq $s.Scanner}).Count;LastSuccessfulUpdate=$last;CheckedUtc=[datetime]::UtcNow.ToString('o')}
@@ -343,6 +348,7 @@ function Get-QaInventory { param($Config,$State,$Progress,$Summary,[switch]$InWo
             Import-Module (Join-Path $PSScriptRoot 'Process.psm1')
             try {
                 $single=$Config|Select-Object *;$single.Sources=@($s)
+                Set-QaProgress $Progress 'Checking scanner report folders...' -Stage 'Scanning' -Completed ($sourceNo-1) -Total @($Config.Sources).Count
                 $snapshot=Invoke-QaIsolatedTask Inventory ([pscustomobject]@{Config=$single;State=$State}) -TimeoutSeconds 60 -Progress $Progress
                 foreach($item in @($snapshot.Inventory.Items)){[void]$items.Add($item)}
                 foreach($row in @($snapshot.Inventory.Scanners)){[void]$statuses.Add($row)}
@@ -365,6 +371,7 @@ function Get-QaInventory { param($Config,$State,$Progress,$Summary,[switch]$InWo
                 $access=Test-QaNetworkAvailability $s
                 if($access.Status -ne 'Connected'){throw [IO.IOException]::new([string]$access.Message)}
             }
+            Set-QaProgress $Progress 'Checking scanner report folders...' -Stage 'Scanning' -Completed ($sourceNo-1) -Total @($Config.Sources).Count
             Assert-QaNoReparse ([string]$s.Path)
             if (-not [IO.Directory]::Exists([string]$s.Path)) { throw 'The scanner folder is missing, offline, or access is denied.' }
             $queue=New-Object 'System.Collections.Generic.Queue[string]';$queue.Enqueue([string]$s.Path)
@@ -378,6 +385,7 @@ function Get-QaInventory { param($Config,$State,$Progress,$Summary,[switch]$InWo
                         $queue.Enqueue($sub)
                     }
                     foreach($file in [IO.Directory]::GetFiles($dir,'*.pdf')) {
+                        if(Test-QaCancel $Progress){$Summary.Cancelled=$true;break}
                         if (([IO.File]::GetAttributes($file) -band [IO.FileAttributes]::ReparsePoint) -ne 0) { continue }
                         $info=Get-Item -LiteralPath $file -ErrorAction Stop
                         $cls=Get-QaClassification $s $info.Name $info.Length
@@ -901,6 +909,7 @@ function Invoke-QaOperation {
         if($Plan.ConfigFingerprint -ne (Get-QaConfigFingerprint $Config)){throw 'Settings changed after preview. Run the setup preview again.'}
         if([bool]$Plan.Summary.Cancelled){throw 'The preview was cancelled. Run it again before importing.'}
         foreach($item in @($Plan.Items)) {
+            if(Test-QaCancel $Progress){throw [OperationCanceledException]::new('Import cancelled before copying. Existing saved reports remain unchanged.')}
             if($item.Action -eq 'Deferred'){continue}
             try{$info=Get-Item -LiteralPath $item.SourcePath -ErrorAction Stop}catch{throw 'A previewed report is no longer available. Run setup preview again.'}
             if($info.Length -ne $item.Length -or $info.LastWriteTimeUtc.ToString('o') -ne $item.SourceLastWriteUtc){throw 'A source report changed after preview. Run setup preview again before copying.'}
@@ -919,7 +928,7 @@ function Invoke-QaOperation {
         if($Mode -eq 'Audit') {
             $rows=@($state.Records);$summary.Total=$rows.Count;$n=0
             foreach($r in $rows) {
-                $n++;if(Test-QaCancel $Progress){$summary.Cancelled=$true;break};Set-QaProgress $Progress ('Checking saved report '+$n+' of '+$rows.Count) (100*$n/[math]::Max(1,$rows.Count))
+                $n++;if(Test-QaCancel $Progress){$summary.Cancelled=$true;break};Set-QaProgress $Progress ('Checking saved report '+$n+' of '+$rows.Count) (100*$n/[math]::Max(1,$rows.Count)) -Stage 'Verifying' -Completed ($n-1) -Total $rows.Count
                 try{Assert-QaNoReparse $r.DestinationPath $paths.Root;if(-not [IO.File]::Exists($r.DestinationPath)){throw 'The saved PDF is missing.'};if((Get-QaFileHash $r.DestinationPath) -ne $r.Hash){throw 'The saved PDF differs from its verified SHA-256.'};$summary.Verified++}
                 catch{$summary.Failed++;[void]$issues.Add((New-QaIssue $r.Scanner 'Integrity' ($r.Scanner+' - '+$r.OriginalFileName+': '+$_.Exception.Message) $r.DestinationPath $r.Id))}
             }
@@ -943,7 +952,7 @@ function Invoke-QaOperation {
             $state.Scanners=@($inventory.Scanners);$scannerFailed=@{};$n=0
             foreach($item in @($inventory.Items)) {
                 if(Test-QaCancel $Progress){$summary.Cancelled=$true;break};$n++
-                Set-QaProgress $Progress ('Organizing '+$item.OriginalFileName) (30+70*$n/[math]::Max(1,@($inventory.Items).Count))
+                Set-QaProgress $Progress ('Organizing '+$item.OriginalFileName) (30+70*$n/[math]::Max(1,@($inventory.Items).Count)) -Stage 'Copying' -Completed ($n-1) -Total @($inventory.Items).Count
                 if($item.Action -in @('Unchanged','Deferred')){continue}
                 $source=@($Config.Sources|Where-Object{$_.Scanner -eq $item.Scanner})[0]
                 try{Copy-QaVerified $item $source $state $paths $Progress $summary}
@@ -961,6 +970,8 @@ function Invoke-QaOperation {
             if($Mode -eq 'Import' -and -not $summary.Cancelled -and @($state.Scanners|Where-Object{$_.Status -in @('Connected','Issues','Partial')}).Count -gt 0){$state.SetupComplete=$true}
             $summary.Description=($summary.Copied.ToString()+' copied; '+$summary.Unchanged+' unchanged; '+$summary.Verified+' existing verified; '+$summary.Failed+' need attention.')
         }
+        Set-QaProgress $Progress 'Saving completed report records...' -Stage 'Finishing' -Completed 0 -Total 0
+        if($null -ne $Progress){foreach($field in @('Copied','Unchanged','Failed')){Set-QaValue $Progress $field ([long]$summary.$field)}}
         $state.Issues=@($issues.ToArray());Save-QaState $state $paths
         Add-QaHistory $paths $Mode $summary $summary.Description
         if($summary.Cancelled){$summary.Description='Cancelled safely. Completed, verified reports are preserved. Run Update Reports to continue.'}

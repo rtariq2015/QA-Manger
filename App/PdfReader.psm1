@@ -87,7 +87,8 @@ function Read-QaReportText {
         [ValidateRange(5,120)][int]$MaximumSeconds=45
     )
     if($RecordId -notmatch '^[0-9A-Fa-f]{64}$'){throw 'Select one saved report from the report list first.'}
-    if(-not(Get-Command Get-QaDashboard -ErrorAction SilentlyContinue)){Import-Module (Join-Path $PSScriptRoot 'Archive.psm1') -ErrorAction Stop}
+    $archiveModule=Get-Module Archive
+    if($null -eq $archiveModule){Import-Module (Join-Path $PSScriptRoot 'Archive.psm1') -ErrorAction Stop;$archiveModule=Get-Module Archive}
     $root=[IO.Path]::GetFullPath([string]$Config.ArchiveRoot)
     $meta=Join-Path $root '.ctqa';$reports=Join-Path $root 'Reports'
     $lockPath=Join-Path $meta 'archive.lock'
@@ -97,8 +98,19 @@ function Read-QaReportText {
     try {
         if(Test-QaReaderCancel $Progress){throw [OperationCanceledException]::new('Reading cancelled.')}
         try{$lock=[IO.File]::Open($lockPath,[IO.FileMode]::Open,[IO.FileAccess]::ReadWrite,[IO.FileShare]::None)}catch{throw 'Wait for the current archive update or report export to finish, then read the report again.'}
-        $dashboard=Get-QaDashboard -Config $Config
-        $matches=@($dashboard.Records|Where-Object{$_.Id -eq $RecordId})
+        # Keep the complete archive/config/path validation under the reader lock,
+        # without rebuilding every scanner's coverage and attention list per PDF.
+        $matches=@(& $archiveModule {
+            param($ReaderConfig,$SelectedId)
+            Assert-QaConfig $ReaderConfig
+            $state=Read-QaState (Get-QaPaths $ReaderConfig)
+            $selected=@($state.Records|Where-Object{$_.Id -eq $SelectedId})
+            if($selected.Count -eq 1){
+                $source=@($ReaderConfig.Sources|Where-Object{$_.Scanner -ceq $selected[0].Scanner})[0]
+                Set-QaValue $selected[0] 'ScannerName' ([string]$source.Name)
+            }
+            return $selected
+        } $Config $RecordId)
         if($matches.Count -ne 1){throw 'The selected report is no longer uniquely available. Refresh the report list.'}
         $record=$matches[0];$path=[IO.Path]::GetFullPath([string]$record.DestinationPath)
         $prefix=[IO.Path]::GetFullPath($reports).TrimEnd('\','/')+[IO.Path]::DirectorySeparatorChar

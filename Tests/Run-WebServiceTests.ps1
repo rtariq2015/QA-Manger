@@ -16,7 +16,7 @@ function New-WebFixture([string]$Name){
     foreach($s in $cfg.Sources){$s.DailySchedule='Off';$s.ExpectedMonthly=$false};$cfg.Sources[0].ExpectedMonthly=$true;$cfg.Sources[0]|Add-Member MonthlyChecklist @('MTF','Slice thickness') -Force
     $cfg|ConvertTo-Json -Depth 15|Set-Content (Join-Path $cfg.AppRoot 'Config/Settings.json') -Encoding UTF8
     [void](Save-QaConfig $cfg.AppRoot $cfg)
-    $source=Add-Report $cfg 'CT_Edge' 'Monthly_Constancy' (Get-Date).ToString('yyyy-MM-dd') '08-00-00' 95000
+    $source=Add-Report $cfg 'CT_Edge' 'Quality_Constancy' (Get-Date).ToString('yyyy-MM-dd') '08-00-00' 95000
     [void](Import-Fixture $cfg);$core=@((Get-QaDashboard $cfg).Records)[0]
     return [pscustomobject]@{Config=$cfg;AppRoot=$cfg.AppRoot;Record=$core;Source=$source;SourceHash=(Get-FileHash $source).Hash;StatePath=(Join-Path $cfg.ArchiveRoot '.ctqa/state.json')}
 }
@@ -179,8 +179,120 @@ if([Environment]::OSVersion.Platform -eq [PlatformID]::Win32NT){
         Check ((Get-Web $f).previewMode -eq 'windows') 'Windows clients select the policy-independent native preview path'
     }
 }
+Scenario 'Standard Daily and explicit Monthly document names are organized automatically without human approval' {
+    $f=New-WebFixture 'AutomaticNames';$day=(Get-Date).ToString('yyyy-MM-dd')
+    [void](Add-Report $f.Config 'CT_Edge' 'QualityDaily' $day '09-00-00' 1800)
+    [void](Add-Report $f.Config 'CT_Edge' 'Quality_Constancy' $day '09-05-00' 1800)
+    [void](Add-Report $f.Config 'CT_Edge' 'Monthly_Constancy' $day '09-10-00' 95000)
+    $unknown=Join-Path $f.Config.Sources[0].Path 'Unclassified.pdf';[void](New-TestPdf $unknown)
+    [void](Invoke-QaOperation $f.Config -Mode Update);$before=(Get-FileHash $f.StatePath).Hash;$snapshot=Get-Web $f
+    $automatic=@($snapshot.records|Where-Object decision -eq 'Automatic');$pending=@($snapshot.records|Where-Object pending)
+    Check ($automatic.Count -eq 3 -and $pending.Count -eq 2) 'Only size-based Monthly and unknown documents remain pending'
+    Check (@($automatic|Where-Object category -eq 'Daily').Count -eq 2 -and @($automatic|Where-Object category -eq 'Monthly').Count -eq 1) 'Standard small Constancy and explicit document names use clear type grouping'
+    Check (@($automatic|Where-Object{$_.organizationSource -ne 'automatic' -or $_.decision -eq 'Approved'}).Count -eq 0) 'Automatic grouping is not presented as human approval'
+    Check ($snapshot.pendingSummary.automatic -eq 3 -and $snapshot.pendingSummary.pending -eq 2) 'Visible counters use the same pending rules'
+    $core=Get-QaDashboard $f.Config
+    Check (@($core.Records|Where-Object{$_.ConfirmedBy -or $_.ConfirmedAt -or @($_.ConfirmedComponents).Count}).Count -eq 0) 'No named reviewer, clinical result or checklist evidence was manufactured'
+    Check ((Get-FileHash $f.StatePath).Hash -ceq $before -and -not [IO.File]::Exists((Join-Path $f.Config.ArchiveRoot '.ctqa/organization.json'))) 'Automatic display classification does not rewrite historical clinical state or action history'
+}
+Scenario 'Saved user decisions and valid legacy reviews take precedence over automatic grouping' {
+    $f=New-WebFixture 'ClassificationPrecedence';[void](Decide-Web $f 'Disapprove')
+    $review=[pscustomobject]@{RecordId=$f.Record.Id;Hash=$f.Record.Hash;Category='Daily_QA';Reviewer='Synthetic historical reviewer';Reason='Existing reviewed record';ConfirmedComponents=@()}
+    [void](Invoke-QaOperation $f.Config -Mode Reclassify -Decisions @($review));$before=(Get-FileHash $f.StatePath).Hash;$snapshot=Get-Web $f
+    Check ($snapshot.records[0].decision -eq 'Disapproved' -and $snapshot.records[0].category -eq 'Other' -and -not $snapshot.records[0].pending) 'Explicit sidecar decisions are not silently changed by legacy or automatic rules'
+    $legacy=New-WebFixture 'LegacyPrecedence';$review.RecordId=$legacy.Record.Id;$review.Hash=$legacy.Record.Hash;$review.Category='Monthly_QA';$review.ConfirmedComponents=@('MTF')
+    [void](Invoke-QaOperation $legacy.Config -Mode Reclassify -Decisions @($review));$old=Get-Web $legacy
+    Check ($old.records[0].decision -eq 'Approved' -and $old.records[0].organizationSource -eq 'legacy' -and -not $old.records[0].pending) 'A valid historical review remains resolved'
+    Check ($old.records[0].clinicalComponents -contains 'MTF') 'Actual previously reviewed evidence is preserved'
+    Check ((Get-FileHash $f.StatePath).Hash -ceq $before) 'Classification precedence performs no clinical-state migration'
+}
+Scenario 'Readable-library refresh batches its ledger and reuses only verified metadata matches' {
+    $f=New-WebFixture 'LibraryCache';$module=Get-Module WebService;$dashboard=Get-QaDashboard $f.Config
+    $cold=& $module {param($config,$dashboard) Update-QaWebLibrary -Config $config -Dashboard $dashboard} $f.Config $dashboard
+    Check ($cold.copied -eq 1 -and $cold.hashedFiles -eq 2 -and $cold.manifestWrites -eq 1) 'New copies are stream-hashed, read back and committed in a single batch ledger'
+    $index=Join-Path $f.Config.ArchiveRoot '.ctqa/web-library.json';$hash=(Get-FileHash $index).Hash
+    $warm=& $module {param($config,$dashboard) Update-QaWebLibrary -Config $config -Dashboard $dashboard} $f.Config $dashboard
+    Check ($warm.unchanged -eq 1 -and $warm.hashedFiles -eq 0 -and $warm.manifestWrites -eq 0 -and (Get-FileHash $index).Hash -ceq $hash) 'An unchanged warm refresh does not reread PDF bytes or rewrite the entire ledger'
+    $state=Get-Content $index -Raw|ConvertFrom-Json;$state.Version=1;$state.Records=@($state.Records|Select-Object id,hash,relative,category,original);$state|ConvertTo-Json -Depth 10|Set-Content $index -Encoding UTF8
+    $upgraded=& $module {param($config) Update-QaWebLibrary $config} $f.Config
+    Check ($upgraded.hashedFiles -eq 2 -and $upgraded.manifestWrites -eq 1) 'Old readable ledgers are verified before receiving the metadata cache'
+    $after=& $module {param($config) Update-QaWebLibrary $config} $f.Config
+    Check ($after.hashedFiles -eq 0 -and $after.manifestWrites -eq 0) 'The next refresh uses the migrated cache'
+}
+Scenario 'Full verification catches edited bytes even when length and write time were restored' {
+    $f=New-WebFixture 'LibraryAudit';$module=Get-Module WebService;[void](& $module {param($config) Update-QaWebLibrary $config} $f.Config)
+    $file=Get-Item $f.Record.DestinationPath;$when=$file.LastWriteTimeUtc;$bytes=[IO.File]::ReadAllBytes($file.FullName);$bytes[$bytes.Length-5]=$bytes[$bytes.Length-5] -bxor 1;[IO.File]::WriteAllBytes($file.FullName,$bytes);[IO.File]::SetLastWriteTimeUtc($file.FullName,$when)
+    $quick=& $module {param($config) Update-QaWebLibrary $config} $f.Config
+    Check ($quick.hashedFiles -eq 0 -and $quick.metadataFastPath) 'Fast refresh is explicitly a metadata cache, not a new proof of byte integrity'
+    $caught=$false;try{& $module {param($config) Update-QaWebLibrary -Config $config -Verify} $f.Config|Out-Null}catch{$caught=$true}
+    Check $caught 'An explicit verify always hashes the saved PDF and rejects altered contents'
+    $caught=$false;try{Invoke-QaWebRequest $f.AppRoot ([pscustomobject]@{action='Pdf';id=$f.Record.Id})|Out-Null}catch{$caught=$true}
+    Check $caught 'Opening a PDF still performs its full fingerprint check'
+}
+Scenario 'A cancelled library batch commits completed ownership and resumes without duplicate copies' {
+    $f=New-WebFixture 'LibraryCancel';[void](Add-Report $f.Config 'CT_Edge' 'QualityDaily' (Get-Date).ToString('yyyy-MM-dd') '09-00-00' 1800);[void](Invoke-QaOperation $f.Config -Mode Update)
+    $module=Get-Module WebService;$progress=[hashtable]::Synchronized(@{Cancel=$false;Stage='Preparing';Completed=0;Total=0;Percent=0;Copied=0;Unchanged=0;Failed=0});$original=& $module {(Get-Command Copy-QaWebLibraryPdf).ScriptBlock}
+    try{
+        & $module {param($body) $script:TestLibraryCopyOriginal=$body;function script:Copy-QaWebLibraryPdf {param($Source,$Target,$Hash,$Progress,$Metrics) & $script:TestLibraryCopyOriginal $Source $Target $Hash $Progress $Metrics;$Progress['Cancel']=$true}} $original
+        $partial=& $module {param($config,$progress) Update-QaWebLibrary -Config $config -Progress $progress} $f.Config $progress
+        Check ($partial.cancelled -and $partial.completed -eq 1 -and $partial.manifestWrites -eq 1) 'Completed copies receive a committed ledger even when the next item is cancelled'
+    }finally{& $module {param($body) Set-Item -Path Function:script:Copy-QaWebLibraryPdf -Value $body;Remove-Variable TestLibraryCopyOriginal -Scope Script -ErrorAction SilentlyContinue} $original}
+    $progress.Cancel=$false;$resumed=& $module {param($config,$progress) Update-QaWebLibrary -Config $config -Progress $progress} $f.Config $progress
+    Check ($resumed.copied -eq 1 -and $resumed.unchanged -eq 1 -and $resumed.hashedFiles -eq 2) 'Resume reuses the owned completed PDF and copies only the remaining report'
+    Check (@(Get-ChildItem (Join-Path $f.Config.ArchiveRoot 'Report Library') -Filter '*.pdf' -Recurse).Count -eq 2) 'Cancellation and resume did not create duplicate readable files'
+}
+
+Scenario 'Pre-upgrade approvals retain their decisions and Undo restores their original pending state' {
+    $f=New-WebFixture 'UpgradeUndo';$day=(Get-Date).ToString('yyyy-MM-dd');$module=Get-Module WebService
+    [void](Add-Report $f.Config 'CT_Edge' 'Quality_Constancy' $day '09-00-00' 1800)
+    [void](Add-Report $f.Config 'CT_Edge' 'Monthly_Constancy' $day '09-05-00' 95000)
+    [void](Invoke-QaOperation $f.Config -Mode Update);$before=(Get-FileHash $f.StatePath).Hash
+    $oldRecords=@((Get-Web $f).records|Where-Object decision -eq 'Automatic');$original=& $module {(Get-Command Get-QaWebClassification).ScriptBlock}
+    try{
+        & $module {function script:Get-QaWebClassification {param($Record,$Entry) return [pscustomobject]@{category=(Get-QaWebCategory $Record $Entry);pending=(Test-QaReportPending $Record);decision='Pending';source='pending';reason='Synthetic v5.0.1 classification behavior'}}}
+        foreach($record in $oldRecords){[void](Invoke-QaWebRequest $f.AppRoot ([pscustomobject]@{action='Approve';id=$record.id;stamp=$record.stamp}))}
+    }finally{& $module {param($body) Set-Item Function:script:Get-QaWebClassification $body} $original}
+    $upgraded=Get-Web $f
+    Check (@($upgraded.records|Where-Object decision -eq 'Approved').Count -eq 2) 'Both earlier Daily and explicit Monthly approvals remain resolved after upgrading'
+    foreach($old in $oldRecords){$record=@((Get-Web $f).records|Where-Object id -ceq $old.id)[0];[void](Invoke-QaWebRequest $f.AppRoot ([pscustomobject]@{action='Undo';id=$record.id;reviewId=$record.reviewId;stamp=$record.stamp}))}
+    [void](Invoke-QaOperation $f.Config -Mode Update);$restored=Get-Web $f
+    Check (@($restored.records|Where-Object pending).Count -eq 3 -and @($restored.records|Where-Object decision -eq 'Automatic').Count -eq 0) 'Undo restores old pending decisions across restart and unchanged scanner import'
+    [void](Add-Report $f.Config 'CT_Edge' 'QualityDaily' $day '10-00-00' 1800);[void](Invoke-QaOperation $f.Config -Mode Update)
+    Check (@((Get-Web $f).records|Where-Object decision -eq 'Automatic').Count -eq 1) 'Fresh documents without a restored decision still receive automatic grouping'
+    $org=Get-Content (Join-Path $f.Config.ArchiveRoot '.ctqa/organization.json') -Raw|ConvertFrom-Json
+    Check ($org.History.Count -eq 4 -and @($org.History|Where-Object action -eq 'Undo').Count -eq 2) 'Upgrade and Undo preserve append-only decisions without inventing a reviewer'
+}
+Scenario 'Concurrent edits cannot seed a verified source or readable-file metadata cache' {
+    $module=Get-Module WebService;$original=& $module {(Get-Command Get-QaWebLibraryHash).ScriptBlock}
+    foreach($which in @('source','target','staged')){
+        $f=New-WebFixture ('MetadataRace_'+$which);$index=Join-Path $f.Config.ArchiveRoot '.ctqa/web-library.json'
+        if($which -ne 'staged'){
+            [void](& $module {param($config) Update-QaWebLibrary $config} $f.Config)
+            $state=Get-Content $index -Raw|ConvertFrom-Json;$target=Join-Path (Join-Path $f.Config.ArchiveRoot 'Report Library') $state.Records[0].relative;$oldLedger=(Get-FileHash $index).Hash
+        }else{$target='';$oldLedger=''}
+        $mutate=if($which -eq 'source'){$f.Record.DestinationPath}elseif($which -eq 'target'){$target}else{'*.partial'}
+        try{
+            & $module {param($body,$path) $script:RaceHashOriginal=$body;$script:RaceMutatePath=$path;$script:RaceDone=$false
+                function script:Get-QaWebLibraryHash {param($Path,$Metrics)
+                    $hash=& $script:RaceHashOriginal $Path $Metrics
+                    if(-not $script:RaceDone -and (($script:RaceMutatePath -eq '*.partial' -and $Path -like '*.partial') -or $Path -ceq $script:RaceMutatePath)){
+                        $script:RaceDone=$true;$bytes=[IO.File]::ReadAllBytes($Path);$bytes[$bytes.Length-5]=$bytes[$bytes.Length-5] -bxor 1;[IO.File]::WriteAllBytes($Path,$bytes);[IO.File]::SetLastWriteTimeUtc($Path,[datetime]::UtcNow.AddSeconds(3))
+                    };return $hash
+                }
+            } $original $mutate
+            $caught=$false;try{& $module {param($config) Update-QaWebLibrary -Config $config -Verify} $f.Config|Out-Null}catch{$caught=$true}
+            Check $caught ('A '+$which+' edit between verified read and metadata refresh is rejected')
+        }finally{& $module {param($body) Set-Item Function:script:Get-QaWebLibraryHash $body;Remove-Variable RaceHashOriginal,RaceMutatePath,RaceDone -Scope Script -ErrorAction SilentlyContinue} $original}
+        if($which -eq 'staged'){Check (-not [IO.File]::Exists($index)) 'A staged edit never creates a trusted readable-file ownership entry'}else{
+            Check ((Get-FileHash $index).Hash -ceq $oldLedger) ('The '+$which+' race does not seed changed metadata under the earlier fingerprint')
+            $caught=$false;try{& $module {param($config) Update-QaWebLibrary $config} $f.Config|Out-Null}catch{$caught=$true}
+            Check $caught ('The next normal refresh verifies and rejects the '+$which+' edit instead of accepting a warm cache hit')
+        }
+    }
+}
+
 $failed=@($script:Results|Where-Object Result -eq 'FAIL').Count
-$report=[pscustomobject]@{Version='5.0.1';Runtime=$PSVersionTable.PSVersion.ToString();Tests=$script:Results.Count;Assertions=$script:Assertions;Failed=$failed;Results=@($script:Results.ToArray());Scope='Synthetic PDFs and local scanner folders; independent file organization, no fabricated clinical review, stale/changed-file rejection, append-only Undo, readable ownership, exports and stdin/stdout JSON worker.'}
+$report=[pscustomobject]@{Version='5.1.0';Runtime=$PSVersionTable.PSVersion.ToString();Tests=$script:Results.Count;Assertions=$script:Assertions;Failed=$failed;Results=@($script:Results.ToArray());Scope='Synthetic PDFs and local scanner folders; independent file organization, no fabricated clinical review, stale/changed-file rejection, append-only Undo, readable ownership, exports and stdin/stdout JSON worker.'}
 if($OutputPath){$report|ConvertTo-Json -Depth 12|Set-Content $OutputPath -Encoding UTF8}
 Write-Host ('Result: '+($report.Tests-$failed)+'/'+$report.Tests+' scenarios; '+$report.Assertions+' assertions.')
 if([IO.Directory]::Exists($TestRoot)){Remove-Item $TestRoot -Recurse -Force}

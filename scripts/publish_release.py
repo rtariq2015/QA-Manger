@@ -38,6 +38,8 @@ Version 5 uses an offline HTML interface with **Today, Reports and Settings**, b
 
 Version 5.0.1 fixes text fields losing focus when the mouse is released. Manual scanner entry, pasting, report search and keyboard interaction work after a normal click. Unsaved scanner edits survive unrelated background refreshes; passwords are cleared on submission or scanner changes and are never stored in browser storage.
 
+Version 5.1.0 automatically organizes routine Daily and explicitly named Monthly documents. Existing user decisions and their Undo history remain authoritative; uncertain report types remain pending. Automatic organization never creates clinical PASS/FAIL, a personal reviewer or completed checklist evidence. Updates reuse unchanged readable copies and avoid rewriting the entire index for every PDF. Live progress, counts, elapsed time and safe cancellation replace an indefinite working indicator, and background jobs clear their indicator when finished.
+
 A readable Report Library groups PDFs by scanner, year, month and Daily/Monthly/Other. Existing archives, original PDFs, legacy review history and configuration are retained. Background jobs keep browsing available. The self-contained local helper is bundled: no internet, administrator launch, runtime installation or public website is required. The larger download includes the runtime components. Workstation application policy must permit the helper executable and browser loopback access.
 
 Use **Start CT QA Manager.cmd**. The original Windows interface remains available by running that launcher with the `classic` argument. Offline ZIP updates and scrubbed support logs remain available. Nothing is uploaded automatically.

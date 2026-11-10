@@ -34,8 +34,8 @@ $sourceFiles=New-Object 'System.Collections.Generic.List[string]'
 [void]$sourceFiles.Add((New-WebDemoPdf (Join-Path $cfg.Sources[0].Path ('QualityDaily_'+$today+'_07-15-00.pdf')) 'Synthetic CT Edge' 'Daily QA'))
 [void]$sourceFiles.Add((New-WebDemoPdf (Join-Path $cfg.Sources[1].Path ('QualityDaily_'+$today+'_07-30-00.pdf')) 'Synthetic CT Flash' 'Daily QA'))
 [void]$sourceFiles.Add((New-WebDemoPdf (Join-Path $cfg.Sources[2].Path ('QualityDaily_'+$yesterday+'_07-20-00.pdf')) 'Synthetic MDP Building' 'Daily QA'))
-[void]$sourceFiles.Add((New-WebDemoPdf (Join-Path $cfg.Sources[0].Path ('Monthly_Constancy_'+$today+'_08-00-00.pdf')) 'Synthetic CT Edge' 'Monthly QA' 95000))
-[void]$sourceFiles.Add((New-WebDemoPdf (Join-Path $cfg.Sources[1].Path ('Monthly_Constancy_'+$today+'_08-05-00.pdf')) 'Synthetic CT Flash' 'Monthly QA' 96000))
+[void]$sourceFiles.Add((New-WebDemoPdf (Join-Path $cfg.Sources[0].Path ('Quality_Constancy_'+$today+'_08-00-00.pdf')) 'Synthetic CT Edge' 'Monthly QA' 95000))
+[void]$sourceFiles.Add((New-WebDemoPdf (Join-Path $cfg.Sources[1].Path ('Quality_Constancy_'+$today+'_08-05-00.pdf')) 'Synthetic CT Flash' 'Monthly QA' 96000))
 [void]$sourceFiles.Add((New-WebDemoPdf (Join-Path $cfg.Sources[0].Path ('Monthly_Constancy_'+$previous+'_08-10-00.pdf')) 'Synthetic CT Edge' 'Monthly QA' 97000))
 [void](Import-Fixture $cfg)
 $legacy=@((Get-QaDashboard $cfg).Records|Where-Object ReportDate -eq $previous)[0]

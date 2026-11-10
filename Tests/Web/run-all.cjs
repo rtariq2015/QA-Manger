@@ -31,6 +31,28 @@ else if (isWindows) testArgs.push('--browser-channel', 'msedge');
 if (args.python) testArgs.push('--python', args.python);
 const result = spawnSync(process.execPath, testArgs, { cwd: product, stdio: 'inherit', windowsHide: true, timeout: 900000 });
 if (result.error) process.stderr.write(result.error.message + '\n');
-if (result.status === 0 && !args['keep-fixture']) fs.rmSync(fixture, { recursive: true, force: true });
-else fs.writeFileSync(path.join(output, 'synthetic-fixture-location.txt'), fixture + '\n');
-process.exit(result.status || (result.error ? 1 : 0));
+let finalStatus = result.status || (result.error ? 1 : 0);
+const largeFixture = fixture + '-large';
+const largeOutput = path.join(output, 'large');
+if (finalStatus === 0) {
+  fs.mkdirSync(largeOutput, { recursive: true });
+  const createLarge = spawnSync(powershell, ['-NoProfile', '-File', path.join(__dirname, 'New-LargeWebFixture.ps1'), '-FixtureRoot', largeFixture, '-ProductRoot', product], { cwd: product, encoding: 'utf8', windowsHide: true, timeout: 300000 });
+  process.stdout.write(createLarge.stdout || '');
+  if (createLarge.status !== 0) { process.stderr.write(createLarge.stderr || 'Large synthetic fixture creation failed.\n'); finalStatus = createLarge.status || 1; }
+  if (finalStatus === 0) {
+    const integration = spawnSync(powershell, ['-NoProfile', '-File', path.join(__dirname, 'Run-LargeWebTests.ps1'), '-FixtureRoot', largeFixture, '-OutputPath', path.join(largeOutput, 'library-summary.json')], { cwd: product, stdio: 'inherit', windowsHide: true, timeout: 900000 });
+    finalStatus = integration.status || (integration.error ? 1 : 0);
+  }
+  if (finalStatus === 0) {
+    const largeArgs = [path.join(__dirname, 'run-large-e2e.cjs'), '--root', largeFixture, '--host', host, '--powershell', powershell, '--output-dir', largeOutput];
+    if (dotnet) largeArgs.push('--dotnet', dotnet);
+    if (args.chromium) largeArgs.push('--chromium', args.chromium); else if (isWindows) largeArgs.push('--browser-channel', 'msedge');
+    const integration = spawnSync(process.execPath, largeArgs, { cwd: product, stdio: 'inherit', windowsHide: true, timeout: 900000 });
+    finalStatus = integration.status || (integration.error ? 1 : 0);
+  }
+}
+if (finalStatus === 0 && !args['keep-fixture']) {
+  fs.rmSync(fixture, { recursive: true, force: true });
+  fs.rmSync(largeFixture, { recursive: true, force: true });
+} else fs.writeFileSync(path.join(output, 'synthetic-fixture-location.txt'), fixture + '\n' + largeFixture + '\n');
+process.exit(finalStatus);

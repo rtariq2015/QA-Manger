@@ -41,6 +41,28 @@ Scenario 'Compressed multi-page PDF text is read locally without changing classi
  Check ((Get-FileHash -LiteralPath $fx.Record.DestinationPath).Hash -eq $savedHash) 'Archived PDF untouched'
  Check (@((Get-QaDashboard -Config $fx.Config).Records)[0].Category -eq $fx.Record.Category) 'Text never auto-confirms or changes QA category'
 }
+Scenario 'Reading one PDF does not rebuild the dashboard and retains the configured scanner label' {
+ $fx=Fixture 'SelectedLookup';$fx.Config.Sources[0].Name='Synthetic custom reader scanner'
+ $state=Join-Path $fx.Config.ArchiveRoot '.ctqa/state.json';$before=(Get-FileHash $state).Hash
+ $readerModule=Get-Module PdfReader
+ & $readerModule {function script:Get-QaDashboard {throw 'The PDF reader must not rebuild the full dashboard.'}}
+ try{$result=Read-QaReportText -Config $fx.Config -RecordId $fx.Record.Id}
+ finally{& $readerModule {Remove-Item Function:Get-QaDashboard -ErrorAction SilentlyContinue}}
+ Check ($result.ReadPages -eq 3 -and $result.Text -match 'SYNTHETIC QA FIXTURE') 'Selected PDF is read through the validated archive lookup without a dashboard call'
+ Check ($result.Title -like 'Synthetic custom reader scanner*') 'Configured scanner display name is preserved'
+ Check ((Get-FileHash $state).Hash -eq $before) 'Faster lookup does not change archive state'
+}
+Scenario 'Selected-record lookup still rejects an unsafe unrelated archive record and releases the lock' {
+ $fx=Fixture 'UnrelatedUnsafePath';$statePath=Join-Path $fx.Config.ArchiveRoot '.ctqa/state.json';$state=Get-Content $statePath -Raw|ConvertFrom-Json
+ $other=$state.Records[0]|Select-Object *;$other.Id=('B'*64);$other.SourcePath=[string]$other.SourcePath+'.other';$other.RelativePath='../outside.pdf'
+ $state.Records=@($state.Records)+@($other);$state|ConvertTo-Json -Depth 15|Set-Content $statePath -Encoding UTF8
+ $before=(Get-FileHash $statePath).Hash;$pdfBefore=(Get-FileHash $fx.Record.DestinationPath).Hash;$rejected=$false
+ try{Read-QaReportText -Config $fx.Config -RecordId $fx.Record.Id|Out-Null}catch{$rejected=$_.Exception.Message -match 'outside Reports|unsafe relative path'}
+ Check $rejected 'Full archive path validation remains in force even for an unselected record'
+ Check ((Get-FileHash $statePath).Hash -eq $before -and (Get-FileHash $fx.Record.DestinationPath).Hash -eq $pdfBefore) 'Rejected state and selected PDF are preserved unchanged'
+ $guard=[IO.File]::Open((Join-Path $fx.Config.ArchiveRoot '.ctqa/archive.lock'),[IO.FileMode]::Open,[IO.FileAccess]::ReadWrite,[IO.FileShare]::None);$guard.Dispose()
+ Check $true 'Archive lock is released after metadata-validation failure'
+}
 Scenario 'Image-only PDF reports no readable text and does not invent a report type' {
  $fx=Fixture 'ImageOnly' 'Image-Only.pdf';$r=Read-QaReportText -Config $fx.Config -RecordId $fx.Record.Id
  Check $r.NeedsOCR 'No selectable text detected'
@@ -84,6 +106,29 @@ Scenario 'Cancelled reading and unknown report selections have no side effects' 
  Check ($r.Summary.Cancelled -and $r.Text -eq '') 'Cancellation returns no invented text'
  Check ((Get-FileHash -LiteralPath $state).Hash -eq $before) 'Cancellation leaves metadata unchanged'
  $rejected=$false;try{[void](Read-QaReportText -Config $fx.Config -RecordId ('A'*64))}catch{$rejected=$_.Exception.Message -match 'uniquely'};Check $rejected 'Unknown identity refused'
+}
+Scenario 'Background analysis reports its actual bounded queue and reuses all cached results' {
+ Import-Module (Join-Path $ProductRoot 'App/Insights.psm1') -Force
+ $fx=Fixture 'AnalysisBatch'
+ foreach($day in @('02','03')){
+  $path=Join-Path $fx.Config.Sources[0].Path ('Quality_Constancy_2025-12-'+$day+'_06-00-00.pdf')
+  [IO.File]::Copy($fx.Source,$path,$false);[IO.File]::AppendAllText($path,("`n% Synthetic distinct fingerprint "+$day+"`n"),[Text.Encoding]::ASCII)
+  (Get-Item $path).LastWriteTimeUtc=[datetime]::UtcNow.AddMinutes(-10)
+ }
+ [void](Invoke-QaOperation $fx.Config -Mode Update)
+ $statePath=Join-Path $fx.Config.ArchiveRoot '.ctqa/state.json';$before=(Get-FileHash $statePath).Hash
+ $first=Invoke-QaAnalysis $fx.Config -Limit 1
+ Check ($first.Analyzed -eq 1 -and $first.Failed -eq 0) 'The first bounded batch reads one real synthetic PDF'
+ $progress=[hashtable]::Synchronized(@{Cancel=$false;Message='';Percent=-1})
+ $second=Invoke-QaAnalysis $fx.Config -Limit 20 -Progress $progress
+ Check ($second.Analyzed -eq 2 -and $second.Cached -eq 1 -and $second.Failed -eq 0) 'Only the two uncached fingerprints are read in the next batch'
+ Check ($progress.Stage -eq 'Analyzing' -and $progress.Total -eq 2 -and $progress.Completed -eq 2) 'Progress counts the actual queue rather than the maximum twenty'
+ $analysisRoot=Join-Path $fx.Config.ArchiveRoot '.ctqa/analysis';$saved=@{}
+ foreach($file in Get-ChildItem $analysisRoot -Filter '*.json'){$saved[$file.Name]=(Get-FileHash $file.FullName).Hash}
+ $third=Invoke-QaAnalysis $fx.Config -Limit 20 -Progress $progress
+ Check ($third.Analyzed -eq 0 -and $third.Cached -eq 3 -and $progress.Total -eq 0) 'A fully cached archive starts no new PDF reads'
+ foreach($file in Get-ChildItem $analysisRoot -Filter '*.json'){Check ($saved[$file.Name] -ceq (Get-FileHash $file.FullName).Hash) 'Cached text evidence is not rewritten'}
+ Check ((Get-FileHash $statePath).Hash -ceq $before) 'Analysis and cached repeats leave core clinical state byte-for-byte unchanged'
 }
 $failed=@($script:Results|Where-Object Result -eq 'FAIL').Count
 $r=[pscustomobject]@{Product='CT QA Manager Pro';Feature='Portable PDF text reader';TimestampUtc=[datetime]::UtcNow.ToString('o');Runtime=$PSVersionTable.PSVersion.ToString();Platform=[Environment]::OSVersion.ToString();WindowsPowerShell51ActuallyRun=($PSVersionTable.PSVersion.Major -eq 5);Tests=$script:Results.Count;Assertions=$script:Assertions;Failed=$failed;Results=@($script:Results.ToArray());Notes='Synthetic compressed, image-only and encrypted PDFs only. Native Windows .NET Framework/PdfPig loading and hospital PDFs still require Windows validation.'}
