@@ -45,6 +45,6 @@ $cfg.SetupComplete=$true
 $dashboard=Get-QaDashboard $cfg
 $rows=@($dashboard.Records|ForEach-Object{[pscustomobject]@{Id=$_.Id;Hash=$_.Hash;Category=$_.Category;ConfirmedBy=$_.ConfirmedBy;ConfirmedAt=$_.ConfirmedAt;ConfirmedComponents=@($_.ConfirmedComponents);DestinationPath=$_.DestinationPath}})
 $sources=@($sourceFiles|ForEach-Object{[pscustomobject]@{Path=$_;Hash=(Get-FileHash $_ -Algorithm SHA256).Hash}})
-$metadata=[pscustomobject]@{Synthetic=$true;FixtureRoot=$FixtureRoot;ArchiveRoot=$cfg.ArchiveRoot;RecordCount=$rows.Count;Records=$rows;Sources=$sources;Month=(Get-Date).ToString('yyyy-MM')}
+$metadata=[pscustomobject]@{Synthetic=$true;FixtureRoot=$FixtureRoot;ArchiveRoot=$cfg.ArchiveRoot;ArchiveStateSHA256=(Get-FileHash (Join-Path $cfg.ArchiveRoot '.ctqa/state.json') -Algorithm SHA256).Hash;RecordCount=$rows.Count;Records=$rows;Sources=$sources;Month=(Get-Date).ToString('yyyy-MM')}
 [IO.File]::WriteAllText((Join-Path $FixtureRoot 'fixture-baseline.json'),($metadata|ConvertTo-Json -Depth 18),(New-Object Text.UTF8Encoding $true))
 Write-Output ('Created synthetic browser fixture with '+$rows.Count+' PDFs; real scanner data and credentials are absent.')

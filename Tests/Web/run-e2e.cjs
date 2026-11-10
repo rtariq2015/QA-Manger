@@ -97,13 +97,15 @@ async function scenario(name, fn) {
   catch (error) { results.push({ name, result: 'FAIL', details: clean(error.stack || error.message) }); process.stdout.write('FAIL ' + name + ': ' + clean(error.message) + '\n'); throw error; }
 }
 function verifyArchivePreserved() {
-  const state = JSON.parse(fs.readFileSync(path.join(baseline.ArchiveRoot, '.ctqa', 'state.json'), 'utf8').replace(/^\uFEFF/, ''));
+  const stateBytes = fs.readFileSync(path.join(baseline.ArchiveRoot, '.ctqa', 'state.json'));
+  check(sha(stateBytes) === baseline.ArchiveStateSHA256, 'The entire core archive state, including exact clinical timestamps, stays byte-for-byte unchanged');
+  const state = JSON.parse(stateBytes.toString('utf8').replace(/^\uFEFF/, ''));
   check(state.Records.length === baseline.RecordCount, 'Every archive record remains present');
   for (const original of baseline.Records) {
     const record = state.Records.find(r => r.Id === original.Id);
     check(!!record, 'An original record identity remains present');
     check(record.Hash === original.Hash && sha(fs.readFileSync(record.DestinationPath || original.DestinationPath)) === original.Hash, 'Original archived PDF bytes remain unchanged');
-    for (const field of ['Category', 'ConfirmedBy', 'ConfirmedAt']) check(String(record[field] || '') === String(original[field] || ''), 'Classification-only review does not rewrite clinical ' + field);
+    for (const field of ['Category', 'ConfirmedBy']) check(String(record[field] || '') === String(original[field] || ''), 'Classification-only review does not rewrite clinical ' + field);
     check(JSON.stringify(record.ConfirmedComponents || []) === JSON.stringify(original.ConfirmedComponents || []), 'Explicit checklist evidence remains unchanged');
   }
   for (const source of baseline.Sources) check(sha(fs.readFileSync(source.Path)) === source.Hash, 'Scanner-source fixture bytes remain unchanged');
