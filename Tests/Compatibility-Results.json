@@ -1,0 +1,24 @@
+{
+  "Analyzer": "PSScriptAnalyzer",
+  "Version": "1.25.0",
+  "HostRuntime": "PowerShell 7.4.19 on Linux",
+  "TargetSyntax": "5.1",
+  "CommandAndTypeProfile": "win-48_x64_10.0.17763.0_5.1.17763.316_x64_4.0.30319.42000_framework",
+  "UnexpectedFindings": 0,
+  "ExpectedDynamicAssemblyNotices": 2,
+  "Explanation": "Both WinForms types are explicitly loaded by Add-Type -AssemblyName System.Windows.Forms before use; they are not present in the analyzer default-loaded type profile. This is static analysis, not Windows PowerShell 5.1 runtime validation.",
+  "Findings": [
+    {
+      "RuleName": "PSUseCompatibleTypes",
+      "ScriptName": "Start.ps1",
+      "Line": 1,
+      "Message": "The type 'System.Windows.Forms.FolderBrowserDialog' is not available by default in PowerShell version '5.1.17763.316' on platform 'Microsoft Windows 10 Pro'"
+    },
+    {
+      "RuleName": "PSUseCompatibleTypes",
+      "ScriptName": "Start.ps1",
+      "Line": 114,
+      "Message": "The type 'System.Windows.Forms.DialogResult' is not available by default in PowerShell version '5.1.17763.316' on platform 'Microsoft Windows 10 Pro'"
+    }
+  ]
+}

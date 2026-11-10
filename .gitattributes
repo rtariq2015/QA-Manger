@@ -1,0 +1,2 @@
+# Preserve supplied BOMs and line endings, including original package hashes.
+* -text

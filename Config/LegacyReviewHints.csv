@@ -1,0 +1,6 @@
+﻿Scanner,OriginalFileName,Category,ShortLabel,Reason,VerificationStatus
+CT_Edge,ID_QUALITY_CONSTANCY_2026-01-01_07-07-09.pdf,Monthly_QA,Lightmarker,Uploaded PDF: 4-page lightmarker-only extended constancy,Historical filename-only suggestion; exact PDF hash and full monthly QA scope not verified by this version.
+CT_Edge,ID_QUALITY_CONSTANCY_2026-01-01_07-21-54.pdf,Monthly_QA,FullConstancy,Uploaded PDF: 17-page extended constancy; MTF slice table and more,Historical filename-only suggestion; exact PDF hash and full monthly QA scope not verified by this version.
+CT_Flash,Quality_Constancy_2024-12-11_06-03-31.pdf,Monthly_QA,FullConstancy,Uploaded PDF: 19-page extended constancy incl MTF and slice,Historical filename-only suggestion; exact PDF hash and full monthly QA scope not verified by this version.
+CT_Flash,Quality_Constancy_2024-12-09_07-10-40.pdf,Monthly_QA,Constancy_MTF,Uploaded PDF: includes MTF,Historical filename-only suggestion; exact PDF hash and full monthly QA scope not verified by this version.
+CT_Flash,Quality_Constancy_2024-12-14_07-13-49.pdf,Monthly_QA,Constancy_Slice,Uploaded PDF: includes slice thickness,Historical filename-only suggestion; exact PDF hash and full monthly QA scope not verified by this version.

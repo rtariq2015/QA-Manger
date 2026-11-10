@@ -1,0 +1,25 @@
+# Runtime archive data and local logs
+**/.ctqa/
+**/Reports/
+**/QA_Master_Index.csv
+**/Activity.csv
+*.pdf
+*.log
+*.partial
+*.bak
+*.tmp
+
+# Local development files
+.env
+.env.*
+!.env.example
+__pycache__/
+*.pyc
+.venv/
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Config/Settings.json is intentionally tracked as the supplied baseline.

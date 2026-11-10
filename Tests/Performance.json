@@ -1,0 +1,12 @@
+{
+  "Runtime": "7.4.19",
+  "Platform": "Unix 6.18.57.0",
+  "Fixtures": 300,
+  "ApproximatePdfBytes": 51200,
+  "PreviewSeconds": 1.02,
+  "ImportSeconds": 6.548,
+  "UnchangedUpdateSeconds": 2.158,
+  "UpdateCopied": 0,
+  "UpdateUnchanged": 300,
+  "Scope": "Synthetic local disk benchmark; not hospital SMB performance or Windows performance."
+}
