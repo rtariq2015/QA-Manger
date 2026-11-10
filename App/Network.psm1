@@ -92,105 +92,115 @@ function Get-QaDriveAssignment {
     return [pscustomobject]@{ Kind='Free'; Path=''; Code=$code }
 }
 
-function Test-QaNetworkAvailability {
-    [CmdletBinding()]
-    param([Parameter(Mandatory=$true)][object]$Scanner)
-    if ([string]$Scanner.Path -notmatch '^\\\\[^\\]+\\[^\\]+') {
-        return (New-QaConnectionResult $Scanner 'Unavailable' 'Enter a network folder beginning with two backslashes, a server and a share.')
-    }
-    try {
-        if ([IO.Directory]::Exists([string]$Scanner.Path)) {
-            return (New-QaConnectionResult $Scanner 'Connected' 'Network folder is available. Reports use the direct network path.')
-        }
-    } catch {
-        # Do not expose credential-related exception text to logs or the UI.
-    }
-    return (New-QaConnectionResult $Scanner 'Unavailable' 'Network folder is unavailable or Windows has not granted access. Reconnect or ask hospital IT to check the share.')
+function Get-QaNetworkLocation {
+    [CmdletBinding()]param([string]$Path)
+    $value=$Path.Trim().TrimEnd('\')
+    if(-not $value.StartsWith('\\') -or [regex]::IsMatch($value,'[\x00-\x1f]')){throw 'Enter a UNC reports folder: \\SERVER\Share\Folder.'}
+    $parts=$value.Substring(2).Split([char]'\')
+    if($parts.Count -lt 2 -or -not $parts[0] -or -not $parts[1]){throw 'Enter both the server and share name.'}
+    foreach($part in $parts){if(-not $part -or $part -in @('.','..') -or $part.IndexOfAny([char[]]'/:*?"<>|') -ge 0){throw 'The network folder contains unsupported path characters.'}}
+    return [pscustomobject]@{Path=$value;Host=$parts[0];ShareRoot=('\\'+$parts[0]+'\'+$parts[1])}
 }
-
+function Test-QaPlaceholderConnection {
+    param($Scanner)
+    try{$location=Get-QaNetworkLocation ([string]$Scanner.Path)}catch{return $false}
+    return ($location.Host -in @('CT-EDGE','CT-FLASH','MDP-SCANNER') -and $location.ShareRoot.EndsWith('\Reports',[StringComparison]::OrdinalIgnoreCase))
+}
+function Get-QaNetworkFailure {
+    param($Scanner,[int]$Code,[switch]$AfterAuthentication)
+    $message=switch($Code) {
+        3 {'The reports subfolder was not found. Check the full folder path in Advanced settings.'}
+        5 {'Windows denied access. Enter the authorized scanner sign-in, or ask IT to grant read/list access to the reports folder.'}
+        53 {'The server could not be reached. Check this workstation network connection and the server address.'}
+        67 {'The network share was not found. Check the share name and reports subfolder.'}
+        86 {'Windows did not accept the scanner username or password.'}
+        1326 {'Windows did not accept the scanner username or password.'}
+        1219 {'Windows already has a session to this server using different credentials. No session was disconnected; ask IT to resolve the conflict.'}
+        1244 {'Windows requires an authorized scanner sign-in.'}
+        1231 {'The scanner network is unreachable from this workstation.'}
+        64 {'The network connection was interrupted. Try again when the scanner is available.'}
+        default {'The reports folder is unavailable. Check the saved path, workstation network access, and folder permissions.'}
+    }
+    $status=if(-not $AfterAuthentication -and $Code -in @(5,86,1326,1244)){'CredentialsRequired'}else{'Unavailable'}
+    if($AfterAuthentication -and $Code -eq 5){$message='Windows accepted the server connection, but denied access to the reports folder. Ask IT to check folder read/list permissions.'}
+    if($Code -gt 0){$message+=' Windows error '+$Code+'.'}
+    return (New-QaConnectionResult $Scanner $status $message $Code)
+}
+function Test-QaNetworkAvailability {
+    [CmdletBinding()]param([Parameter(Mandatory=$true)][object]$Scanner)
+    if(Test-QaPlaceholderConnection $Scanner){return (New-QaConnectionResult $Scanner 'NotConfigured' 'Example connection settings are still selected. Apply your local connection profile or enter the real scanner folder in Advanced settings.')}
+    try{$location=Get-QaNetworkLocation ([string]$Scanner.Path)}catch{return (New-QaConnectionResult $Scanner 'NotConfigured' $_.Exception.Message)}
+    $iterator=$null
+    try {
+        # Enumerating one entry checks read/list access, including an empty reports folder.
+        # Directory.Exists alone hides permission errors by returning false.
+        $iterator=[IO.Directory]::EnumerateFileSystemEntries($location.Path).GetEnumerator()
+        [void]$iterator.MoveNext()
+        return (New-QaConnectionResult $Scanner 'Connected' 'Reports folder is accessible using the direct UNC path. Existing Windows connections were left unchanged.')
+    } catch {
+        $exception=$_.Exception
+        while($null -ne $exception.InnerException){$exception=$exception.InnerException}
+        $code=[int]($exception.HResult -band 65535)
+        if($exception -is [UnauthorizedAccessException]){$code=5}
+        return (Get-QaNetworkFailure $Scanner $code)
+    } finally {if($iterator -is [IDisposable]){$iterator.Dispose()}}
+}
+function Invoke-QaNativeConnection {
+    param([string]$RemoteName,[string]$LocalName='',[System.Management.Automation.PSCredential]$Credential)
+    $resource=New-Object CtQa.NetworkResource;$resource.Type=1;$resource.RemoteName=$RemoteName
+    if($LocalName){$resource.LocalName=$LocalName}
+    $passwordPointer=[IntPtr]::Zero;$username=$null
+    try {
+        if($null -ne $Credential){$username=$Credential.UserName;$passwordPointer=[Runtime.InteropServices.Marshal]::SecureStringToGlobalAllocUnicode($Credential.Password)}
+        return [CtQa.NativeNetwork]::AddConnection([ref]$resource,$passwordPointer,$username,0)
+    } finally {
+        if($passwordPointer -ne [IntPtr]::Zero){[Runtime.InteropServices.Marshal]::ZeroFreeGlobalAllocUnicode($passwordPointer)}
+        $passwordPointer=[IntPtr]::Zero;$username=$null;$Credential=$null
+    }
+}
 function Reconnect-QaScanner {
-    [CmdletBinding()]
-    param(
+    [CmdletBinding()]param(
         [Parameter(Mandatory=$true)][object]$Scanner,
         [System.Management.Automation.PSCredential]$Credential,
         [switch]$InWorker
     )
+    if(Test-QaPlaceholderConnection $Scanner){return (New-QaConnectionResult $Scanner 'NotConfigured' 'Example connection settings are still selected. Apply your local connection profile or enter the real scanner folder in Advanced settings.')}
+    try{$location=Get-QaNetworkLocation ([string]$Scanner.Path)}catch{return (New-QaConnectionResult $Scanner 'NotConfigured' $_.Exception.Message)}
+    $letter=([string]$Scanner.DriveLetter).Trim().TrimEnd(':').ToUpperInvariant()
+    if($letter -notmatch '^[A-Z]$'){return (New-QaConnectionResult $Scanner 'NotConfigured' 'Check the preferred drive letter in Advanced settings.')}
     if(-not $InWorker -and [Environment]::OSVersion.Platform -eq [PlatformID]::Win32NT) {
         Import-Module (Join-Path $PSScriptRoot 'Process.psm1')
-        try{return (Invoke-QaIsolatedTask Reconnect ([pscustomobject]@{Scanner=$Scanner;Credential=$Credential}) -TimeoutSeconds 15)}
-        catch{return (New-QaConnectionResult $Scanner 'Unavailable' 'Connection timed out or was blocked. Saved reports remain available; existing sessions were left intact.')}
+        try{return (Invoke-QaIsolatedTask Reconnect ([pscustomobject]@{Scanner=$Scanner;Credential=$Credential}) -TimeoutSeconds 30)}
+        catch{return (New-QaConnectionResult $Scanner 'Unavailable' 'Connection attempt timed out or the helper was blocked by workstation policy. Check the server address, network access, and IT policy. Saved reports remain available.')}
     }
-    $path = [string]$Scanner.Path
-    $letter = ([string]$Scanner.DriveLetter).Trim().TrimEnd(':').ToUpperInvariant()
-    if ($path -notmatch '^\\\\[^\\]+\\[^\\]+' -or $letter -notmatch '^[A-Z]$' -or $path.IndexOf([char]0) -ge 0) {
-        return (New-QaConnectionResult $Scanner 'Unavailable' 'Check the scanner network path and preferred drive letter in Advanced Settings.')
-    }
-    if ([Environment]::OSVersion.Platform -ne [PlatformID]::Win32NT) {
-        return (New-QaConnectionResult $Scanner 'Unsupported' 'Network reconnection requires a Windows workstation.')
-    }
-    $access = Test-QaNetworkAvailability -Scanner $Scanner
-    if ($access.Status -eq 'Connected') { return $access }
-    try {
-        if (-not (Initialize-QaNetworkApi)) {
-            return (New-QaConnectionResult $Scanner 'Unsupported' 'Windows network services are unavailable.')
-        }
-    } catch {
-        return (New-QaConnectionResult $Scanner 'Unsupported' 'Hospital Windows policy prevented the network connection component from loading. Ask IT to approve the application; do not bypass the policy.')
-    }
-    try {
-        $assignment = Get-QaDriveAssignment -Letter $letter
-    } catch {
-        return (New-QaConnectionResult $Scanner 'Unavailable' 'Windows could not safely check the preferred drive letter. No drive mappings were changed.')
-    }
-    $same = $assignment.Kind -eq 'Network' -and (Get-QaNormalizedNetworkPath $assignment.Path) -eq (Get-QaNormalizedNetworkPath $path)
-    if ($assignment.Kind -ne 'Free' -and -not $same) {
-        return (New-QaConnectionResult $Scanner 'DriveConflict' ($letter + ': is already assigned or its status could not be safely determined. It was left unchanged. Use the direct network path, choose another free letter, or ask IT.') $assignment.Code)
-    }
-    $resource = New-Object CtQa.NetworkResource
-    $resource.Type = 1
-    $resource.RemoteName = $path.TrimEnd('\')
-    # If the correct drive already exists, authenticate a temporary deviceless
-    # connection instead of disconnecting and recreating that drive.
-    if ($assignment.Kind -eq 'Free') { $resource.LocalName = $letter + ':' }
-    $passwordPointer = [IntPtr]::Zero
-    $username = $null
-    $code = -1
-    try {
-        if ($null -ne $Credential) {
-            $username = $Credential.UserName
-            $passwordPointer = [Runtime.InteropServices.Marshal]::SecureStringToGlobalAllocUnicode($Credential.Password)
-        }
-        $code = [CtQa.NativeNetwork]::AddConnection([ref]$resource,$passwordPointer,$username,0)
-    } catch {
-        return (New-QaConnectionResult $Scanner 'Unavailable' 'Windows could not complete the network connection. No existing mapping was disconnected. Ask IT to check access.')
-    } finally {
-        if ($passwordPointer -ne [IntPtr]::Zero) {
-            [Runtime.InteropServices.Marshal]::ZeroFreeGlobalAllocUnicode($passwordPointer)
-        }
-        $passwordPointer = [IntPtr]::Zero
-        $username = $null
-        $Credential = $null
-    }
-    if ($code -eq 0) {
-        $check = Test-QaNetworkAvailability -Scanner $Scanner
-        if ($check.Status -eq 'Connected') {
-            return (New-QaConnectionResult $Scanner 'Connected' 'Connected for this Windows session. No password was saved by CT QA Manager.')
-        }
-        return (New-QaConnectionResult $Scanner 'Unavailable' 'Windows accepted the connection, but the reports folder is still unavailable. Ask IT to check the folder path and read permissions.' $code)
-    }
-    switch ($code) {
-        1219 { return (New-QaConnectionResult $Scanner 'Unavailable' 'Windows already has a connection to this server with different credentials. No sessions were disconnected. Ask IT to resolve the credential conflict.' $code) }
-        5    { return (New-QaConnectionResult $Scanner 'CredentialsRequired' 'Windows denied access. Enter authorized scanner credentials or ask IT to grant read access.' $code) }
-        86   { return (New-QaConnectionResult $Scanner 'CredentialsRequired' 'Windows did not accept the network credentials. Enter an authorized account; passwords are never saved by the app.' $code) }
-        1326 { return (New-QaConnectionResult $Scanner 'CredentialsRequired' 'Windows did not accept the network credentials. Enter an authorized account; passwords are never saved by the app.' $code) }
-        1244 { return (New-QaConnectionResult $Scanner 'CredentialsRequired' 'Windows requires an authorized network sign-in for this share.' $code) }
-        85   { return (New-QaConnectionResult $Scanner 'DriveConflict' 'The preferred drive letter became occupied. Windows left it unchanged. Choose another free letter or use the direct network path.' $code) }
-        1202 { return (New-QaConnectionResult $Scanner 'DriveConflict' 'Windows has remembered a different mapping for this drive letter. It was not replaced. Ask IT or choose another free letter.' $code) }
-        53   { return (New-QaConnectionResult $Scanner 'Unavailable' 'The scanner network location could not be reached. Check the hospital network connection and scanner address.' $code) }
-        67   { return (New-QaConnectionResult $Scanner 'Unavailable' 'Windows could not find the configured network share. Check its path with hospital IT.' $code) }
-        1231 { return (New-QaConnectionResult $Scanner 'Unavailable' 'The scanner network is unreachable from this workstation. Check its hospital network connection.' $code) }
-        default { return (New-QaConnectionResult $Scanner 'Unavailable' ('Windows could not connect (network error ' + $code + '). No existing mappings were disconnected. Ask IT to check access.') $code) }
-    }
+    if([Environment]::OSVersion.Platform -ne [PlatformID]::Win32NT){return (New-QaConnectionResult $Scanner 'Unsupported' 'Network reconnection requires Windows.')}
+    return (Invoke-QaReconnectCore -Scanner $Scanner -Credential $Credential)
 }
-
-Export-ModuleMember -Function Reconnect-QaScanner,Test-QaNetworkAvailability
+function Invoke-QaReconnectCore {
+    param($Scanner,[System.Management.Automation.PSCredential]$Credential)
+    $location=Get-QaNetworkLocation ([string]$Scanner.Path)
+    $letter=([string]$Scanner.DriveLetter).Trim().TrimEnd(':').ToUpperInvariant()
+    if($null -eq $Credential){$access=Test-QaNetworkAvailability $Scanner;if($access.Status -eq 'Connected' -or $access.Status -eq 'NotConfigured'){return $access}}
+    try{if(-not (Initialize-QaNetworkApi)){throw 'Native network services unavailable.'}}catch{return (New-QaConnectionResult $Scanner 'Unsupported' 'Workstation policy prevented the Windows network component from loading. Ask IT to approve the application.')}
+    try {
+        # Authenticate to the SMB share root first. The scanner source still points
+        # to the complete reports folder; no file or archive path is changed here.
+        $code=Invoke-QaNativeConnection -RemoteName $location.ShareRoot -Credential $Credential
+        if($code -ne 0){
+            if($code -eq 1219){$existing=Test-QaNetworkAvailability $Scanner;if($existing.Status -eq 'Connected'){return $existing}}
+            return (Get-QaNetworkFailure $Scanner $code)
+        }
+        $check=Test-QaNetworkAvailability $Scanner
+        if($check.Status -ne 'Connected'){return (Get-QaNetworkFailure $Scanner ([int]$check.NativeCode) -AfterAuthentication)}
+        $mappingNote='Reports use the direct UNC path.'
+        try {
+            $assignment=Get-QaDriveAssignment $letter
+            if($assignment.Kind -eq 'Free') {
+                $mapCode=Invoke-QaNativeConnection -RemoteName $location.Path -LocalName ($letter+':') -Credential $Credential
+                $mappingNote=if($mapCode -eq 0){$letter+': connected for this Windows session.'}else{'The folder is accessible directly; the optional drive mapping was not created (Windows error '+$mapCode+').'}
+            } else {$mappingNote=$letter+': was left unchanged; reports use the direct UNC path.'}
+        }catch{$mappingNote='The folder is accessible directly. Drive mappings were left unchanged.'}
+        return (New-QaConnectionResult $Scanner 'Connected' ('Reports folder is accessible. '+$mappingNote))
+    }catch{return (New-QaConnectionResult $Scanner 'Unavailable' 'Windows could not complete the scanner connection. Existing mappings were left unchanged. Ask IT to check access.')}
+}
+Export-ModuleMember -Function Reconnect-QaScanner,Test-QaNetworkAvailability,Get-QaNetworkLocation,Test-QaPlaceholderConnection

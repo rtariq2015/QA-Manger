@@ -35,3 +35,7 @@ Logs/
 Backups/
 artifacts/
 .update-*/
+
+# Private network connection presets never belong in source control
+Config/NetworkProfile.local.json
+Config/NetworkProfile.local.json.*

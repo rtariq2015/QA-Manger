@@ -24,7 +24,7 @@ jobs:
         run: |
           New-Item -ItemType Directory -Path artifacts/windows -Force | Out-Null
           $failed = $false
-          foreach ($name in @('Run-Tests','Run-ExportTests','Run-ConnectionTests','Run-BrowseTests','Run-MonthlyTests','Run-PdfTests','Run-PortableTests')) {
+          foreach ($name in @('Run-Tests','Run-ExportTests','Run-ConnectionTests','Run-BrowseTests','Run-MonthlyTests','Run-PdfTests','Run-PortableTests','Run-NetworkTests')) {
             & powershell.exe -NoProfile -File ".\Tests\$name.ps1" -OutputPath ".\artifacts\windows\$name.json"
             if ($LASTEXITCODE -ne 0) { $failed = $true }
           }

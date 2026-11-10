@@ -28,3 +28,7 @@ The Linux cloud suite and the dedicated hosted Windows suite have both run. The 
 - SHA-256 manifests and review history detect ordinary inconsistencies; they are not a signed, tamper-proof audit system.
 
 The Windows runs exposed and helped fix managed/readable path-length failures and duplicate-name suffix handling. The application keeps managed names compact and shortens readable filenames when needed; original names remain in the index and offline inventory. Very long workspace roots can still exceed Windows PowerShell 5.1 path limits; choose a short local folder.
+
+## Network update tests (4.2.1)
+
+`Tests/Run-NetworkTests.ps1` uses synthetic profiles and mocked Windows network API boundaries to check share-root authentication, complete folder paths, occupied letters, mapping races, native error numbers, preserved data and profile privacy. These tests do not contact hospital scanner addresses or authenticate with real passwords. A private network profile is deliberately absent from this repository. The real workstation must still verify share access.

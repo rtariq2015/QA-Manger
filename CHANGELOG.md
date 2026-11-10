@@ -1,5 +1,15 @@
 # Changes
 
+## 4.2.1
+
+- Apply private connection profiles locally without publishing scanner addresses or passwords.
+- Preserve the archive and reviewed evidence when repairing connection settings in an existing installation.
+- Authenticate to the SMB share root before accessing the full reports subfolder; reuse readable Windows sessions.
+- Keep unrelated drive assignments intact and continue using UNC paths when an optional mapping cannot be created.
+- Show Windows authentication, session-conflict, missing-share and folder-permission errors in the import preview.
+- Identify factory examples as setup that is not yet configured, and disable confirming a zero-report import.
+- Add synthetic network regressions and an existing-installation repair helper.
+
 ## 4.2.0
 
 - Redesigned Today dashboard with separate report receipt, extracted printed results, scanner freshness, Monthly evidence, and storage information.

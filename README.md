@@ -1,4 +1,4 @@
-# CT QA Manager Pro 4.2.0
+# CT QA Manager Pro 4.2.1
 
 A portable Windows workspace for collecting, reviewing, finding and sharing CT QA report PDFs. Run it from one folder using the Windows PowerShell 5.1 and WPF components already supplied with Windows. No installer, administrator launch, Python, Git or external PowerShell modules are required for normal use.
 
@@ -9,6 +9,14 @@ A portable Windows workspace for collecting, reviewing, finding and sharing CT Q
 ![Offline report library with synthetic PDFs](docs/images/offline-library.png)
 
 *Actual browser screenshot of the generated offline library with synthetic PDFs. Both images use demonstration data.*
+
+## Network setup update
+
+Version 4.2.1 adds a local connection profile and clearer Windows errors. Generic GitHub downloads contain example addresses. Enter your real scanner folders under Advanced settings, or apply your own private profile with **Apply local connection profile**. See `Config/NetworkProfile.example.json` for the format; never include passwords.
+
+A private `Config/NetworkProfile.local.json` automatically replaces factory examples on startup. Existing customized connections are preserved until an explicit profile apply. The app authenticates to the share root, reads the complete reports folder directly, and leaves occupied drive letters untouched. An optional drive-mapping failure does not invalidate a readable UNC folder. Passwords belong only in the secure prompt or Windows-protected saved sign-ins.
+
+For an existing installation, the private network-update package includes an **Apply CT QA Network Update.cmd** helper: close the app, extract the package elsewhere, run the helper and select the existing application folder. It verifies program updates, preserves data/settings and applies the local connection profile. Real network profiles are excluded from GitHub.
 
 ## Start on Windows
 
@@ -62,7 +70,7 @@ Use **Create full backup** to save a verified ZIP outside the live archive. **Re
 
 ## Validation and evidence
 
-The Linux cloud run passed **120 scenarios and 861 assertions** across seven suites. The hosted Windows run also passed **120 scenarios and 868 assertions**, including Windows DPAPI, native WPF loading and preview generation. A 10,000-record search benchmark measured **0.021 seconds** for a cached filter after **1.38 seconds** to build the index, including first compilation, on this Linux host. These are in-memory measurements, not workstation or SMB performance. Current Linux cloud and browser results are in [Tests/Current](Tests/Current). The [Windows workflow](https://github.com/rtariq2015/QA-Manger/actions/workflows/windows-validation.yml) runs native PowerShell 5.1 suites and a WPF demonstration capture on source changes. [Saved Windows evidence](Tests/Current/Windows) identifies the validated source commit and run. These hosted checks do not establish hospital access or interactive workstation DPI behavior.
+The v4.2.0 Linux cloud run passed **120 scenarios and 861 assertions** across seven suites. Current v4.2.1 network and regression evidence is saved in Tests/Current; its Windows workflow tests the updated code. The v4.2.0 hosted Windows run also passed **120 scenarios and 868 assertions**, including Windows DPAPI, native WPF loading and preview generation. A 10,000-record search benchmark measured **0.021 seconds** for a cached filter after **1.38 seconds** to build the index, including first compilation, on this Linux host. These are in-memory measurements, not workstation or SMB performance. Current Linux cloud and browser results are in [Tests/Current](Tests/Current). The [Windows workflow](https://github.com/rtariq2015/QA-Manger/actions/workflows/windows-validation.yml) runs native PowerShell 5.1 suites and a WPF demonstration capture on source changes. [Saved Windows evidence](Tests/Current/Windows) identifies the validated source commit and run. These hosted checks do not establish hospital access or interactive workstation DPI behavior.
 
 Actual hospital access, scanner authentication, endpoint restrictions and interactive DPI acceptance still require workstation validation. See [testing and limitations](docs/TESTING.md) and the [Windows checklist](Tests/Windows-Smoke.md).
 

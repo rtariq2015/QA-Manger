@@ -1,0 +1,10 @@
+{
+  "Version": 1,
+  "Connections": [
+    {
+      "Scanner": "CT_Edge",
+      "Path": "\\\\YOUR-SCANNER\\YOUR-SHARE\\ConstancyReports",
+      "Username": "YOUR-APPROVED-USERNAME"
+    }
+  ]
+}

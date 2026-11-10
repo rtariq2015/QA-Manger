@@ -186,7 +186,7 @@ Scenario 'An upgrade verifies package files and preserves local settings and dat
     Check ($LASTEXITCODE -ne 0 -and [IO.File]::ReadAllText((Join-Path $target 'App/Example.psm1')) -eq '# new program') 'Checksum mismatch rejected without replacing working program'
 }
 $failed=@($script:Results|Where-Object Result -eq 'FAIL').Count
-$report=[pscustomobject]@{Version='4.2.0';Runtime=$PSVersionTable.PSVersion.ToString();Platform=[Environment]::OSVersion.ToString();WindowsPowerShell51ActuallyRun=($PSVersionTable.PSVersion.Major -eq 5);Tests=$script:Results.Count;Assertions=$script:Assertions;Failed=$failed;Results=@($script:Results.ToArray());SyntheticScenario=$TestRoot}
+$report=[pscustomobject]@{Version='4.2.1';Runtime=$PSVersionTable.PSVersion.ToString();Platform=[Environment]::OSVersion.ToString();WindowsPowerShell51ActuallyRun=($PSVersionTable.PSVersion.Major -eq 5);Tests=$script:Results.Count;Assertions=$script:Assertions;Failed=$failed;Results=@($script:Results.ToArray());SyntheticScenario=$TestRoot}
 if($OutputPath){$report|ConvertTo-Json -Depth 12|Set-Content -LiteralPath $OutputPath -Encoding UTF8}
 Write-Host ('Result: '+($report.Tests-$failed)+'/'+$report.Tests+' scenarios; '+$report.Assertions+' assertions.')
 if(-not $KeepFixtures){Remove-Item -LiteralPath $TestRoot -Recurse -Force}

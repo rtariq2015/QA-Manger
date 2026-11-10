@@ -38,3 +38,5 @@ Follow `Tests/Windows-Smoke.md` for interactive acceptance. Record the runtime a
 Develop and deploy in separate folders. Downloaded work-computer copies do not synchronize automatically with GitHub, and updates must preserve the deployed configuration and archive.
 
 The Windows workflow runs all suites and captures only synthetic demonstration data. Read `docs/TESTING.md` for practical limits. No installer, service or scheduled task may be introduced. Browser screenshots of the offline library are real generated artifacts; do not present them as native WPF screenshots.
+
+For network changes, run `Tests/Run-NetworkTests.ps1`. Never commit NetworkProfile.local.json, workplace connection settings or credentials. Private package generation happens outside the Git checkout and must exclude passwords.

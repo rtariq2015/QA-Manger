@@ -360,6 +360,11 @@ function Get-QaInventory { param($Config,$State,$Progress,$Summary,[switch]$InWo
                 Import-Module (Join-Path $PSScriptRoot 'Process.psm1')
                 if(-not (Invoke-QaIsolatedTask Probe ([pscustomobject]@{Path=$s.Path}) -TimeoutSeconds 10 -Progress $Progress)){throw 'Scanner folder is unavailable or access is denied.'}
             }
+            if(([string]$s.Path).StartsWith('\\')) {
+                Import-Module (Join-Path $PSScriptRoot 'Network.psm1') -DisableNameChecking
+                $access=Test-QaNetworkAvailability $s
+                if($access.Status -ne 'Connected'){throw [IO.IOException]::new([string]$access.Message)}
+            }
             Assert-QaNoReparse ([string]$s.Path)
             if (-not [IO.Directory]::Exists([string]$s.Path)) { throw 'The scanner folder is missing, offline, or access is denied.' }
             $queue=New-Object 'System.Collections.Generic.Queue[string]';$queue.Enqueue([string]$s.Path)
@@ -409,7 +414,7 @@ function Get-QaInventory { param($Config,$State,$Progress,$Summary,[switch]$InWo
                 } catch { $localErrors++;[void]$issues.Add((New-QaIssue $s.Scanner 'SourceFolder' ($s.Name+' - A source folder could not be fully read. '+$_.Exception.Message) $dir)) }
             }
             if ($localErrors -gt 0) { $status.Status='Partial';$status.Message='Some source folders could not be read.' }
-        } catch { $status.Status='Unavailable';$status.Message=$_.Exception.Message;[void]$issues.Add((New-QaIssue $s.Scanner 'Connection' ($s.Name+' - Scanner unavailable. Archive coverage cannot establish whether source reports are missing.') $s.Path)) }
+        } catch { $status.Status='Unavailable';$status.Message=$_.Exception.Message;[void]$issues.Add((New-QaIssue $s.Scanner 'Connection' ($s.Name+' - '+$_.Exception.Message+' Archive coverage cannot establish whether source reports are missing.') $s.Path)) }
         [void]$statuses.Add($status)
     }
     foreach($s in $Config.Sources) {

@@ -697,7 +697,7 @@ function Save-Settings {
 function Set-Busy {
     param([bool]$Busy)
     $script:Busy=$Busy
-    foreach ($name in @('SetupButton','UpdateButton','SaveSettingsButton','ReconnectButton','AuditButton','ReclassifyButton','ReviewReportButton','AdoptLegacyButton','BrowseArchiveButton','ExportReportsButton','ReviewPendingButton','ClearFiltersButton','ReadReportTextButton','BrowseReportsButton','OpenFolderButton','AnalyzeButton','BackupButton','RestoreButton','CompatibilityButton','RetryAnalysisButton','SourceAuditButton')) { $script:Controls[$name].IsEnabled=(-not $Busy) }
+    foreach ($name in @('SetupButton','UpdateButton','SaveSettingsButton','ReconnectButton','AuditButton','ReclassifyButton','ReviewReportButton','AdoptLegacyButton','BrowseArchiveButton','ExportReportsButton','ReviewPendingButton','ClearFiltersButton','ReadReportTextButton','BrowseReportsButton','OpenFolderButton','AnalyzeButton','BackupButton','RestoreButton','CompatibilityButton','RetryAnalysisButton','SourceAuditButton','ImportConnectionsButton')) { $script:Controls[$name].IsEnabled=(-not $Busy) }
     $script:Controls.AdvancedView.IsEnabled=(-not $Busy)
     # Searching an immutable saved snapshot remains available during network checks.
     $script:Controls.ReportFilters.IsEnabled=$true
@@ -746,6 +746,7 @@ try {
   if((Test-Path -LiteralPath $legacyIndex -PathType Leaf) -and -not (Test-Path -LiteralPath $statePath -PathType Leaf)) {
    $progress.Result=[pscustomobject]@{LegacyRoot=$config.ArchiveRoot;LegacyCount=@(Import-Csv -LiteralPath $legacyIndex).Count}
   } else { $progress.Result=Invoke-QaOperation -Config $config -Mode Preview -Progress $progress }
+  if($null -ne $plan -and $null -ne $plan.PSObject.Properties['Connections']){Add-Member -InputObject $progress.Result -NotePropertyName ConnectionResults -NotePropertyValue @($plan.Connections) -Force}
  } elseif ($mode -eq 'Reconnect') {
   Import-Module (Join-Path $appRoot 'App\Network.psm1') -Force -ErrorAction Stop
   Import-Module (Join-Path $appRoot 'App\Credentials.psm1') -Force -ErrorAction Stop
@@ -823,7 +824,8 @@ function Show-Preview {
             [void]$warnings.Add(([string](Value-Or $scanner Name (Value-Or $scanner Scanner))+': '+[string](Value-Or $scanner Message 'Connection unavailable. Existing archive records remain available.')))
         }
     }
-    $dialog.FindName('PreviewConnections').Text=($warnings -join "`r`n")
+    foreach($connection in @(Value-Or $Result ConnectionResults @())){if($connection.Status -ne 'Connected'){[void]$warnings.Add(([string]$connection.Scanner+': '+[string]$connection.Message))}}
+    $dialog.FindName('PreviewConnections').Text=(@($warnings|Select-Object -Unique) -join "`r`n")
     $dialog.FindName('Reconnect').Visibility=$(if($warnings.Count -and $ApplyMode -eq 'Import'){[Windows.Visibility]::Visible}else{[Windows.Visibility]::Collapsed})
     $dialog.FindName('Reconnect').Add_Click({param($sender,$args) $parent=[Windows.Window]::GetWindow($sender);$parent.Tag='Reconnect';$parent.DialogResult=$false})
     Add-RecordLabels $plan.Items
@@ -839,6 +841,7 @@ function Show-Preview {
     }
     # Event closures hold only this dialog; no worker execution is attached to dispatcher objects.
     $dialog.FindName('Dismiss').Add_Click({ param($sender,$eventArgs) [Windows.Window]::GetWindow($sender).DialogResult=$false })
+    if($ApplyMode -eq 'Import' -and @($plan.Items).Count -eq 0){$dialog.FindName('Apply').IsEnabled=$false;$dialog.FindName('PreviewNotice').Text='No reports were found. Check the connection details above, apply your local profile in Advanced settings, or reconnect scanners before confirming an import.'}
     $dialog.FindName('Apply').Add_Click({ param($sender,$eventArgs) [Windows.Window]::GetWindow($sender).DialogResult=$true })
     if($dialog.ShowDialog() -eq $true) {
         if($ApplyMode -eq 'Reclassify') { Start-Work -Mode Reclassify -Decisions $script:PendingDecisions }
@@ -886,7 +889,7 @@ function Finish-Connections {
     if($script:AfterReconnect) {
         $next=$script:AfterReconnect; $script:AfterReconnect=''
         $script:Controls.StatusText.Text='Connections checked. Preparing the report preview...'
-        Start-Work -Mode $next
+        Start-Work -Mode $next -Plan ([pscustomobject]@{Connections=@(Value-Or $Result Connections @())})
         return
     }
     Show-Note (($lines -join "`r`n`r`n")+"`r`n`r`nUse Update Reports to refresh scanner status and import accessible reports.") 'Scanner connections'
@@ -1073,6 +1076,14 @@ try {
     $script:Controls.AttentionList.Add_PreviewKeyDown({param($sender,$args) if($args.Key -eq [Windows.Input.Key]::Enter){Open-AttentionItem;$args.Handled=$true}})
     $script:Controls.SaveSettingsButton.Add_Click({[void](Save-Settings)})
     $script:Controls.BrowseArchiveButton.Add_Click({$p=Choose-Folder 'Choose the archive parent location' $script:Controls.ArchivePath.Text;if($p){$script:Controls.ArchivePath.Text=$p}})
+    $script:Controls.ImportConnectionsButton.Add_Click({
+        if($script:Busy){return}
+        $dialog=New-Object Microsoft.Win32.OpenFileDialog;$dialog.Filter='Local network profile (*.json)|*.json';$dialog.InitialDirectory=Join-Path $script:AppRoot 'Config'
+        if($dialog.ShowDialog($script:Window)) {
+            $answer=[Windows.MessageBox]::Show($script:Window,'Apply the scanner paths and usernames from this local profile? Existing report data and review history will be preserved. Passwords must be entered securely on this workstation.','Apply connection profile',[Windows.MessageBoxButton]::YesNo,[Windows.MessageBoxImage]::Question)
+            if($answer -eq [Windows.MessageBoxResult]::Yes){try{$result=Set-QaConnectionProfile -AppRoot $script:AppRoot -ProfilePath $dialog.FileName -ReplaceExisting;$script:Config=Read-QaConfig $script:AppRoot;Fill-Settings;Refresh-Dashboard;Show-Note $result.Message 'Connections updated'}catch{Show-Note $_.Exception.Message 'Connection profile could not be applied' $true}}
+        }
+    })
     $script:Controls.ReconnectButton.Add_Click({if(Save-Settings){Start-Work -Mode Reconnect}})
     $script:Controls.AddScannerButton.Add_Click({Add-Scanner})
     $script:Controls.OpenLogsButton.Add_Click({Start-Process -FilePath 'explorer.exe' -ArgumentList ('"'+(Join-Path $script:AppRoot 'Logs')+'"')|Out-Null})
