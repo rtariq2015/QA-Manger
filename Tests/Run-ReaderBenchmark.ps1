@@ -14,7 +14,19 @@ $selected=@($baseline.Records|Where-Object{$_.key -in @('basic','extended')})
 $statePath=Join-Path $Config.ArchiveRoot '.ctqa/state.json';$stateHash=(Get-FileHash $statePath).Hash
 $script:Results=New-Object 'Collections.Generic.List[object]';$script:Assertions=0;$script:Samples=New-Object 'Collections.Generic.List[object]';$script:CacheMetrics=$null
 function Check($Condition,[string]$Message){$script:Assertions++;if(-not $Condition){throw ('CHECK: '+$Message)}}
-function Scenario([string]$Name,[scriptblock]$Body){try{&$Body;[void]$script:Results.Add([pscustomobject]@{Name=$Name;Result='PASS';Details=''});Write-Host ('PASS '+$Name)}catch{$detail=if($_.Exception.Message.StartsWith('CHECK: ')){$_.Exception.Message.Substring(7)}else{$_.Exception.GetType().Name};[void]$script:Results.Add([pscustomobject]@{Name=$Name;Result='FAIL';Details=$detail});Write-Host ('FAIL '+$Name+': '+$detail)}}
+function Get-SafeTestFailure($Failure){
+    # Public fixture diagnostics identify code and line only. Reader exception
+    # messages, source paths and document data are deliberately excluded.
+    $kind=[string]$Failure.Exception.GetType().Name
+    if($kind -notmatch '^[A-Za-z0-9_]+$'){$kind='Exception'}
+    $symbol=[string]$Failure.FullyQualifiedErrorId
+    if($symbol -notmatch '^[A-Za-z0-9_.+,`-]{1,200}$'){$symbol='Unclassified'}
+    $line=0;if($null -ne $Failure.InvocationInfo){$line=[math]::Max(0,[int]$Failure.InvocationInfo.ScriptLineNumber)}
+    $detail=$kind+' [Code='+$symbol+'; TestLine='+$line+']'
+    if($Failure.Exception.Message.StartsWith('CHECK: ')){$detail=$Failure.Exception.Message.Substring(7)+' '+$detail}
+    return $detail
+}
+function Scenario([string]$Name,[scriptblock]$Body){try{&$Body;[void]$script:Results.Add([pscustomobject]@{Name=$Name;Result='PASS';Details=''});Write-Host ('PASS '+$Name)}catch{$detail=Get-SafeTestFailure $_;[void]$script:Results.Add([pscustomobject]@{Name=$Name;Result='FAIL';Details=$detail});Write-Host ('FAIL '+$Name+': '+$detail)}}
 function Median([double[]]$Values){$rows=@($Values|Sort-Object);if(-not $rows.Count){return [double]0};$middle=[int][math]::Floor($rows.Count/2);if(($rows.Count%2) -eq 1){return [double]$rows[$middle]};return ([double]$rows[$middle-1]+[double]$rows[$middle])/2.0}
 function Distribution([double[]]$Values){return [pscustomobject]@{Samples=$Values.Count;Minimum=[math]::Round([double](($Values|Measure-Object -Minimum).Minimum),3);Median=[math]::Round((Median $Values),3);Maximum=[math]::Round([double](($Values|Measure-Object -Maximum).Maximum),3)}}
 try {

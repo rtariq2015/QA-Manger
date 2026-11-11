@@ -271,8 +271,15 @@ function Read-QaReportText {
     }
     if($Reader -ieq 'Auto'){$Reader='Auto'}elseif($Reader -ieq 'Python'){$Reader='Python'}else{$Reader='Standard'}
     if($RecordId -notmatch '^[0-9A-Fa-f]{64}$'){throw 'Select one saved report from the report list first.'}
-    $archiveModule=Get-Module Archive
-    if($null -eq $archiveModule){Import-Module (Join-Path $PSScriptRoot 'Archive.psm1') -ErrorAction Stop;$archiveModule=Get-Module Archive}
+    # Multiple portable workspaces can load modules with the same name. Bind
+    # this reader to its own Archive module rather than invoking a name array.
+    $archivePath=[IO.Path]::GetFullPath((Join-Path $PSScriptRoot 'Archive.psm1'))
+    $archiveModules=@(Get-Module Archive -All|Where-Object{$_.Path -and [string]::Equals([IO.Path]::GetFullPath($_.Path),$archivePath,[StringComparison]::OrdinalIgnoreCase)})
+    if($archiveModules.Count -eq 0){
+        $archiveModules=@(Import-Module -Name $archivePath -PassThru -ErrorAction Stop|Where-Object{$_.Path -and [string]::Equals([IO.Path]::GetFullPath($_.Path),$archivePath,[StringComparison]::OrdinalIgnoreCase)})
+    }
+    if($archiveModules.Count -eq 0){throw 'The archive reader module could not be loaded from this program folder.'}
+    $archiveModule=$archiveModules[0]
     $root=[IO.Path]::GetFullPath([string]$Config.ArchiveRoot)
     $meta=Join-Path $root '.ctqa';$reports=Join-Path $root 'Reports'
     $lockPath=Join-Path $meta 'archive.lock'

@@ -42,7 +42,19 @@ $script:Originals=@($dashboard.Records|ForEach-Object{[pscustomobject]@{Source=$
 $script:Results=New-Object 'Collections.Generic.List[object]';$script:Assertions=0
 $script:LiveCancellationActuallyRun=$false;$script:StandardAccountName='';$script:StandardAccountSid='';$script:SecurePassword=$null;$script:StandardAccountCreated=$false;$script:NonAdministratorActuallyRun=$false;$script:StandardAccountCleanupSucceeded=$false
 function Check($Condition,[string]$Message){$script:Assertions++;if(-not $Condition){throw ('CHECK: '+$Message)}}
-function Scenario([string]$Name,[scriptblock]$Body){try{&$Body;[void]$script:Results.Add([pscustomobject]@{Name=$Name;Result='PASS';Details=''});Write-Host ('PASS '+$Name)}catch{$detail=if($_.Exception.Message.StartsWith('CHECK: ')){$_.Exception.Message.Substring(7)}else{$_.Exception.GetType().Name};[void]$script:Results.Add([pscustomobject]@{Name=$Name;Result='FAIL';Details=$detail});Write-Host ('FAIL '+$Name+': '+$detail)}}
+function Get-SafeTestFailure($Failure){
+    # Public fixture diagnostics identify code and line only. Reader exception
+    # messages, source paths and document data are deliberately excluded.
+    $kind=[string]$Failure.Exception.GetType().Name
+    if($kind -notmatch '^[A-Za-z0-9_]+$'){$kind='Exception'}
+    $symbol=[string]$Failure.FullyQualifiedErrorId
+    if($symbol -notmatch '^[A-Za-z0-9_.+,`-]{1,200}$'){$symbol='Unclassified'}
+    $line=0;if($null -ne $Failure.InvocationInfo){$line=[math]::Max(0,[int]$Failure.InvocationInfo.ScriptLineNumber)}
+    $detail=$kind+' [Code='+$symbol+'; TestLine='+$line+']'
+    if($Failure.Exception.Message.StartsWith('CHECK: ')){$detail=$Failure.Exception.Message.Substring(7)+' '+$detail}
+    return $detail
+}
+function Scenario([string]$Name,[scriptblock]$Body){try{&$Body;[void]$script:Results.Add([pscustomobject]@{Name=$Name;Result='PASS';Details=''});Write-Host ('PASS '+$Name)}catch{$detail=Get-SafeTestFailure $_;[void]$script:Results.Add([pscustomobject]@{Name=$Name;Result='FAIL';Details=$detail});Write-Host ('FAIL '+$Name+': '+$detail)}}
 function Original([string]$Key){return $script:Records[$Key]}
 function Read-One([string]$Key,[string]$Reader='Python',[hashtable]$Limits=@{}){return Read-QaReportText -Config $Config -RecordId (Original $Key).id -Reader $Reader @Limits}
 function Read-Isolated([string]$Key,[string]$Reader='Python'){return Invoke-QaIsolatedTask -Action ReadPdf -InputObject ([pscustomobject]@{Config=$Config;RecordId=(Original $Key).id;Reader=$Reader}) -TimeoutSeconds 90}
