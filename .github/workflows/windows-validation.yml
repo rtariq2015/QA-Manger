@@ -46,12 +46,22 @@ jobs:
         run: |
           python scripts/build_app_python.py --output-dir App/Python --build-info artifacts/python-build-info.json
           if ($LASTEXITCODE -ne 0) { exit 1 }
+      - name: Browser tests with the real offline host
+        if: success()
+        shell: powershell
+        run: |
+          $env:PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD='1'
+          npm install --prefix artifacts/web-tools --no-audit --no-fund playwright@1.62.1
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+          $env:NODE_PATH=(Join-Path $pwd 'artifacts/web-tools/node_modules')
+          node Tests/Web/run-all.cjs --windows --output artifacts/web
+          if ($LASTEXITCODE -ne 0) { exit 1 }
       - name: Compare both PDF readers on identical saved PDFs
         shell: powershell
         run: |
           & powershell.exe -NoProfile -File .\Tests\Run-ReaderBenchmark.ps1 -OutputPath .\artifacts\windows\Reader-Benchmark.json
           if ($LASTEXITCODE -ne 0) { exit 1 }
-      - name: Save reader comparison before browser workloads
+      - name: Save reader comparison
         uses: actions/upload-artifact@v4
         with:
           name: reader-benchmark
@@ -88,16 +98,6 @@ jobs:
           & powershell.exe -NoProfile -STA -File .\App\Start.ps1 -DemoPreview -PreviewPage Updates -ScreenshotPath .\artifacts\windows\updates-native-demo.png
           if ($LASTEXITCODE -ne 0) { exit 1 }
           & powershell.exe -NoProfile -STA -File .\App\Start.ps1 -DemoPreview -PreviewPage Queue -ScreenshotPath .\artifacts\windows\queue-native-demo.png
-          if ($LASTEXITCODE -ne 0) { exit 1 }
-      - name: Browser tests with the real offline host
-        if: success()
-        shell: powershell
-        run: |
-          $env:PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD='1'
-          npm install --prefix artifacts/web-tools --no-audit --no-fund playwright@1.62.1
-          if ($LASTEXITCODE -ne 0) { exit 1 }
-          $env:NODE_PATH=(Join-Path $pwd 'artifacts/web-tools/node_modules')
-          node Tests/Web/run-all.cjs --windows --output artifacts/web
           if ($LASTEXITCODE -ne 0) { exit 1 }
       - name: Save tested portable host
         uses: actions/upload-artifact@v4

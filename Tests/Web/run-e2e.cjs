@@ -270,8 +270,17 @@ function verifyArchivePreserved() {
         check(await page.locator('#pdf-image').isVisible(), 'Windows shows the rendered PDF page inside the review pane');
         const source = await page.locator('#pdf-image').getAttribute('src');
         check(source && source.startsWith('blob:'), 'The native review uses a local revocable image URL');
-        const bytes = Buffer.from(await page.locator('#pdf-image').evaluate(async image=>Array.from(new Uint8Array(await(await fetch(image.src)).arrayBuffer()))));
-        check(bytes.subarray(0, 8).toString('hex') === '89504e470d0a1a0a', 'The preview page has a PNG signature');
+        const decoded=await page.locator('#pdf-image').evaluate(image=>({complete:image.complete,width:image.naturalWidth,height:image.naturalHeight}));
+        check(decoded.complete&&decoded.width>0&&decoded.height>0,'The local Blob image has actually decoded into visible PDF pixels');
+        // Browser connect-src intentionally excludes blob:. Verify the renderer's
+        // PNG through its authenticated API, without broadening production CSP.
+        const renderedResponse=await api('/api/preview/'+chosen.id+'?page=0');
+        check(renderedResponse.ok,'The authenticated selected-page renderer returns successfully');
+        const rendered=await renderedResponse.json(),field=name=>rendered[Object.keys(rendered).find(key=>key.toLowerCase()===name.toLowerCase())];
+        check(field('RecordId')===chosen.id&&field('Hash')===original.Hash&&field('PageNumber')===0,'The native PNG is bound to the selected indexed PDF fingerprint and page');
+        const bytes=Buffer.from(field('PngBase64'),'base64');
+        check(bytes.length>=24&&bytes.subarray(0,8).toString('hex')==='89504e470d0a1a0a','The authenticated renderer supplies a PNG page');
+        check(bytes.readUInt32BE(16)===decoded.width&&bytes.readUInt32BE(20)===decoded.height,'The visible decoded image dimensions match the authenticated PNG page');
         check(previewRequests.includes('/api/preview/' + chosen.id), 'The rendered preview was requested for the selected report ID');
         check(!(await page.locator('#preview-previous-page').isVisible())&&!(await page.locator('#preview-next-page').isVisible()), 'Continuous PDF review does not require Previous or Next page buttons');
         check(await page.locator('#pdf-pages .pdf-page').count()===1,'The one-page synthetic document has exactly one page in the scrolling preview');
