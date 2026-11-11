@@ -1,0 +1,62 @@
+name: Portable Python compatibility test
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'Tools/PythonProbe/**'
+      - 'scripts/build_python_probe.py'
+      - 'Tests/Run-PythonProbeTests.ps1'
+      - '.github/workflows/python-probe.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: ctqa-python-probe
+  cancel-in-progress: false
+jobs:
+  windows:
+    runs-on: windows-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build the separate portable Python test
+        shell: powershell
+        run: |
+          python scripts/build_python_probe.py --output-dir artifacts/python-probe
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+      - name: Test bundled Python under a standard Windows user
+        shell: powershell
+        run: |
+          & powershell.exe -NoProfile -File .\Tests\Run-PythonProbeTests.ps1 -PackagePath .\artifacts\python-probe\CT_QA_Python_Portable_Test_v1.0.0.zip -OutputPath .\artifacts\python-probe\Validation.json
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+      - name: Save the exact tested download and results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: portable-python-test
+          path: artifacts/python-probe/
+      - name: Publish the separate test download
+        if: success()
+        shell: powershell
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $repo = 'rtariq2015/QA-Manger'
+          $tag = 'python-test-v1.0.0'
+          $notes = @'
+          A separate compatibility test for the restricted Windows workstation. The main CT QA Manager program remains unchanged.
+
+          Extract the complete ZIP into a separate writable folder and double-click Run Python Test.cmd. Results appear in Results/ProbeResult.html and Results/ProbeResult.json. Share the JSON result when requesting help. The test includes its own Windows x64 Python runtime, PDF reader and synthetic sample PDFs; no installer, administrator launch, pip, PowerShell launcher or runtime download is required.
+
+          The recorded Windows validation runs the bundled interpreter under an actual standard local user with a restricted PATH and hostile Python environment variables. The Python process blocks its own network operations. This is an application-level offline check, not a simulation of every hospital endpoint policy or an operating-system network block. The included samples test PDF text reading, not clinical QA interpretation. Try this same ZIP on the work computer later to establish whether its policies permit execution.
+
+          No workplace reports, network profiles or credentials are included. Optional PDF reading remains local, and the result report contains checks/counts rather than extracted text or paths. The download does not modify the main program or install anything.
+          '@
+          $notesFile = Join-Path $env:RUNNER_TEMP 'ctqa-python-probe-release.txt'
+          $notes | Set-Content $notesFile -Encoding UTF8
+          gh release create $tag --repo $repo --target $env:GITHUB_SHA --draft --prerelease --latest=false --title 'Portable Python compatibility test 1.0.0' --notes-file $notesFile
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+          gh release upload $tag --repo $repo artifacts/python-probe/CT_QA_Python_Portable_Test_v1.0.0.zip artifacts/python-probe/Validation.json artifacts/python-probe/Build-Info.json
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+          gh release edit $tag --repo $repo --draft=false --prerelease --latest=false
+          if ($LASTEXITCODE -ne 0) { exit 1 }

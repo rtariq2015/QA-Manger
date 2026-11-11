@@ -1,0 +1,21 @@
+CT QA - Portable Python Test 1.0.0
+
+This is a separate compatibility test. It does not install anything or change CT QA Manager.
+
+1. Extract the WHOLE ZIP into a new writable local folder.
+2. Double-click Run Python Test.cmd normally. Do not choose Run as administrator.
+3. Read the PASS/FAIL summary that opens in your browser.
+
+The Python runtime and PDF reader are included. No Python installation, pip, internet connection, administrator launch, service, scheduled task or PowerShell command is needed.
+
+To test your own selectable-text PDF, drag one PDF onto Run Python Test.cmd. The PDF is read only. Its text, name, location and dates are excluded from the saved result. No copy of it is saved. The built-in PDFs contain generated examples only.
+
+Results/ProbeResult.html is the readable summary. Results/ProbeResult.json is the small scrubbed report you can share for troubleshooting. A selected PDF may need attention even when the runtime tests pass. Image-only PDFs need OCR; encrypted PDFs and very large reports are outside this small test.
+
+A pass proves that this included runtime and reader worked on the computer where you ran it. Your work computer may apply different application restrictions. Run this same test there later to check those restrictions. The included in-process network guard blocks Python socket operations; it does not change Windows firewall policy.
+
+Keep the whole folder together when moving it. All persistent test results stay inside this folder. Delete this separate test folder when you no longer want it.
+
+Basic and Extended describe test layouts. Your department still decides which layout belongs to Daily or Monthly QA. This test does not approve clinical QA or interpret measurement limits.
+
+Package-SHA256SUMS.txt checks the consistency of the bundled files. It is not a publisher signature. Third-party licenses are included in runtime and vendor.

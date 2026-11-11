@@ -51,3 +51,6 @@ Host/obj/
 App/Host/
 **/Report Library/
 Exports/
+
+# Local portable Python probe output
+Tools/PythonProbe/Results/
