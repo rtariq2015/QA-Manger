@@ -76,6 +76,31 @@ function preserved(){check(hash(fs.readFileSync(path.join(baseline.ArchiveRoot,'
    for(let i=0;i<selectedKeys.length;i++){const key=selectedKeys[i],job=finished[i],result=jobResult(job),row=await record(key);check(job.status==='completed','Each concurrent selected job finishes successfully');check(result.Analyzed===1&&result.AnalyzedIds.length===1&&result.AnalyzedIds[0]===original(key).id,'Each concurrent result identifies only its own selected PDF');check(row.content.status==='Recognized'&&row.content.pages===original(key).pages&&row.content.readPages===original(key).pages,'Each selected PDF receives its own complete content cache');}
    preserved();check(errors.length===0,'No JavaScript errors occurred');check(external.length===0,'No external interface request was made');
   });
+  if(baseline.IncludesFlash)await scenario('A single saved scanner rule lets the pending queue read compatible Flash reports and file them automatically',async()=>{
+   for(const key of ['flashBasic','flashExtended']){const row=await record(key);check(row.pending&&row.content.status==='NotRead','The generated '+key+' begins as an unread uncertain file.');}
+   await nav('settings');await page.locator('[data-settings-tab="connections"]').click();await page.locator('#connection-scanner').selectOption('CT_Flash');
+   if(!(await page.locator('.report-format-settings').evaluate(details=>details.open)))await page.locator('.report-format-settings > summary').click();
+   check(await page.locator('#format-basic').inputValue()===''&&await page.locator('#format-extended').inputValue()==='','A rule saved for CT Edge does not silently apply to CT Flash.');
+   await page.locator('#format-basic').selectOption('Daily');await page.locator('#format-extended').selectOption('Monthly');
+   let previous=new Set((await jobs()).map(job=>job.id));await page.locator('#save-report-formats').click();await completedAfter(previous,'ScannerSettings');
+   await nav('review');await until(()=>page.locator('#organize-pending-button').isEnabled(),'The pending-queue action did not become available.');
+   const submitted=page.waitForRequest(request=>{if(new URL(request.url()).pathname!=='/api/actions'||request.method()!=='POST')return false;try{return request.postDataJSON().action==='AnalyzeBacklog';}catch{return false;}});
+   previous=new Set((await jobs()).map(job=>job.id));await page.locator('#organize-pending-button').click();
+   check((await submitted).postDataJSON().scope==='pending','The Review action explicitly targets unresolved filing work.');
+   const completed=await completedAfter(previous,'AnalyzeBacklog'),result=jobResult(completed);
+   check(completed.background===true,'Pending processing remains pausable background work.');
+   check(result.Analyzed>=2&&['flashBasic','flashExtended'].every(key=>result.AnalyzedIds.includes(original(key).id)),'The queue actually parses both compatible Flash PDFs.');
+   for(const [key,category,profile]of[['flashBasic','Daily','siemens-iec-basic-v1'],['flashExtended','Monthly','siemens-iec-extended-v1']]){
+    const row=await record(key);check(row.content.status==='Recognized'&&row.content.profileId===profile&&row.content.completeRead,'The '+key+' report is identified from its complete Flash IEC body profile.');
+    check(row.category===category&&row.decision==='Automatic'&&!row.pending,'The '+key+' report leaves Pending through its saved scanner rule, without a per-file approval.');
+    check(row.clinicalComponents.length===0&&row.printedResult==='Not inferred from file classification','Automatic filing does not create clinical approval or reviewed checklist evidence.');
+   }
+   check((await record('basic')).pending,'The queue preserves the earlier explicit Undo instead of overwriting it.');
+   check((await record('footerConflict')).pending&&(await record('filenameConflict')).pending,'Contradictory footer or filename dates remain visible for review.');
+   const organization=json(path.join(baseline.ArchiveRoot,'.ctqa/organization.json'));
+   check(!organization.History.some(item=>['flashBasic','flashExtended'].some(key=>item.recordId===original(key).id)),'Automatic filing does not fabricate human approval history.');
+   await nav('review');await page.screenshot({path:path.join(output,'automatic-filing-web-demo.png'),fullPage:true});preserved();check(errors.length===0,'Automatic pending processing produces no JavaScript errors.');check(external.length===0,'Automatic filing requires no external service or asset.');
+  });
  }catch(error){process.exitCode=1;if(!results.some(r=>r.result==='FAIL'))results.push({name:'Setup or completion',result:'FAIL',details:clean(error.stack)});if(page)try{await page.screenshot({path:path.join(output,'content-failure.png'),fullPage:true});}catch{}}
  finally{if(browser)await browser.close();if(ready)try{await api('/api/actions',{method:'POST',headers:{'Content-Type':'application/json'},body:'{"action":"Shutdown"}'});}catch{}if(host)await until(()=>host.exitCode!==null,'Host shutdown timed out.',15000).catch(()=>host.kill());const summary={version:ready?.version||'',syntheticOnly:true,nativeContinuousPreviewActuallyRun,browserChannel:args['browser-channel']||'chromium',tests:results.length,assertions,failed:results.filter(r=>r.result==='FAIL').length,javascriptErrors:errors,externalAssetRequests:external.length,results,scope:'Actual offline host, selected-PDF reader, classifier, scanner settings, durable decisions and ZIP export. Generated Basic9-page and Extended6-page documents; no uploaded report or real credentials are included.'};fs.writeFileSync(path.join(output,'content-browser-summary.json'),JSON.stringify(summary,null,2)+'\n');console.log('Result: '+(summary.tests-summary.failed)+'/'+summary.tests+' scenarios; '+assertions+' assertions.');}
 })();

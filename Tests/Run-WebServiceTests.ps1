@@ -328,8 +328,27 @@ Scenario 'Trend queries read cached metadata without creating PDF readings or re
     }
 }
 
+Scenario 'Diagnostic downloads remain available when a verified cache contains malformed numeric fields' {
+    $f=New-WebFixture 'DiagnosticMalformedCache';$info=Get-Item $f.Record.DestinationPath;$folder=Join-Path $f.Config.ArchiveRoot '.ctqa/analysis';[void][IO.Directory]::CreateDirectory($folder)
+    $row=[pscustomobject]@{ParserVersion=1;AnalysisCacheSchemaVersion=3;DocumentClassifierVersion=1;Hash=$f.Record.Hash;RecordId=$f.Record.Id;VerifiedHash=$f.Record.Hash;VerifiedLength=$info.Length;VerifiedWriteTicks=$info.LastWriteTimeUtc.Ticks;SavedLength=$info.Length;SavedWriteTicks=$info.LastWriteTimeUtc.Ticks;ContentSupportRevision='invalid-integer';Status='NeedsReview';Truncated=$false;DocumentClassification=[pscustomobject]@{ClassifierVersion=1;Status='Recognized';ProfileId='siemens-iec-basic-v1';CompleteRead=$true;ReadPages=3;Pages=3;DateStatus='Missing';ReasonCode='SupportedProfile'};MeasurementsDocument=[pscustomobject]@{MeasurementVersion='invalid-integer'}}
+    $cache=Join-Path $folder ($f.Record.Hash+'.json');$row|ConvertTo-Json -Depth 12|Set-Content $cache -Encoding UTF8;$before=(Get-FileHash $cache).Hash
+    foreach($action in @('Diagnostics','PrintDiagnostics')){
+        $result=Invoke-QaWebRequest $f.AppRoot ([pscustomobject]@{action=$action});Check ([IO.File]::Exists($result.path)) 'Logs can be downloaded without rebuilding the broken normal snapshot'
+        if($action -eq 'PrintDiagnostics'){$html=[IO.File]::ReadAllText($result.path);Check ($html -match 'CacheUnreadable' -or $html -match 'cache.*read') 'Printable diagnostics describe the unreadable cache safely'}
+    }
+    Check ((Get-FileHash $cache).Hash -ceq $before) 'Collecting diagnostics preserves malformed evidence for recovery'
+}
+Scenario 'Diagnostic exports report unreadable organization history without treating saved decisions as absent' {
+    $f=New-WebFixture 'DiagnosticOrganization';$path=Join-Path $f.Config.ArchiveRoot '.ctqa/organization.json';[IO.File]::WriteAllText($path,'malformed-private-history');$before=(Get-FileHash $path).Hash
+    foreach($action in @('Diagnostics','PrintDiagnostics')){
+        $result=Invoke-QaWebRequest $f.AppRoot ([pscustomobject]@{action=$action});Check ([IO.File]::Exists($result.path)) 'Both diagnostic formats remain exportable with damaged organization history'
+        if($action -eq 'PrintDiagnostics'){$html=[IO.File]::ReadAllText($result.path);Check ($html -match 'OrganizationUnreadable' -or $html -match 'organization history') 'The report discloses unknown organization history instead of inventing automatic decisions';Check (-not $html.Contains('malformed-private-history')) 'Private raw corruption text is not exported'}
+    }
+    Check ((Get-FileHash $path).Hash -ceq $before) 'History bytes are not modified by diagnostics'
+}
+
 $failed=@($script:Results|Where-Object Result -eq 'FAIL').Count
-$report=[pscustomobject]@{Version='5.3.0';Runtime=$PSVersionTable.PSVersion.ToString();Tests=$script:Results.Count;Assertions=$script:Assertions;Failed=$failed;Results=@($script:Results.ToArray());Scope='Synthetic PDFs and local scanner folders; independent file organization, no fabricated clinical review, stale/changed-file rejection, append-only Undo, readable ownership, exports and stdin/stdout JSON worker.'}
+$report=[pscustomobject]@{Version='5.3.1';Runtime=$PSVersionTable.PSVersion.ToString();Tests=$script:Results.Count;Assertions=$script:Assertions;Failed=$failed;Results=@($script:Results.ToArray());Scope='Synthetic PDFs and local scanner folders; independent file organization, no fabricated clinical review, stale/changed-file rejection, append-only Undo, readable ownership, exports and stdin/stdout JSON worker.'}
 if($OutputPath){$report|ConvertTo-Json -Depth 12|Set-Content $OutputPath -Encoding UTF8}
 Write-Host ('Result: '+($report.Tests-$failed)+'/'+$report.Tests+' scenarios; '+$report.Assertions+' assertions.')
 if([IO.Directory]::Exists($TestRoot)){Remove-Item $TestRoot -Recurse -Force}

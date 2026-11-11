@@ -27,7 +27,7 @@ try{
     if($text.Length -gt 2097152){throw 'The application request is too large.'};try{$request=$text|ConvertFrom-Json}catch{throw 'The application request could not be read. Try the action again.'}
     Import-Module (Join-Path $PSScriptRoot 'WebService.psm1') -Force -DisableNameChecking -WarningAction SilentlyContinue
     Import-Module (Join-Path $PSScriptRoot 'Support.psm1') -Global -DisableNameChecking -WarningAction SilentlyContinue
-    $maps=@{Refresh='Update';Approve='Reclassify';Disapprove='Reclassify';Undo='Reclassify';Reconnect='Reconnect';Settings='Settings';ApplyProfile='Settings';ScannerSettings='Settings';Export='Export';Analyze='Analysis';Backup='Backup';Restore='Restore';Diagnostics='Diagnostics';Audit='Audit';Browse='BrowseRefresh';PrepareUpdate='OfflineUpdate';InstallPreparedUpdate='OfflineUpdate'}
+    $maps=@{Refresh='Update';Approve='Reclassify';Disapprove='Reclassify';Undo='Reclassify';Reconnect='Reconnect';Settings='Settings';ApplyProfile='Settings';ScannerSettings='Settings';Export='Export';Analyze='Analysis';Backup='Backup';Restore='Restore';Diagnostics='Diagnostics';PrintDiagnostics='PrintDiagnostics';Audit='Audit';Browse='BrowseRefresh';SyncLibrary='BrowseRefresh';PrepareUpdate='OfflineUpdate';InstallPreparedUpdate='OfflineUpdate'}
     if($null -ne $request.PSObject.Properties['action'] -and $maps.ContainsKey([string]$request.action)){$operation=$maps[[string]$request.action];Write-QaSupportEvent -AppRoot $AppRoot -Operation $operation -Outcome Started}
     $shared=Start-QaWebProgressMonitor -Root $AppRoot -Destination $ProgressPath -Cancellation $CancelPath
     if($null -ne $shared){
@@ -59,7 +59,11 @@ try{
     $value=Invoke-QaWebRequest -AppRoot $AppRoot -Request $request -Progress $shared
     $response=[pscustomobject]@{success=$true;value=$value}
     $wasCancelled=($null -ne $value -and $null -ne $value.PSObject.Properties['cancelled'] -and [bool]$value.cancelled)
-    if($operation){Write-QaSupportEvent -AppRoot $AppRoot -Operation $operation -Outcome $(if($wasCancelled){'Cancelled'}else{'Completed'}) -DurationMs $clock.ElapsedMilliseconds}
+    if($operation){
+        $counts=@{};$detail=if($null -ne $value -and $null -ne $value.PSObject.Properties['result']){$value.result}else{$null}
+        foreach($name in @('Analyzed','Cached','Failed','Pending')){if($null -ne $detail -and $null -ne $detail.PSObject.Properties[$name]){$counts[$name]=[int]$detail.$name}}
+        Write-QaSupportEvent -AppRoot $AppRoot -Operation $operation -Outcome $(if($wasCancelled){'Cancelled'}else{'Completed'}) -DurationMs $clock.ElapsedMilliseconds -Counts $counts -Stage Finishing -Reason $(if($wasCancelled){'WorkerCancelled'}elseif($operation -ceq 'Analysis'){'ReadCompleted'}else{'OperationCompleted'})
+    }
 }catch{
     $message=$_.Exception.Message;$kind='Operation';$code=0
     if($message -match 'Windows error (\d+)'){$code=[int]$Matches[1]}

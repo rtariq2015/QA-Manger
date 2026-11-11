@@ -57,7 +57,7 @@ if (finalStatus === 0) {
 }
 if (finalStatus === 0) {
   fs.mkdirSync(contentOutput, { recursive: true });
-  const createContent = spawnSync(powershell, ['-NoProfile', '-File', path.join(__dirname, 'New-ContentFixture.ps1'), '-FixtureRoot', contentFixture, '-ProductRoot', product], { cwd: product, encoding: 'utf8', windowsHide: true, timeout: 300000 });
+  const createContent = spawnSync(powershell, ['-NoProfile', '-File', path.join(__dirname, 'New-ContentFixture.ps1'), '-FixtureRoot', contentFixture, '-ProductRoot', product, '-IncludeFlash'], { cwd: product, encoding: 'utf8', windowsHide: true, timeout: 300000 });
   process.stdout.write(createContent.stdout || '');
   if (createContent.status !== 0) { process.stderr.write(createContent.stderr || 'Synthetic content fixture creation failed.\n'); finalStatus = createContent.status || 1; }
   if (finalStatus === 0) {

@@ -75,7 +75,7 @@ app.MapGet("/favicon.ico", () => Results.NoContent());
 app.MapPost("/api/session", (HttpContext context) => {
     if (!HeaderAuthorized(context.Request)) return Results.Unauthorized();
     context.Response.Cookies.Append("ctqa-session", token, new CookieOptions { HttpOnly = true, SameSite = SameSiteMode.Strict, IsEssential = true, Path = "/api", MaxAge = TimeSpan.FromHours(24) });
-    return Results.Json(new { connected = true, version = "5.3.0" });
+    return Results.Json(new { connected = true, version = "5.3.1" });
 });
 app.MapPost("/api/heartbeat", () => { state.Heartbeat(); return Results.Json(new { alive = true }); });
 app.MapGet("/api/snapshot", () => state.Snapshot is JsonNode snapshot ? Results.Json(snapshot) : Results.Json(new { error = state.StartupError ?? "The saved library is loading. Please wait a moment." }, statusCode: 503));
@@ -103,6 +103,7 @@ app.MapPost("/api/actions", async (HttpContext context) => {
 app.MapPost("/api/jobs/{id}/cancel", (string id) => {
     if (!state.Jobs.TryGetValue(id, out var job)) return Results.NotFound();
     if (!job.RequestCancel()) return Results.Conflict(new { error = "This step is already finishing or must finish atomically." });
+    if (job.Background) state.RecordReadingControl("UserStopped");
     return Results.Json(new { cancelRequested = true });
 });
 app.MapPost("/api/jobs/{id}/pause", async (string id, HttpContext context) => {
@@ -111,6 +112,7 @@ app.MapPost("/api/jobs/{id}/pause", async (string id, HttpContext context) => {
     var request = await JsonNode.ParseAsync(context.Request.Body, cancellationToken: context.RequestAborted) as JsonObject;
     if (request?["paused"] is not JsonValue value || !value.TryGetValue<bool>(out var paused)) return Results.BadRequest(new { error = "Choose Pause or Resume for background reading." });
     if (!job.RequestPause(paused)) return Results.Conflict(new { error = "This background reading job has already finished." });
+    state.RecordReadingControl(paused ? "UserPaused" : "UserResumed");
     return Results.Json(new { pauseRequested = paused, paused = job.Paused });
 });
 app.MapPost("/api/update", async (HttpContext context) => {
@@ -159,16 +161,23 @@ app.MapGet("/api/preview/{id}", async (string id, HttpContext context) => {
     var value = await bridge.Run(new JsonObject { ["action"] = "PreviewPdf", ["id"] = id, ["page"] = page }, 60, context.RequestAborted);
     return Results.Json(value);
 });
-app.MapGet("/api/download/{id}", (string id) => {
+app.MapGet("/api/download/{id}", (string id, HttpContext context) => {
     if (!state.Downloads.TryGetValue(id, out var artifact) || !File.Exists(artifact.Path)) return Results.NotFound(new { error = "The saved download is no longer available." });
     SafeFiles.RequireDirect(artifact.Path);
+    if (Path.GetExtension(artifact.Path).Equals(".html", StringComparison.OrdinalIgnoreCase) && SafeFiles.IsWithin(artifact.Path, Path.Combine(root, "Logs", "Support"))) {
+        context.Response.Headers["Content-Security-Policy"] = "default-src 'none'; script-src 'none'; style-src 'unsafe-inline'; img-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'";
+        context.Response.Headers["Content-Disposition"] = "inline";
+        return Results.File(artifact.Path, "text/html; charset=utf-8", enableRangeProcessing: true);
+    }
     return Results.File(artifact.Path, "application/octet-stream", Path.GetFileName(artifact.Path), enableRangeProcessing: true);
 });
 
 await app.StartAsync();
+state.RecordLifecycle("Startup", "Started");
+app.Lifetime.ApplicationStopped.Register(() => state.RecordLifecycle("Shutdown", "Completed"));
 origin = app.Services.GetRequiredService<IServer>().Features.Get<IServerAddressesFeature>()!.Addresses.Single().TrimEnd('/');
 // Kestrel starts on an OS-selected loopback port. No URL ACL, service or firewall rule is created.
-var ready = JsonSerializer.Serialize(new { url = origin, token, pid = Environment.ProcessId, version = "5.3.0" });
+var ready = JsonSerializer.Serialize(new { url = origin, token, pid = Environment.ProcessId, version = "5.3.1" });
 SafeFiles.WritePrivate(readyPath, ready);
 var browserStartup = Stopwatch.StartNew();
 var startupFailed = 0;
@@ -308,7 +317,7 @@ sealed class WorkerBridge(string root, string powerShell) {
     }
 }
 sealed class Job(string action, bool background = false) {
-    private static readonly HashSet<string> CooperativeActions = new(StringComparer.Ordinal) { "Refresh", "Analyze", "Export", "Backup", "Audit", "Browse" };
+    private static readonly HashSet<string> CooperativeActions = new(StringComparer.Ordinal) { "Refresh", "Analyze", "AnalyzeBacklog", "Export", "Backup", "Audit", "Browse" };
     private static readonly HashSet<string> Stages = new(StringComparer.Ordinal) { "Preparing", "Connecting", "Scanning", "Copying", "Library", "Analyzing", "Exporting", "BackingUp", "Restoring", "Verifying", "Finishing" };
     private readonly object progressLock = new();
     private bool cancelRequested, pauseRequested, paused, atBoundary;
@@ -361,7 +370,7 @@ sealed class Job(string action, bool background = false) {
     public void SetBackgroundProgress(long analyzed, long errors, long pending, long cached) {
         lock (progressLock) {
             completed = analyzed + errors; failed = errors; unchanged = cached;
-            total = Math.Min(20, completed + pending);
+            total = Action == "AnalyzeBacklog" ? completed + pending : Math.Min(20, completed + pending);
             percent = total > 0 ? Math.Clamp(100.0 * completed / total, 0, 100) : 100;
         }
     }
@@ -403,6 +412,9 @@ sealed class Job(string action, bool background = false) {
             ProgressPath = null; CancelPath = null;
         }
     }
+    public object SupportView() {
+        lock (progressLock) return new { action = Action switch { "Analyze" or "AnalyzeBacklog" => "Analysis", "Refresh" => "Update", "Approve" or "Disapprove" or "Undo" => "Reclassify", "ScannerSettings" or "ApplyProfile" => "Settings", "Browse" => "BrowseRefresh", _ => Action }, status = paused ? "Paused" : char.ToUpperInvariant(Status[0]) + Status[1..], stage, completed, total, failed, background = Background, pauseRequested, cancelRequested };
+    }
     public object PublicView() {
         ReadProgress();
         lock (progressLock) return new { id = Id, action = Action, status = Status, message = cancelRequested && Status == "running" ? "Cancel requested. Waiting for the current Windows read or safe checkpoint…" : Message, result = Result, error = Error, startedUtc = StartedUtc, stage = Status == "queued" ? "Queued" : stage, completed, total, copied, unchanged, failed, percent = percent >= 0 ? (double?)percent : null, elapsedSeconds = ElapsedSeconds, cancellable = Cancellable && !cancelRequested, cancelRequested, background = Background, pausable = Background && (Status is "queued" or "running") && !cancelRequested, paused, pauseRequested };
@@ -410,7 +422,7 @@ sealed class Job(string action, bool background = false) {
 }
 sealed record Download(string Path);
 sealed class HostState(WorkerBridge bridge, string root) {
-    public static readonly HashSet<string> AllowedActions = new(StringComparer.Ordinal) { "Refresh", "Approve", "Disapprove", "Undo", "Reconnect", "Settings", "ApplyProfile", "Export", "Analyze", "Backup", "Restore", "Diagnostics", "Browse", "PickArchive", "ScannerSettings", "Audit", "InstallPreparedUpdate", "Shutdown", "OpenClassic" };
+    public static readonly HashSet<string> AllowedActions = new(StringComparer.Ordinal) { "Refresh", "Approve", "Disapprove", "Undo", "Reconnect", "Settings", "ApplyProfile", "Export", "Analyze", "AnalyzeBacklog", "Backup", "Restore", "Diagnostics", "PrintDiagnostics", "Browse", "PickArchive", "ScannerSettings", "Audit", "InstallPreparedUpdate", "Shutdown", "OpenClassic" };
     public readonly ConcurrentDictionary<string, Job> Jobs = new();
     public readonly ConcurrentDictionary<string, Download> Downloads = new();
     private readonly SemaphoreSlim mutation = new(1, 1);
@@ -457,9 +469,11 @@ sealed class HostState(WorkerBridge bridge, string root) {
     public Job Queue(JsonObject request, CancellationToken hostToken, Action<JsonNode?>? completed = null, string? cleanupPath = null) {
         Job job;
         var action = request["action"]!.GetValue<string>();
-        var background = action == "Analyze" && (request["id"] is null || request["id"] is JsonValue idValue && idValue.TryGetValue<string>(out var id) && string.IsNullOrEmpty(id));
+        var background = action == "AnalyzeBacklog" || action == "Analyze" && (request["id"] is null || request["id"] is JsonValue idValue && idValue.TryGetValue<string>(out var id) && string.IsNullOrEmpty(id));
         lock (queueGate) {
             if (closing) { request.Clear(); throw new WorkerException("The program is closing after the current safe checkpoint. Reopen it to continue."); }
+            if (action == "AnalyzeBacklog" && (request["scope"] is not JsonValue scopeValue || !scopeValue.TryGetValue<string>(out var scope) || scope is not ("pending" or "all")))
+                throw new WorkerException("Choose pending reports or all saved reports for automatic reading.");
             if (action == "Refresh") {
                 var existing = Jobs.Values.FirstOrDefault(j => j.Action == action && (j.Status is "queued" or "running"));
                 if (existing is not null) { request.Clear(); return existing; }
@@ -472,10 +486,11 @@ sealed class HostState(WorkerBridge bridge, string root) {
             foreach (var old in Jobs.Values.Where(j => j.Status is "completed" or "failed" or "cancelled").OrderByDescending(j => j.StartedUtc).Skip(80)) { if (Jobs.TryRemove(old.Id, out var removed)) removed.Cancel.Dispose(); }
             // Only supported reading options survive in a long-running background request.
             // In particular, do not retain unrelated transient credential fields.
-            if (background) foreach (var name in request.Select(p => p.Key).Where(n => n is not ("action" or "ids" or "measurements" or "analysisLimit" or "force" or "id")).ToArray()) request.Remove(name);
+            if (background) foreach (var name in request.Select(p => p.Key).Where(n => n is not ("action" or "ids" or "measurements" or "analysisLimit" or "force" or "id" or "scope" or "refreshUnsupported")).ToArray()) request.Remove(name);
             job = new Job(action, background); Jobs[job.Id] = job;
+            WriteActivity(action, "Started", 0, "Queued", "Queued");
             if (action == "Refresh") LastRefresh = DateTimeOffset.UtcNow;
-            if (action == "Analyze") LastAnalysis = DateTimeOffset.UtcNow;
+            if (action is "Analyze" or "AnalyzeBacklog") LastAnalysis = DateTimeOffset.UtcNow;
         }
         _ = Task.Run(async () => {
             using var execution = CancellationTokenSource.CreateLinkedTokenSource(hostToken, shutdown.Token);
@@ -487,13 +502,14 @@ sealed class HostState(WorkerBridge bridge, string root) {
                     job.PrepareProgress(root); job.Status = "running";
                     result = await RunBackgroundAnalysis(request, job, execution.Token, waiting.Token);
                 } else {
-                    if (action != "Diagnostics") { await mutation.WaitAsync(waiting.Token); entered = true; }
+                    if (action is not ("Diagnostics" or "PrintDiagnostics")) { await mutation.WaitAsync(waiting.Token); entered = true; }
                     waiting.Token.ThrowIfCancellationRequested();
                     job.PrepareProgress(root);
                     job.Status = "running"; job.Message = MessageFor(action);
-                    result = await bridge.Run(request, action is "Refresh" or "Backup" or "Restore" or "Analyze" or "Export" ? 1800 : 120, execution.Token, job);
+                    if (action is "Diagnostics" or "PrintDiagnostics") request["supportWork"] = JsonSerializer.SerializeToNode(Jobs.Values.OrderByDescending(j => j.StartedUtc).Take(32).Select(j => j.SupportView()));
+                    result = await bridge.Run(request, action is "Refresh" or "Backup" or "Restore" or "Analyze" or "Export" or "Diagnostics" or "PrintDiagnostics" ? 1800 : 120, execution.Token, job);
                     job.ReadProgress();
-                    if (action != "Diagnostics") {
+                    if (action is not ("Diagnostics" or "PrintDiagnostics")) {
                         var previousArchive = Snapshot?["archiveRoot"]?.GetValue<string>();
                         if (result?["snapshot"] is JsonNode nextSnapshot) Volatile.Write(ref snapshot, nextSnapshot.DeepClone());
                         else if (action != "InstallPreparedUpdate") await LoadSnapshot(execution.Token);
@@ -531,7 +547,7 @@ sealed class HostState(WorkerBridge bridge, string root) {
                 request.Clear(); // Includes transient password fields. Never retain request payloads in job history.
                 job.CleanupProgress(); job.MarkFinished();
                 if (action == "Refresh") LastRefresh = DateTimeOffset.UtcNow;
-                if (action == "Analyze") LastAnalysis = DateTimeOffset.UtcNow;
+                if (action is "Analyze" or "AnalyzeBacklog") LastAnalysis = DateTimeOffset.UtcNow;
                 if (entered) mutation.Release();
                 if (cleanupPath is not null) { try { File.Delete(cleanupPath); } catch { } }
             }
@@ -563,6 +579,10 @@ sealed class HostState(WorkerBridge bridge, string root) {
                 job.SetBoundary(false);
                 var chunk = (JsonObject)request.DeepClone();
                 chunk["analysisLimit"] = 1;
+                if (job.Action == "AnalyzeBacklog") {
+                    chunk["action"] = "Analyze"; chunk["backlog"] = true;
+                    chunk["measurements"] = true; chunk["refreshUnsupported"] = true;
+                }
                 try { last = await bridge.Run(chunk, 90, executionToken, job); }
                 finally { chunk.Clear(); }
                 job.ReadProgress();
@@ -580,18 +600,25 @@ sealed class HostState(WorkerBridge bridge, string root) {
                     if (result["AnalyzedIds"] is JsonArray ids) foreach (var item in ids) {
                         if (item is JsonValue v && v.TryGetValue<string>(out var id) && SafeFiles.ValidRecordId(id) && seen.Add(id)) analyzedIds.Add(id);
                     }
+                    if (job.Action == "AnalyzeBacklog" && pending == 0 && !cancelled) {
+                        var synced = await bridge.Run(new JsonObject { ["action"] = "SyncLibrary" }, 1800, executionToken, job);
+                        if (synced?["snapshot"] is JsonNode syncedSnapshot) Volatile.Write(ref snapshot, syncedSnapshot.DeepClone());
+                        cancelled = synced?["cancelled"]?.GetValue<bool>() == true || job.CancelRequested;
+                    }
                     job.SetBackgroundProgress(analyzed, failed, pending, cached);
                     if (!cancelled && pending > 0 && done + errors == 0)
                         throw new WorkerException("Background reading stopped because no further PDF could be saved. Completed readings remain available; export support logs before retrying.");
                 } else if (!cancelled) throw new WorkerException("The background reader did not return a complete progress result. Completed readings remain saved.");
             } finally { mutation.Release(); }
-            if (cancelled || pending == 0 || analyzed + failed >= 20) break;
+            if (cancelled || pending == 0 || job.Action != "AnalyzeBacklog" && analyzed + failed >= 20) break;
             // Give foreground jobs and the workstation a scheduling opportunity after each PDF.
             job.SetBoundary(true, ForegroundBusy);
             await Task.Delay(200, waitingToken);
         }
         var description = $"{analyzed} PDFs analyzed; {cached} cached; {failed} need attention.";
+        WriteActivity("ReadingScheduler", cancelled ? "Cancelled" : "Completed", 0, "Finishing", cancelled ? "UserStopped" : pending == 0 ? "QueueEmpty" : "BatchLimitReached", analyzed + failed, analyzed + failed + pending, failed, cached);
         if (!cancelled && pending > 0) description += $" {pending} remain for the next reading batch.";
+        if (job.Action == "AnalyzeBacklog" && !cancelled) description += $" {Snapshot?["pendingSummary"]?["pending"]?.GetValue<int>() ?? 0} report types still need a filing rule or review.";
         return new JsonObject {
             ["cancelled"] = cancelled, ["message"] = cancelled ? "Stopped safely. Completed readings remain saved." : description,
             ["result"] = new JsonObject { ["Mode"] = "Analysis", ["Analyzed"] = analyzed, ["Failed"] = failed, ["Cached"] = cached, ["Pending"] = pending, ["AnalyzedIds"] = analyzedIds,
@@ -599,12 +626,16 @@ sealed class HostState(WorkerBridge bridge, string root) {
             ["warning"] = last?["warning"]?.DeepClone()
         };
     }
-    private void WriteActivity(string action, string outcome, long duration) {
-        try {
-            var path = Path.Combine(root, "Logs", "Web", "activity.jsonl"); Directory.CreateDirectory(Path.GetDirectoryName(path)!); SafeFiles.RequireDirect(path);
+    private readonly object activityGate = new();
+    public void RecordLifecycle(string operation, string outcome) => WriteActivity(operation, outcome, 0, "Idle");
+    public void RecordReadingControl(string reason) => WriteActivity("ReadingScheduler", "Completed", 0, reason == "UserPaused" ? "Paused" : "Analyzing", reason);
+    private void WriteActivity(string action, string outcome, long duration, string stage = "Finishing", string reason = "", long completed = 0, long total = 0, long failed = 0, long cached = 0) {
+        try { lock (activityGate) {
+            var operation = action switch { "Refresh" => "Update", "Analyze" or "AnalyzeBacklog" => "Analysis", "Approve" or "Disapprove" or "Undo" => "Reclassify", "ScannerSettings" or "ApplyProfile" => "Settings", "Browse" => "BrowseRefresh", "InstallPreparedUpdate" or "PrepareUpdate" => "OfflineUpdate", _ => action };
+            var path = Path.Combine(root, "Logs", "Web", "activity.jsonl"); Directory.CreateDirectory(Path.GetDirectoryName(path)!); SafeFiles.RequireDirect(path); SafeFiles.RequireDirect(path + ".previous");
             if (File.Exists(path) && new FileInfo(path).Length > 1_048_576) File.Move(path, path + ".previous", true);
-            File.AppendAllText(path, JsonSerializer.Serialize(new { timeUtc = DateTimeOffset.UtcNow, action, outcome, durationMs = duration }) + Environment.NewLine, new UTF8Encoding(false));
-        } catch { }
+            File.AppendAllText(path, JsonSerializer.Serialize(new { SchemaVersion = 3, TimeUtc = DateTimeOffset.UtcNow, Operation = operation, Outcome = outcome, DurationMs = duration, Stage = stage, Reason = reason.Length > 0 ? reason : outcome == "Failed" ? "WorkerFailed" : outcome == "Started" ? "OperationStarted" : "OperationCompleted", ErrorKind = outcome == "Failed" ? "Unknown" : "None", Counts = new { Completed = completed, Total = total, Failed = failed, Cached = cached } }) + Environment.NewLine, new UTF8Encoding(false));
+        }} catch { }
     }
     private static string MessageFor(string action) => action switch { "Refresh" => "Checking scanners and collecting new reports…", "Approve" or "Disapprove" => "Saving the file decision…", "Export" => "Preparing the report package…", "Backup" => "Creating a verified backup…", "Restore" => "Choose a backup ZIP and a new destination in the Windows dialogs…", "Analyze" => "Reading new or changed PDF text…", "Reconnect" => "Testing the selected scanner connection…", "PrepareUpdate" => "Checking the update ZIP…", _ => "Working on your request…" };
 }

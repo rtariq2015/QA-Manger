@@ -145,13 +145,13 @@ Scenario 'A scrubbed ZIP includes all retained activity and strips injected fiel
     Check ((Export-QaSupportBundle -AppRoot $workspace -Config $config -Dashboard $dashboard -DestinationPath $output) -eq $output) 'Bundle saved'
     Add-Type -AssemblyName System.IO.Compression.FileSystem;$archive=[IO.Compression.ZipFile]::OpenRead($output)
     try{
-        Check ($archive.Entries.Count -eq 3) 'Only summary, scrubbed activity and readme included'
+        Check ($archive.Entries.Count -eq 7) 'Only the seven approved readable and machine diagnostic files are included'
         $activity='';foreach($entry in $archive.Entries){$reader=New-Object IO.StreamReader($entry.Open());try{$text=$reader.ReadToEnd();Check (-not $text.Contains($canary)) 'No injected private field or text in any ZIP entry';if($entry.FullName -eq 'Scrubbed-Activity.jsonl'){$activity=$text}}finally{$reader.Dispose()}}
         $events=@($activity -split '\r?\n'|Where-Object{$_}|ForEach-Object{$_|ConvertFrom-Json})
         Check ($events.Count -gt 250) 'Full retained history included beyond the 200-event summary limit'
         $timed=@($events|Where-Object{$_.Operation -eq 'Analysis' -and $_.DurationMs -eq 123})
         Check ($timed.Count -eq 250 -and $timed[0].Counts.Analyzed -eq 20 -and $timed[0].ScannerNumber -eq 1) 'Useful timing, counts and scanner aliases retained'
-        Check ($events[0].SchemaVersion -eq 2) 'Events reconstructed into the controlled schema'
+        Check ($events[0].SchemaVersion -eq 3) 'Events reconstructed into the controlled schema'
     }finally{$archive.Dispose()}
     $caught=$false;try{Export-QaSupportBundle $workspace $config $dashboard $output|Out-Null}catch{$caught=$true};Check $caught 'Existing bundle is never overwritten'
     $caught=$false;try{Export-QaSupportBundle $workspace $config $dashboard (Join-Path $workspace 'Config/unsafe.zip')|Out-Null}catch{$caught=$true};Check $caught 'Bundle destination protects settings'
@@ -198,6 +198,151 @@ Scenario 'A failed PDF read stays cached until the destination changes' {
     [IO.File]::WriteAllText($missing,'%PDF-1.4 synthetic restored destination')
     Check ($null -eq (Get-QaSavedAnalysis $config $record)) 'Restored or changed destination becomes eligible for a fresh read'
 }
+function New-SyntheticDiagnosticRow {
+    param([string[]]$Reasons=@('Unread'),[int]$ScannerNumber=1)
+    return [pscustomobject]@{scannerNumber=$ScannerNumber;filingStatus='Pending';category='Monthly';textCacheStatus='Missing';cacheSchemaVersion=0;measurementVersion=0;measurementStatus='NotRead';contentStatus='NotRead';profile='Unknown';reader='Unknown';readMilliseconds=0;readPages=0;totalPages=0;measurementCount=0;contentSupportRevision=0;model='Unknown';sizeBand='Unknown';reasonCodes=$Reasons;id=('c'*64);hash=('d'*64);filename=$canary;path=$workspace;username=$canary;text=$canary;reason=$canary;message=$canary}
+}
+function Read-SyntheticSupportEntry {
+    param($Archive,[string]$Name)
+    $entry=$Archive.GetEntry($Name);if($null -eq $entry){throw ('Missing approved support entry: '+$Name)}
+    $reader=New-Object IO.StreamReader($entry.Open())
+    try{return $reader.ReadToEnd()}finally{$reader.Dispose()}
+}
+Scenario 'Detailed report diagnoses keep independent reasons and opaque bundle references without private data' {
+    $rows=New-Object 'Collections.Generic.List[object]'
+    [void]$rows.Add((New-SyntheticDiagnosticRow @('Unread','CacheMissing')))
+    $row=New-SyntheticDiagnosticRow @('MeasurementUpgradePending');$row.textCacheStatus='Valid';$row.cacheSchemaVersion=2;$row.measurementStatus='UpgradePending';$row.contentStatus='Recognized';$row.profile='siemens-iec-extended-v1';$row.reader='Standard';$row.readMilliseconds=345;$row.readPages=5;$row.totalPages=5;$row.measurementCount=10;$row.contentSupportRevision=2;$row.model='Edge';$row.sizeBand='Medium';[void]$rows.Add($row)
+    $row=New-SyntheticDiagnosticRow @('MissingFormatRule');$row.textCacheStatus='Valid';$row.cacheSchemaVersion=3;$row.measurementVersion=1;$row.measurementStatus='Extracted';$row.contentStatus='Recognized';$row.profile='Extended';[void]$rows.Add($row)
+    $row=New-SyntheticDiagnosticRow @('UnknownTemplate','UnsupportedProfile');$row.textCacheStatus='Valid';$row.cacheSchemaVersion=3;$row.measurementVersion=1;$row.measurementStatus='UnsupportedProfile';$row.contentStatus='NeedsReview';[void]$rows.Add($row)
+    $row=New-SyntheticDiagnosticRow @('DateConflict','TimeConflict','TypeConflict');$row.contentStatus='NeedsReview';[void]$rows.Add($row)
+    [void]$rows.Add((New-SyntheticDiagnosticRow @('UndoRestored')))
+    $row=New-SyntheticDiagnosticRow @('ReaderFailed');$row.textCacheStatus='ReadFailed';$row.measurementStatus='ReadError';$row.contentStatus='ReadError';[void]$rows.Add($row)
+    [void]$rows.Add((New-SyntheticDiagnosticRow @('IncompleteRead')))
+    $row=New-SyntheticDiagnosticRow @('UnsupportedSelectedMetric');$row.textCacheStatus='Valid';$row.cacheSchemaVersion=3;$row.measurementVersion=1;$row.measurementStatus='Extracted';$row.contentStatus='Recognized';$row.profile='Basic';[void]$rows.Add($row)
+    $context=@{Reports=@($rows.ToArray());Settings=@{readerMode='Python';autoAnalyze=$true;monitorMinutes=15;supportRevision=2;username=$canary};Work=@([pscustomobject]@{action='Analysis';status='Paused';stage='Paused';completed=18;total=20;failed=0;background=$true;pauseRequested=$true;cancelRequested=$false;id=$canary;message=$canary;path=$workspace});message=$canary}
+    $report=Get-QaSupportReport -AppRoot $workspace -Config $config -Dashboard $dashboard -SupportContext $context
+    Check ($report.ReportDiagnostics.Count -eq 9) 'All nine independent report observations are retained'
+    Check ($report.ReportDiagnostics[0].Reference -ceq 'Report0001' -and $report.ReportDiagnostics[-1].Reference -ceq 'Report0009') 'Bundle references are generated from export order'
+    Check ($report.ReportDiagnostics[0].ReasonCodes.Count -eq 2 -and $report.ReportDiagnostics[0].ReasonCodes -ccontains 'Unread' -and $report.ReportDiagnostics[0].ReasonCodes -ccontains 'CacheMissing') 'Derived missing-cache reasons stay separate fixed codes without joined array strings'
+    Check (@($report.ReportDiagnostics|Where-Object{$_.Scanner -ceq 'Scanner 1' -and $_.ScannerNumber -eq 1}).Count -eq 9) 'Only configured scanner ordinals identify report sources'
+    foreach($reason in @('Unread','CacheMissing','MeasurementUpgradePending','MissingFormatRule','UnknownTemplate','UnsupportedProfile','DateConflict','TimeConflict','TypeConflict','UndoRestored','ReaderFailed','IncompleteRead','UnsupportedSelectedMetric')){Check ([int]$report.DiagnosticCounts.$reason -ge 1) ('Separate diagnostic count retained: '+$reason)}
+    Check ($report.ReportDiagnostics[1].Profile -ceq 'Extended') 'Known internal profile identifiers become a fixed generic profile enum'
+    Check ($report.ReportDiagnostics[1].CacheSchemaVersion -eq 2 -and $report.ReportDiagnostics[1].MeasurementVersion -eq 0) 'A legacy text cache and missing measurement version remain distinct'
+    Check ($report.ReportDiagnostics[1].ReadMilliseconds -eq 345 -and $report.ReportDiagnostics[1].ReadPages -eq 5 -and $report.ReportDiagnostics[1].TotalPages -eq 5 -and $report.ReportDiagnostics[1].MeasurementCount -eq 10) 'Bounded numeric read metadata remains useful without raw measurements'
+    Check ($report.ReportDiagnostics[1].Model -ceq 'Edge' -and $report.ReportDiagnostics[1].SizeBand -ceq 'Medium' -and $report.ReportDiagnostics[1].ContentSupportRevision -eq 2) 'Only generic model, size band and content revision are retained'
+    Check ($report.ReadSettings.ReaderMode -ceq 'Python' -and $report.ReadSettings.AutoAnalyze -eq $true -and $report.ReadSettings.MonitorMinutes -eq 15 -and $report.ReadSettings.ReadingBatchLimit -eq 20) 'Typed reading settings explain the current scheduling policy'
+    $json=$report|ConvertTo-Json -Depth 20
+    foreach($private in @($canary,$workspace,('c'*64),('d'*64))){Check (-not $json.Contains($private)) 'Detailed diagnostics omit identifiers, text and private caller fields'}
+    $again=Get-QaSupportReport -AppRoot $workspace -Config $config -Dashboard $dashboard -SupportContext ([pscustomobject]$context)
+    Check ($again.ReportDiagnostics.Count -eq 9) 'Hashtable and JSON-style contexts are both accepted'
+}
+Scenario 'Unknown diagnostic and event fields cannot inject text or spreadsheet formulas' {
+    $row=New-SyntheticDiagnosticRow @($canary,'=HYPERLINK("https://example.invalid","private")');$row.scannerNumber=$canary;$row.filingStatus=$canary;$row.category=$canary;$row.textCacheStatus=$canary;$row.cacheSchemaVersion=$canary;$row.measurementVersion=$canary;$row.measurementStatus=$canary;$row.contentStatus=$canary;$row.profile=$canary;$row.reader=$canary;$row.readMilliseconds=$canary;$row.readPages=$canary;$row.totalPages=$canary;$row.measurementCount=$canary;$row.contentSupportRevision=$canary;$row.model=$canary;$row.sizeBand=$canary
+    $report=Get-QaSupportReport -AppRoot $workspace -Config $config -Dashboard $dashboard -SupportContext @{Reports=@($row);Work=@([pscustomobject]@{action=$canary;status=$canary;stage=$canary;completed=$canary;total=$canary;failed=$canary;message=$canary})}
+    $json=$report|ConvertTo-Json -Depth 20
+    Check (-not $json.Contains($canary) -and -not $json.Contains('HYPERLINK') -and -not $json.Contains('example.invalid')) 'Invalid enum and counter payloads are never copied'
+    Check ($report.ReportDiagnostics[0].FilingStatus -ceq 'Unknown' -and $report.ReportDiagnostics[0].ScannerNumber -eq 0) 'Unknown values use explicit safe defaults'
+    Check (@($report.ReportDiagnostics[0].ReasonCodes|Where-Object{$_ -ceq 'Unknown'}).Count -eq 1) 'Unknown reasons become one fixed category'
+    Write-QaSupportEvent -AppRoot $workspace -Operation Analysis -Outcome Completed -Stage Analyzing -Reason ReadCompleted -Reader Python -Profile Basic -Counts @{Analyzed=1}
+    Write-QaSupportEvent -AppRoot $workspace -Operation Analysis -Outcome Failed -Stage $canary -Reason $canary -Reader $canary -Profile $canary -Counts @{Failed=1;Secret=$canary}
+    $events=@(& (Get-Module Support) {param($folder) Get-QaSupportEvents -AppRoot $folder -All} $workspace)
+    $json=$events|ConvertTo-Json -Depth 10
+    Check (-not $json.Contains($canary)) 'Additional event fields are whitelisted before persistence and export'
+    Check (@($events|Where-Object{$_.Stage -ceq 'Analyzing' -and $_.Reason -ceq 'ReadCompleted' -and $_.Reader -ceq 'Python' -and $_.Profile -ceq 'Basic'}).Count -eq 1) 'Useful fixed stage, reason, reader and profile enums survive'
+}
+Scenario 'Printable diagnostics cap readable sections honestly while machine files retain every report and event' {
+    $rows=New-Object 'Collections.Generic.List[object]'
+    foreach($n in 1..503){$row=New-SyntheticDiagnosticRow @('Unread');$row.scannerNumber=1;[void]$rows.Add($row)}
+    $context=[pscustomobject]@{Reports=@($rows.ToArray());Work=@()}
+    $file=Join-Path (Join-Path $workspace 'Logs/Scrubbed') ('ctqa-'+[datetime]::UtcNow.ToString('yyyyMMdd')+'-060.jsonl')
+    $lines=New-Object 'Collections.Generic.List[string]'
+    foreach($n in 1..507){[void]$lines.Add(([pscustomobject]@{TimeUtc=[datetime]::UtcNow.AddSeconds($n).ToString('o');Operation='Analysis';Outcome='Completed';Stage='Analyzing';Reason='ReadCompleted';Reader='Standard';Profile='Basic';DurationMs=432;ScannerNumber=1;ErrorKind='None';Message=$canary;Counts=[pscustomobject]@{Analyzed=1;Secret=$canary}}|ConvertTo-Json -Depth 6 -Compress))}
+    [IO.File]::WriteAllLines($file,[string[]]$lines.ToArray())
+    $output=Join-Path $workspace 'Logs/Support/Full-Detailed-Diagnostics.zip'
+    [void](Export-QaSupportBundle -AppRoot $workspace -Config $config -Dashboard $dashboard -SupportContext $context -DestinationPath $output)
+    $archive=[IO.Compression.ZipFile]::OpenRead($output)
+    try{
+        $expected=@('SupportReport.html','Support-Summary.json','Report-Diagnostics.csv','Report-Diagnostics.jsonl','Scrubbed-Activity.csv','Scrubbed-Activity.jsonl','READ ME.txt')
+        Check ($archive.Entries.Count -eq $expected.Count) 'Bundle includes only the approved readable and machine files'
+        foreach($entry in $archive.Entries){Check ($expected -ccontains $entry.FullName) 'No raw or unexpected file enters the ZIP';Check (-not (Read-SyntheticSupportEntry $archive $entry.FullName).Contains($canary)) 'Every ZIP entry is separately checked for private text'}
+        $summary=Read-SyntheticSupportEntry $archive 'Support-Summary.json'|ConvertFrom-Json
+        Check ($summary.ReportDiagnostics.Count -eq 503 -and $summary.LogRetention.SummaryRecentEventLimit -eq 500) 'Complete per-report JSON and the documented recent-event limit are retained'
+        $reportJson=@((Read-SyntheticSupportEntry $archive 'Report-Diagnostics.jsonl') -split '\r?\n'|Where-Object{$_}|ForEach-Object{$_|ConvertFrom-Json})
+        $reportCsv=@((Read-SyntheticSupportEntry $archive 'Report-Diagnostics.csv')|ConvertFrom-Csv)
+        Check ($reportJson.Count -eq 503 -and $reportCsv.Count -eq 503) 'JSONL and CSV both retain all 503 report diagnoses'
+        Check ($reportJson[-1].Reference -ceq 'Report0503' -and $reportCsv[-1].Reference -ceq 'Report0503') 'Complete machine files preserve the same bundle-local references'
+        $eventJson=@((Read-SyntheticSupportEntry $archive 'Scrubbed-Activity.jsonl') -split '\r?\n'|Where-Object{$_}|ForEach-Object{$_|ConvertFrom-Json})
+        $eventCsv=@((Read-SyntheticSupportEntry $archive 'Scrubbed-Activity.csv')|ConvertFrom-Csv)
+        Check (@($eventJson|Where-Object{$_.DurationMs -eq 432}).Count -eq 507) 'JSONL retains every one of the 507 distinguishing events'
+        Check (@($eventCsv|Where-Object{$_.DurationMs -eq '432'}).Count -eq 507 -and $eventCsv.Count -eq $eventJson.Count) 'CSV retains the same full retained timeline'
+        $html=Read-SyntheticSupportEntry $archive 'SupportReport.html'
+        Check ($html -match '(?i)@media\s+print') 'The detailed overview has a print stylesheet'
+        Check ($html -notmatch '(?i)<script\b|\bon[a-z]+\s*=|(?:src|href)\s*=\s*["'']\s*(?:https?:|//)') 'Printable HTML needs no scripts, event handlers or external resources'
+        Check ($html -match 'Report0500' -and $html -notmatch 'Report0501|Report0502|Report0503') 'The readable pending-details section stops at 500 rows'
+        Check ($html -match '503' -and $html -match '500' -and $html -match '(?i)complete|full|remaining|limit|showing') 'The readable report limit is explicitly described'
+        Check ($summary.RecentOperations.Count -eq 500) 'The summary recent timeline is capped independently of machine history'
+        Check ($html -match '(?i)500' -and $html -match '(?i)retained|recent|events|timeline') 'The human timeline is labelled as a recent subset'
+    }finally{$archive.Dispose()}
+}
+Scenario 'Standalone HTML exports protect files and sanitize even direct printable-report input' {
+    $context=@{Reports=@((New-SyntheticDiagnosticRow @('MissingFormatRule')));Work=@()}
+    $report=Get-QaSupportReport -AppRoot $workspace -Config $config -Dashboard $dashboard -SupportContext $context
+    $output=Join-Path $workspace 'Logs/Support/Printable-Diagnostics.html'
+    Check ((Export-QaSupportHtml -AppRoot $workspace -Config $config -Dashboard $dashboard -SupportContext $context -DestinationPath $output) -eq $output) 'A new printable HTML file can be exported directly'
+    $original=[IO.File]::ReadAllText($output)
+    Check ($original -match 'Report0001' -and -not $original.Contains($canary)) 'Standalone print output retains safe detail references only'
+    $caught=$false;try{Export-QaSupportHtml -AppRoot $workspace -Config $config -Dashboard $dashboard -SupportContext $context -DestinationPath $output|Out-Null}catch{$caught=$true};Check ($caught -and [IO.File]::ReadAllText($output) -ceq $original) 'Existing HTML is never overwritten'
+    foreach($name in @('Config/unsafe.html','App/unsafe.html','Data/unsafe.html','Logs/wrong.txt')){$caught=$false;try{Export-QaSupportHtml -AppRoot $workspace -Config $config -Dashboard $dashboard -SupportContext $context -DestinationPath (Join-Path $workspace $name)|Out-Null}catch{$caught=$true};Check $caught 'HTML export protects application settings, code, data and extensions'}
+    $report.ApplicationVersion=$canary;$report.Platform=$canary;$report.CurrentOperation=$canary;$report.Privacy=$canary;$report.Scanners[0].Scanner=$canary;$report.ReportDiagnostics[0].Reference=$canary;$report.ReportDiagnostics[0].ReasonCodes=@($canary);$report.ReportDiagnostics[0].ReadMilliseconds=$canary;$report.ReportDiagnostics[0].Model=$canary;$report.ReportDiagnostics[0].SizeBand=$canary;$report|Add-Member PrivateText $canary
+    $html=ConvertTo-QaSupportHtml -Report $report
+    Check (-not $html.Contains($canary)) 'The public HTML renderer projects safe fields again instead of trusting caller text'
+    Check (@(Get-ChildItem (Join-Path $workspace 'Logs/Support') -Filter '*.tmp').Count -eq 0) 'HTML and ZIP failures leave no partial export'
+}
+Scenario 'Classic diagnostics inspect cached versions without opening or changing PDF content' {
+    $pdf=Join-Path $workspace 'Data/private-synthetic.pdf';[IO.File]::WriteAllText($pdf,('%PDF-1.4 '+$canary))
+    $privateId='e'*64;$privateHash='f'*64;$info=Get-Item $pdf
+    $record=[pscustomobject]@{Scanner=$config.Sources[0].Scanner;Id=$privateId;Hash=$privateHash;Length=$info.Length;ReportDate='2026-11-10';Category='Monthly_QA/Pending_Verification';DestinationPath=$pdf;SourcePath=$canary;OriginalFileName=$canary}
+    $saved=[pscustomobject]@{ParserVersion=1;AnalysisCacheSchemaVersion=2;DocumentClassifierVersion=1;Hash=$privateHash;RecordId=$privateId;Status='NeedsReview';Truncated=$false;VerifiedHash=$privateHash;VerifiedLength=$info.Length;VerifiedWriteTicks=$info.LastWriteTimeUtc.Ticks;SavedWriteTicks=$info.LastWriteTimeUtc.Ticks;SavedLength=$info.Length;DocumentClassification=[pscustomobject]@{ClassifierVersion=1;Status='Recognized';ProfileId='siemens-iec-basic-v1';CompleteRead=$true;DateStatus='Consensus';ReportDate='2026-11-10';ReportTime='07:00:00';Reason=$canary};Findings=@([pscustomobject]@{Evidence=$canary});ReaderMessage=$canary}
+    $cachePath=Join-Path $config.ArchiveRoot ('.ctqa/analysis/'+$privateHash+'.json');[IO.File]::WriteAllText($cachePath,($saved|ConvertTo-Json -Depth 10))
+    $cacheBefore=(Get-FileHash $cachePath).Hash;$pdfBefore=[IO.File]::ReadAllBytes($pdf)
+    $localDashboard=[pscustomobject]@{SetupComplete=$true;Records=@($record);Attention=@();Scanners=@()}
+    $lock=[IO.File]::Open($pdf,[IO.FileMode]::Open,[IO.FileAccess]::ReadWrite,[IO.FileShare]::None)
+    try{$report=Get-QaSupportReport -AppRoot $workspace -Config $config -Dashboard $localDashboard;Check ($report.ReportDiagnostics.Count -eq 1) 'Classic callers get cached per-report diagnostics without browser context';Check ($report.ReportDiagnostics[0].CacheSchemaVersion -eq 2 -and $report.ReportDiagnostics[0].MeasurementVersion -eq 0) 'Classic diagnostics distinguish a legacy cache from missing measurement data'}finally{$lock.Dispose()}
+    $json=$report|ConvertTo-Json -Depth 20
+    foreach($private in @($canary,$pdf,$privateId,$privateHash)){Check (-not $json.Contains($private)) 'Classic cache details cannot expose report evidence or identity'}
+    Check ((Get-FileHash $cachePath).Hash -ceq $cacheBefore -and [Convert]::ToBase64String([IO.File]::ReadAllBytes($pdf)) -ceq [Convert]::ToBase64String($pdfBefore)) 'Export diagnostics leave both cache JSON and PDF bytes unchanged'
+}
+Scenario 'Additional and Daily metadata, Drive models and the third filing rule remain safely diagnosable' {
+    $copy=$config|ConvertTo-Json -Depth 20|ConvertFrom-Json
+    $copy.Sources[0]|Add-Member -MemberType NoteProperty -Name ContentProfiles -Value @() -Force
+    $additional=New-SyntheticDiagnosticRow @('SupportedProfile');$additional.profile='siemens-iec-additional-v1';$additional.model='Drive'
+    $daily=New-SyntheticDiagnosticRow @('SupportedProfile');$daily.profile='siemens-quality-daily-v1';$daily.model='Drive'
+    $unknown=New-SyntheticDiagnosticRow @('UnknownTemplate');$unknown.profile=$canary;$unknown.model=$canary
+    $context=@{Reports=@($additional,$daily,$unknown);Work=@()}
+    $fallback=Get-QaSupportReport -AppRoot $workspace -Config $copy -Dashboard $dashboard -SupportContext $context
+    $revision=& (Get-Module Support) { Get-QaContentSupportRevision }
+    Check ($fallback.ReadSettings.SupportRevision -eq $revision) 'Absent context revision follows the current pure classifier revision dynamically'
+    Check ($fallback.ScannerRules[0].AdditionalRule -ceq 'Ask') 'No Additional mapping defaults to an explicit Ask rule'
+    Check ($fallback.ReportDiagnostics[0].Profile -ceq 'Additional' -and $fallback.ReportDiagnostics[1].Profile -ceq 'Daily') 'New internal profile identifiers become fixed generic aliases'
+    Check ($fallback.ReportDiagnostics[0].Model -ceq 'Drive' -and $fallback.ReportDiagnostics[1].Model -ceq 'Drive' -and $fallback.ReadSettings.SupportedModels -ccontains 'Drive') 'Drive is retained as a generic supported-model enum'
+    Check ($fallback.ReportDiagnostics[2].Profile -ceq 'Unknown' -and $fallback.ReportDiagnostics[2].Model -ceq 'Unknown') 'Private profile and model strings become Unknown'
+    $copy.Sources[0].ContentProfiles=@([pscustomobject]@{profileId='siemens-iec-basic-v1';category='Daily'},[pscustomobject]@{profileId='siemens-iec-extended-v1';category='Monthly'},[pscustomobject]@{profileId='siemens-iec-additional-v1';category='Monthly';message=$canary},[pscustomobject]@{profileId=$canary;category='Monthly';message=$canary})
+    $context.Settings=@{readerMode='Auto';autoAnalyze=$true;monitorMinutes=15;supportRevision=3;message=$canary}
+    $explicit=Get-QaSupportReport -AppRoot $workspace -Config $copy -Dashboard $dashboard -SupportContext $context
+    Check ($explicit.ReadSettings.SupportRevision -eq 3) 'A supplied revision-three support context is preserved'
+    Check ($explicit.ScannerRules[0].BasicRule -ceq 'Daily' -and $explicit.ScannerRules[0].ExtendedRule -ceq 'Monthly' -and $explicit.ScannerRules[0].AdditionalRule -ceq 'Monthly') 'The Additional filing rule is independent of Basic and Extended mappings'
+    $html=ConvertTo-QaSupportHtml -Report $explicit
+    foreach($heading in @('Basic filing','Extended filing','Additional filing')){Check ($html.Contains('<th>'+$heading+'</th>')) ('Printable configuration labels its own column: '+$heading)}
+    Check (-not ($explicit|ConvertTo-Json -Depth 20).Contains($canary) -and -not $html.Contains($canary)) 'New model, profile and rule projections cannot leak private metadata'
+    $copy.Sources[0].ContentProfiles=@([pscustomobject]@{profileId='siemens-iec-additional-v1';category=$canary},[pscustomobject]@{profileId=$canary;category='Monthly'})
+    $invalid=Get-QaSupportReport -AppRoot $workspace -Config $copy -Dashboard $dashboard -SupportContext $context
+    Check ($invalid.ScannerRules[0].AdditionalRule -ceq 'Ask') 'Invalid Additional categories and unknown profile identifiers cannot create an automatic rule'
+    Check (-not ($invalid|ConvertTo-Json -Depth 20).Contains($canary) -and -not (ConvertTo-QaSupportHtml -Report $invalid).Contains($canary)) 'Invalid third-rule data remains scrubbed in machine and printable output'
+    Write-QaSupportEvent -AppRoot $workspace -Operation PdfRead -Outcome Completed -Stage Analyzing -Reason ReadCompleted -Reader Standard -Profile 'siemens-iec-additional-v1' -DurationMs 876
+    Write-QaSupportEvent -AppRoot $workspace -Operation PdfRead -Outcome Completed -Stage Analyzing -Reason ReadCompleted -Reader Standard -Profile 'siemens-quality-daily-v1' -DurationMs 877
+    $events=@(& (Get-Module Support) {param($folder) Get-QaSupportEvents -AppRoot $folder -All} $workspace)
+    Check (@($events|Where-Object{$_.DurationMs -eq 876 -and $_.Profile -ceq 'Additional'}).Count -eq 1 -and @($events|Where-Object{$_.DurationMs -eq 877 -and $_.Profile -ceq 'Daily'}).Count -eq 1) 'Retained event metadata canonicalizes both new profile aliases'
+}
 Scenario 'Real connection-result handling avoids repeated prompts and remembers only accepted sign-ins' {
     $tokens=$null;$parseErrors=$null;$ast=[Management.Automation.Language.Parser]::ParseFile((Join-Path $root 'App/Start.ps1'),[ref]$tokens,[ref]$parseErrors)
     $definition=$ast.Find({param($node) $node -is [Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -eq 'Finish-Connections'},$true)
@@ -231,7 +376,7 @@ Scenario 'Real connection-result handling avoids repeated prompts and remembers 
 }
 
 $failed=@($script:Results|Where-Object Result -eq 'FAIL').Count
-$report=[pscustomobject]@{Version='4.3.0';Runtime=$PSVersionTable.PSVersion.ToString();WindowsPowerShell51ActuallyRun=($PSVersionTable.PSVersion.Major -eq 5);Tests=$script:Results.Count;Assertions=$script:Assertions;Failed=$failed;Results=@($script:Results.ToArray());Scope='Synthetic review grouping, diagnostic privacy, protected destinations, safe events, standalone export and active application lock. Production diagnostic CMD runs on Windows.'}
+$report=[pscustomobject]@{Version='5.3.1';Runtime=$PSVersionTable.PSVersion.ToString();WindowsPowerShell51ActuallyRun=($PSVersionTable.PSVersion.Major -eq 5);Tests=$script:Results.Count;Assertions=$script:Assertions;Failed=$failed;Results=@($script:Results.ToArray());Scope='Synthetic review grouping, strict diagnostic privacy, per-report reason categories, printable HTML limits, complete machine exports, protected destinations, cached-only classic fallback, safe events and active application lock. Production diagnostic CMD runs on Windows.'}
 if($OutputPath){$report|ConvertTo-Json -Depth 12|Set-Content -LiteralPath $OutputPath -Encoding UTF8}
 Write-Host ('Result: '+($report.Tests-$failed)+'/'+$report.Tests+' scenarios; '+$report.Assertions+' assertions.')
 Remove-Item -LiteralPath $testRoot -Recurse -Force

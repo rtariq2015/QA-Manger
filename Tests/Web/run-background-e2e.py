@@ -168,6 +168,13 @@ def main():
         assert complete['status'] == 'completed' and complete['completed'] == 20 and complete['total'] == 20 and complete['percent'] == 100, complete
         assert complete['result']['result']['Pending'] == 5
         checks.append('A bulk action stops after twenty actual PDFs and reports the remaining work')
+        (base / 'Data/sim.json').write_text(json.dumps({'count': 0, 'revision': 0, 'limit': 25, 'delayMs': 50}), encoding='utf-8')
+        continuous = call('/api/actions', {'action': 'AnalyzeBacklog', 'scope': 'all'})['id']
+        drained = until(lambda: terminal(continuous), seconds=120)
+        assert drained['status'] == 'completed' and drained['completed'] == 25 and drained['total'] == 25, drained
+        assert drained['result']['result']['Pending'] == 0
+        assert any(event['action'] == 'SyncLibrary' for event in [json.loads(line) for line in (base / 'events.jsonl').read_text(encoding='utf-8').splitlines()])
+        checks.append('An explicitly started backlog continues beyond twenty and synchronizes readable folders')
         (base / 'Data/sim.json').write_text(json.dumps({'count': 20, 'revision': 0, 'limit': 25, 'delayMs': 1000}), encoding='utf-8')
         final = call('/api/actions', {'action': 'Analyze'})['id']
         until(lambda: job(final)['status'] == 'running')

@@ -158,6 +158,76 @@ Scenario 'Linked analysis directories cannot supply trusted document classificat
     }finally{if([IO.Directory]::Exists($folder)){[IO.Directory]::Delete($folder)}}
     Check ((Get-FileHash $outsideFile).Hash -ceq $before) 'Removing the fixture link preserves its external data'
 }
+function Write-TestAnalysisCache($Fx,$Record,$Value){[IO.File]::WriteAllText((CachePath $Fx $Record),($Value|ConvertTo-Json -Depth 16),(New-Object Text.UTF8Encoding($true)))}
+function Set-TestUnknownTemplate($Value){
+    $Value.PSObject.Properties.Remove('ContentSupportRevision')
+    $Value.DocumentClassification.PSObject.Properties.Remove('SupportRevision');$Value.DocumentClassification.Model=''
+    $Value.DocumentClassification.Status='NeedsReview';$Value.DocumentClassification.ProfileId='';$Value.DocumentClassification.ReasonCode='UnknownTemplate'
+    return $Value
+}
+Scenario 'A metadata-only work plan distinguishes unread files, measurement upgrades, format upgrades and cached errors' {
+    $fx=Fixture 'BacklogPlan' 6;$control=Install-ReadMock $fx
+    [void](Invoke-QaAnalysis $fx.Config -RecordIds @($fx.Records[1..5].Id))
+    foreach($n in @(1,4)){$row=Get-QaSavedAnalysis $fx.Config $fx.Records[$n];$row.DocumentClassification.Status='Recognized';$row.DocumentClassification.ProfileId='siemens-iec-basic-v1';$row.DocumentClassification.ReasonCode='SupportedProfile';$row.ContentSupportRevision=1;if($n -eq 1){$row.PSObject.Properties.Remove('MeasurementsDocument')};Write-TestAnalysisCache $fx $fx.Records[$n] $row}
+    $row=Set-TestUnknownTemplate (Get-QaSavedAnalysis $fx.Config $fx.Records[2]);Write-TestAnalysisCache $fx $fx.Records[2] $row
+    $row=Get-QaSavedAnalysis $fx.Config $fx.Records[3];$row.Status='ReadError';Write-TestAnalysisCache $fx $fx.Records[3] $row
+    $row=Get-QaSavedAnalysis $fx.Config $fx.Records[5];$row.ContentSupportRevision=1;$row.DocumentClassification.ReasonCode='IncompleteRead';Write-TestAnalysisCache $fx $fx.Records[5] $row
+    $state=Join-Path $fx.Config.ArchiveRoot '.ctqa/state.json';$before=(Get-FileHash $state).Hash;$cacheBefore=@{};foreach($r in $fx.Records[1..5]){$cacheBefore[$r.Id]=(Get-FileHash (CachePath $fx $r)).Hash}
+    $module=Get-Module Insights
+    try{
+        & $module {function script:Get-QaDashboard {param($Config) throw 'Work plan unexpectedly rebuilt the dashboard.'}}
+        $plan=Get-QaAnalysisWorkPlan -Config $fx.Config -Records $fx.Records -UpgradeMeasurements -RefreshUnsupported -Limit 2
+        $ordinary=Get-QaAnalysisWorkPlan -Config $fx.Config -Records $fx.Records
+        $progress=Get-QaAnalysisProgress -Config $fx.Config -Records $fx.Records
+    }finally{& $module {Remove-Item Function:Get-QaDashboard -ErrorAction SilentlyContinue}}
+    Check ($plan.Total -eq 6 -and $plan.Cached -eq 5 -and $plan.Errors -eq 1) 'Valid existing caches and a failed read remain distinct from missing work'
+    Check ($plan.NewPending -eq 1 -and $plan.MeasurementUpgradePending -eq 1 -and $plan.UnsupportedUpgradePending -eq 1 -and $plan.Pending -eq 3) 'Three eligible causes are disjoint and explicitly counted'
+    Check ($plan.RecordIds.Count -eq 2 -and $plan.RecordIds[0] -ceq $fx.Records[2].Id -and $plan.RecordIds[1] -ceq $fx.Records[1].Id) 'A bounded newest-first queue contains only eligible identities'
+    Check ($ordinary.Pending -eq 1 -and $ordinary.RecordIds.Count -eq 1 -and $ordinary.RecordIds[0] -ceq $fx.Records[0].Id) 'Ordinary background work does not force a historical upgrade'
+    Check ($progress.Pending -eq 1 -and $progress.BacklogPending -eq 3 -and $progress.MeasurementUpgradePending -eq 1 -and $progress.UnsupportedUpgradePending -eq 1) 'Progress exposes backlog without changing the conservative automatic count'
+    Check ($control.Requests.Count -eq 5 -and (Get-FileHash $state).Hash -ceq $before) 'Planning parses no PDF and changes no clinical archive state'
+    foreach($r in $fx.Records[1..5]){Check ((Get-FileHash (CachePath $fx $r)).Hash -ceq $cacheBefore[$r.Id]) 'Metadata planning never rewrites an existing reading'}
+}
+Scenario 'An older unknown Flash template is refreshed once and then reused with the same protected PDF provenance' {
+    $fx=Fixture 'FlashRevision';$record=$fx.Records[0];$parts=New-Object 'Collections.Generic.List[string]'
+    foreach($page in 1..3){$body="--- Page $page ---`nSOMATOM Definition Flash`nQuality IEC Constancy`n";if($page -eq 3){$body+="1. Quality IEC Constancy Homogeneity / Water`nStatus: OK`n2. Quality IEC Constancy Noise`nStatus: OK`n"};$body+="2025-12-01 06:00:00 Page: $page / 3";[void]$parts.Add($body)}
+    $control=Install-ReadMock $fx ($parts -join "`n");$control.Reads[$record.Id].Pages=3;$control.Reads[$record.Id].ReadPages=3;$control.Reads[$record.Id]|Add-Member ReaderUsed 'Standard' -Force
+    $state=Join-Path $fx.Config.ArchiveRoot '.ctqa/state.json';$before=(Get-FileHash $state).Hash
+    [void](Invoke-QaAnalysis $fx.Config);$old=Set-TestUnknownTemplate (Get-QaSavedAnalysis $fx.Config $record);Write-TestAnalysisCache $fx $record $old
+    Check (Test-QaAnalysisSelectedRefresh $fx.Config $record) 'Selecting an old unsupported report offers a current-format refresh'
+    $normal=Invoke-QaAnalysis $fx.Config;Check ($normal.Cached -eq 1 -and $control.Requests.Count -eq 1) 'Existing background behavior still reuses a valid old cache'
+    $first=Invoke-QaAnalysis $fx.Config -RefreshUnsupported;$saved=Get-QaSavedAnalysis $fx.Config $record;$cacheHash=(Get-FileHash (CachePath $fx $record)).Hash
+    Check ($first.Analyzed -eq 1 -and $saved.ContentSupportRevision -eq 3 -and $saved.DocumentClassification.Status -ceq 'Recognized' -and $saved.DocumentClassification.Model -ceq 'SOMATOM Definition Flash') 'One opt-in refresh recognizes the compatible complete Flash IEC body'
+    Check ($saved.DocumentClassification.Category -ceq '' -and $saved.DocumentClassification.ClinicalResult -ceq 'Not inferred') 'Recognition does not assign department frequency or clinical approval'
+    $second=Invoke-QaAnalysis $fx.Config -UpgradeMeasurements -RefreshUnsupported
+    Check ($second.Cached -eq 1 -and $second.Analyzed -eq 0 -and $control.Requests.Count -eq 2 -and (Get-FileHash (CachePath $fx $record)).Hash -ceq $cacheHash) 'A completed current revision is reused without another read or write'
+    Check ($saved.VerifiedHash -ceq $record.Hash -and (Get-FileHash $record.DestinationPath).Hash -ceq $record.Hash -and (Get-FileHash $state).Hash -ceq $before) 'Derived support refresh preserves exact PDF bytes and core review state'
+    $events=@(Get-ChildItem (Join-Path $fx.Config.AppRoot 'Logs/Scrubbed') -Filter '*.jsonl'|ForEach-Object{Get-Content $_.FullName|ForEach-Object{$_|ConvertFrom-Json}});$completed=@($events|Where-Object{$_.Operation -ceq 'PdfRead' -and $_.Outcome -ceq 'Completed'})
+    Check ($completed.Count -eq 2 -and $completed[-1].Stage -ceq 'Analyzing' -and $completed[-1].Reason -ceq 'NoSupportedTables' -and $completed[-1].Reader -ceq 'Standard' -and $completed[-1].Profile -ceq 'Basic') 'The detailed event retains controlled reason, reader, profile and stage codes without adding events for cached skips'
+}
+Scenario 'Explicit measurement backlog upgrades an older successful cache once without reprocessing current or failed readings' {
+    $fx=Fixture 'MeasurementBacklog' 3;$control=Install-ReadMock $fx;[void](Invoke-QaAnalysis $fx.Config)
+    $old=$fx.Records[0];$row=Get-QaSavedAnalysis $fx.Config $old;$row.PSObject.Properties.Remove('MeasurementsDocument');Write-TestAnalysisCache $fx $old $row
+    $failed=$fx.Records[2];$row=Get-QaSavedAnalysis $fx.Config $failed;$row.Status='readerror';$row.PSObject.Properties.Remove('MeasurementsDocument');Write-TestAnalysisCache $fx $failed $row
+    $plan=Get-QaAnalysisWorkPlan -Config $fx.Config -Records $fx.Records -UpgradeMeasurements -RefreshUnsupported
+    Check ($plan.Pending -eq 1 -and $plan.MeasurementUpgradePending -eq 1 -and $plan.Errors -eq 1 -and $plan.RecordIds[0] -ceq $old.Id) 'Only the eligible successful old reading is queued'
+    $first=Invoke-QaAnalysis $fx.Config -UpgradeMeasurements -RefreshUnsupported -Limit 1;$second=Invoke-QaAnalysis $fx.Config -UpgradeMeasurements -RefreshUnsupported
+    Check ($first.Analyzed -eq 1 -and $first.Pending -eq 0 -and $second.Analyzed -eq 0 -and $control.Requests.Count -eq 4) 'A historical measurement cache upgrades exactly once'
+    Check ((Get-QaSavedAnalysis $fx.Config $failed).Status -ceq 'readerror') 'A noncanonical-case legacy read error is preserved without entering the historical upgrade loop'
+}
+Scenario 'Equal-content destinations retain independent one-time format support revisions' {
+    $fx=Fixture 'SupportAlias' 3 -SameBytes;$control=Install-ReadMock $fx;[void](Invoke-QaAnalysis $fx.Config)
+    $path=CachePath $fx $fx.Records[0];$combined=[IO.File]::ReadAllText($path)|ConvertFrom-Json
+    [void](Set-TestUnknownTemplate $combined);foreach($entry in $combined.OtherRecords){[void](Set-TestUnknownTemplate $entry)}
+    $combined.OtherRecords[0].DocumentClassification.ReasonCode='UnrecognizedSections';Write-TestAnalysisCache $fx $fx.Records[0] $combined
+    $plan=Get-QaAnalysisWorkPlan -Config $fx.Config -Records $fx.Records -RefreshUnsupported
+    Check ($plan.UnsupportedUpgradePending -eq 3 -and $plan.RecordIds.Count -eq 3) 'Equal byte hashes retain independently eligible UnknownTemplate and UnrecognizedSections provenance rows'
+    $first=Invoke-QaAnalysis $fx.Config -Limit 1 -RefreshUnsupported;$remaining=Get-QaAnalysisWorkPlan -Config $fx.Config -Records $fx.Records -RefreshUnsupported
+    Check ($first.Analyzed -eq 1 -and $remaining.Pending -eq 2) 'Saving one destination revision does not mark untouched aliases as upgraded'
+    $second=Invoke-QaAnalysis $fx.Config -RefreshUnsupported;$warm=Invoke-QaAnalysis $fx.Config -RefreshUnsupported
+    Check ($second.Analyzed -eq 2 -and $warm.Analyzed -eq 0 -and $warm.Cached -eq 3 -and $control.Requests.Count -eq 6) 'Every alias upgrades once and then stays warm without cache ping-pong'
+}
+
 $failed=@($script:Results|Where-Object Result -eq 'FAIL').Count
 $result=[pscustomobject]@{Product='CT QA Manager Pro';Feature='Versioned content analysis cache';TimestampUtc=[datetime]::UtcNow.ToString('o');Runtime=$PSVersionTable.PSVersion.ToString();Platform=[Environment]::OSVersion.ToString();WindowsPowerShell51ActuallyRun=($PSVersionTable.PSVersion.Major -eq 5);Tests=$script:Results.Count;Assertions=$script:Assertions;Failed=$failed;Results=@($script:Results.ToArray());Notes='Synthetic PDFs and controlled reader responses only. The first scenario invokes the real isolated verified PDF reader.'}
 if($OutputPath){$result|ConvertTo-Json -Depth 10|Set-Content -LiteralPath $OutputPath -Encoding UTF8}

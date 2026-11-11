@@ -136,6 +136,82 @@ Scenario 'An explicit Daily document title conflicts with a saved Monthly profil
     Check ($row.content.reason -match 'conflict|disagree') 'The content inspector explains the disagreement between the printed title and configured rule'
     Preserve
 }
+Scenario 'A compatible Flash PDF upgrades a prior unknown-template cache and follows one saved scanner filing rule' {
+    $cfg=Read-QaConfig $FixtureRoot
+    $flashDefinition=$fixtureAst.Find({param($n)$n -is [Management.Automation.Language.FunctionDefinitionAst] -and $n.Name -eq 'New-ContentPdf'},$true).Extent.Text.Replace('SOMATOM Definition Edge','SOMATOM Definition Flash')
+    . ([scriptblock]::Create($flashDefinition))
+    $name='Unlabelled_Compatible_Flash_IEC.pdf';New-ContentPdf -Path (Join-Path $cfg.Sources[1].Path $name) -Profile Basic -Pages 3 -Date '2025-02-03' -Time '14:00:00' -Model 'Flash'
+    [void](Invoke-QaOperation $cfg -Mode Update);$raw=@((Get-QaDashboard $cfg).Records|Where-Object OriginalFileName -ceq $name)[0]
+    $baseline.Records+=@([pscustomobject]@{key='compatibleFlash';id=$raw.Id;hash=$raw.Hash;scanner=$raw.Scanner;source=$raw.SourcePath;destination=$raw.DestinationPath;rawDate=$raw.ReportDate;rawCategory=$raw.Category;pages=3;profile='Basic';expectedDate='2025-02-03';expectedTime='14:00:00'})
+    $baseline.StateSHA256=(Get-FileHash (Join-Path $baseline.ArchiveRoot '.ctqa/state.json')).Hash
+    [void](Request @{action='Analyze';id=$raw.Id});$initial=Record 'compatibleFlash'
+    Check ($initial.content.status -ceq 'Recognized' -and $initial.content.profileId -ceq 'siemens-iec-basic-v1' -and $initial.pending) 'The real PDF reader recognizes the complete Flash body but does not invent a department filing convention'
+    $cached=&(Get-Module WebService){param($c,$r) Get-QaSavedAnalysis $c $r} $cfg $raw
+    Check ($cached.DocumentClassification.Model -ceq 'SOMATOM Definition Flash') 'The generated real PDF actually contains the Flash model header'
+    $cached.PSObject.Properties.Remove('ContentSupportRevision');$cached.DocumentClassification.PSObject.Properties.Remove('SupportRevision');$cached.DocumentClassification.Model='';$cached.DocumentClassification.Status='NeedsReview';$cached.DocumentClassification.ProfileId='';$cached.DocumentClassification.ReasonCode='UnknownTemplate'
+    $cachePath=Join-Path $cfg.ArchiveRoot ('.ctqa/analysis/'+$raw.Hash+'.json');[IO.File]::WriteAllText($cachePath,($cached|ConvertTo-Json -Depth 16),(New-Object Text.UTF8Encoding $true))
+    $plan=&(Get-Module WebService){param($c,$id) Get-QaAnalysisWorkPlan -Config $c -RecordIds @($id) -RefreshUnsupported} $cfg $raw.Id
+    Check ($plan.Pending -eq 1 -and $plan.UnsupportedUpgradePending -eq 1) 'The earlier unsupported cache is eligible for one explicit format-support upgrade'
+    $refreshed=&(Get-Module WebService){param($c,$id) Invoke-QaAnalysis -Config $c -RecordIds @($id) -RefreshUnsupported} $cfg $raw.Id
+    Check ($refreshed.Analyzed -eq 1 -and (Record 'compatibleFlash').content.status -ceq 'Recognized') 'A verified selected support refresh replaces the old unsupported result'
+    [void](Request @{action='ScannerSettings';scanner=$raw.Scanner;contentProfiles=@([pscustomobject]@{profileId='siemens-iec-basic-v1';category='Daily'},[pscustomobject]@{profileId='siemens-iec-extended-v1';category='Monthly'})})
+    $filed=Record 'compatibleFlash'
+    Check ($filed.category -ceq 'Daily' -and $filed.decision -ceq 'Automatic' -and -not $filed.pending) 'One explicit per-scanner rule files matching Flash content without an individual approval'
+    Check ($filed.clinicalComponents.Count -eq 0 -and $filed.printedResult -ceq 'Not inferred from file classification') 'Automatic filing supplies no formal clinical checklist or PASS'
+    $before=(Get-FileHash $cachePath).Hash;$warm=&(Get-Module WebService){param($c,$id) Invoke-QaAnalysis -Config $c -RecordIds @($id) -UpgradeMeasurements -RefreshUnsupported} (Read-QaConfig $FixtureRoot) $raw.Id
+    Check ($warm.Analyzed -eq 0 -and $warm.Cached -eq 1 -and (Get-FileHash $cachePath).Hash -ceq $before) 'The completed support revision and measurement pass are reused without another parse or cache write'
+    Preserve
+}
+
+Scenario 'Real Drive Additional and manufacturer Daily PDFs retain separate filing rules and protected original evidence' {
+    $cfg=Read-QaConfig $FixtureRoot;$scanner=[string]$cfg.Sources[2].Scanner
+    $originalDefinition=$fixtureAst.Find({param($n)$n -is [Management.Automation.Language.FunctionDefinitionAst] -and $n.Name -eq 'New-ContentPdf'},$true).Extent.Text
+    $originalHeader=@'
+[void]$lines.Add(('SOMATOM Definition '+$Model))
+'@
+    $driveHeader=@'
+[void]$lines.Add('SOMATOM Drive')
+'@
+    $driveDefinition=$originalDefinition.Replace($originalHeader.Trim(),$driveHeader.Trim())
+    Check ($driveDefinition -cne $originalDefinition) 'The disposable real-PDF fixture explicitly emits the Drive model header'
+    $additionalDefinition=$driveDefinition.Replace("@('Lightmarker','External Lightm.','Sag./Cor. Lightm.','Topogram Pos.','Slice','Homogeneity / Water','Noise','MTF','Contrast','Table Position')","@('Lightmarker','Slice','MTF','Contrast','Low Contrast')")
+    . ([scriptblock]::Create($additionalDefinition))
+    $additionalName='Synthetic_Unlabelled_Drive_Additional.pdf';New-ContentPdf -Path (Join-Path $cfg.Sources[2].Path $additionalName) -Profile Extended -Pages 5 -Date '2025-02-03' -Time '16:00:00'
+    $dailyDefinition=$driveDefinition.Replace("@('Homogeneity / Water','Noise')","@('Noise','Homogeneity')").Replace('Quality IEC Constancy','Quality Daily')
+    . ([scriptblock]::Create($dailyDefinition))
+    $dailyName='Synthetic_Unlabelled_Drive_Document.pdf';New-ContentPdf -Path (Join-Path $cfg.Sources[2].Path $dailyName) -Profile Basic -Pages 4 -Date '2025-02-03' -Time '17:00:00'
+    [void](Invoke-QaOperation $cfg -Mode Update);$imported=Get-QaDashboard $cfg
+    foreach($spec in @(@{Key='driveAdditional';Name=$additionalName;Pages=5;Time='16:00:00'},@{Key='driveDaily';Name=$dailyName;Pages=4;Time='17:00:00'})){
+        $raw=@($imported.Records|Where-Object OriginalFileName -ceq $spec.Name)[0]
+        $baseline.Records+=@([pscustomobject]@{key=$spec.Key;id=$raw.Id;hash=$raw.Hash;scanner=$raw.Scanner;source=$raw.SourcePath;destination=$raw.DestinationPath;rawDate=$raw.ReportDate;rawCategory=$raw.Category;pages=$spec.Pages;profile=$spec.Key;expectedDate='2025-02-03';expectedTime=$spec.Time})
+    }
+    $baseline.StateSHA256=(Get-FileHash (Join-Path $baseline.ArchiveRoot '.ctqa/state.json')).Hash;$baseline.RecordCount=@($imported.Records).Count
+    [void](Request @{action='ScannerSettings';scanner=$scanner;contentProfiles=@([pscustomobject]@{profileId='siemens-iec-basic-v1';category=''},[pscustomobject]@{profileId='siemens-iec-extended-v1';category=''},[pscustomobject]@{profileId='siemens-iec-additional-v1';category=''})})
+    [void](Read-One 'driveAdditional');[void](Read-One 'driveDaily');$additional=Record 'driveAdditional';$daily=Record 'driveDaily'
+    Check ($additional.content.status -ceq 'Recognized' -and $additional.content.profileId -ceq 'siemens-iec-additional-v1' -and $additional.content.components.Count -eq 5) 'The actual reader identifies all five known numbered Drive additional test bodies'
+    Check ($additional.pending -and $additional.content.mappedCategory -ceq '' -and $additional.content.suggestedCategory -ceq 'Monthly') 'Additional IEC checks remain Ask until a department filing rule is explicitly configured'
+    Check (@($additional.content.components|Where-Object name -ceq 'Low contrast').Count -eq 1) 'The reader and facade retain Low contrast as its own supported section'
+    Check ($daily.content.status -ceq 'Recognized' -and $daily.content.profileId -ceq 'siemens-quality-daily-v1' -and $daily.category -ceq 'Daily' -and $daily.decision -ceq 'Automatic' -and -not $daily.pending) 'The exact manufacturer Quality Daily body files automatically without a department profile mapping'
+    Check ($daily.content.mappedCategory -ceq '' -and $daily.content.dateStatus -ceq 'Consensus' -and $daily.date -ceq '2025-02-03') 'Explicit Daily classification still requires a complete matching footer date'
+    foreach($key in @('driveAdditional','driveDaily')){
+        $raw=@($imported.Records|Where-Object Id -ceq (Original $key).id)[0];$cached=&(Get-Module WebService){param($c,$r) Get-QaSavedAnalysis $c $r} $cfg $raw
+        Check ($cached.DocumentClassification.Model -ceq 'SOMATOM Drive') 'Both actual synthetic PDFs carry the exact Drive header through the real reader'
+    }
+    [void](Request @{action='ScannerSettings';scanner=$scanner;contentProfiles=@([pscustomobject]@{profileId='siemens-iec-basic-v1';category=''},[pscustomobject]@{profileId='siemens-iec-extended-v1';category=''},[pscustomobject]@{profileId='siemens-iec-additional-v1';category='Monthly'})})
+    $additional=Record 'driveAdditional';$daily=Record 'driveDaily'
+    Check ($additional.category -ceq 'Monthly' -and $additional.decision -ceq 'Automatic' -and -not $additional.pending) 'One explicit third-format rule files the already-read Additional PDF without individual approval or rereading'
+    Check ($daily.category -ceq 'Daily' -and -not $daily.pending -and (Mapping $scanner 'siemens-iec-additional-v1') -ceq 'Monthly') 'The additional rule remains separate from the explicit Daily document family'
+    foreach($row in @($additional,$daily)){Check ($row.clinicalComponents.Count -eq 0 -and $row.printedResult -ceq 'Not inferred from file classification') 'Document filing adds no clinical checklist sign-off or overall QA outcome'}
+    $export=Request @{action='Export';ids=@((Original 'driveAdditional').id,(Original 'driveDaily').id)}
+    Add-Type -AssemblyName System.IO.Compression.FileSystem;$archive=[IO.Compression.ZipFile]::OpenRead($export.path)
+    try{
+        $pdfs=@($archive.Entries|Where-Object FullName -match '\.pdf$')
+        Check ($pdfs.Count -eq 2 -and @($pdfs|Where-Object FullName -match '/Daily/').Count -eq 1 -and @($pdfs|Where-Object FullName -match '/Monthly/').Count -eq 1) 'Both real PDFs export in their independent derived Daily and Monthly folders'
+        foreach($entry in $pdfs){$stream=$entry.Open();$sha=[Security.Cryptography.SHA256]::Create();try{$hash=([BitConverter]::ToString($sha.ComputeHash($stream))).Replace('-','');Check ($hash -cin @((Original 'driveAdditional').hash,(Original 'driveDaily').hash)) 'Exported PDFs retain one of the two exact original byte fingerprints'}finally{$sha.Dispose();$stream.Dispose()}}
+    }finally{$archive.Dispose()}
+    Preserve
+}
+
 $failed=@($script:Results|Where-Object Result -eq 'FAIL').Count
 $summary=[pscustomobject]@{Product='CT QA Manager Pro';Feature='Offline content classification integration';Runtime=$PSVersionTable.PSVersion.ToString();WindowsPowerShell51ActuallyRun=($PSVersionTable.PSVersion.Major -eq 5);SyntheticOnly=$true;Tests=$script:Results.Count;Assertions=$script:Assertions;Failed=$failed;Results=@($script:Results.ToArray());Scope='Actual PDF reader, isolated analysis worker, content classifier, per-scanner settings, durable file decisions, readable library and ZIP export. Generated PDFs only; page count is deliberately decoupled from body profile. Core clinical state and original files are preserved.'}
 if($OutputPath){[void][IO.Directory]::CreateDirectory([IO.Path]::GetDirectoryName([IO.Path]::GetFullPath($OutputPath)));[IO.File]::WriteAllText($OutputPath,($summary|ConvertTo-Json -Depth 20),(New-Object Text.UTF8Encoding $false))}

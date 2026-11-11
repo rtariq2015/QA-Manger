@@ -119,7 +119,7 @@
     const coverage=state.data?.coverage;
     if(!coverage){setText('trend-coverage',state.loading?'Checking saved measurement coverage…':'Measurements appear after supported PDFs have been read.');return;}
     const details=[`${count(coverage.readReports)} of ${count(coverage.savedReports)} saved PDFs read`,`${count(coverage.pendingReports)} need measurement reading`];
-    for(const [key,label] of [['unsupportedReports','unsupported format'],['failedReports','could not be read'],['conflicts','with conflicting evidence'],['unknownDates','without a usable printed date']])if(Number(coverage[key])>0)details.push(`${count(coverage[key])} ${label}`);
+    for(const [key,label] of [['unsupportedReports','without usable readings for this measurement'],['failedReports','could not be read'],['conflicts','with conflicting evidence'],['unknownDates','without a usable printed date']])if(Number(coverage[key])>0)details.push(`${count(coverage[key])} ${label}`);
     setText('trend-coverage',details.join(' · ')+'.');
   }
   function boundsLabel(point) {

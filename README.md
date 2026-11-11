@@ -1,4 +1,4 @@
-# CT QA Manager Pro 5.3.0
+# CT QA Manager Pro 5.3.1
 
 A portable offline HTML interface built on the original Windows archive, network, PDF and export modules. Run **Start CT QA Manager.cmd**. The local helper and runtime are bundled; the work computer needs no separate runtime installation or administrator launch. Its application policy must permit the included Windows x64 executable and local browser access.
 
@@ -30,7 +30,7 @@ Pending file organization has exactly two primary actions: **Approve** keeps the
 
 These organization decisions are stored separately from clinical review. They do not manufacture a reviewer identity, printed PASS/FAIL or Monthly checklist evidence. Existing PDFs, reviewer names, selected evidence and archive history remain unchanged. The original interface remains available under Settings → Additional Windows tools, or through **Start CT QA Manager.cmd classic**, for detailed evidence review and legacy tools.
 
-Background content reading processes one PDF at a time at lower process priority, yields between PDFs for foreground actions, and supports Pause/Resume and Stop. A user-started batch reads at most 20 PDFs. Completed readings are cached, and browsing a chart never starts a hidden full-archive read. CPU and network work still depend on the workstation and report sizes.
+Background content reading processes one PDF at a time at lower process priority, yields between PDFs for foreground actions, and supports Pause/Resume and Stop. Use **Review → Read & organize automatically** for the pending queue, or **Settings → Reading & filing → Read all saved PDFs** to work through the remaining eligible library continuously. Saved scanner format rules determine Daily/Monthly filing; uncertain files remain pending. The separate **Read next 20 saved PDFs** and targeted Trends actions retain their bounded batches. Completed readings are cached, and browsing a chart never starts a hidden full-archive read. CPU and network work still depend on the workstation and report sizes.
 
 Trends keep scanner, Head/Body, system and slice contexts separate. Printed bounds and unusual values remain visible; ambiguous or conflicting readings are withheld. Change means the latest minus the first reading in the selected period, not a calibrated drift diagnosis or a clinical PASS. Older cached reports can be read in an explicit bounded batch to add measurements.
 
@@ -43,6 +43,12 @@ The HTML, styles, icons, JavaScript, host and runtime are local files. No CDN, p
 The Microsoft ASP.NET Core host listens only on 127.0.0.1 with an OS-selected port, same-origin checks and a per-run authenticated session. It invokes narrow PowerShell operations rather than arbitrary commands or file paths. Scanner passwords travel through local authenticated requests and process stdin, never URLs, command arguments or browser storage. Remembered passwords use Windows account/workstation protection and may need re-entry after moving to another computer.
 
 The larger download contains the self-contained runtime. Runtime licensing notices are included with the host. Build dependencies are development-only; the Python reader and its libraries are bundled. Normal use requires no separate Python, Node, Git or SDK installation.
+
+## Troubleshooting and printable support reports
+
+Open **Settings → Backup & support → Support & activity**. **Export diagnostic ZIP** collects the retained structured activity and current diagnostic summary into one shareable file. **Open printable report** prepares a readable HTML report; open its dedicated link, then press **Ctrl+P** to print or save as PDF. The ZIP and printable-report links remain available while other operations finish.
+
+The diagnostics describe program actions, timings, counts, reading and filing reasons, and connection error numbers. They exclude PDFs, extracted report text, filenames, private paths, network addresses, usernames, passwords and raw logs. Nothing is uploaded automatically. Share the diagnostic ZIP when asking for troubleshooting help; the printable report is useful for a quick review.
 
 ## Build and validate
 

@@ -30,12 +30,59 @@ function Get-QaAnalysisReaderMode {
     if($mode -cnotin @('Auto','Python','Standard')){return 'Auto'}
     return $mode
 }
+function Get-QaAnalysisVersionValue($Value) {
+    $number=0
+    if([int]::TryParse([string]$Value,[ref]$number) -and $number -ge 0 -and $number -le 1000000){return $number}
+    return 0
+}
+function Get-QaAnalysisEligibility {
+    param($Saved,[switch]$UpgradeMeasurements,[switch]$RefreshUnsupported)
+    if($null -eq $Saved){return 'New'}
+    if([string](Get-QaInsightValue $Saved Status '') -eq 'ReadError'){return ''}
+    $doc=Get-QaInsightValue $Saved DocumentClassification $null
+    # Format support changes are incremental. A previously unknown template may
+    # be retried once, while already recognized formats keep their valid cache.
+    # Do not repeatedly retry read errors, bad dates, incomplete text, or OCR.
+    if($RefreshUnsupported -and (Get-QaAnalysisVersionValue (Get-QaInsightValue $Saved ContentSupportRevision 0)) -lt (Get-QaContentSupportRevision) -and [string](Get-QaInsightValue $doc ReasonCode '') -cin @('UnknownTemplate','UnrecognizedSections') -and -not [string](Get-QaInsightValue $doc ProfileId '')){return 'UnsupportedUpgrade'}
+    if($UpgradeMeasurements -and (Get-QaAnalysisVersionValue (Get-QaInsightValue (Get-QaInsightValue $Saved MeasurementsDocument $null) MeasurementVersion 0)) -ne (Get-QaMeasurementParserVersion)){return 'MeasurementUpgrade'}
+    return ''
+}
+function Select-QaAnalysisRecords {
+    param([object[]]$Records=@(),[AllowEmptyCollection()][string[]]$RecordIds=@())
+    if(-not $PSBoundParameters.ContainsKey('RecordIds')){return @($Records)}
+    if(-not $RecordIds.Count){throw 'Choose at least one saved report to analyze.'}
+    $selected=New-Object 'Collections.Generic.List[object]';$ids=New-Object 'Collections.Generic.HashSet[string]' ([StringComparer]::OrdinalIgnoreCase)
+    $byId=@{}
+    foreach($record in $Records){$id=[string](Get-QaInsightValue $record Id '');if($byId.ContainsKey($id)){$byId[$id]=$null}else{$byId[$id]=$record}}
+    foreach($id in $RecordIds){
+        if($id -notmatch '^[0-9A-Fa-f]{64}$'){throw 'Invalid saved report identity.'}
+        if(-not $ids.Add($id)){continue}
+        if(-not $byId.ContainsKey($id) -or $null -eq $byId[$id]){throw 'The selected report must exist uniquely in the archive.'}
+        [void]$selected.Add($byId[$id])
+    }
+    return @($selected.ToArray())
+}
+function Get-QaAnalysisWorkPlan {
+    [CmdletBinding()]param($Config,[AllowEmptyCollection()][object[]]$Records=@(),[AllowEmptyCollection()][string[]]$RecordIds=@(),[switch]$UpgradeMeasurements,[switch]$RefreshUnsupported,[ValidateRange(1,100000)][int]$Limit=20)
+    if(-not $PSBoundParameters.ContainsKey('Records')){$Records=@((Get-QaDashboard -Config $Config).Records)}
+    $ordered=@($Records|Sort-Object ReportDate -Descending)
+    if($PSBoundParameters.ContainsKey('RecordIds')){$ordered=@(Select-QaAnalysisRecords -Records $ordered -RecordIds $RecordIds)}
+    $next=New-Object 'Collections.Generic.List[string]';$cached=0;$errors=0;$new=0;$measurements=0;$unsupported=0
+    foreach($record in $ordered){
+        $saved=Get-QaSavedAnalysis $Config $record
+        if($null -ne $saved){$cached++;if([string](Get-QaInsightValue $saved Status '') -eq 'ReadError'){$errors++}}
+        $reason=Get-QaAnalysisEligibility -Saved $saved -UpgradeMeasurements:$UpgradeMeasurements -RefreshUnsupported:$RefreshUnsupported
+        switch($reason){'New'{$new++}'MeasurementUpgrade'{$measurements++}'UnsupportedUpgrade'{$unsupported++}}
+        if($reason -and $next.Count -lt $Limit){[void]$next.Add([string]$record.Id)}
+    }
+    return [pscustomobject]@{Total=$ordered.Count;Saved=$cached;Cached=$cached;Errors=$errors;NewPending=$new;MeasurementUpgradePending=$measurements;UnsupportedUpgradePending=$unsupported;Pending=($new+$measurements+$unsupported);RecordIds=@($next.ToArray())}
+}
 function Test-QaAnalysisSelectedRefresh {
     param($Config,$Record)
     $saved=Get-QaSavedAnalysis $Config $Record
     if($null -eq $saved){return $false}
     $measurements=Get-QaInsightValue $saved MeasurementsDocument $null
-    return ([int](Get-QaInsightValue $measurements MeasurementVersion 0) -ne (Get-QaMeasurementParserVersion) -or [string](Get-QaInsightValue $saved RequestedReaderMode '') -cne (Get-QaAnalysisReaderMode $Config))
+    return ((Get-QaAnalysisVersionValue (Get-QaInsightValue $measurements MeasurementVersion 0)) -ne (Get-QaMeasurementParserVersion) -or [string](Get-QaInsightValue $saved RequestedReaderMode '') -cne (Get-QaAnalysisReaderMode $Config) -or (Get-QaAnalysisEligibility -Saved $saved -RefreshUnsupported) -ceq 'UnsupportedUpgrade')
 }
 function Get-QaAnalysisMetadata {
     param([string]$Path)
@@ -90,22 +137,11 @@ function Set-QaAnalysisWorkProgress {
     foreach($key in $values.Keys){if($Progress -is [Collections.IDictionary]){$Progress[$key]=$values[$key]}else{$Progress|Add-Member -NotePropertyName $key -NotePropertyValue $values[$key] -Force}}
 }
 function Invoke-QaAnalysis {
-    [CmdletBinding()]param($Config,$Progress=$null,[int]$Limit=20,[string[]]$RecordIds=@(),[switch]$Force,[switch]$UpgradeMeasurements)
+    [CmdletBinding()]param($Config,$Progress=$null,[int]$Limit=20,[string[]]$RecordIds=@(),[switch]$Force,[switch]$UpgradeMeasurements,[switch]$RefreshUnsupported)
     $dashboard=Get-QaDashboard -Config $Config;$done=0;$skipped=0;$failed=0;$cancelled=$false;$requestedReader=Get-QaAnalysisReaderMode $Config
     $root=Join-Path $Config.ArchiveRoot '.ctqa/analysis'
     $records=@($dashboard.Records|Sort-Object ReportDate -Descending)
-    if($PSBoundParameters.ContainsKey('RecordIds')){
-        if(-not $RecordIds.Count){throw 'Choose at least one saved report to analyze.'}
-        $selected=New-Object 'Collections.Generic.List[object]';$ids=New-Object 'Collections.Generic.HashSet[string]' ([StringComparer]::OrdinalIgnoreCase)
-        foreach($id in $RecordIds){
-            if($id -notmatch '^[0-9A-Fa-f]{64}$'){throw 'Invalid saved report identity.'}
-            if(-not $ids.Add($id)){continue}
-            $matches=@($records|Where-Object{[string]$_.Id -eq $id})
-            if($matches.Count -ne 1){throw 'The selected report must exist uniquely in the archive.'}
-            [void]$selected.Add($matches[0])
-        }
-        $records=@($selected.ToArray())
-    }
+    if($PSBoundParameters.ContainsKey('RecordIds')){$records=@(Select-QaAnalysisRecords -Records $records -RecordIds $RecordIds)}
     $analyzedIds=New-Object 'Collections.Generic.List[string]'
     # Determine this bounded batch once, without reopening already cached PDF text.
     $candidates=New-Object 'Collections.Generic.List[object]'
@@ -113,8 +149,8 @@ function Invoke-QaAnalysis {
     foreach($record in $records){
         if([bool](Get-QaInsightValue $Progress Cancel $false)){$cancelled=$true;break}
         $saved=Get-QaSavedAnalysis $Config $record
-        $needsMeasurements=($UpgradeMeasurements -and $null -ne $saved -and [string](Get-QaInsightValue $saved Status '') -ne 'ReadError' -and [int](Get-QaInsightValue (Get-QaInsightValue $saved MeasurementsDocument $null) MeasurementVersion 0) -ne (Get-QaMeasurementParserVersion))
-        if(-not $Force -and $null -ne $saved -and -not $needsMeasurements){$skipped++;continue}
+        $reason=Get-QaAnalysisEligibility -Saved $saved -UpgradeMeasurements:$UpgradeMeasurements -RefreshUnsupported:$RefreshUnsupported
+        if(-not $Force -and -not $reason){$skipped++;continue}
         if($candidates.Count -lt [math]::Max(0,$Limit)){[void]$candidates.Add($record)}
     }
     # Content classification is derived evidence. It never writes a clinical
@@ -123,12 +159,14 @@ function Invoke-QaAnalysis {
         if([bool](Get-QaInsightValue $Progress Cancel $false)){$cancelled=$true;break}
         Set-QaAnalysisWorkProgress $Progress ($done+$failed) $candidates.Count
         $readClock=[Diagnostics.Stopwatch]::StartNew();$source=@($Config.Sources|Where-Object Scanner -eq $record.Scanner|Select-Object -First 1);$number=0;if($source.Count){$number=1+[Array]::IndexOf([object[]]$Config.Sources,$source[0])}
-        Write-QaSupportEvent -AppRoot $Config.AppRoot -Operation PdfRead -Outcome Started -ScannerNumber $number
+        $eventReader='Unknown';$eventProfile='Unknown';$eventReason='ReadCompleted'
+        Write-QaSupportEvent -AppRoot $Config.AppRoot -Operation PdfRead -Outcome Started -ScannerNumber $number -Stage Analyzing -Reason ReadStarted -Reader Unknown -Profile Unknown
         try {
             $before=Get-QaAnalysisMetadata ([string]$record.DestinationPath)
             $read=Invoke-QaIsolatedTask -Action ReadPdf -InputObject ([pscustomobject]@{Config=$Config;RecordId=$record.Id;Reader=$requestedReader}) -TimeoutSeconds 90 -Progress $Progress
+            $observedReader=[string](Get-QaInsightValue $read ReaderUsed '');if($observedReader -cin @('Standard','Python','Legacy')){$eventReader=$observedReader}
             if([bool](Get-QaInsightValue (Get-QaInsightValue $read Summary $null) Cancelled $false) -or [bool](Get-QaInsightValue $Progress Cancel $false)){
-                $cancelled=$true;Write-QaSupportEvent -AppRoot $Config.AppRoot -Operation PdfRead -Outcome Cancelled -ScannerNumber $number -DurationMs $readClock.ElapsedMilliseconds;break
+                $cancelled=$true;Write-QaSupportEvent -AppRoot $Config.AppRoot -Operation PdfRead -Outcome Cancelled -ScannerNumber $number -DurationMs $readClock.ElapsedMilliseconds -Stage Analyzing -Reason WorkerCancelled -Reader $eventReader -Profile $eventProfile;break
             }
             $after=Get-QaAnalysisMetadata ([string]$record.DestinationPath)
             $verifiedHash=[string](Get-QaInsightValue $read VerifiedHash '');$verifiedLength=[long](Get-QaInsightValue $read VerifiedLength -1);$verifiedTicks=[long](Get-QaInsightValue $read VerifiedWriteTicks 0)
@@ -137,7 +175,11 @@ function Invoke-QaAnalysis {
             $classification=ConvertFrom-QaDocumentContent -Text ([string]$read.Text) -Truncated ([bool]$read.Truncated) -NeedsOCR ([bool]$read.NeedsOCR) -Pages ([int]$read.Pages) -ReadPages ([int]$read.ReadPages)
             $classification|Add-Member -NotePropertyName Pages -NotePropertyValue ([int]$read.Pages) -Force;$classification|Add-Member -NotePropertyName ReadPages -NotePropertyValue ([int]$read.ReadPages) -Force;$classification|Add-Member -NotePropertyName NeedsOCR -NotePropertyValue ([bool]$read.NeedsOCR) -Force
             $measurements=ConvertFrom-QaMeasurementText -Text ([string]$read.Text) -Truncated ([bool]$read.Truncated) -NeedsOCR ([bool]$read.NeedsOCR) -Pages ([int]$read.Pages) -ReadPages ([int]$read.ReadPages)
+            $eventProfile=switch([string]$classification.ProfileId){'siemens-iec-basic-v1'{'Basic'}'siemens-iec-extended-v1'{'Extended'}'siemens-iec-additional-v1'{'Additional'}'siemens-quality-daily-v1'{'Daily'}default{'Unknown'}}
+            $documentReason=[string]$classification.ReasonCode;$measurementReason=[string]$measurements.ReasonCode
+            if($documentReason -ceq 'SupportedProfile' -and $measurementReason -cin @('NoReadableText','InputLimit','UnsupportedProfile','NoSupportedTables','MeasurementReviewNeeded','SupportedPrintedValues')){$eventReason=$measurementReason}elseif($documentReason -cin @('SupportedProfile','UnknownTemplate','IncompleteRead','UncertainReportDate','ConflictingExplicitTitles','UnrecognizedSections')){$eventReason=$documentReason}
             $row|Add-Member MeasurementsDocument $measurements
+            $row|Add-Member ContentSupportRevision (Get-QaContentSupportRevision)
             $readerUsed=[string](Get-QaInsightValue $read ReaderUsed 'Legacy');if($readerUsed -cnotin @('Python','Standard')){$readerUsed='Legacy'}
             $row|Add-Member ReaderUsed $readerUsed;$row|Add-Member ReaderVersion ([string](Get-QaInsightValue $read ReaderVersion ''));$row|Add-Member ReaderElapsedMs ([long]$readClock.ElapsedMilliseconds);$row|Add-Member RequestedReaderMode $requestedReader
             $row|Add-Member ReaderFallbackReason ([string](Get-QaInsightValue $read FallbackReason ''))
@@ -146,18 +188,18 @@ function Invoke-QaAnalysis {
             $row|Add-Member VerifiedHash $verifiedHash;$row|Add-Member VerifiedLength $verifiedLength;$row|Add-Member VerifiedWriteTicks $verifiedTicks
             $row|Add-Member ReaderMessage ([string]$read.Message)
             $row|Add-Member SavedWriteTicks $verifiedTicks;$row|Add-Member SavedLength $verifiedLength
-            if([bool](Get-QaInsightValue $Progress Cancel $false)){$cancelled=$true;Write-QaSupportEvent -AppRoot $Config.AppRoot -Operation PdfRead -Outcome Cancelled -ScannerNumber $number -DurationMs $readClock.ElapsedMilliseconds;break}
+            if([bool](Get-QaInsightValue $Progress Cancel $false)){$cancelled=$true;Write-QaSupportEvent -AppRoot $Config.AppRoot -Operation PdfRead -Outcome Cancelled -ScannerNumber $number -DurationMs $readClock.ElapsedMilliseconds -Stage Analyzing -Reason WorkerCancelled -Reader $eventReader -Profile $eventProfile;break}
             Write-QaAnalysisFile -Root $root -Hash $record.Hash -Value $row
             $done++;[void]$analyzedIds.Add([string]$record.Id)
-            Write-QaSupportEvent -AppRoot $Config.AppRoot -Operation PdfRead -Outcome Completed -ScannerNumber $number -DurationMs $readClock.ElapsedMilliseconds -Counts @{Analyzed=1;Truncated=[int][bool]$row.Truncated;PrintedPass=[int]($row.Status -eq 'ReportedPass');PrintedFailure=[int]($row.Status -eq 'ReportedFailure');NeedsReview=[int]($row.Status -eq 'NeedsReview')}
+            Write-QaSupportEvent -AppRoot $Config.AppRoot -Operation PdfRead -Outcome Completed -ScannerNumber $number -DurationMs $readClock.ElapsedMilliseconds -Stage Analyzing -Reason $eventReason -Reader $eventReader -Profile $eventProfile -Counts @{Analyzed=1;Truncated=[int][bool]$row.Truncated;PrintedPass=[int]($row.Status -eq 'ReportedPass');PrintedFailure=[int]($row.Status -eq 'ReportedFailure');NeedsReview=[int]($row.Status -eq 'NeedsReview')}
         } catch {
-            if([bool](Get-QaInsightValue $Progress Cancel $false) -or $_.Exception -is [OperationCanceledException]){$cancelled=$true;Write-QaSupportEvent -AppRoot $Config.AppRoot -Operation PdfRead -Outcome Cancelled -ScannerNumber $number -DurationMs $readClock.ElapsedMilliseconds;break}
-            Write-QaSupportEvent -AppRoot $Config.AppRoot -Operation PdfRead -Outcome Failed -ScannerNumber $number -DurationMs $readClock.ElapsedMilliseconds -ErrorKind (Get-QaSupportErrorKind $_.Exception.Message) -Counts @{ReadErrors=1}
+            if([bool](Get-QaInsightValue $Progress Cancel $false) -or $_.Exception -is [OperationCanceledException]){$cancelled=$true;Write-QaSupportEvent -AppRoot $Config.AppRoot -Operation PdfRead -Outcome Cancelled -ScannerNumber $number -DurationMs $readClock.ElapsedMilliseconds -Stage Analyzing -Reason WorkerCancelled -Reader $eventReader -Profile $eventProfile;break}
+            Write-QaSupportEvent -AppRoot $Config.AppRoot -Operation PdfRead -Outcome Failed -ScannerNumber $number -DurationMs $readClock.ElapsedMilliseconds -Stage Analyzing -Reason ReadFailed -Reader $eventReader -Profile $eventProfile -ErrorKind (Get-QaSupportErrorKind $_.Exception.Message) -Counts @{ReadErrors=1}
             $failed++
             # Failure observations are not successful read provenance. They only
             # prevent repeated background retries until a file changes.
             $observed=Get-QaAnalysisMetadata ([string]$record.DestinationPath)
-            $row=[pscustomobject]@{AnalysisCacheSchemaVersion=3;RequestedReaderMode=$requestedReader;ParserVersion=1;Hash=[string]$record.Hash;RecordId=[string]$record.Id;Status='ReadError';Truncated=$true;Findings=@();ReadUtc=[datetime]::UtcNow.ToString('o');ReaderMessage='The saved PDF could not be read and verified. Check the PDF, reader components, and archive integrity before retrying.';SavedWriteTicks=$observed.WriteTicks;SavedLength=$observed.Length}
+            $row=[pscustomobject]@{AnalysisCacheSchemaVersion=3;ContentSupportRevision=(Get-QaContentSupportRevision);RequestedReaderMode=$requestedReader;ParserVersion=1;Hash=[string]$record.Hash;RecordId=[string]$record.Id;Status='ReadError';Truncated=$true;Findings=@();ReadUtc=[datetime]::UtcNow.ToString('o');ReaderMessage='The saved PDF could not be read and verified. Check the PDF, reader components, and archive integrity before retrying.';SavedWriteTicks=$observed.WriteTicks;SavedLength=$observed.Length}
             Write-QaAnalysisFile -Root $root -Hash $record.Hash -Value $row
         }
     }
@@ -193,9 +235,8 @@ function Write-QaAnalysisFile {
 }
 function Get-QaAnalysisProgress {
     [CmdletBinding()]param($Config,[object[]]$Records=@())
-    $cached=0;$errors=0
-    foreach($record in $Records){$row=Get-QaSavedAnalysis -Config $Config -Record $record;if($null -ne $row){$cached++;if($row.Status -eq 'ReadError'){$errors++}}}
-    return [pscustomobject]@{Total=$Records.Count;Cached=$cached;Pending=($Records.Count-$cached);Errors=$errors}
+    $plan=Get-QaAnalysisWorkPlan -Config $Config -Records $Records -UpgradeMeasurements -RefreshUnsupported
+    return [pscustomobject]@{Total=$plan.Total;Cached=$plan.Cached;Pending=$plan.NewPending;Errors=$plan.Errors;Saved=$plan.Saved;NewPending=$plan.NewPending;MeasurementUpgradePending=$plan.MeasurementUpgradePending;UnsupportedUpgradePending=$plan.UnsupportedUpgradePending;BacklogPending=$plan.Pending}
 }
 function Get-QaTodayOverview {
     [CmdletBinding()]param($Config,$Dashboard,[datetime]$Date=(Get-Date))
@@ -248,4 +289,4 @@ function Invoke-QaSourceAudit {
     }
     return [pscustomobject]@{Mode='SourceAudit';Rows=@($rows.ToArray());Summary=[pscustomobject]@{Description='Scanner source fingerprints checked read-only. Archive labels were not changed.';Cancelled=($null -ne $Progress -and [bool]$Progress.Cancel)}}
 }
-Export-ModuleMember -Function Get-QaAnalysisReaderMode,Test-QaAnalysisSelectedRefresh,Get-QaDocumentClassificationVersion,ConvertFrom-QaReportText,Get-QaSavedAnalysis,Invoke-QaAnalysis,Get-QaTodayOverview,Get-QaAnalysisProgress,Get-QaMonthOverview,Invoke-QaSourceAudit
+Export-ModuleMember -Function Get-QaAnalysisWorkPlan,Get-QaAnalysisReaderMode,Test-QaAnalysisSelectedRefresh,Get-QaDocumentClassificationVersion,ConvertFrom-QaReportText,Get-QaSavedAnalysis,Invoke-QaAnalysis,Get-QaTodayOverview,Get-QaAnalysisProgress,Get-QaMonthOverview,Invoke-QaSourceAudit

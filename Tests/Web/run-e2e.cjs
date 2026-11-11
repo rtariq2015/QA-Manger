@@ -428,6 +428,45 @@ function verifyArchivePreserved() {
       check(true,'Undo remains usable after background cancellation and restores the pending filing decision');
       verifyArchivePreserved();
     });
+    await scenario('One support export includes detailed scrubbed activity, report reasons and a separately printable report',async()=>{
+      await settings('support');
+      const previous=new Set((await jobs()).map(job=>job.id));
+      await page.locator('#diagnostics-button').click();
+      const bundled=await until(async()=>(await jobs()).find(job=>!previous.has(job.id)&&job.action==='Diagnostics'&&['completed','failed'].includes(job.status)),'The detailed diagnostic ZIP did not finish.',180000);
+      check(bundled.status==='completed','The diagnostic ZIP finishes successfully');
+      const zipUrl=bundled.result?.downloadUrl;check(!!zipUrl,'A completed diagnostic export exposes its authenticated ZIP');
+      await until(async()=>await page.locator('#support-download-link').isVisible()&&(await page.locator('#support-download-link').getAttribute('href')).endsWith(zipUrl),'The diagnostic ZIP link was not retained in Support.');
+      const zipResponse=await api(zipUrl);check(zipResponse.ok,'The detailed diagnostic ZIP downloads successfully');
+      const zipPath=path.join(output,'synthetic-detailed-diagnostics.zip');fs.writeFileSync(zipPath,Buffer.from(await zipResponse.arrayBuffer()));
+      const contents=JSON.parse(execFileSync(args.python||(process.platform==='win32'?'python':'python3'),['-c','import json,zipfile,sys;z=zipfile.ZipFile(sys.argv[1]);print(json.dumps({n:z.read(n).decode("utf-8-sig") for n in z.namelist()}))',zipPath],{encoding:'utf8'}));
+      const expectedEntries=['READ ME.txt','Report-Diagnostics.csv','Report-Diagnostics.jsonl','Scrubbed-Activity.csv','Scrubbed-Activity.jsonl','Support-Summary.json','SupportReport.html'];
+      check(JSON.stringify(Object.keys(contents).sort())===JSON.stringify(expectedEntries),'The ZIP contains the printable report, structured summary and complete CSV/JSONL report and activity details');
+      const support=JSON.parse(contents['Support-Summary.json']),reportRows=contents['Report-Diagnostics.jsonl'].trim().split(/\r?\n/).filter(Boolean).map(line=>JSON.parse(line)),events=contents['Scrubbed-Activity.jsonl'].trim().split(/\r?\n/).filter(Boolean).map(line=>JSON.parse(line));
+      check(support.ArchiveRecords===baseline.RecordCount&&reportRows.length===baseline.RecordCount,'Diagnostic detail accounts for every archived synthetic PDF without bundling its contents');
+      check(new Set(reportRows.map(row=>row.Reference)).size===baseline.RecordCount&&reportRows.every(row=>/^Report[0-9]{4,}$/.test(row.Reference)),'Each report gets a unique per-export reference instead of its filename, path or fingerprint');
+      check(reportRows.every(row=>/^Scanner [0-9]+$/.test(row.Scanner)),'Configured scanners use anonymous ordinal labels');
+      check(events.some(event=>event.Operation==='PdfRead')&&events.some(event=>event.Operation==='Reconnect'&&event.Outcome==='Failed'),'Activity retains PDF work and failed connection attempts for diagnosis');
+      const combined=Object.values(contents).join('\n');
+      for(const canary of ['Synthetic Draft User','Synthetic test password - not a real credential','Synthetic unsaved secret - not a credential','Synthetic evidence reviewer',baseline.FixtureRoot,baseline.ArchiveRoot,...baseline.Records.map(row=>row.Hash)])check(!combined.includes(canary),'The shareable ZIP excludes a private sentinel, workstation path or original report fingerprint');
+      check(!Object.keys(contents).some(name=>/\.(pdf|log|ps1)$/i.test(name)),'Raw reports, startup logs and commands are not included');
+      check(/UnknownTemplate|MissingFormatRule|Unread|MeasurementUpgradePending|NoSupportedTables/.test(combined),'The diagnostic export explains unread, unsupported or rule-dependent evidence instead of only a pending total');
+      const html=contents['SupportReport.html'];
+      check(/Diagnostic report/i.test(html)&&/@media\s+print/i.test(html)&&/Ctrl\s*\+\s*P/i.test(html),'The bundled report has readable headings, print CSS and printing instructions');
+      check(!/<script\b/i.test(html)&&!/\b(?:src|href)=["'](?:https?:)?\/\//i.test(html),'The printable report uses no script or remote assets');
+      const beforePrint=new Set((await jobs()).map(job=>job.id));await page.locator('#print-diagnostics-button').click();
+      const printable=await until(async()=>(await jobs()).find(job=>!beforePrint.has(job.id)&&job.action==='PrintDiagnostics'&&['completed','failed'].includes(job.status)),'The standalone printable report did not finish.',180000);
+      check(printable.status==='completed'&&!!printable.result?.downloadUrl,'The print action creates a separate authenticated HTML report');
+      const printUrl=printable.result.downloadUrl;
+      await until(async()=>await page.locator('#print-support-download-link').isVisible()&&(await page.locator('#print-support-download-link').getAttribute('href')).endsWith(printUrl),'The printable report link was not retained in Support.');
+      check((await page.locator('#support-download-link').getAttribute('href')).endsWith(zipUrl),'Creating a printable report preserves the existing diagnostic ZIP link');
+      check((await page.locator('#print-support-download-link').getAttribute('target'))==='_blank','The print link can open independently without replacing the application');
+      const printResponse=await api(printUrl);check(printResponse.ok&&/text\/html/i.test(printResponse.headers.get('content-type')||''),'The print artifact is served as HTML for browser printing');
+      const printedHtml=await printResponse.text();check(/Diagnostic report/i.test(printedHtml)&&/@media\s+print/i.test(printedHtml)&&!/<script\b/i.test(printedHtml),'The standalone HTML retains the complete script-free printable report');
+      const printPage=await context.newPage();await printPage.goto(new URL(printUrl,ready.url).href,{waitUntil:'domcontentloaded'});await printPage.emulateMedia({media:'print'});check((await printPage.locator('body').innerText()).includes('Diagnostic report'),'The authenticated printable page opens in the existing browser session');await printPage.screenshot({path:path.join(output,'support-print-web-demo.png'),fullPage:true});await printPage.close();
+      await action({action:'Settings',theme:'Light'});await settings('support');
+      check((await page.locator('#support-download-link').getAttribute('href')).endsWith(zipUrl)&&(await page.locator('#print-support-download-link').getAttribute('href')).endsWith(printUrl),'Both support links survive an unrelated completed operation and fresh snapshot');
+      await page.screenshot({path:path.join(output,'support-activity-web-demo.png'),fullPage:true});verifyArchivePreserved();
+    });
     await scenario('The interface remains usable at a smaller workstation size', async () => {
       await page.setViewportSize({ width: 1024, height: 768 }); await nav('reports'); await page.locator('#clear-filters').click(); await page.locator('#status-filter').selectOption('pending');
       const pending = (await waitSnapshot()).records.find(r => r.pending); await page.locator('.report-item[data-record-id="' + pending.id + '"]').click();
@@ -447,7 +486,7 @@ function verifyArchivePreserved() {
     releaseAnalysis();
     if (browser) await browser.close(); await stopHost();
     fs.writeFileSync(insightFile,originalInsights);
-    const summary = { version: '5.3.0', syntheticOnly: true, browser: 'Chromium via Playwright', browserChannel: args['browser-channel'] || 'chromium', nativePdfPreviewActuallyRun: nativePreviewActuallyRun, tests: results.length, assertions, failed: results.filter(r => r.result === 'FAIL').length, externalAssetRequests: externalRequests.length, javascriptErrors: errors, results, scope: 'Actual local host, PowerShell adapter and synthetic archived PDFs. Does not establish hospital network access or workstation endpoint-policy approval.' };
+    const summary = { version: '5.3.1', syntheticOnly: true, browser: 'Chromium via Playwright', browserChannel: args['browser-channel'] || 'chromium', nativePdfPreviewActuallyRun: nativePreviewActuallyRun, tests: results.length, assertions, failed: results.filter(r => r.result === 'FAIL').length, externalAssetRequests: externalRequests.length, javascriptErrors: errors, results, scope: 'Actual local host, PowerShell adapter and synthetic archived PDFs. Does not establish hospital network access or workstation endpoint-policy approval.' };
     fs.writeFileSync(path.join(output, 'browser-summary.json'), JSON.stringify(summary, null, 2) + '\n');
     process.stdout.write('Result: ' + (summary.tests - summary.failed) + '/' + summary.tests + ' scenarios; ' + assertions + ' assertions.\n');
   }

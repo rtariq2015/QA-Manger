@@ -3,6 +3,9 @@ Set-StrictMode -Version 2.0
 $ErrorActionPreference='Stop'
 
 function Get-QaContentClassifierVersion { return 1 }
+# Additive compatible templates have a separate rollout revision so recognized
+# historical evidence remains reusable while old unsupported reads can retry once.
+function Get-QaContentSupportRevision { return 3 }
 function Get-QaContentSectionDefinitions {
     return @(
         [pscustomobject]@{Code='HomogeneityWater';Name='Homogeneity / Water'},
@@ -14,6 +17,7 @@ function Get-QaContentSectionDefinitions {
         [pscustomobject]@{Code='Slice';Name='Slice'},
         [pscustomobject]@{Code='MTF';Name='MTF'},
         [pscustomobject]@{Code='Contrast';Name='Contrast'},
+        [pscustomobject]@{Code='LowContrast';Name='Low contrast'},
         [pscustomobject]@{Code='TablePosition';Name='Table position'}
     )
 }
@@ -29,6 +33,7 @@ function Get-QaContentSectionCode([string]$Label) {
         '^Slice$' {return 'Slice'}
         '^MTF$' {return 'MTF'}
         '^Contrast$' {return 'Contrast'}
+        '^Low\s+Contrast$' {return 'LowContrast'}
         '^Table\s+Position$' {return 'TablePosition'}
         default {return ''}
     }
@@ -42,7 +47,7 @@ function ConvertFrom-QaDocumentContent {
         [int]$ReadPages=0
     )
     $template='siemens-iec-constancy-v1';$sections=New-Object 'Collections.Generic.List[object]';$issues=New-Object 'Collections.Generic.List[string]'
-    $result=[pscustomobject]@{ClassifierVersion=1;TemplateVersion=$template;ProfileId='';ProfileName='';Model='';Status='NeedsReview';Category='';SuggestedCategory='';ReportDate='';ReportTime='';DateStatus='Missing';CompleteRead=$false;ReasonCode='UnknownTemplate';Reason='The document does not match a supported complete report profile.';Sections=@();DateEvidence=[pscustomobject]@{MatchedPages=0;ExpectedPages=$Pages};Issues=@();ClinicalResult='Not inferred'}
+    $result=[pscustomobject]@{ClassifierVersion=1;SupportRevision=(Get-QaContentSupportRevision);TemplateVersion=$template;ProfileId='';ProfileName='';Model='';Status='NeedsReview';Category='';SuggestedCategory='';ReportDate='';ReportTime='';DateStatus='Missing';CompleteRead=$false;ReasonCode='UnknownTemplate';Reason='The document does not match a supported complete report profile.';Sections=@();DateEvidence=[pscustomobject]@{MatchedPages=0;ExpectedPages=$Pages};Issues=@();ClinicalResult='Not inferred'}
     # Text must come from the verified full-document reader. Page counts alone
     # never determine whether a document is Daily or Monthly.
     $normalized=$Text.Replace([string][char]0x00a0,' ').Replace([string][char]0x202f,' ').Replace("`r`n","`n").Replace("`r","`n")
@@ -73,52 +78,79 @@ function ConvertFrom-QaDocumentContent {
     elseif($complete -and $matchedPages -eq $Pages -and $footerValues.Count -eq 1){$result.DateStatus='Consensus';$only=@($footerValues.Keys)[0];$result.ReportDate=$only.Substring(0,10);$result.ReportTime=$only.Substring(11,8)}
     elseif($complete){$result.DateStatus='Missing';[void]$issues.Add('MissingFooterDate')}
 
-    $supportedTemplate=($normalized -match '(?i)\bSOMATOM\s+Definition\s+Edge\b' -and $normalized -match '(?i)\bQuality\s+IEC\s+Constancy\b')
+    # A recognized model name is only one template prerequisite. Exact numbered
+    # body sections, full text and matching page footers are still required.
+    $models=@{}
+    foreach($modelMatch in @([regex]::Matches($normalized,'(?i)\bSOMATOM\s+Definition\s+(?<model>Edge|Flash)\b(?![A-Za-z0-9_+\-])'))){
+        $model=if($modelMatch.Groups['model'].Value -ieq 'Edge'){'Edge'}else{'Flash'};$models[$model]=$true
+    }
+    if($normalized -match '(?i)\bSOMATOM\s+Drive\b(?![A-Za-z0-9_+\-])'){$models['Drive']=$true}
+    if($models.Count -gt 1){[void]$issues.Add('ConflictingModelHeaders')}
+    $supportedTemplate=($models.Count -eq 1 -and $normalized -match '(?i)\bQuality\s+(?:IEC\s+Constancy|Daily)\b')
     $bodyHeadings=New-Object 'Collections.Generic.List[object]'
     foreach($page in $pageBodies){
         if($page.Number -lt 3){continue}
-        $headings=@([regex]::Matches($page.Body,'(?im)^[ \t]*(?<number>\d{1,2})\.[ \t\r\n]*Quality\s+IEC\s+Constancy[ \t]*(?:\r?\n[ \t]*)?(?<label>[^\r\n]+?)[ \t]*$'))
-        foreach($heading in $headings){[void]$bodyHeadings.Add([pscustomobject]@{Number=[int]$heading.Groups['number'].Value;Page=$page.Number;Code=(Get-QaContentSectionCode $heading.Groups['label'].Value);Start=$heading.Index;HeadingEnd=($heading.Index+$heading.Length)})}
+        $headings=@([regex]::Matches($page.Body,'(?im)^[ \t]*(?<number>\d{1,2})\.[ \t\r\n]*Quality\s+(?<kind>IEC\s+Constancy|Daily)[ \t]*(?:\r?\n[ \t]*)?(?<label>[^\r\n]+?)[ \t]*$'))
+        foreach($heading in $headings){
+            $kind=if($heading.Groups['kind'].Value -match '(?i)^Daily$'){'Daily'}else{'IEC'}
+            $label=([regex]::Replace($heading.Groups['label'].Value,'\s+',' ')).Trim()
+            # Daily's literal manufacturer heading uses Homogeneity, while IEC
+            # uses Homogeneity / Water. Do not generalize this alias to IEC.
+            $code=if($kind -eq 'Daily'){switch -Regex ($label){'^Noise$'{'Noise'}'^Homogeneity$'{'HomogeneityWater'}default{''}}}else{Get-QaContentSectionCode $label}
+            [void]$bodyHeadings.Add([pscustomobject]@{Number=[int]$heading.Groups['number'].Value;Page=$page.Number;Code=$code;Kind=$kind;Start=$heading.Index;HeadingEnd=($heading.Index+$heading.Length)})
+        }
     }
-    $seenSections=@{};$hasUnknown=$false;$badSequence=$false;$expectedNumber=1
+    $seenSections=@{};$hasUnknown=$false;$badSequence=$false;$expectedNumber=1;$bodyKinds=@{}
     for($i=0;$i -lt $bodyHeadings.Count;$i++){
-        $heading=$bodyHeadings[$i];$code=[string]$heading.Code
+        $heading=$bodyHeadings[$i];$code=[string]$heading.Code;$bodyKinds[[string]$heading.Kind]=$true
         if(-not $code){$hasUnknown=$true;[void]$issues.Add('UnknownBodySection')}
         if($heading.Number -ne $expectedNumber){$badSequence=$true};$expectedNumber++
         if($seenSections.ContainsKey($code)){$badSequence=$true}else{$seenSections[$code]=$true}
         $endPage=if($i+1 -lt $bodyHeadings.Count){$bodyHeadings[$i+1].Page}else{$Pages}
-        $outcomes=New-Object 'Collections.Generic.List[string]'
+        $outcomes=New-Object 'Collections.Generic.List[string]';$hasTestMarker=$false;$hasResultMarker=$false;$hasUnitMarker=$false
         foreach($page in $pageBodies){
             if($page.Number -lt $heading.Page -or $page.Number -gt $endPage){continue};$body=$page.Body
             if($i+1 -lt $bodyHeadings.Count -and $page.Number -eq $bodyHeadings[$i+1].Page){$body=$body.Substring(0,$bodyHeadings[$i+1].Start)}
             if($page.Number -eq $heading.Page){$body=$body.Substring([math]::Min($heading.HeadingEnd,$body.Length))}
+            if($body -match '(?im)^[ \t]*Test[ \t]*:'){$hasTestMarker=$true}
+            if($body -match '(?im)^[ \t]*(?:Result|Results)[ \t]*(?::|for[ \t]+System|$)'){$hasResultMarker=$true}
+            if($body -match '(?i)(?<![A-Za-z])(?:HU|mm|cm|lp/cm)(?![A-Za-z])'){$hasUnitMarker=$true}
             # Retain only literal end-of-line status tokens from body sections.
             # Table labels and numeric measurements are not copied or interpreted.
             foreach($outcome in @([regex]::Matches($body,'(?im)(?<!\S)(?<value>NOT[ \t]+OK|OK|FAIL(?:ED)?|PASS(?:ED)?|ERROR|WARNING|NOT[ \t]+EVALUATED)[ \t]*$'))){$raw=([regex]::Replace($outcome.Groups['value'].Value,'[ \t]+',' ')).Trim().ToUpperInvariant();if(-not $outcomes.Contains($raw)){[void]$outcomes.Add($raw)}}
         }
         $outcomeStatus=if($outcomes.Count -gt 1){'Conflict'}elseif($outcomes.Count -eq 1){'Printed'}else{'Missing'}
         if($outcomeStatus -eq 'Conflict'){[void]$issues.Add('MixedPrintedOutcomes')}
-        [void]$sections.Add([pscustomobject]@{Code=$code;Number=$heading.Number;Page=$heading.Page;PrintedOutcomes=@($outcomes.ToArray());OutcomeStatus=$outcomeStatus;EvidenceCode=$(if($code){'NumberedBodySection.'+$code}else{'UnknownNumberedBodySection'})})
+        [void]$sections.Add([pscustomobject]@{Code=$code;Number=$heading.Number;Page=$heading.Page;PrintedOutcomes=@($outcomes.ToArray());OutcomeStatus=$outcomeStatus;BodyEvidence=($outcomes.Count -gt 0 -or ($hasTestMarker -and $hasResultMarker -and $hasUnitMarker));EvidenceCode=$(if($code){'NumberedBodySection.'+$code}else{'UnknownNumberedBodySection'})})
     }
     $result.Sections=@($sections.ToArray())
     $basic=@('HomogeneityWater','Noise');$extended=@('Lightmarker','ExternalLightmarker','SagittalCoronalLightmarker','TopogramPosition','Slice','HomogeneityWater','Noise','MTF','Contrast','TablePosition')
     $profile='';$suggestion=''
+    if($bodyKinds.Count -gt 1){$badSequence=$true;[void]$issues.Add('MixedReportKinds')}
     if($supportedTemplate -and -not $hasUnknown -and -not $badSequence){
         $codes=@($sections|ForEach-Object Code)
-        if($codes.Count -eq $basic.Count -and ($codes -join '|') -ceq ($basic -join '|')){$profile='siemens-iec-basic-v1';$suggestion='Daily'}
-        elseif($codes.Count -eq $extended.Count -and ($codes -join '|') -ceq ($extended -join '|')){$profile='siemens-iec-extended-v1';$suggestion='Monthly'}
+        $evidenced=($codes.Count -gt 0 -and @($sections|Where-Object{-not $_.BodyEvidence}).Count -eq 0)
+        if($bodyKinds.ContainsKey('Daily')){
+            if(($codes -join '|') -ceq 'Noise|HomogeneityWater' -and $evidenced){$profile='siemens-quality-daily-v1';$suggestion='Daily'}
+        }else{
+            if($codes.Count -eq $basic.Count -and ($codes -join '|') -ceq ($basic -join '|')){$profile='siemens-iec-basic-v1';$suggestion='Daily'}
+            elseif($codes.Count -eq $extended.Count -and ($codes -join '|') -ceq ($extended -join '|')){$profile='siemens-iec-extended-v1';$suggestion='Monthly'}
+            elseif($evidenced -and @($codes|Where-Object{$_ -cnotin @('HomogeneityWater','Noise')}).Count -gt 0){$profile='siemens-iec-additional-v1';$suggestion='Monthly'}
+        }
     }
     $result.ProfileId=$profile;$result.SuggestedCategory=$suggestion
-    if($supportedTemplate){$result.Model='SOMATOM Definition Edge'}
-    if($profile -eq 'siemens-iec-basic-v1'){$result.ProfileName='Siemens IEC basic checks'}elseif($profile -eq 'siemens-iec-extended-v1'){$result.ProfileName='Siemens IEC extended checks'}
+    if($supportedTemplate){$model=@($models.Keys)[0];$result.Model=if($model -ceq 'Drive'){'SOMATOM Drive'}else{'SOMATOM Definition '+$model}}
+    switch($profile){'siemens-iec-basic-v1'{$result.ProfileName='Siemens IEC basic checks'}'siemens-iec-extended-v1'{$result.ProfileName='Siemens IEC extended checks'}'siemens-iec-additional-v1'{$result.ProfileName='IEC individual / combined tests'}'siemens-quality-daily-v1'{$result.ProfileName='Siemens daily checks';$result.TemplateVersion='siemens-quality-daily-v1'}}
     if($badSequence){[void]$issues.Add('ConflictingSectionSequence')}
     # An explicit document title is distinct from a department's optional profile
     # mapping. Ordinary mentions in instructions or a table of contents do not count.
     $titleCategories=@{}
     if($pageBodies.Count){foreach($title in @([regex]::Matches($pageBodies[0].Body,'(?im)^[ \t]*(?<kind>Daily|Monthly)[ \t]+(?:QA|Quality[ \t]+(?:Assurance|Control)|IEC[ \t]+Constancy)(?:[ \t]+(?:Report|Protocol|Tests?|Check))?[ \t]*\r?$'))){$kind=$title.Groups['kind'].Value;if($kind -ieq 'Daily'){$titleCategories['Daily']=$true}else{$titleCategories['Monthly']=$true}}}
+    if($profile -ceq 'siemens-quality-daily-v1'){$titleCategories['Daily']=$true}
     if($titleCategories.Count -gt 1){[void]$issues.Add('ConflictingExplicitTitles')}
     if($profile -and $complete -and $result.DateStatus -eq 'Consensus' -and $titleCategories.Count -le 1){
         $result.Status='Recognized';$result.ReasonCode='SupportedProfile';$result.Reason='A complete supported document profile and matching report-footer dates were read. Profile-to-Daily/Monthly mapping requires department confirmation.'
+        if($profile -ceq 'siemens-quality-daily-v1'){$result.Reason='A complete supported manufacturer Daily document and matching report-footer dates were read. File classification does not imply clinical QA approval.'}
         if($titleCategories.Count -eq 1){$result.Category=@($titleCategories.Keys)[0]}
     }elseif(-not $complete){$result.ReasonCode='IncompleteRead';$result.Reason='The complete verified report text was not available; no document type or date was accepted.'}
     elseif($result.DateStatus -ne 'Consensus'){$result.ReasonCode='UncertainReportDate';$result.Reason='The printed report-footer date is missing, invalid or inconsistent; review the original PDF.'}
@@ -127,4 +159,4 @@ function ConvertFrom-QaDocumentContent {
     $result.Issues=@($issues|Select-Object -Unique)
     return $result
 }
-Export-ModuleMember -Function ConvertFrom-QaDocumentContent,Get-QaContentClassifierVersion,Get-QaContentSectionDefinitions
+Export-ModuleMember -Function ConvertFrom-QaDocumentContent,Get-QaContentClassifierVersion,Get-QaContentSupportRevision,Get-QaContentSectionDefinitions
