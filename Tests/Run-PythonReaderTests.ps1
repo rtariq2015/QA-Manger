@@ -159,14 +159,30 @@ try {
         }finally{[IO.File]::WriteAllBytes($o.destination,$bytes);[IO.File]::SetLastWriteTimeUtc($o.destination,$ticks)}
         Preserve
     }
-    Scenario 'An invalid Python dependency is rejected explicitly and automatic fallback preserves provenance' {
+    Scenario 'A damaged standard-reader component is rejected and automatic mode falls back to verified Python reading' {
+        $component=Join-Path $FixtureRoot 'App/Lib/PdfPig/UglyToad.PdfPig.dll'
+        $bytes=[IO.File]::ReadAllBytes($component);$stamp=[IO.File]::GetLastWriteTimeUtc($component)
+        try {
+            $changed=[byte[]]$bytes.Clone();$changed[100]=$changed[100] -bxor 1
+            [IO.File]::WriteAllBytes($component,$changed)
+            $errorText='';try{Read-Isolated 'basic' 'Standard'|Out-Null}catch{$errorText=$_.Exception.Message}
+            Check (-not [string]::IsNullOrWhiteSpace($errorText) -and -not $errorText.Contains($FixtureRoot)) 'An explicitly selected standard reader rejects its altered DLL checksum without disclosing paths.'
+            $read=Read-Isolated 'basic' 'Auto'
+            Check ($read.ReaderUsed -ceq 'Python' -and $read.FallbackReason -ceq 'StandardReadError') 'Automatic mode records the actual Python reader and the standard-reader fallback reason.'
+            Check ($read.Pages -eq 9 -and $read.ReadPages -eq 9 -and -not $read.Truncated -and $read.VerifiedHash -ceq (Original 'basic').hash) 'Fallback reads the complete original PDF with the exact verified fingerprint.'
+            $content=Classify $read
+            Check ($content.ProfileId -ceq 'siemens-iec-basic-v1' -and $content.DateStatus -ceq 'Consensus' -and @($content.Sections).Count -eq 2) 'Python fallback retains the same supported body profile and report-footer evidence.'
+        }finally{[IO.File]::WriteAllBytes($component,$bytes);[IO.File]::SetLastWriteTimeUtc($component,$stamp)}
+        Preserve
+    }
+    Scenario 'An invalid Python dependency is rejected explicitly while automatic standard reading remains usable' {
         $dependency=Join-Path $FixtureRoot 'App/Python/vendor/pypdf/__init__.py';$bytes=[IO.File]::ReadAllBytes($dependency);$stamp=[IO.File]::GetLastWriteTimeUtc($dependency)
         try {
             [IO.File]::AppendAllText($dependency,"`r`n# Synthetic disposable integrity mutation",[Text.Encoding]::ASCII)
             $errorText='';try{Read-Isolated 'basic' 'Python'|Out-Null}catch{$errorText=$_.Exception.Message}
             Check (-not [string]::IsNullOrWhiteSpace($errorText) -and -not $errorText.Contains($FixtureRoot)) 'A modified reader dependency cannot execute as a successful explicit Python read.'
             $fallback=Read-Isolated 'basic' 'Auto'
-            Check ($fallback.ReaderUsed -ceq 'Standard' -and $fallback.FallbackReason -in @('PythonUnavailable','PythonReadError')) 'Automatic mode uses the verified standard reader when Python cannot be used.'
+            Check ($fallback.ReaderUsed -ceq 'Standard' -and [string]::IsNullOrEmpty([string]$fallback.FallbackReason)) 'Automatic mode uses its healthy standard reader without inspecting an unused Python dependency.'
             Check ($fallback.VerifiedHash -ceq (Original 'basic').hash -and $fallback.ReadPages -eq 9) 'Fallback remains a full read of the original verified bytes.'
         }finally{[IO.File]::WriteAllBytes($dependency,$bytes);[IO.File]::SetLastWriteTimeUtc($dependency,$stamp)}
         Preserve
@@ -175,7 +191,7 @@ try {
         $runtime=Join-Path $FixtureRoot 'App/Python/runtime';$held=$runtime+'.disabled-for-synthetic-test';[IO.Directory]::Move($runtime,$held)
         try {
             $read=Read-Isolated 'extended' 'Auto'
-            Check ($read.ReaderUsed -ceq 'Standard' -and $read.FallbackReason -ceq 'PythonUnavailable' -and $read.ReadPages -eq 6) 'Automatic mode remains usable without an available Python executable.'
+            Check ($read.ReaderUsed -ceq 'Standard' -and [string]::IsNullOrEmpty([string]$read.FallbackReason) -and $read.ReadPages -eq 6) 'Automatic mode uses its healthy standard reader without requiring an unused Python executable.'
             Check ($read.VerifiedHash -ceq (Original 'extended').hash) 'Fallback keeps the same fingerprint provenance.'
             $failed=$false;try{Read-Isolated 'extended' 'Python'|Out-Null}catch{$failed=$true};Check $failed 'An explicit unavailable reader request is never silently mislabeled as Python.'
         }finally{[IO.Directory]::Move($held,$runtime)}

@@ -360,31 +360,33 @@ function Read-QaReportText {
         if($hash -ne $record.Hash){throw 'The saved PDF differs from its verified SHA-256. Run the integrity audit before reading it.'}
         Assert-QaReaderStableMetadata $path $verifiedLength $verifiedWriteTicks
         $engineTimer=[Diagnostics.Stopwatch]::StartNew()
-        $extracted=$null;$fallbackReason='';$pythonFailure=''
-        if($Reader -in @('Auto','Python')) {
-            if(Test-QaPythonReaderAvailable) {
-                try{$extracted=Invoke-QaPythonPdfText -Bytes $bytes -ExpectedHash $hash -Progress $Progress -MaximumPages $MaximumPages -MaximumCharacters $MaximumCharacters -MaximumSeconds $MaximumSeconds}
-                catch [OperationCanceledException] {throw}
-                catch{if($Reader -ceq 'Python'){throw};$fallbackReason='PythonReadError';$pythonFailure='The portable reader could not finish within the reading limit. Try Standard reading for this PDF.'}
-            }else{
-                if($Reader -ceq 'Python'){throw 'The portable Python reader is unavailable on this computer. Choose Automatic or Standard reading.'}
-                $fallbackReason='PythonUnavailable'
+        $extracted=$null;$fallbackReason=''
+        if($Reader -ceq 'Python') {
+            if(-not (Test-QaPythonReaderAvailable)){throw 'The portable Python reader is unavailable on this computer. Choose Automatic or Standard reading.'}
+            $extracted=Invoke-QaPythonPdfText -Bytes $bytes -ExpectedHash $hash -Progress $Progress -MaximumPages $MaximumPages -MaximumCharacters $MaximumCharacters -MaximumSeconds $MaximumSeconds
+        }elseif($Reader -ceq 'Standard') {
+            $extracted=Invoke-QaStandardPdfText -Bytes $bytes -Progress $Progress -MaximumPages $MaximumPages -MaximumCharacters $MaximumCharacters -MaximumSeconds $MaximumSeconds
+        }else{
+            # Native Windows measurements found the standard reader faster for
+            # complete cold reads. Healthy automatic reads therefore perform no
+            # Python startup or Python component hashing.
+            try{$extracted=Invoke-QaStandardPdfText -Bytes $bytes -Progress $Progress -MaximumPages $MaximumPages -MaximumCharacters $MaximumCharacters -MaximumSeconds $MaximumSeconds}
+            catch [OperationCanceledException]{throw}
+            catch{}
+            if($null -eq $extracted) {
+                $remaining=[int][math]::Floor($MaximumSeconds-$engineTimer.Elapsed.TotalSeconds)
+                if($remaining -lt 5 -or -not (Test-QaPythonReaderAvailable)){throw 'Text could not be read from this PDF with the available readers. It may be encrypted, damaged or unsupported. Try an explicit reader or extract the complete program package again.'}
+                $extracted=Invoke-QaPythonPdfText -Bytes $bytes -ExpectedHash $hash -Progress $Progress -MaximumPages $MaximumPages -MaximumCharacters $MaximumCharacters -MaximumSeconds $remaining
+                $fallbackReason='StandardReadError'
+            }elseif($extracted.NeedsOCR -and -not $extracted.Truncated) {
+                $remaining=[int][math]::Floor($MaximumSeconds-$engineTimer.Elapsed.TotalSeconds)
+                if($remaining -ge 5 -and (Test-QaPythonReaderAvailable)) {
+                    try{
+                        $alternate=Invoke-QaPythonPdfText -Bytes $bytes -ExpectedHash $hash -Progress $Progress -MaximumPages $MaximumPages -MaximumCharacters $MaximumCharacters -MaximumSeconds $remaining
+                        if(-not $alternate.NeedsOCR){$extracted=$alternate;$fallbackReason='StandardNoText'}
+                    }catch [OperationCanceledException]{throw}catch{}
+                }
             }
-        }
-        if($null -ne $extracted -and $Reader -ceq 'Auto' -and $extracted.NeedsOCR -and -not $extracted.Truncated) {
-            $remaining=[int][math]::Floor($MaximumSeconds-$engineTimer.Elapsed.TotalSeconds)
-            if($remaining -ge 5){
-                try{
-                    $alternate=Invoke-QaStandardPdfText -Bytes $bytes -Progress $Progress -MaximumPages $MaximumPages -MaximumCharacters $MaximumCharacters -MaximumSeconds $remaining
-                    if(-not $alternate.NeedsOCR){$extracted=$alternate;$fallbackReason='PythonNoText'}
-                }catch [OperationCanceledException]{throw}catch{}
-            }
-        }
-        if($null -eq $extracted) {
-            $remaining=[int][math]::Floor($MaximumSeconds-$engineTimer.Elapsed.TotalSeconds)
-            if($remaining -lt 5 -and $pythonFailure){throw $pythonFailure}
-            $budget=[math]::Max(5,[math]::Min($MaximumSeconds,$remaining))
-            $extracted=Invoke-QaStandardPdfText -Bytes $bytes -Progress $Progress -MaximumPages $MaximumPages -MaximumCharacters $MaximumCharacters -MaximumSeconds $budget
         }
         $pages=[int]$extracted.Pages;$readPages=[int]$extracted.ReadPages;$truncated=[bool]$extracted.Truncated
         $fullText=[string]$extracted.Text

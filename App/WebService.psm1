@@ -55,7 +55,7 @@ function Get-QaWebContentContext($Config,$Record){
     $reader=[string](Get-QaWebValue $analysis ReaderUsed 'Legacy');if($reader -cnotin @('Python','Standard')){$reader='Legacy'}
     $readerVersion=[string](Get-QaWebValue $analysis ReaderVersion '');if($readerVersion.Length -gt 64 -or $readerVersion -notmatch '^[A-Za-z0-9 ._+/;-]*$'){$readerVersion=''}
     $readerMs=[long]0;[void][long]::TryParse([string](Get-QaWebValue $analysis ReaderElapsedMs 0),[ref]$readerMs);if($readerMs -lt 0 -or $readerMs -gt 3600000){$readerMs=0}
-    $view.reader=[pscustomobject]@{name=$reader;version=$readerVersion;elapsedMs=$readerMs;fallback=([string](Get-QaWebValue $analysis ReaderFallbackReason '') -cin @('PythonUnavailable','PythonReadError','PythonNoText'))}
+    $view.reader=[pscustomobject]@{name=$reader;version=$readerVersion;elapsedMs=$readerMs;fallback=([string](Get-QaWebValue $analysis ReaderFallbackReason '') -cin @('PythonUnavailable','PythonReadError','PythonNoText','StandardReadError','StandardNoText'))}
     $measured=Get-QaWebValue $analysis MeasurementsDocument $null
     if([int](Get-QaWebValue $measured MeasurementVersion 0) -eq 1){
         $view.measurementStatus=if([string](Get-QaWebValue $measured Status '') -ceq 'Extracted'){'Read'}else{'NeedsReview'}
