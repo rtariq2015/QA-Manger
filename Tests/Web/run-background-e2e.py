@@ -21,16 +21,25 @@ $ErrorActionPreference='Stop'
 $stream=[Console]::OpenStandardInput();$reader=New-Object IO.StreamReader($stream,(New-Object Text.UTF8Encoding($false)),$true,4096)
 try{$request=$reader.ReadToEnd()|ConvertFrom-Json}finally{$reader.Dispose()}
 $action=[string]$request.action;$statePath=Join-Path $AppRoot 'Data/sim.json'
-function State {if([IO.File]::Exists($statePath)){return ([IO.File]::ReadAllText($statePath)|ConvertFrom-Json)};return [pscustomobject]@{count=0;revision=0;limit=8;delayMs=800}}
-function Snapshot {$s=State;return [pscustomobject]@{archiveRoot=(Join-Path $AppRoot 'Reports');marker=$s.revision;analysis=[pscustomobject]@{pending=[math]::Max(0,$s.limit-$s.count)};setupComplete=$false}}
+function State {
+    $s=if([IO.File]::Exists($statePath)){[IO.File]::ReadAllText($statePath)|ConvertFrom-Json}else{[pscustomobject]@{count=0;revision=0;limit=8;delayMs=800}}
+    foreach($name in @('setupComplete','autoAnalyze','autoUpdateOnOpen')){if($null -eq $s.PSObject.Properties[$name]){$s|Add-Member $name $false}}
+    if($null -eq $s.PSObject.Properties['coreRevision']){$s|Add-Member coreRevision 0};return $s
+}
+function Save($s){[IO.File]::WriteAllText($statePath,($s|ConvertTo-Json -Compress))}
+function Snapshot {$s=State;return [pscustomobject]@{archiveRoot=(Join-Path $AppRoot 'Reports');marker=$s.revision;analysis=[pscustomobject]@{pending=[math]::Max(0,$s.limit-$s.count);backlogPending=[math]::Max(0,$s.limit-$s.count)};setupComplete=[bool]$s.setupComplete;settings=[pscustomobject]@{autoAnalyze=[bool]$s.autoAnalyze;autoUpdateOnOpen=[bool]$s.autoUpdateOnOpen;monitorMinutes=0}}}
 function Event([string]$Kind){
     $limit=$null;if($null -ne $request.PSObject.Properties['analysisLimit']){$limit=$request.analysisLimit}
-    $row=[pscustomobject]@{action=$action;kind=$Kind;analysisLimit=$limit;passwordPresent=($null -ne $request.PSObject.Properties['password'])}
+    $row=[pscustomobject]@{action=$action;kind=$Kind;analysisLimit=$limit;passwordPresent=($null -ne $request.PSObject.Properties['password']);hasSnapshot=($Kind -eq 'end' -and $null -ne $value.PSObject.Properties['snapshot'])}
     [IO.File]::AppendAllText((Join-Path $AppRoot 'events.jsonl'),(($row|ConvertTo-Json -Compress)+[Environment]::NewLine),(New-Object Text.UTF8Encoding($false)))
 }
 Event 'start'
 switch($action){
     'Snapshot'{$value=[pscustomobject]@{snapshot=(Snapshot)}}
+    'AnalysisPlan'{
+        $s=State;$ids=@();for($n=$s.count+1;$n -le $s.limit;$n++){$ids+=$n.ToString('x64')}
+        $value=[pscustomobject]@{plan=[pscustomobject]@{recordIds=$ids;pending=$ids.Count;total=$s.limit;cached=$s.count;revision=[string]$s.coreRevision};snapshotDeferred=$true;cancelled=$false}
+    }
     'Analyze'{
         if($null -eq $request.PSObject.Properties['id'] -and $request.analysisLimit -ne 1){throw 'Expected one PDF per background chunk.'}
         $s=State;$duration=[int]$s.delayMs
@@ -39,11 +48,14 @@ switch($action){
             Start-Sleep -Milliseconds 50
             if($CancelPath -and [IO.File]::Exists($CancelPath)){break}
         }
-        $stopped=($CancelPath -and [IO.File]::Exists($CancelPath));$s=State;$previous=$s.count
-        if(-not $stopped){$s.count++;$s.revision++;[IO.File]::WriteAllText($statePath,($s|ConvertTo-Json -Compress))}
-        $value=[pscustomobject]@{cancelled=[bool]$stopped;snapshot=(Snapshot);result=[pscustomobject]@{Analyzed=$(if($stopped){0}else{1});Failed=0;Cached=$previous;Pending=[math]::Max(0,$s.limit-$s.count);AnalyzedIds=@();Summary=[pscustomobject]@{Cancelled=[bool]$stopped}}}
+        $stopped=($CancelPath -and [IO.File]::Exists($CancelPath));$s=State;$previous=$s.count;$changed=@()
+        if(-not $stopped){$s.count++;$s.revision++;Save $s;$changed=@($s.count.ToString('x64'))}
+        $value=[pscustomobject]@{cancelled=[bool]$stopped;snapshotDeferred=$true;libraryDeferred=$true;analysisRevision=[string]$s.coreRevision;result=[pscustomobject]@{Analyzed=$(if($stopped){0}else{1});Failed=0;Cached=0;Pending=0;AnalyzedIds=$changed;Summary=[pscustomobject]@{Cancelled=[bool]$stopped}}}
     }
-    'Approve'{Start-Sleep -Milliseconds 150;$s=State;$s.revision+=100;[IO.File]::WriteAllText($statePath,($s|ConvertTo-Json -Compress));$value=[pscustomobject]@{snapshot=(Snapshot);message='saved'}}
+    'SyncLibrary'{$value=[pscustomobject]@{snapshot=(Snapshot);cancelled=$false}}
+    'Approve'{Start-Sleep -Milliseconds 150;$s=State;$s.revision+=100;$s.coreRevision++;Save $s;$value=[pscustomobject]@{snapshot=(Snapshot);message='saved'}}
+    'Refresh'{$value=[pscustomobject]@{snapshot=(Snapshot);message='refreshed'}}
+    'Settings'{$s=State;if($null -ne $request.PSObject.Properties['autoAnalyze']){$s.autoAnalyze=[bool]$request.autoAnalyze};$s.coreRevision++;Save $s;$value=[pscustomobject]@{snapshot=(Snapshot);message='settings saved'}}
     'Trends'{$value=[pscustomobject]@{series=@();filter=[string]$request.metric}}
     'Diagnostics'{Start-Sleep -Milliseconds 150;$value=[pscustomobject]@{message='logs ready'}}
     default{$value=[pscustomobject]@{snapshot=(Snapshot)}}
@@ -146,6 +158,7 @@ def main():
         assert job(foreground)['status'] == 'completed' and job(background)['completed'] < 8
         checks.append('A foreground action queued during a PDF runs before the archive batch completes')
         until(lambda: job(background)['completed'] >= 3)
+        until(lambda: sum(json.loads(line)['action'] == 'Analyze' and json.loads(line)['kind'] == 'start' for line in (base / 'events.jsonl').read_text(encoding='utf-8').splitlines()) > job(background)['completed'])
         call('/api/jobs/' + background + '/cancel', {})
         stopped = until(lambda: terminal(background))
         assert stopped['status'] == 'cancelled' and stopped['completed'] >= 3 and stopped['total'] == 8, stopped
@@ -153,7 +166,7 @@ def main():
         assert all(not event['passwordPresent'] and event['analysisLimit'] == 1 for event in events if event['action'] == 'Analyze')
         active = None
         for event in events:
-            if event['action'] not in ('Analyze', 'Approve'):
+            if event['action'] not in ('Analyze', 'Approve', 'SyncLibrary'):
                 continue
             if event['kind'] == 'start':
                 assert active is None, (active, event)
@@ -167,14 +180,63 @@ def main():
         complete = until(lambda: terminal(bounded), seconds=90)
         assert complete['status'] == 'completed' and complete['completed'] == 20 and complete['total'] == 20 and complete['percent'] == 100, complete
         assert complete['result']['result']['Pending'] == 5
+        assert complete['performance']['planBuilds'] == 1 and complete['performance']['processedReports'] == 20, complete
         checks.append('A bulk action stops after twenty actual PDFs and reports the remaining work')
         (base / 'Data/sim.json').write_text(json.dumps({'count': 0, 'revision': 0, 'limit': 25, 'delayMs': 50}), encoding='utf-8')
+        trace_start = len((base / 'events.jsonl').read_text(encoding='utf-8').splitlines())
         continuous = call('/api/actions', {'action': 'AnalyzeBacklog', 'scope': 'all'})['id']
         drained = until(lambda: terminal(continuous), seconds=120)
         assert drained['status'] == 'completed' and drained['completed'] == 25 and drained['total'] == 25, drained
         assert drained['result']['result']['Pending'] == 0
+        assert drained['performance']['planBuilds'] == 2, drained
+        assert drained['performance']['processedReports'] == 25, drained
+        trace = [json.loads(line) for line in (base / 'events.jsonl').read_text(encoding='utf-8').splitlines()[trace_start:]]
+        completed_steps = [event for event in trace if event['action'] == 'Analyze' and event['kind'] == 'end']
+        assert len(completed_steps) == 25 and all(not event['hasSnapshot'] for event in completed_steps)
+        assert not any(event['action'] == 'Snapshot' for event in trace)
+        assert drained['performance']['fullSnapshots'] == sum(event['action'] == 'SyncLibrary' and event['kind'] == 'end' for event in trace)
+        summary['syntheticAdapterJobMetrics'] = drained['performance']
+        checks.append('A 25-PDF job reuses two plans and keeps PDF steps separate from overview checkpoints')
         assert any(event['action'] == 'SyncLibrary' for event in [json.loads(line) for line in (base / 'events.jsonl').read_text(encoding='utf-8').splitlines()])
         checks.append('An explicitly started backlog continues beyond twenty and synchronizes readable folders')
+        # Enabling automatic reading is a settings decision, not opening a chart.
+        (base / 'Data/sim.json').write_text(json.dumps({'count': 0, 'revision': 0, 'limit': 25, 'delayMs': 500, 'setupComplete': True, 'autoAnalyze': False}), encoding='utf-8')
+        refresh = call('/api/actions', {'action': 'Refresh'})['id']
+        until(lambda: terminal(refresh))
+        time.sleep(.3)
+        assert not any(x['automatic'] and x['status'] in ('queued', 'running') for x in call('/api/jobs')['jobs'])
+        checks.append('AutoAnalyze false keeps an eligible archive manual')
+        previous = {x['id'] for x in call('/api/jobs')['jobs']}
+        settings = call('/api/actions', {'action': 'Settings', 'autoAnalyze': True})['id']
+        until(lambda: terminal(settings))
+        automatic = until(lambda: next((x for x in call('/api/jobs')['jobs'] if x['id'] not in previous and x['automatic']), None))
+        until(lambda: job(automatic['id'])['completed'] >= 1)
+        call('/api/jobs/' + automatic['id'] + '/cancel', {})
+        until(lambda: terminal(automatic['id']))
+        assert call('/api/jobs')['automaticReadingStopped'] is True
+        refresh = call('/api/actions', {'action': 'Refresh'})['id']
+        until(lambda: terminal(refresh))
+        time.sleep(.3)
+        assert call('/api/jobs')['automaticReadingStopped'] is True
+        assert not any(x['background'] and x['status'] in ('queued', 'running') for x in call('/api/jobs')['jobs'])
+        checks.append('Stop intent persists across Refresh independently of cooldown')
+        # Reopen with AutoAnalyze enabled and check-on-open enabled. A Refresh must
+        # complete before automatic reading starts, without an Analyze UI action.
+        call('/api/actions', {'action': 'Shutdown'})
+        process.wait(timeout=45)
+        (base / 'Data/sim.json').write_text(json.dumps({'count': 0, 'revision': 0, 'limit': 3, 'delayMs': 300, 'setupComplete': True, 'autoAnalyze': True, 'autoUpdateOnOpen': True}), encoding='utf-8')
+        event_start = len((base / 'events.jsonl').read_text(encoding='utf-8').splitlines())
+        process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        until(lambda: (base / 'Data/web-ready.json').exists())
+        config = json.loads((base / 'Data/web-ready.json').read_text(encoding='utf-8-sig'))
+        startup = until(lambda: next((x for x in call('/api/jobs')['jobs'] if x['automatic'] and x['action'] == 'AnalyzeBacklog'), None))
+        startup_done = until(lambda: terminal(startup['id']))
+        assert startup_done['status'] == 'completed' and startup_done['completed'] == 3, startup_done
+        recent = [json.loads(line) for line in (base / 'events.jsonl').read_text(encoding='utf-8').splitlines()[event_start:]]
+        refresh_end = next(i for i, x in enumerate(recent) if x['action'] == 'Refresh' and x['kind'] == 'end')
+        plan_start = next(i for i, x in enumerate(recent) if x['action'] == 'AnalysisPlan' and x['kind'] == 'start')
+        assert refresh_end < plan_start
+        checks.append('App reopen automatically reads eligible backlog after initial Refresh')
         (base / 'Data/sim.json').write_text(json.dumps({'count': 20, 'revision': 0, 'limit': 25, 'delayMs': 1000}), encoding='utf-8')
         final = call('/api/actions', {'action': 'Analyze'})['id']
         until(lambda: job(final)['status'] == 'running')

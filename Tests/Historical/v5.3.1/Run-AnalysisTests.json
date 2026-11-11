@@ -1,0 +1,89 @@
+{
+  "Product": "CT QA Manager Pro",
+  "Feature": "Versioned content analysis cache",
+  "TimestampUtc": "2026-11-11T16:11:54.5055636Z",
+  "Runtime": "7.4.13",
+  "Platform": "Unix 6.18.57.0",
+  "WindowsPowerShell51ActuallyRun": false,
+  "Tests": 15,
+  "Assertions": 73,
+  "Failed": 0,
+  "Results": [
+    {
+      "Name": "A real verified PDF is classified once and reused without changing review state",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "Legacy successful cache receives one bounded classifier upgrade",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "Legacy failed reads stay cached until manual force or file change",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "Selected analysis never reads newer unselected reports or invalid identities",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "Stored provenance invalidates changed bytes, lengths, timestamps, and classifier contents",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "Reader provenance mismatches and post-read mutation cannot create successful classification",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "Cancellation neither writes partial classification nor replaces a prior cache",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "Unknown image and truncated reads are cached once without auto approval",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "Equal-content destinations retain separate valid metadata without cache ping-pong",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "Cache stores bounded evidence fields without the full PDF text or private reader error",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "Linked analysis directories cannot supply trusted document classifications",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "A metadata-only work plan distinguishes unread files, measurement upgrades, format upgrades and cached errors",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "An older unknown Flash template is refreshed once and then reused with the same protected PDF provenance",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "Explicit measurement backlog upgrades an older successful cache once without reprocessing current or failed readings",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "Equal-content destinations retain independent one-time format support revisions",
+      "Result": "PASS",
+      "Details": ""
+    }
+  ],
+  "Notes": "Synthetic PDFs and controlled reader responses only. The first scenario invokes the real isolated verified PDF reader."
+}

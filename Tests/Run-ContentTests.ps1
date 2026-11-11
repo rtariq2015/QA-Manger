@@ -188,15 +188,109 @@ Scenario 'Daily document classification preserves incomplete reads, footer confl
     $contradiction=Read-Content (New-DailyContentText -Title 'Monthly QA Report') 4
     Check ($contradiction.Status -ceq 'NeedsReview' -and $contradiction.Category -ceq '') 'An explicit Monthly cover title cannot silently coexist with the manufacturer Daily body label'
 }
+function New-ReferenceContentText([string[]]$Labels=@('MTF'),[string]$Model='SOMATOM Definition Edge',[switch]$Single){
+    if($Single){return "--- Page 1 ---`nQuality IEC Constancy`n$Model`n2026-11-10 08:00:00 Page: 1/2`n--- Page 2 ---`nQuality IEC Constancy Reference $($Labels[0])`nSynthetic reference table`nResults`n1.0 mm`n2026-11-10 08:00:00 Page: 2/2`n"}
+    return New-ContentText -Labels @($Labels|ForEach-Object{'Reference '+$_}) -Model $Model
+}
+Scenario 'Exact historical reference headings are filed as Other without current QA sections' {
+    foreach($model in @('SOMATOM Definition Edge','SOMATOM Definition Flash','SOMATOM Drive')){
+        foreach($text in @((New-ReferenceContentText -Model $model),(New-ReferenceContentText -Labels $extended -Model $model))){
+            $row=Read-Content $text
+            Check ($row.Status -ceq 'Recognized' -and $row.ProfileId -ceq 'siemens-iec-reference-v1' -and $row.Model -ceq $model) 'Supported models recognize exact numbered historical reference sections independently of current IEC profiles'
+            Check ($row.Category -ceq 'Other' -and $row.SuggestedCategory -ceq 'Other' -and $row.IsReference -and $row.HasReferenceEvidence -and $row.DocumentKind -ceq 'Reference') 'Reference documents carry an explicit Other identity before Daily or Monthly filing rules'
+            Check ($row.Sections.Count -eq 0 -and $row.ReasonCode -ceq 'ReferenceDocument' -and $row.ClinicalResult -ceq 'Not inferred') 'Historical tables never become current section evidence or clinical results'
+            Check ($row.DateStatus -ceq 'Consensus' -and $row.CompleteRead -and $row.TemplateVersion -ceq 'siemens-iec-reference-v1') 'The separate reference profile requires complete text and repeated matching footer evidence'
+        }
+    }
+    foreach($label in @($extended+'Low Contrast')){
+        $row=Read-Content (New-ReferenceContentText -Labels @($label) -Single) 2
+        Check ($row.Status -ceq 'Recognized' -and $row.IsReference -and $row.Sections.Count -eq 0 -and $row.Category -ceq 'Other') 'An exact single unnumbered reference component is recognized outside a table of contents'
+    }
+    $monthly=Read-Content ((New-ReferenceContentText).Replace("Quality IEC Constancy`n","Monthly QA Report`n"))
+    Check ($monthly.Category -ceq 'Other' -and $monthly.IsReference) 'A Monthly mention cannot turn a literal reference document into current Monthly QA'
+}
+Scenario 'Reference recognition rejects unknown labels, mixed current evidence and invalid body structure' {
+    $reference=New-ReferenceContentText
+    $cases=@((New-ReferenceContentText -Labels @('Unknown synthetic test')),(New-ReferenceContentText -Labels @('MTF','MTF')),($reference.Replace('1. Quality IEC Constancy Reference MTF','2. Quality IEC Constancy Reference MTF')),($reference.Replace('1. Quality IEC Constancy Reference MTF',"1. Quality IEC Constancy Reference MTF`n2. Quality IEC Constancy Contrast")),((New-ContentText -Labels $basic).Replace('1. Quality IEC Constancy Homogeneity / Water',"Quality IEC Constancy Reference MTF`n1. Quality IEC Constancy Homogeneity / Water")),(New-ContentText -Labels @('Reference MTF') -TocOnly),($reference.Replace('Quality IEC Constancy Reference MTF','Quality IEC Constancy MTF Reference')),($reference.Replace('SOMATOM Definition Edge','SOMATOM FutureModel')),($reference.Replace('SOMATOM Definition Edge',"SOMATOM Definition Edge`nSOMATOM Drive")),($reference.Replace('Quality IEC Constancy Reference MTF','Quality Daily Reference MTF')))
+    foreach($text in $cases){
+        $row=Read-Content $text
+        Check ($row.Status -ceq 'NeedsReview' -and $row.ProfileId -ceq '' -and -not $row.IsReference -and $row.Category -ceq '') 'Only exact known nonmixed reference body evidence can acquire the historical reference identity'
+    }
+    $single=New-ReferenceContentText -Single
+    $row=Read-Content ($single.Replace('Quality IEC Constancy Reference MTF',"Table of contents`nQuality IEC Constancy Reference MTF")) 2
+    Check ($row.Status -ceq 'NeedsReview' -and -not $row.IsReference) 'A single reference name inside a table of contents is insufficient'
+    $row=Read-Content ($single.Replace('Quality IEC Constancy Reference MTF',"Quality IEC Constancy Reference MTF`nQuality IEC Constancy Reference Contrast")) 2
+    Check ($row.Status -ceq 'NeedsReview' -and -not $row.IsReference) 'Several unnumbered reference titles cannot substitute for a validated numbered suite'
+}
+Scenario 'Unsupported and mixed actual reference headings retain an exclusion signal without accepted identity' {
+    foreach($text in @((New-ReferenceContentText -Labels @('Unknown synthetic test')),(New-ReferenceContentText -Labels @('MTF','Unknown synthetic test')),((New-ReferenceContentText).Replace('1. Quality IEC Constancy Reference MTF',"1. Quality IEC Constancy Reference MTF`n2. Quality IEC Constancy Contrast")))){
+        $row=Read-Content $text
+        Check ($row.Status -ceq 'NeedsReview' -and $row.HasReferenceEvidence -and -not $row.IsReference -and $row.Category -ceq '' -and $row.ProfileId -ceq '') 'Actual reference evidence blocks current receipt or measurement fallback while unknown and mixed documents remain unrecognized'
+    }
+    $toc=Read-Content (New-ContentText -Labels @('Reference Unknown synthetic test') -TocOnly)
+    Check (-not $toc.HasReferenceEvidence -and -not $toc.IsReference) 'Reference text in a table of contents cannot manufacture an actual-body reference signal'
+    $current=Read-Content (New-ContentText -Labels $basic)
+    Check (-not $current.HasReferenceEvidence -and -not $current.IsReference -and $current.Status -ceq 'Recognized') 'A normal reference-date mention does not suppress current QA evidence'
+}
+Scenario 'Reference documents retain full-read footer and model safeguards and current documents retain their identity' {
+    $reference=New-ReferenceContentText
+    foreach($row in @((ConvertFrom-QaDocumentContent -Text $reference -Pages 7 -ReadPages 6),(ConvertFrom-QaDocumentContent -Text $reference -Pages 7 -ReadPages 7 -Truncated $true),(ConvertFrom-QaDocumentContent -Text $reference -Pages 7 -ReadPages 7 -NeedsOCR $true),(Read-Content ($reference.Replace('2026-11-10 08:00:00 Page: 4/7','2026-11-09 08:00:00 Page: 4/7'))),(Read-Content ($reference.Replace('2026-11-10 08:00:00 Page: 4/7',''))))){
+        Check ($row.Status -ceq 'NeedsReview' -and -not $row.IsReference -and $row.Category -ceq '') 'Incomplete or inconsistent reference text does not receive an accepted document identity'
+    }
+    $current=Read-Content (New-ContentText -Labels $basic)
+    Check ($current.Status -ceq 'Recognized' -and -not $current.IsReference -and $current.DocumentKind -ceq 'Current' -and $current.Sections.Count -eq 2) 'An ordinary historical-reference date mention leaves actual current test sections unchanged'
+    $text=New-ContentText -Labels $basic
+    $text=$text.Replace("Table of contents`n","Table of contents`nQuality IEC Constancy Reference MTF`n")
+    $current=Read-Content $text
+    Check ($current.Status -ceq 'Recognized' -and -not $current.IsReference -and $current.ProfileId -ceq 'siemens-iec-basic-v1') 'Reference table-of-contents text alone does not reclassify current evidence'
+}
+function New-ComponentContentText([string]$Label='MTF',[string]$Model='SOMATOM Definition Edge',[int]$Pages=3){
+    $builder=New-Object Text.StringBuilder
+    for($page=1;$page -le $Pages;$page++){
+        [void]$builder.Append("--- Page $page ---`n")
+        if($page -eq 1){[void]$builder.Append("Quality IEC Constancy`n$Model`n")}
+        if($page -eq 2){[void]$builder.Append("Quality IEC Constancy $Label`nTest: Synthetic phantom`nResults`n1.0 mm`nOK`n")}
+        [void]$builder.Append('2026-11-10 08:00:00 Page: '+$page+'/'+$Pages+"`n")
+    };return $builder.ToString()
+}
+Scenario 'A complete standalone current IEC component retains its actual test identity without claiming department frequency' {
+    foreach($model in @('SOMATOM Definition Edge','SOMATOM Definition Flash','SOMATOM Drive')){
+        foreach($label in @($extended+'Low Contrast')){
+            $row=Read-Content (New-ComponentContentText -Label $label -Model $model) 3
+            Check ($row.Status -ceq 'Recognized' -and $row.ProfileId -ceq 'siemens-iec-additional-v1' -and $row.Model -ceq $model) 'An exact supported unnumbered component title with its actual table evidence forms the additional-tests profile'
+            Check ($row.Category -ceq '' -and $row.SuggestedCategory -ceq 'Monthly' -and -not $row.IsReference -and $row.DocumentKind -ceq 'Current') 'A standalone current component suggests filing only and never invents a manufacturer frequency label'
+            Check ($row.Sections.Count -eq 1 -and $row.Sections[0].Number -eq 1 -and $row.Sections[0].Page -eq 2 -and $row.Sections[0].EvidenceCode -ceq ('ComponentTitle.'+$row.Sections[0].Code)) 'One fixed canonical component and its source page are preserved for context'
+            Check ($row.CompleteRead -and $row.DateStatus -ceq 'Consensus' -and $row.ClinicalResult -ceq 'Not inferred') 'The standalone component retains all complete-read, date and clinical-interpretation safeguards'
+        }
+    }
+    $text=(New-ComponentContentText -Label 'Noise' -Pages 2).Replace("Results`n",'').Replace("`nOK`n","`nFAIL`n")
+    $row=Read-Content $text 2
+    Check ($row.Status -ceq 'Recognized' -and $row.Sections[0].PrintedOutcomes -contains 'FAIL' -and $row.ClinicalResult -ceq 'Not inferred') 'A literal printed outcome identifies the current table even when its standalone Result label is absent; failure never changes file type'
+    $row=Read-Content ((New-ComponentContentText).Replace('Quality IEC Constancy MTF',"Quality IEC Constancy`nMTF").Replace("`n","`r`n")) 3
+    Check ($row.Status -ceq 'Recognized' -and $row.Sections[0].Code -ceq 'MTF') 'Wrapped canonical component titles support the same bounded whitespace variation as numbered sections'
+}
+Scenario 'Standalone IEC components cannot borrow missing table evidence or absorb mixed report headings' {
+    $component=New-ComponentContentText
+    $cases=@((New-ComponentContentText -Label 'Unsupported synthetic test'),($component.Replace("Test: Synthetic phantom`n",'')),($component.Replace("1.0 mm`n",'')),($component.Replace("`nOK`n","`n")),($component.Replace('Quality IEC Constancy MTF',"Table of contents`nQuality IEC Constancy MTF")),($component.Replace('Quality IEC Constancy MTF','1. Quality IEC Constancy MTF')),($component.Replace('Quality IEC Constancy MTF',"Quality IEC Constancy MTF`nQuality IEC Constancy Contrast")),($component.Replace('Quality IEC Constancy MTF',"Quality IEC Constancy MTF`nQuality IEC Constancy Unsupported synthetic test")),($component.Replace('Quality IEC Constancy MTF',"Quality IEC Constancy MTF`nQuality IEC Constancy Reference Contrast")),($component.Replace('Quality IEC Constancy MTF',"Quality IEC Constancy MTF`n1. Quality IEC Constancy Contrast")),($component.Replace('Quality IEC Constancy MTF',"Quality IEC Constancy MTF`nQuality Daily Noise")),($component.Replace('Quality IEC Constancy MTF','Quality IEC Constancy MTF Reference')),($component.Replace('SOMATOM Definition Edge','SOMATOM FutureModel')),($component.Replace('SOMATOM Definition Edge',"SOMATOM Definition Edge`nSOMATOM Drive")))
+    foreach($text in $cases){
+        $row=Read-Content $text 3
+        Check ($row.Status -ceq 'NeedsReview' -and $row.ProfileId -ceq '' -and $row.Category -ceq '' -and -not $row.IsReference) 'Unsupported, mixed, numbered or incomplete standalone evidence never becomes a recognized current component'
+    }
+    foreach($row in @((ConvertFrom-QaDocumentContent -Text $component -Pages 3 -ReadPages 2),(ConvertFrom-QaDocumentContent -Text $component -Pages 3 -ReadPages 3 -Truncated $true),(ConvertFrom-QaDocumentContent -Text $component -Pages 3 -ReadPages 3 -NeedsOCR $true),(Read-Content ($component.Replace('2026-11-10 08:00:00 Page: 3/3','2026-11-09 08:00:00 Page: 3/3')) 3),(Read-Content ($component.Replace('2026-11-10 08:00:00 Page: 3/3','')) 3))){
+        Check ($row.Status -ceq 'NeedsReview' -and $row.Category -ceq '' -and $row.ClinicalResult -ceq 'Not inferred') 'Standalone components must also retain complete verified text and matching report-footer timestamps'
+    }
+    $numberedWater=Read-Content (New-ContentText -Labels @('Homogeneity / Water'))
+    Check ($numberedWater.Status -ceq 'NeedsReview' -and $numberedWater.ProfileId -ceq '') 'The standalone-template support does not generalize into accepting an incomplete numbered Basic profile'
+}
 Scenario 'Classifier metadata and evidence codes are fixed and support safe display allowlists' {
     $definitions=@(Get-QaContentSectionDefinitions);$row=Read-Content (New-ContentText $extended)
     Check ((Get-QaContentClassifierVersion) -eq 1 -and $row.ClassifierVersion -eq 1 -and $row.TemplateVersion -eq 'siemens-iec-constancy-v1') 'The cache can bind classification to an explicit classifier/template version'
-    Check ((Get-QaContentSupportRevision) -eq 3 -and $row.SupportRevision -eq 3) 'Additive support has its own retry revision without invalidating recognized classifier-version-one caches'
+    Check ((Get-QaContentSupportRevision) -eq 4 -and $row.SupportRevision -eq 4) 'Additive support has its own retry revision without invalidating recognized classifier-version-one caches'
     Check ($definitions.Count -eq 11 -and @($definitions|Select-Object -ExpandProperty Code -Unique).Count -eq 11) 'Supported section codes have eleven fixed display definitions including distinct low contrast'
     foreach($section in $row.Sections){Check (@($definitions|Where-Object Code -ceq $section.Code).Count -eq 1 -and $section.EvidenceCode -ceq ('NumberedBodySection.'+$section.Code)) 'Evidence uses a fixed section code, never raw report text'}
 }
 $failed=@($script:Results|Where-Object Result -eq 'FAIL').Count
-$report=[pscustomobject]@{Version='5.3.1';Runtime=$PSVersionTable.PSVersion.ToString();Tests=$script:Results.Count;Assertions=$script:Assertions;Failed=$failed;Results=@($script:Results.ToArray());Scope='Synthetic Edge, compatible Flash and Drive model text only. Covers exact Basic and Extended IEC profiles, bounded individual/combined additional test sets and the explicit Quality Daily body family. Exact numbered Siemens IEC body-section profiles and repeated report footer consensus. Profile suggestions are separate from department mappings and clinical QA evidence.'}
+$report=[pscustomobject]@{Version='5.4.0';Runtime=$PSVersionTable.PSVersion.ToString();Tests=$script:Results.Count;Assertions=$script:Assertions;Failed=$failed;Results=@($script:Results.ToArray());Scope='Synthetic Edge, compatible Flash and Drive model text only. Covers exact Basic and Extended IEC profiles, bounded individual/combined additional test sets the explicit Quality Daily body family, isolated historical reference documents, and strict standalone current component templates. Exact numbered Siemens IEC body-section profiles and repeated report footer consensus. Profile suggestions are separate from department mappings and clinical QA evidence.'}
 if($OutputPath){$report|ConvertTo-Json -Depth 12|Set-Content $OutputPath -Encoding UTF8}
 Write-Host ('Result: '+($report.Tests-$failed)+'/'+$report.Tests+' scenarios; '+$report.Assertions+' assertions.')
 if($failed){exit 1}

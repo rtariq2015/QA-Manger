@@ -1,0 +1,231 @@
+{
+  "Version": "5.3.1",
+  "SourceCommit": "006268bb12a6ca93c428ac5cbe1078d7d3976bf3",
+  "WorkflowRun": "https://github.com/rtariq2015/QA-Manger/actions/runs/43062859219",
+  "Runtime": "Windows PowerShell 5.1",
+  "Tests": 306,
+  "Assertions": 2608,
+  "Failed": 0,
+  "Suites": [
+    {
+      "Name": "Run-PythonReaderTests",
+      "Tests": 14,
+      "Assertions": 544,
+      "Failed": 0
+    },
+    {
+      "Name": "Run-MeasurementTests",
+      "Tests": 14,
+      "Assertions": 37,
+      "Failed": 0
+    },
+    {
+      "Name": "Run-ContentTests",
+      "Tests": 19,
+      "Assertions": 128,
+      "Failed": 0
+    },
+    {
+      "Name": "Run-AnalysisTests",
+      "Tests": 15,
+      "Assertions": 73,
+      "Failed": 0
+    },
+    {
+      "Name": "Run-ContentIntegrationTests",
+      "Tests": 12,
+      "Assertions": 313,
+      "Failed": 0
+    },
+    {
+      "Name": "Run-WebServiceTests",
+      "Tests": 29,
+      "Assertions": 129,
+      "Failed": 0
+    },
+    {
+      "Name": "Run-ReviewQueueTests",
+      "Tests": 14,
+      "Assertions": 83,
+      "Failed": 0
+    },
+    {
+      "Name": "Run-UpdateTests",
+      "Tests": 12,
+      "Assertions": 63,
+      "Failed": 0
+    },
+    {
+      "Name": "Run-SupportTests",
+      "Tests": 22,
+      "Assertions": 171,
+      "Failed": 0
+    },
+    {
+      "Name": "Run-NetworkTests",
+      "Tests": 13,
+      "Assertions": 43,
+      "Failed": 0
+    },
+    {
+      "Name": "Run-Tests",
+      "Tests": 24,
+      "Assertions": 247,
+      "Failed": 0
+    },
+    {
+      "Name": "Run-ExportTests",
+      "Tests": 24,
+      "Assertions": 250,
+      "Failed": 0
+    },
+    {
+      "Name": "Run-ConnectionTests",
+      "Tests": 15,
+      "Assertions": 181,
+      "Failed": 0
+    },
+    {
+      "Name": "Run-BrowseTests",
+      "Tests": 17,
+      "Assertions": 117,
+      "Failed": 0
+    },
+    {
+      "Name": "Run-MonthlyTests",
+      "Tests": 16,
+      "Assertions": 89,
+      "Failed": 0
+    },
+    {
+      "Name": "Run-PdfTests",
+      "Tests": 13,
+      "Assertions": 44,
+      "Failed": 0
+    },
+    {
+      "Name": "Run-PortableTests",
+      "Tests": 17,
+      "Assertions": 48,
+      "Failed": 0
+    },
+    {
+      "Name": "Run-TrendTests",
+      "Tests": 16,
+      "Assertions": 48,
+      "Failed": 0
+    }
+  ],
+  "WindowsPowerShell51ActuallyRun": true,
+  "WindowsDPAPIActuallyRun": true,
+  "NativeWPFCompatibilityActuallyRun": true,
+  "NativePdfRendererActuallyRun": true,
+  "SelfContainedWindowsWebHostActuallyRun": true,
+  "ProductionPortablePythonActuallyRun": true,
+  "ProductionPythonNonAdministratorActuallyRun": true,
+  "ProductionPythonLiveCancellationActuallyRun": true,
+  "StandardAccountCleanupSucceeded": true,
+  "ReaderBenchmark": {
+    "Evidence": "../Reader-Benchmark-Windows.json",
+    "Tests": 3,
+    "Assertions": 80,
+    "Failed": 0,
+    "ColdReadSamples": 12,
+    "Profiles": [
+      "Basic:9pages",
+      "Extended:6pages"
+    ],
+    "WholeIsolatedReadMediansMilliseconds": {
+      "Standard": 1135.01,
+      "Python": 1614.14
+    },
+    "FasterReaderForThisFixture": "Standard",
+    "StandardMedianDividedByPythonMedian": 0.703,
+    "CachedAnalysis": {
+      "ColdAnalyzed": 2,
+      "ColdMilliseconds": 2550.358,
+      "WarmAnalyzed": 0,
+      "WarmCached": 2,
+      "WarmMilliseconds": 94.46,
+      "WarmCacheWrites": 0
+    },
+    "MemoryMeasured": false,
+    "HospitalNetworkSpeedMeasured": false
+  },
+  "SelfContainedWindowsHostSHA256": "7016cbd150d99f9b707c14593fca32c46dd4d31b59d680d9790b17961318f53b",
+  "PortablePythonRuntimeArtifactZipSHA256": "a72161ecdadc2699af66c79b28e68d338850d95108aedca097ac6f5a1f6c2942",
+  "ValidationArtifactZipSHA256": "5fa0296b6ffa967e24ef754baea0eca1c53c7d013c60e1163ac65321fed801cb",
+  "Screenshots": [
+    "today-light-web-demo.png",
+    "today-dark-web-demo.png",
+    "reports-light-web-demo.png",
+    "reports-dark-web-demo.png",
+    "review-light-web-demo.png",
+    "review-dark-web-demo.png",
+    "exports-light-web-demo.png",
+    "exports-dark-web-demo.png",
+    "trends-light-web-demo.png",
+    "trends-dark-web-demo.png",
+    "settings-light-web-demo.png",
+    "settings-dark-web-demo.png",
+    "today-web-demo.png",
+    "reports-web-demo.png",
+    "review-web-demo.png",
+    "exports-web-demo.png",
+    "trends-web-demo.png",
+    "settings-web-demo.png",
+    "reports-small-web-demo.png",
+    "support-activity-web-demo.png",
+    "support-print-web-demo.png",
+    "large-library-pending.png",
+    "large-refresh-progress.png",
+    "content-basic-web-demo.png",
+    "content-continuous-pdf-web-demo.png",
+    "content-settings-web-demo.png",
+    "automatic-filing-web-demo.png",
+    "python-measurements-web-demo.png",
+    "python-measurements-small-web-demo.png",
+    "python-reader-settings-web-demo.png",
+    "trends-measurements-web-demo.png"
+  ],
+  "BackgroundScheduler": {
+    "Evidence": "../Background-Scheduler-Windows.json",
+    "Passed": true,
+    "CheckCount": 10,
+    "SyntheticOnly": true,
+    "ExecutionPlatform": "Native Windows workflow execution",
+    "Scope": "Actual self-contained host scheduler with a deterministic synthetic PowerShell adapter. These ten check outcomes are separate from PowerShell suite scenarios/assertions and do not measure real PDF-reader speed."
+  },
+  "Scope": "Final pinned execution with generated PDFs and local scanner folders. Eighteen native PowerShell suites, ten separate actual-host/synthetic-adapter scheduler checks, a separate three-scenario reader comparison, real Edge standard/content/Python/large-browser workloads, and a separate large-library workload are counted independently. Standard-user Python execution and live cancellation, continuous native PDF scrolling, six interface tabs, both themes, seven-entry scrubbed diagnostics, printable reports and explicit pending-file automatic processing are actually exercised. Additional, Daily and Drive parser regressions use synthetic layouts only; departmental filing mappings remain Ask until confirmed. No hospital sign-in, workplace policy approval, real reports or hospital SMB timing is established. Raw reports and screenshots are copied unchanged.",
+  "PortablePythonIntegrityManifestSHA256": "7bb612a33fa72070b608fc7a67ab93d9de48aebafc6c3ebd1978aff3fd9f27d4",
+  "Browser": {
+    "Evidence": "../Browser-Web-Windows.json",
+    "Tests": 15,
+    "Assertions": 553,
+    "Failed": 0
+  },
+  "LargeLibrary": {
+    "Evidence": "../Large-Library-Windows.json",
+    "Tests": 4,
+    "Assertions": 5463,
+    "Failed": 0
+  },
+  "LargeBrowser": {
+    "Evidence": "../Browser-Large-Windows.json",
+    "Tests": 4,
+    "Assertions": 27328,
+    "Failed": 0
+  },
+  "ContentBrowser": {
+    "Evidence": "../Browser-Content-Windows.json",
+    "Tests": 6,
+    "Assertions": 188,
+    "Failed": 0
+  },
+  "PythonBrowser": {
+    "Evidence": "../Browser-Python-Windows.json",
+    "Tests": 4,
+    "Assertions": 118,
+    "Failed": 0
+  }
+}

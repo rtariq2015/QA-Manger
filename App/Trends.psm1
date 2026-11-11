@@ -3,6 +3,19 @@ Set-StrictMode -Version 2.0
 $ErrorActionPreference='Stop'
 Import-Module (Join-Path $PSScriptRoot 'Insights.psm1') -DisableNameChecking -WarningAction SilentlyContinue
 
+function Get-QaTrendMetricDefinition {
+    [CmdletBinding()]param([ValidateSet('WaterCTNumber','ImageNoise','SliceThickness')][string]$Metric='WaterCTNumber')
+    switch($Metric){
+        'WaterCTNumber'{return [pscustomobject]@{code='WaterCTNumber';label='Water CT number';unit='HU';axisLabel='Hounsfield units (HU)'}}
+        'ImageNoise'{return [pscustomobject]@{code='ImageNoise';label='Image noise';unit='HU';axisLabel='Hounsfield units (HU)'}}
+        'SliceThickness'{return [pscustomobject]@{code='SliceThickness';label='Slice thickness';unit='mm';axisLabel='Millimetres (mm)'}}
+    }
+}
+function Test-QaTrendReference {param($Analysis)
+    $doc=Get-QaTrendValue $Analysis DocumentClassification $null
+    return ([string](Get-QaTrendValue $doc ProfileId '') -ceq 'siemens-iec-reference-v1' -or [string](Get-QaTrendValue $doc DocumentKind '') -ceq 'Reference' -or (Test-QaTrendTrue (Get-QaTrendValue $doc IsReference $false)) -or (Test-QaTrendTrue (Get-QaTrendValue $doc HasReferenceEvidence $false)))
+}
+
 function Get-QaTrendValue {param($Object,[string]$Name,$Default=$null)
     if($null -ne $Object){if($Object -is [Collections.IDictionary]){if($Object.Contains($Name)){return $Object[$Name]}}elseif($null -ne $Object.PSObject.Properties[$Name]){return $Object.$Name}};return $Default
 }
@@ -31,6 +44,8 @@ function Get-QaTrendAliasEvidence {param($Analysis,$Record,[string]$Scanner,[str
     # Equal PDF hashes can have separate reader-cache provenance rows. Compare
     # their clear readings before choosing one alias, so a reader disagreement
     # cannot be hidden by deduplication or by the stable record-id tie breaker.
+    if(Test-QaTrendReference $Analysis){return $null}
+    $unit=(Get-QaTrendMetricDefinition $Metric).unit
     $measurement=Get-QaTrendValue $Analysis MeasurementsDocument $null;$doc=Get-QaTrendValue $Analysis DocumentClassification $null
     if([string](Get-QaTrendValue $Analysis Status '') -ceq 'ReadError' -or [int](Get-QaTrendValue $measurement MeasurementVersion 0) -ne 1 -or -not (Test-QaTrendTrue (Get-QaTrendValue $doc CompleteRead $false)) -or -not (Test-QaTrendTrue (Get-QaTrendValue $measurement CompleteRead $false)) -or [string](Get-QaTrendValue $doc DateStatus '') -cne 'Consensus' -or [string](Get-QaTrendValue $measurement Status '') -cnotin @('Extracted','NeedsReview')){return $null}
     $date=[string](Get-QaTrendValue $doc ReportDate '');$time=[string](Get-QaTrendValue $doc ReportTime '');$timestamp=[datetime]::MinValue
@@ -40,7 +55,7 @@ function Get-QaTrendAliasEvidence {param($Analysis,$Record,[string]$Scanner,[str
     $values=@{}
     foreach($row in @(Get-QaTrendValue $measurement Measurements @()|Select-Object -First 100)){
         $rowMode=[string](Get-QaTrendValue $row Mode '');$system=[string](Get-QaTrendValue $row SourceSystem '');$sliceText=[string](Get-QaTrendValue $row Slice '');$page=[int](Get-QaTrendValue $row Page 0)
-        if([string](Get-QaTrendValue $row Code '') -cne $Metric -or [string](Get-QaTrendValue $row Unit '') -cne 'HU' -or [string](Get-QaTrendValue $row Status '') -cnotin @('Printed','NeedsReview') -or $rowMode -cnotin @('Head','Body','Unspecified') -or $system -cnotin @('A','B') -or $sliceText -cnotmatch '^[1-9][0-9]{0,2}$' -or $page -lt 1 -or $page -gt [int](Get-QaTrendValue $doc ReadPages 0)){continue}
+        if([string](Get-QaTrendValue $row Code '') -cne $Metric -or [string](Get-QaTrendValue $row Unit '') -cne $unit -or [string](Get-QaTrendValue $row Status '') -cnotin @('Printed','NeedsReview') -or $rowMode -cnotin @('Head','Body','Unspecified') -or $system -cnotin @('A','B') -or $sliceText -cnotmatch '^[1-9][0-9]{0,2}$' -or $page -lt 1 -or $page -gt [int](Get-QaTrendValue $doc ReadPages 0)){continue}
         $value=Get-QaTrendNumber (Get-QaTrendValue $row Value);if($null -eq $value){continue}
         $lower=Get-QaTrendNumber (Get-QaTrendValue $row LowerLimit);$upper=Get-QaTrendNumber (Get-QaTrendValue $row UpperLimit);if($null -eq $lower -or $null -eq $upper -or $lower -gt $upper){$lower=$null;$upper=$null}
         $key=$Scanner+'|'+$Metric+'|'+$rowMode+'|'+$system+'|'+$sliceText+'|'+$date+'|'+$time
@@ -61,7 +76,7 @@ function Get-QaTrendData {
     [CmdletBinding()]param(
         [Parameter(Mandatory=$true)]$Config,
         [string]$Scanner='',
-        [ValidateSet('WaterCTNumber','ImageNoise')][string]$Metric='WaterCTNumber',
+        [ValidateSet('WaterCTNumber','ImageNoise','SliceThickness')][string]$Metric='WaterCTNumber',
         [ValidateSet('','Head','Body','Unspecified')][string]$Mode='',
         [ValidateSet('','A','B')][string]$SourceSystem='',
         [ValidateRange(0,999)][int]$Slice=0,
@@ -70,14 +85,14 @@ function Get-QaTrendData {
         [string]$SeriesKey='',
         [AllowEmptyCollection()][object[]]$Records=@()
     )
-    $Metric=if($Metric -ieq 'WaterCTNumber'){'WaterCTNumber'}else{'ImageNoise'}
+    $definition=Get-QaTrendMetricDefinition $Metric;$Metric=[string]$definition.code;$unit=[string]$definition.unit
     if($Mode){$Mode=if($Mode -ieq 'Head'){'Head'}elseif($Mode -ieq 'Body'){'Body'}else{'Unspecified'}}
     if($SourceSystem){$SourceSystem=$SourceSystem.ToUpperInvariant()}
     $start=$null;$end=$null
     if($StartDateISO){$start=Get-QaTrendDate $StartDateISO;if($null -eq $start){throw 'Choose a valid start date using yyyy-MM-dd.'}}
     if($EndDateISO){$end=Get-QaTrendDate $EndDateISO;if($null -eq $end){throw 'Choose a valid end date using yyyy-MM-dd.'}}
     if($null -ne $start -and $null -ne $end -and $start -gt $end){throw 'The start date must be on or before the end date.'}
-    if($SeriesKey -and $SeriesKey -cnotmatch '^[A-Za-z][A-Za-z0-9_]{0,31}\|(?:WaterCTNumber|ImageNoise)\|(?:Head|Body|Unspecified)\|[AB]\|[1-9][0-9]{0,2}$'){throw 'Choose one available measurement series.'}
+    if($SeriesKey -and $SeriesKey -cnotmatch '^[A-Za-z][A-Za-z0-9_]{0,31}\|(?:WaterCTNumber|ImageNoise|SliceThickness)\|(?:Head|Body|Unspecified)\|[AB]\|[1-9][0-9]{0,2}$'){throw 'Choose one available measurement series.'}
     $scanners=New-Object 'Collections.Generic.List[object]';$sourceIds=@{}
     foreach($source in @(Get-QaTrendValue $Config Sources @())){
         $id=[string](Get-QaTrendValue $source Scanner '')
@@ -89,7 +104,7 @@ function Get-QaTrendData {
     if(-not @($scanners|Where-Object id -CEQ $Scanner).Count){throw 'Choose a configured scanner.'}
     if(-not $PSBoundParameters.ContainsKey('Records')){$Records=@(Get-QaTrendArchiveRecords $Config)}
     if($Records.Count -gt 100000){throw 'This archive is too large for one trend query. Use a smaller managed archive.'}
-    $coverage=[ordered]@{savedReports=0;readReports=0;pendingReports=0;unsupportedReports=0;failedReports=0;conflicts=0;unknownDates=0;duplicateReports=0;supersededReports=0;reviewReports=0;dateConflicts=0}
+    $coverage=[ordered]@{savedReports=0;readReports=0;pendingReports=0;unsupportedReports=0;failedReports=0;conflicts=0;unknownDates=0;duplicateReports=0;supersededReports=0;reviewReports=0;dateConflicts=0;referenceReports=0}
     $sourceGroups=@{}
     foreach($record in $Records){
         if([string](Get-QaTrendValue $record Scanner '') -cne $Scanner -or [string](Get-QaTrendValue $record Id '') -notmatch '^[0-9A-Fa-f]{64}$' -or [string](Get-QaTrendValue $record Hash '') -notmatch '^[0-9A-Fa-f]{64}$'){continue}
@@ -115,6 +130,7 @@ function Get-QaTrendData {
         $analysis=Get-QaSavedAnalysis -Config $Config -Record $record
         $measurement=Get-QaTrendValue $analysis MeasurementsDocument $null
         $score=if($null -ne $analysis -and [string](Get-QaTrendValue $analysis Status '') -ne 'ReadError' -and [int](Get-QaTrendValue $measurement MeasurementVersion 0) -eq 1){3}elseif($null -ne $analysis -and [string](Get-QaTrendValue $analysis Status '') -ne 'ReadError'){2}elseif($null -ne $analysis){1}else{0}
+        if(Test-QaTrendReference $analysis){$score=-1}
         if($score -eq 3){
             $class=Get-QaTrendValue $analysis DocumentClassification $null
             if((Test-QaTrendTrue (Get-QaTrendValue $class CompleteRead $false)) -and (Test-QaTrendTrue (Get-QaTrendValue $measurement CompleteRead $false))){$score+=2}
@@ -144,6 +160,7 @@ function Get-QaTrendData {
         $coverage.savedReports++
         if($null -eq $date){$coverage.unknownDates++}
         if($null -ne $analysis -and [string](Get-QaTrendValue $analysis Status '') -ceq 'ReadError'){$coverage.failedReports++;continue}
+        if(Test-QaTrendReference $analysis){$coverage.referenceReports++;$coverage.readReports++;continue}
         if($null -eq $analysis -or [int](Get-QaTrendValue $measurement MeasurementVersion 0) -ne 1){$coverage.pendingReports++;if($pending.Count -lt 100){[void]$pending.Add([string]$record.Id)};continue}
         $coverage.readReports++
         if(-not $dated -or $dateConflict -or -not (Test-QaTrendTrue (Get-QaTrendValue $doc CompleteRead $false)) -or -not (Test-QaTrendTrue (Get-QaTrendValue $measurement CompleteRead $false)) -or [string](Get-QaTrendValue $measurement Status '') -cnotin @('Extracted','NeedsReview')){
@@ -156,7 +173,7 @@ function Get-QaTrendData {
         foreach($section in @(Get-QaTrendValue $doc Sections @())){foreach($outcome in @(Get-QaTrendValue $section PrintedOutcomes @())){if(([regex]::Replace([string]$outcome,'\s+',' ')).ToUpperInvariant() -cin @('NOT OK','FAIL','FAILED','ERROR','WARNING','NOT EVALUATED')){[void]$reportWarnings.Add('PrintedObservationNeedsReview')}}}
         $rows=New-Object 'Collections.Generic.List[object]';$seenRows=@{}
         foreach($row in @(Get-QaTrendValue $measurement Measurements @()|Select-Object -First 100)){
-            if([string](Get-QaTrendValue $row Code '') -cne $Metric -or [string](Get-QaTrendValue $row Unit '') -cne 'HU' -or [string](Get-QaTrendValue $row Status '') -cnotin @('Printed','NeedsReview')){continue}
+            if([string](Get-QaTrendValue $row Code '') -cne $Metric -or [string](Get-QaTrendValue $row Unit '') -cne $unit -or [string](Get-QaTrendValue $row Status '') -cnotin @('Printed','NeedsReview')){continue}
             $rowMode=[string](Get-QaTrendValue $row Mode '');$system=[string](Get-QaTrendValue $row SourceSystem '');$sliceText=[string](Get-QaTrendValue $row Slice '');$page=[int](Get-QaTrendValue $row Page 0)
             if($rowMode -cnotin @('Head','Body','Unspecified') -or $system -cnotin @('A','B') -or $sliceText -cnotmatch '^[1-9][0-9]{0,2}$' -or $page -lt 1 -or $page -gt [int](Get-QaTrendValue $doc ReadPages 0)){continue}
             $value=Get-QaTrendNumber (Get-QaTrendValue $row Value);if($null -eq $value){continue}
@@ -166,7 +183,7 @@ function Get-QaTrendData {
             if([string](Get-QaTrendValue $row Status '') -ceq 'NeedsReview'){[void]$warnings.Add('MeasurementNeedsReview')}
             $series=$Scanner+'|'+$Metric+'|'+$rowMode+'|'+$system+'|'+$sliceText
             if($seenRows.ContainsKey($series)){$seenRows[$series]++}else{$seenRows[$series]=1}
-            [void]$rows.Add([pscustomobject]@{_series=$series;_hash=[string]$record.Hash;_mode=$rowMode;_system=$system;_slice=[int]$sliceText;recordId=[string]$record.Id;date=$printedDate.ToString('yyyy-MM-dd',[Globalization.CultureInfo]::InvariantCulture);time=$time;value=$value;unit='HU';lower=$lower;upper=$upper;page=$page;reviewWarning=($warnings.Count -gt 0);outsidePrintedRange=($null -ne $lower -and ($value -lt $lower -or $value -gt $upper));warnings=@($warnings|Select-Object -Unique)})
+            [void]$rows.Add([pscustomobject]@{_series=$series;_hash=[string]$record.Hash;_mode=$rowMode;_system=$system;_slice=[int]$sliceText;recordId=[string]$record.Id;date=$printedDate.ToString('yyyy-MM-dd',[Globalization.CultureInfo]::InvariantCulture);time=$time;value=$value;unit=$unit;lower=$lower;upper=$upper;page=$page;reviewWarning=($warnings.Count -gt 0);outsidePrintedRange=($null -ne $lower -and ($value -lt $lower -or $value -gt $upper));warnings=@($warnings|Select-Object -Unique)})
         }
         if(-not $rows.Count){$coverage.unsupportedReports++}
         if($reportWarnings.Count -or @($rows|Where-Object reviewWarning).Count){$coverage.reviewReports++}
@@ -194,7 +211,7 @@ function Get-QaTrendData {
     $seriesRows=New-Object 'Collections.Generic.List[object]'
     foreach($key in @($bySeries.Keys|Sort-Object)){
         $first=$bySeries[$key][0]
-        [void]$seriesRows.Add([pscustomobject]@{key=$key;label=($first._mode+' / System '+$first._system+' / Slice '+$first._slice);metric=$Metric;mode=[string]$first._mode;system=[string]$first._system;slice=[int]$first._slice;count=$bySeries[$key].Count})
+        [void]$seriesRows.Add([pscustomobject]@{key=$key;label=($first._mode+' / System '+$first._system+' / Slice '+$first._slice);metric=$Metric;unit=$unit;mode=[string]$first._mode;system=[string]$first._system;slice=[int]$first._slice;count=$bySeries[$key].Count})
     }
     $orderedSeries=@($seriesRows|Sort-Object mode,system,slice)
     $available=@($orderedSeries|Where-Object{(-not $Mode -or $_.mode -ceq $Mode) -and (-not $SourceSystem -or $_.system -ceq $SourceSystem) -and (-not $Slice -or $_.slice -eq $Slice)})
@@ -207,6 +224,6 @@ function Get-QaTrendData {
     $public=New-Object 'Collections.Generic.List[object]'
     foreach($point in $all){[void]$public.Add(($point|Select-Object recordId,date,time,value,unit,lower,upper,page,reviewWarning,outsidePrintedRange,warnings))}
     $message=if($count){'Printed measurements from the selected scanner and test context.'}elseif($coverage.pendingReports){'Read the remaining saved reports to collect supported measurements for this period.'}else{'No complete, date-consistent readings match the selected series.'}
-    return [pscustomobject]@{schemaVersion=1;scanner=$Scanner;metric=$Metric;selection=[pscustomobject]@{scanner=$Scanner;metric=$Metric;mode=$Mode;system=$SourceSystem;slice=$Slice;startDate=$StartDateISO;endDate=$EndDateISO};scanners=@($scanners.ToArray());series=@($orderedSeries);selectedSeries=$selected;points=@($public.ToArray());summary=$summary;coverage=[pscustomobject]$coverage;pendingIds=@($pending.ToArray());pendingIdLimitReached=($coverage.pendingReports -gt $pending.Count);totalPointCount=$count;pointLimitReached=$limited;dataLimitReached=$dataLimitReached;message=$message;notes=@('Change means latest minus first reading in the selected period; it is not a calibration baseline or clinical drift diagnosis.','Readings are separated by scanner, metric, head/body mode, system and slice. Confirm protocol consistency before interpreting changes.','Only explicit printed limits are displayed. Outside a printed range is a documentary flag, not a clinical approval or failure.');clinicalResult='Not inferred'}
+    return [pscustomobject]@{schemaVersion=1;scanner=$Scanner;metric=$Metric;unit=$unit;metricDefinition=$definition;selection=[pscustomobject]@{scanner=$Scanner;metric=$Metric;mode=$Mode;system=$SourceSystem;slice=$Slice;startDate=$StartDateISO;endDate=$EndDateISO};scanners=@($scanners.ToArray());series=@($orderedSeries);selectedSeries=$selected;points=@($public.ToArray());summary=$summary;coverage=[pscustomobject]$coverage;pendingIds=@($pending.ToArray());pendingIdLimitReached=($coverage.pendingReports -gt $pending.Count);totalPointCount=$count;pointLimitReached=$limited;dataLimitReached=$dataLimitReached;message=$message;notes=@('Change means latest minus first reading in the selected period; it is not a calibration baseline or clinical drift diagnosis.','Readings are separated by scanner, metric, head/body mode, system and slice. Confirm protocol consistency before interpreting changes.','Only explicit printed limits are displayed. Outside a printed range is a documentary flag, not a clinical approval or failure.');clinicalResult='Not inferred'}
 }
-Export-ModuleMember -Function Get-QaTrendData
+Export-ModuleMember -Function Get-QaTrendData,Get-QaTrendMetricDefinition

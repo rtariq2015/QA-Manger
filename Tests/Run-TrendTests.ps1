@@ -21,14 +21,14 @@ function New-Record($Fx,[string]$Name,[string]$Date='2025-02-01',[string]$Time='
     $row=[pscustomobject]@{Id=$id;Scanner=$Scanner;ReportDate=$Date;ReportTime=$Time;SourcePath=$Source;DestinationPath=$destination;Hash=$hash;Length=(Get-Item $destination).Length;FirstArchived=$Archived;Category='Daily_QA';ConfirmedBy='';ConfirmedAt='';ConfirmedComponents=@()}
     [void]$Fx.Records.Add($row);return $row
 }
-function New-Measurement([string]$Code='WaterCTNumber',[string]$Value='0.25',[string]$Mode='Body',[string]$System='A',[string]$Slice='1',[string]$Lower='-4',[string]$Upper='4',[int]$Page=3,[string]$Status='Printed'){
-    return [pscustomobject]@{Code=$Code;Value=$Value;Unit='HU';Page=$Page;LowerLimit=$Lower;UpperLimit=$Upper;Mode=$Mode;SourceSystem=$System;Slice=$Slice;Status=$Status}
+function New-Measurement([string]$Code='WaterCTNumber',[string]$Value='0.25',[string]$Mode='Body',[string]$System='A',[string]$Slice='1',[string]$Lower='-4',[string]$Upper='4',[int]$Page=3,[string]$Status='Printed',[string]$Unit='HU'){
+    return [pscustomobject]@{Code=$Code;Value=$Value;Unit=$Unit;Page=$Page;LowerLimit=$Lower;UpperLimit=$Upper;Mode=$Mode;SourceSystem=$System;Slice=$Slice;Status=$Status}
 }
-function Save-Analysis($Fx,$Record,[object[]]$Measurements=@(),[string]$Date='', [string]$Time='', [string]$DateStatus='Consensus',[string]$MeasurementStatus='Extracted',[object[]]$Issues=@(),[bool]$Complete=$true,[string]$Outcome='OK',[int]$MeasurementVersion=1,[string]$Status='NeedsReview'){
+function Save-Analysis($Fx,$Record,[object[]]$Measurements=@(),[string]$Date='', [string]$Time='', [string]$DateStatus='Consensus',[string]$MeasurementStatus='Extracted',[object[]]$Issues=@(),[bool]$Complete=$true,[string]$Outcome='OK',[int]$MeasurementVersion=1,[string]$Status='NeedsReview',[string]$ProfileId='', [bool]$IsReference=$false,[bool]$HasReferenceEvidence=$false){
     if(-not $Date){$Date=if($Record.ReportDate){$Record.ReportDate}else{'2025-02-01'}}
     if(-not $Time){$Time=if($Record.ReportTime){$Record.ReportTime}else{'07:00:00'}}
     $info=Get-Item $Record.DestinationPath
-    $row=[pscustomobject]@{ParserVersion=1;AnalysisCacheSchemaVersion=3;DocumentClassifierVersion=1;RecordId=$Record.Id;Hash=$Record.Hash;VerifiedHash=$Record.Hash;VerifiedLength=$info.Length;VerifiedWriteTicks=$info.LastWriteTimeUtc.Ticks;SavedLength=$info.Length;SavedWriteTicks=$info.LastWriteTimeUtc.Ticks;Status=$Status;DocumentClassification=[pscustomobject]@{ClassifierVersion=1;Status='Recognized';DateStatus=$DateStatus;ReportDate=$Date;ReportTime=$Time;CompleteRead=$Complete;ReadPages=3;Pages=3;Sections=@([pscustomobject]@{PrintedOutcomes=@($Outcome)})};MeasurementsDocument=[pscustomobject]@{MeasurementVersion=$MeasurementVersion;CompleteRead=$Complete;Status=$MeasurementStatus;Issues=@($Issues);Measurements=@($Measurements)}}
+    $row=[pscustomobject]@{ParserVersion=1;AnalysisCacheSchemaVersion=3;DocumentClassifierVersion=1;RecordId=$Record.Id;Hash=$Record.Hash;VerifiedHash=$Record.Hash;VerifiedLength=$info.Length;VerifiedWriteTicks=$info.LastWriteTimeUtc.Ticks;SavedLength=$info.Length;SavedWriteTicks=$info.LastWriteTimeUtc.Ticks;Status=$Status;DocumentClassification=[pscustomobject]@{ClassifierVersion=1;ProfileId=$ProfileId;IsReference=$IsReference;HasReferenceEvidence=$HasReferenceEvidence;Status='Recognized';DateStatus=$DateStatus;ReportDate=$Date;ReportTime=$Time;CompleteRead=$Complete;ReadPages=3;Pages=3;Sections=@([pscustomobject]@{PrintedOutcomes=@($Outcome)})};MeasurementsDocument=[pscustomobject]@{MeasurementVersion=$MeasurementVersion;CompleteRead=$Complete;Status=$MeasurementStatus;Issues=@($Issues);Measurements=@($Measurements)}}
     $path=Join-Path $Fx.Config.ArchiveRoot ('.ctqa/analysis/'+$Record.Hash+'.json')
     if([IO.File]::Exists($path)){
         $existing=[IO.File]::ReadAllText($path)|ConvertFrom-Json
@@ -57,6 +57,40 @@ try {
         $head=Read-Trend $fx @{Mode='Head';SourceSystem='A';Slice=1};Check ($head.points.Count -eq 1 -and $head.selectedSeries -eq 'CT_Edge|WaterCTNumber|Head|A|1') 'An explicit head/system/slice context selects exactly its series.'
         $noise=Read-Trend $fx @{Metric='ImageNoise'};Check ($noise.series.Count -eq 1 -and $noise.points[0].value -eq 3.5) 'Noise does not share the water-value series.'
         $other=Read-Trend $fx @{Scanner='CT_Flash'};Check ($other.points.Count -eq 1 -and $other.points[0].value -eq 9) 'The selected scanner has its own values.'
+    }
+    Scenario 'Slice-thickness millimetres use their own metric descriptor and cannot mix with HU values' {
+        $fx=Fixture 'Millimetres';$one=New-Record $fx 'ThicknessEarlier';$two=New-Record $fx 'ThicknessLater' '2025-02-02'
+        [void](Save-Analysis $fx $one @((New-Measurement -Code SliceThickness -Unit mm -Value 6.25 -Lower 5.5 -Upper 7.5),(New-Measurement -Value '-0.25')))
+        [void](Save-Analysis $fx $two @((New-Measurement -Code SliceThickness -Unit mm -Value 6.5 -Lower 5.5 -Upper 7.5)))
+        $m=Read-Trend $fx @{Metric='SliceThickness'}
+        Check ($m.points.Count -eq 2 -and $m.metric -ceq 'SliceThickness' -and $m.unit -ceq 'mm' -and $m.metricDefinition.label -ceq 'Slice thickness') 'The new metric publishes one fixed millimetre descriptor and its own series.'
+        Check ($m.selectedSeries -ceq 'CT_Edge|SliceThickness|Body|A|1' -and $m.points[0].unit -ceq 'mm' -and $m.points[0].lower -eq 5.5 -and $m.summary.change -eq 0.25) 'Unit-matched points, bounds and change remain exact.'
+        $legacy=Read-Trend $fx @{Metric='WaterCTNumber'}
+        Check ($legacy.points.Count -eq 1 -and $legacy.points[0].unit -ceq 'HU' -and $legacy.metricDefinition.axisLabel -ceq 'Hounsfield units (HU)') 'An older schema-one HU cache without a support revision remains graphable separately.'
+        $wrong=New-Record $fx 'WrongThicknessUnit' '2025-02-03';[void](Save-Analysis $fx $wrong @((New-Measurement -Code SliceThickness -Unit HU -Value 800)))
+        $again=Read-Trend $fx @{Metric='SliceThickness'}
+        Check ($again.points.Count -eq 2 -and $again.coverage.unsupportedReports -eq 1) 'A cached HU value cannot enter a millimetre series even when its metric code matches.'
+        $selected=Read-Trend $fx @{Metric='SliceThickness';SeriesKey='CT_Edge|SliceThickness|Body|A|1'}
+        Check ($selected.points.Count -eq 2 -and $selected.metricDefinition.code -ceq 'SliceThickness') 'The strict public series-key validator admits the new fixed metric.'
+    }
+    Scenario 'Historical reference caches never become current points or pending measurement work' {
+        $fx=Fixture 'ReferenceExclusion';$reference=New-Record $fx 'ReferenceDocument'
+        [void](Save-Analysis $fx $reference @((New-Measurement -Value 99)) -ProfileId 'siemens-iec-reference-v1')
+        $result=Read-Trend $fx
+        Check ($result.points.Count -eq 0 -and $result.coverage.referenceReports -eq 1 -and $result.coverage.pendingReports -eq 0) 'A historical profile with legacy numeric rows is explicitly excluded rather than plotted or repeatedly scheduled.'
+        $flagged=New-Record $fx 'FlaggedReference' '2025-02-02';[void](Save-Analysis $fx $flagged @((New-Measurement -Value 88)) -IsReference $true -MeasurementVersion 0)
+        $again=Read-Trend $fx
+        Check ($again.points.Count -eq 0 -and $again.coverage.referenceReports -eq 2 -and $again.pendingIds.Count -eq 0) 'The typed reference flag also excludes an older measurement cache before pending-upgrade coverage.'
+        $suspected=New-Record $fx 'UnknownReferenceHeading' '2025-02-03';[void](Save-Analysis $fx $suspected @((New-Measurement -Value 77)) -ProfileId 'siemens-iec-basic-v1' -HasReferenceEvidence $true)
+        $blocked=Read-Trend $fx
+        Check ($blocked.points.Count -eq 0 -and $blocked.coverage.referenceReports -eq 3 -and $blocked.pendingIds.Count -eq 0) 'An anchored suspected Reference heading excludes plausible stale current-cache numbers even without strict IsReference or reference profile ID.'
+    }
+    Scenario 'A reference cache alias cannot override or fabricate conflicts with verified current evidence' {
+        $fx=Fixture 'ReferenceAlias';$reference=New-Record $fx 'ReferenceAlias' -SameContent 'SYNTHETIC_REFERENCE_ALIAS_BYTES';$current=New-Record $fx 'CurrentAlias' -SameContent 'SYNTHETIC_REFERENCE_ALIAS_BYTES'
+        [void](Save-Analysis $fx $reference @((New-Measurement -Value 999)) -ProfileId 'siemens-iec-reference-v1' -IsReference $true)
+        [void](Save-Analysis $fx $current @((New-Measurement -Value 0.75)))
+        $result=Read-Trend $fx
+        Check ($result.points.Count -eq 1 -and $result.points[0].value -eq 0.75 -and $result.points[0].recordId -ceq $current.Id -and $result.coverage.conflicts -eq 0) 'Excluded historical alias rows neither win cache ranking nor become current-value disagreement evidence.'
     }
     Scenario 'Printed failures and values outside printed limits stay visible with review warnings' {
         $fx=Fixture 'Outliers';$r=New-Record $fx 'Outside'

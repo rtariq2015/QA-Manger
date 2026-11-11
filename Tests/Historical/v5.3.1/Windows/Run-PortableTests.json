@@ -1,0 +1,97 @@
+﻿{
+    "Version":  "4.3.0",
+    "Runtime":  "5.1.26100.33648",
+    "Platform":  "Microsoft Windows NT 10.0.26100.0",
+    "WindowsPowerShell51ActuallyRun":  true,
+    "Tests":  17,
+    "Assertions":  48,
+    "Failed":  0,
+    "Results":  [
+                    {
+                        "Name":  "Daily receipt follows scanner calendar and never implies test passage",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Printed results require explicit labels and keep page evidence",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Local background analysis works with scanner folders offline and uses content cache",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Readable folders preserve all PDFs and build a movable offline library",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Monthly reminder dates and historical checklist versions stay distinct",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Full backup verifies PDFs and restores a standalone workspace to a new folder",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Cancelled backup leaves no completed or partial ZIP",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "A worker cancellation is bounded and leaves no persisted credential file",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Moving the restored folder preserves relative configuration and analysis",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Sources edited without metadata changes are found by a deep source check",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Corrupted backups are rejected before any restore folder is published",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "New workspaces preserve baseline settings and move without absolute archive paths",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Monthly checklist edits preserve prior months and take effect at configured month",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "A bounded inventory worker returns a read-only snapshot",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Historical reviews use the checklist effective for the report month",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "An upgrade verifies package files and preserves local settings and data",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "The production application CMD starts quietly from a folder containing spaces and parentheses",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    }
+                ],
+    "SyntheticScenario":  "C:\\Users\\runneradmin\\AppData\\Local\\Temp\\CTQA_PortableTests_bc1e76e32ad1405aac68f699b010cac9"
+}

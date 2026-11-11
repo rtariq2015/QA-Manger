@@ -249,7 +249,7 @@ Scenario 'Pre-upgrade approvals retain their decisions and Undo restores their o
     [void](Invoke-QaOperation $f.Config -Mode Update);$before=(Get-FileHash $f.StatePath).Hash
     $oldRecords=@((Get-Web $f).records|Where-Object decision -eq 'Automatic');$original=& $module {(Get-Command Get-QaWebClassification).ScriptBlock}
     try{
-        & $module {function script:Get-QaWebClassification {param($Record,$Entry) return [pscustomobject]@{category=(Get-QaWebCategory $Record $Entry);pending=(Test-QaReportPending $Record);decision='Pending';source='pending';reason='Synthetic v5.0.1 classification behavior'}}}
+        & $module {function script:Get-QaWebClassification {param($Record,$Entry) return [pscustomobject]@{category=(Get-QaWebCategory $Record $Entry);pending=(Test-QaReportPending $Record);decision='Pending';source='pending';reason='Synthetic v5.0.1 classification behavior';filingState='NeedsReview';filingBasis='ArchiveGrouping';inferred=$false;filingReason='Synthetic v5.0.1 classification behavior'}}}
         foreach($record in $oldRecords){[void](Invoke-QaWebRequest $f.AppRoot ([pscustomobject]@{action='Approve';id=$record.id;stamp=$record.stamp}))}
     }finally{& $module {param($body) Set-Item Function:script:Get-QaWebClassification $body} $original}
     $upgraded=Get-Web $f
@@ -347,8 +347,248 @@ Scenario 'Diagnostic exports report unreadable organization history without trea
     Check ((Get-FileHash $path).Hash -ceq $before) 'History bytes are not modified by diagnostics'
 }
 
+# Filing-policy fixtures provide controlled cached classifier observations with
+# exact fixture-byte provenance. Actual PDF extraction is covered separately.
+function Set-WebFilingRule($Fixture,[string]$Profile,[AllowNull()]$Category=$null){
+    $cfg=Read-QaConfig $Fixture.AppRoot;$source=@($cfg.Sources|Where-Object Scanner -ceq $Fixture.Record.Scanner)[0]
+    if($null -eq $Category){$source.PSObject.Properties.Remove('ContentProfiles')}else{$source|Add-Member ContentProfiles @([pscustomobject]@{profileId=$Profile;category=[string]$Category}) -Force}
+    [void](Save-QaConfig $Fixture.AppRoot $cfg)
+}
+function Set-WebFilingRawCategory($Fixture,[string]$Category){
+    $state=Get-Content $Fixture.StatePath -Raw|ConvertFrom-Json;$row=@($state.Records|Where-Object Id -ceq $Fixture.Record.Id)[0]
+    $row.Category=$Category;$row.ClassificationBasis='Synthetic prior archive grouping';$Fixture.Record.Category=$Category;$Fixture.Record.ClassificationBasis='Synthetic prior archive grouping'
+    [IO.File]::WriteAllText($Fixture.StatePath,($state|ConvertTo-Json -Depth 20),(New-Object Text.UTF8Encoding $true))
+}
+function Set-WebFilingCache($Fixture,[string]$Profile='siemens-iec-basic-v1',[string]$Category='', [string]$Status='Recognized',[string]$DateStatus='Consensus',[bool]$Reference=$false){
+    $info=Get-Item $Fixture.Record.DestinationPath;$date=[string]$Fixture.Record.ReportDate;$supportRevision=&(Get-Module WebService){Get-QaContentSupportRevision}
+    $doc=[pscustomobject]@{ClassifierVersion=1;SupportRevision=$supportRevision;Status=$Status;ProfileId=$Profile;ProfileName='Synthetic supported format';Model='SOMATOM Definition Edge';CompleteRead=$true;Pages=3;ReadPages=3;DateStatus=$DateStatus;ReportDate=$date;ReportTime=[string]$Fixture.Record.ReportTime;Category=$Category;SuggestedCategory=$(if($Profile -ceq 'siemens-iec-basic-v1'){'Daily'}elseif($Profile -ceq 'siemens-iec-reference-v1'){'Other'}else{'Monthly'});ReasonCode=$(if($Status -ceq 'Recognized'){'SupportedProfile'}else{'UnknownTemplate'});Reason='Synthetic classifier fixture';IsReference=$Reference;NeedsOCR=$false;Sections=@()}
+    if($DateStatus -ceq 'Conflict'){$doc.ReportDate='';$doc.ReportTime=''}
+    $cache=[pscustomobject]@{ParserVersion=1;AnalysisCacheSchemaVersion=3;DocumentClassifierVersion=1;ContentSupportRevision=$supportRevision;Hash=$Fixture.Record.Hash;RecordId=$Fixture.Record.Id;VerifiedHash=$Fixture.Record.Hash;VerifiedLength=$info.Length;VerifiedWriteTicks=$info.LastWriteTimeUtc.Ticks;SavedLength=$info.Length;SavedWriteTicks=$info.LastWriteTimeUtc.Ticks;Status='NeedsReview';Truncated=$false;RequestedReaderMode='Auto';ReaderUsed='Legacy';DocumentClassification=$doc;MeasurementsDocument=[pscustomobject]@{MeasurementVersion=1;Status='NeedsReview';CompleteRead=$true;Measurements=@();Issues=@()}}
+    $folder=Join-Path (Read-QaConfig $Fixture.AppRoot).ArchiveRoot '.ctqa/analysis';[void][IO.Directory]::CreateDirectory($folder);$path=Join-Path $folder ($Fixture.Record.Hash+'.json')
+    [IO.File]::WriteAllText($path,($cache|ConvertTo-Json -Depth 16),(New-Object Text.UTF8Encoding $true));return $path
+}
+function Check-WebFilingBasis($Record){
+    Check ([string]$Record.filingBasis -cin @('SavedDecision','ReviewedLegacy','Undo','Conflict','ReferenceDocument','ScannerRule','ExplicitTitle','ManualReview','BasicFormat','ExtendedFormat','ExistingGrouping','Unsupported','ReadError','FilenameGrouping','ExplicitFilename','AwaitingRead','ArchiveGrouping')) 'A filing basis is a fixed public code rather than a raw document or exception string'
+}
+Scenario 'Absent and legacy blank format settings automatically file complete Basic and Extended content' {
+    foreach($case in @(@{Profile='siemens-iec-basic-v1';Category='Daily';Basis='BasicFormat'},@{Profile='siemens-iec-extended-v1';Category='Monthly';Basis='ExtendedFormat'})){
+        foreach($mode in @('Missing','LegacyBlank')){
+            $f=New-WebFixture ('AutoPolicy_'+$mode+'_'+$case.Category);if($mode -ceq 'Missing'){Set-WebFilingRule $f $case.Profile $null}else{Set-WebFilingRule $f $case.Profile ''}
+            [void](Set-WebFilingCache $f $case.Profile);$before=(Get-FileHash $f.StatePath).Hash;$snapshot=Get-Web $f;$row=$snapshot.records[0]
+            Check ($row.category -ceq $case.Category -and -not $row.pending -and $row.decision -ceq 'Automatic') 'A complete safe known profile files without a one-time mapping or individual approval'
+            Check ($row.filingState -ceq 'Filed' -and $row.filingBasis -ceq $case.Basis -and $row.inferred) 'Default profile inference is visibly identified as inferred filing'
+            Check ($snapshot.filingSummary.filed -eq 1 -and $snapshot.filingSummary.inferred -eq 1 -and $snapshot.filingSummary.waitingRead -eq 0 -and $snapshot.filingSummary.needsReview -eq 0) 'Summary counts distinguish inferred filing from waiting and exceptional review'
+            Check ((Get-FileHash $f.StatePath).Hash -ceq $before -and (Get-FileHash $f.Source).Hash -ceq $f.SourceHash -and $row.clinicalComponents.Count -eq 0) 'Automatic filing preserves source bytes and clinical review state'
+            Check-WebFilingBasis $row
+        }
+    }
+}
+Scenario 'Auto and Ask format policies round-trip while explicit scanner rules retain precedence' {
+    $f=New-WebFixture 'PolicyRoundTrip';[void](Set-WebFilingCache $f)
+    foreach($mode in @('Auto','Ask','Monthly','Other')){
+        $result=Invoke-QaWebRequest $f.AppRoot ([pscustomobject]@{action='ScannerSettings';scanner='CT_Edge';contentProfiles=@([pscustomobject]@{profileId='siemens-iec-basic-v1';category=$mode})});$row=$result.snapshot.records[0]
+        Check (@($result.snapshot.scanners[0].contentProfiles|Where-Object{[string]$_.profileId -ceq 'siemens-iec-basic-v1' -and [string]$_.category -ceq $mode}).Count -eq 1) 'The explicit filing policy persists through the settings API'
+        if($mode -ceq 'Ask'){Check ($row.pending -and $row.filingState -ceq 'NeedsReview' -and -not $row.inferred) 'Ask explicitly requests a decision after a successful read'}elseif($mode -ceq 'Auto'){Check ($row.category -ceq 'Daily' -and $row.filingState -ceq 'Filed' -and $row.inferred) 'Auto resumes the complete Basic-profile Daily convention'}else{Check ($row.category -ceq $mode -and -not $row.pending -and $row.filingBasis -ceq 'ScannerRule' -and -not $row.inferred) 'A nonempty scanner mapping overrides automatic profile inference'}
+        Check-WebFilingBasis $row
+    }
+}
+Scenario 'Additional test sets reuse an existing Daily or Monthly grouping without guessing an ungrouped procedure' {
+    foreach($case in @(@{Raw='Daily_QA';Expected='Daily'},@{Raw='Monthly_QA/Pending_Verification';Expected='Monthly'},@{Raw='Needs_Review';Expected=''})){
+        $f=New-WebFixture ('AdditionalPolicy_'+$case.Raw.Replace('/','_'));Set-WebFilingRawCategory $f $case.Raw;Set-WebFilingRule $f 'siemens-iec-additional-v1' 'Auto';[void](Set-WebFilingCache $f 'siemens-iec-additional-v1');$before=(Get-FileHash $f.StatePath).Hash;$row=(Get-Web $f).records[0]
+        if($case.Expected){Check ($row.category -ceq $case.Expected -and -not $row.pending -and $row.filingState -ceq 'Filed' -and $row.filingBasis -ceq 'ExistingGrouping' -and $row.inferred) 'Automatic additional filing preserves the existing known archive frequency'}else{Check ($row.pending -and $row.filingState -ceq 'NeedsReview' -and -not $row.inferred) 'A complete additional test set with no existing frequency remains a real exception'}
+        Check ((Get-FileHash $f.StatePath).Hash -ceq $before) 'Reusing a prior frequency never rewrites protected archive grouping'
+        Check-WebFilingBasis $row
+    }
+}
+Scenario 'Explicit document titles override inference while contradictory explicit evidence remains exceptional' {
+    $f=New-WebFixture 'TitlePolicy';Set-WebFilingRule $f 'siemens-iec-basic-v1' 'Auto';[void](Set-WebFilingCache $f 'siemens-iec-basic-v1' 'Monthly');$row=(Get-Web $f).records[0]
+    Check ($row.category -ceq 'Monthly' -and -not $row.pending -and $row.filingBasis -ceq 'ExplicitTitle' -and -not $row.inferred) 'A valid Monthly document title overrides the default Basic inference'
+    Set-WebFilingRule $f 'siemens-iec-basic-v1' 'Ask';$row=(Get-Web $f).records[0]
+    Check ($row.category -ceq 'Monthly' -and -not $row.pending -and $row.filingBasis -ceq 'ExplicitTitle') 'Ask is not needed for an otherwise safe explicit document frequency'
+    Set-WebFilingRule $f 'siemens-iec-basic-v1' 'Daily';$row=(Get-Web $f).records[0]
+    Check ($row.pending -and $row.filingState -ceq 'NeedsReview' -and $row.filingBasis -ceq 'Conflict' -and -not $row.inferred) 'Contradictory scanner rules and document titles are not silently accepted'
+}
+Scenario 'Filing counters separate waiting-to-read files from actual reader and content exceptions' {
+    $f=New-WebFixture 'FilingCounters';$initial=Get-Web $f;$row=$initial.records[0]
+    Check ($row.pending -and $row.filingState -ceq 'WaitingRead' -and $initial.filingSummary.waitingRead -eq 1 -and $initial.filingSummary.needsReview -eq 0) 'A missing reading queues work without describing it as a human review failure'
+    $path=Set-WebFilingCache $f '' '' 'NeedsReview';$snapshot=Get-Web $f;$row=$snapshot.records[0]
+    Check ($row.pending -and $row.filingState -ceq 'NeedsReview' -and $snapshot.filingSummary.waitingRead -eq 0 -and $snapshot.filingSummary.needsReview -eq 1) 'An actually attempted unsupported format is a review exception'
+    $cache=Get-Content $path -Raw|ConvertFrom-Json;$cache.Status='ReadError';[IO.File]::WriteAllText($path,($cache|ConvertTo-Json -Depth 16),(New-Object Text.UTF8Encoding $true));$snapshot=Get-Web $f;$row=$snapshot.records[0]
+    Check ($row.filingState -ceq 'NeedsReview' -and $row.filingBasis -ceq 'ReadError' -and $snapshot.filingSummary.needsReview -eq 1) 'An actual read failure remains visible instead of reverting to an unread queue'
+    [void](Set-WebFilingCache $f 'siemens-iec-basic-v1' '' 'Recognized' 'Conflict');$snapshot=Get-Web $f;$row=$snapshot.records[0]
+    Check ($row.pending -and $row.filingState -ceq 'NeedsReview' -and $row.filingBasis -ceq 'Conflict' -and $snapshot.filingSummary.inferred -eq 0) 'A date conflict never contributes an inferred filed report'
+    $path=Set-WebFilingCache $f;$cache=Get-Content $path -Raw|ConvertFrom-Json;$cache.VerifiedWriteTicks=[long]$cache.VerifiedWriteTicks-1;[IO.File]::WriteAllText($path,($cache|ConvertTo-Json -Depth 16),(New-Object Text.UTF8Encoding $true));$snapshot=Get-Web $f
+    Check ($snapshot.records[0].filingState -ceq 'WaitingRead' -and $snapshot.filingSummary.waitingRead -eq 1) 'Stale successful cache evidence waits for a new verified read'
+    [IO.File]::WriteAllText($path,'{synthetic damaged cache');$snapshot=Get-Web $f
+    Check ($snapshot.records[0].filingState -ceq 'NeedsReview' -and $snapshot.records[0].filingBasis -ceq 'ReadError' -and $snapshot.filingSummary.waitingRead -eq 0) 'An unreadable cache is disclosed as a real exception rather than an unattempted read'
+}
+Scenario 'Saved decisions and explicit Undo remain authoritative when automatic policy is enabled' {
+    $f=New-WebFixture 'PolicyDecision';Set-WebFilingRule $f 'siemens-iec-basic-v1' 'Ask';[void](Set-WebFilingCache $f);$before=(Get-FileHash $f.StatePath).Hash
+    [void](Decide-Web $f);Set-WebFilingRule $f 'siemens-iec-basic-v1' 'Monthly';$row=(Get-Web $f).records[0]
+    Check ($row.category -ceq 'Daily' -and $row.decision -ceq 'Approved' -and $row.filingBasis -ceq 'SavedDecision' -and -not $row.inferred) 'A saved one-file decision wins over future automatic or scanner policy changes'
+    Set-WebFilingRule $f 'siemens-iec-basic-v1' 'Auto';$last=(Get-Web $f).lastDecision;$undo=Invoke-QaWebRequest $f.AppRoot ([pscustomobject]@{action='Undo';id=$last.recordId;reviewId=$last.reviewId;stamp=$last.stamp});$row=$undo.snapshot.records[0]
+    Check ($row.pending -and $row.filingState -ceq 'NeedsReview' -and $row.filingBasis -ceq 'Undo') 'Undo restores an intentional review state instead of immediately inferring the same decision again'
+    Check ((Get-FileHash $f.StatePath).Hash -ceq $before) 'Decision precedence and Undo preserve clinical archive bytes'
+}
+Scenario 'Reference documents file as Other and do not count as received Daily reports' {
+    $f=New-WebFixture 'ReferencePolicy';$cfg=Read-QaConfig $f.AppRoot;$source=@($cfg.Sources|Where-Object Scanner -ceq 'CT_Edge')[0];$source.DailySchedule='AllDays';$source.ActiveFrom='';$source|Add-Member ExcludedDates @() -Force;[void](Save-QaConfig $f.AppRoot $cfg)
+    Set-WebFilingRawCategory $f 'Daily_QA';[void](Set-WebFilingCache $f);$control=Get-Web $f;Check ($control.today.received -eq 1) 'The fixture would count as a current Daily receipt when it contains a normal Basic report'
+    $metrics=@([pscustomobject]@{Code='WaterCTNumber';Value='0.2';Unit='HU';Page=3},[pscustomobject]@{Code='SliceThickness';Value='0.6';Unit='mm';Page=3})
+    $path=Set-WebFilingCache $f;$cache=Get-Content $path -Raw|ConvertFrom-Json;$cache.MeasurementsDocument.Measurements=$metrics;$cache.MeasurementsDocument.Status='Extracted';[IO.File]::WriteAllText($path,($cache|ConvertTo-Json -Depth 16),(New-Object Text.UTF8Encoding $true))
+    $control=Get-Web $f
+    Check ($control.records[0].content.measurements.Count -eq 2 -and @($control.records[0].content.measurements|Where-Object{$_.label -ceq 'Slice thickness' -and $_.unit -ceq 'mm'}).Count -eq 1) 'The current-report positive control exposes HU and millimetre metric rows'
+    $path=Set-WebFilingCache $f 'siemens-iec-reference-v1' 'Other' 'Recognized' 'Consensus' $true;$cache=Get-Content $path -Raw|ConvertFrom-Json;$cache.MeasurementsDocument.Measurements=$metrics;$cache.MeasurementsDocument.Status='Extracted';[IO.File]::WriteAllText($path,($cache|ConvertTo-Json -Depth 16),(New-Object Text.UTF8Encoding $true));$snapshot=Get-Web $f;$row=$snapshot.records[0]
+    Check ($row.isReference -and $row.content.measurements.Count -eq 0 -and $row.content.measurementStatus -ceq 'ReferenceExcluded') 'Reference detection suppresses even legacy cached numeric rows from current-report display'
+    Check ($row.category -ceq 'Other' -and -not $row.pending -and $row.filingState -ceq 'Filed' -and $row.filingBasis -ceq 'ReferenceDocument' -and -not $row.inferred) 'An explicit supported reference is kept as Other rather than inferred as a clinical-period QA report'
+    Check ($snapshot.today.received -eq 0 -and @($snapshot.records|Where-Object{$_.category -cin @('Daily','Monthly')}).Count -eq 0) 'Reference material contributes neither a Daily receipt nor a Monthly document label'
+    Check ($row.clinicalComponents.Count -eq 0) 'Reference filing supplies no clinical sign-off'
+    $monthly=New-WebFixture 'ReferenceMonthlyEvidence';Set-WebFilingRawCategory $monthly 'Monthly_QA'
+    $state=Get-Content $monthly.StatePath -Raw|ConvertFrom-Json;$old=@($state.Records|Where-Object Id -ceq $monthly.Record.Id)[0];$old.ConfirmedBy='Synthetic prior reviewer';$old.ConfirmedAt=[datetime]::UtcNow.ToString('o');$old.ConfirmedComponents=@('MTF','Slice thickness');$old|Add-Member ReviewDecision 'Accepted' -Force
+    [IO.File]::WriteAllText($monthly.StatePath,($state|ConvertTo-Json -Depth 20),(New-Object Text.UTF8Encoding $true));[void](Set-WebFilingCache $monthly 'siemens-iec-extended-v1');$control=Get-Web $monthly
+    Check (@($control.months|Where-Object{$_.scanner -ceq 'CT_Edge' -and $_.status -ceq 'Complete'}).Count -eq 1) 'The positive control has actual synthetic legacy reviewed Monthly evidence'
+    $before=(Get-FileHash $monthly.StatePath).Hash;[void](Set-WebFilingCache $monthly 'siemens-iec-reference-v1' 'Other' 'Recognized' 'Consensus' $true);$snapshot=Get-Web $monthly
+    Check (@($snapshot.months|Where-Object{$_.scanner -ceq 'CT_Edge' -and $_.status -ceq 'Complete'}).Count -eq 0) 'A detected reference cannot satisfy current Monthly evidence even when an old file label or review exists'
+    Check ($snapshot.records[0].decision -ceq 'Approved' -and $snapshot.records[0].isReference -and (Get-FileHash $monthly.StatePath).Hash -ceq $before) 'Reference exclusion preserves the old decision and entire clinical archive for audit rather than rewriting it'
+}
+
+Scenario 'Unknown reference evidence cannot inherit generic Daily filing or cached current measurements' {
+    $f=New-WebFixture 'UnknownReferenceEvidence';$cfg=Read-QaConfig $f.AppRoot;$source=@($cfg.Sources|Where-Object Scanner -ceq 'CT_Edge')[0];$source.DailySchedule='AllDays';$source.ActiveFrom='';$source|Add-Member ExcludedDates @() -Force;[void](Save-QaConfig $f.AppRoot $cfg)
+    # The old generic Daily grouping could previously take the filename fallback.
+    Set-WebFilingRawCategory $f 'Daily_QA';$state=Get-Content $f.StatePath -Raw|ConvertFrom-Json;$state.Records[0].ClassificationBasis='Provisional Daily archive grouping from generic Constancy filename; contents are not interpreted.';[IO.File]::WriteAllText($f.StatePath,($state|ConvertTo-Json -Depth 20),(New-Object Text.UTF8Encoding $true))
+    [void](Set-WebFilingCache $f);Check ((Get-Web $f).today.received -eq 1) 'The positive control counts a normal current Basic document as Daily receipt'
+    $path=Set-WebFilingCache $f '' '' 'NeedsReview';$cache=Get-Content $path -Raw|ConvertFrom-Json;$cache.DocumentClassification|Add-Member HasReferenceEvidence $true -Force;$cache.DocumentClassification.IsReference=$false;$cache.MeasurementsDocument.Measurements=@([pscustomobject]@{Code='WaterCTNumber';Value='0.4';Unit='HU';Page=3});$cache.MeasurementsDocument.Status='Extracted';[IO.File]::WriteAllText($path,($cache|ConvertTo-Json -Depth 16),(New-Object Text.UTF8Encoding $true))
+    $before=(Get-FileHash $f.StatePath).Hash;$snapshot=Get-Web $f;$row=$snapshot.records[0]
+    Check ($row.pending -and $row.filingState -ceq 'NeedsReview' -and $row.filingBasis -ceq 'Unsupported' -and -not $row.isReference -and $row.hasReferenceEvidence) 'Unknown reference evidence remains a true exception rather than becoming an automatically filed Reference/Other document'
+    Check ($snapshot.today.received -eq 0 -and $row.content.measurements.Count -eq 0 -and $row.content.measurementStatus -ceq 'ReferenceExcluded') 'Uncertain reference evidence blocks filename receipt and legacy numeric rows'
+    Check ($row.category -ceq 'Daily' -and -not $row.inferred -and (Get-FileHash $f.StatePath).Hash -ceq $before) 'Its old archive grouping stays visible without changing original clinical data or pretending the type is known'
+    [void](Decide-Web $f);$snapshot=Get-Web $f
+    Check ($snapshot.records[0].decision -ceq 'Approved' -and $snapshot.today.received -eq 0 -and $snapshot.records[0].content.measurements.Count -eq 0) 'A saved human file decision remains authoritative while reference receipt and measurement exclusion still apply'
+}
+
+Scenario 'Older unsupported format reads await one compatibility refresh while current exceptions and failures remain actionable' {
+    $f=New-WebFixture 'CompatibilityRefreshState';$path=Set-WebFilingCache $f '' '' 'NeedsReview';$current=&(Get-Module WebService){Get-QaContentSupportRevision}
+    foreach($reason in @('UnknownTemplate','UnrecognizedSections')){
+        $cache=Get-Content $path -Raw|ConvertFrom-Json;$cache.ContentSupportRevision=$current-1;$cache.DocumentClassification.SupportRevision=$current-1;$cache.DocumentClassification.ReasonCode=$reason;[IO.File]::WriteAllText($path,($cache|ConvertTo-Json -Depth 16),(New-Object Text.UTF8Encoding $true));$snapshot=Get-Web $f;$row=$snapshot.records[0]
+        Check ($row.content.compatibilityRefreshPending -and $row.filingState -ceq 'WaitingRead' -and $row.filingBasis -ceq 'AwaitingRead' -and $snapshot.filingSummary.needsReview -eq 0) 'An older unsupported layout is queued for its one compatibility refresh instead of requesting a premature human decision'
+        $cache.ContentSupportRevision=$current;$cache.DocumentClassification.SupportRevision=$current;[IO.File]::WriteAllText($path,($cache|ConvertTo-Json -Depth 16),(New-Object Text.UTF8Encoding $true));$row=(Get-Web $f).records[0]
+        Check (-not $row.content.compatibilityRefreshPending -and $row.filingState -ceq 'NeedsReview') 'An unknown result after the current support revision remains a genuine exception'
+    }
+    $cache.ContentSupportRevision=$current-1;$cache.DocumentClassification.SupportRevision=$current-1;$cache.Status='ReadError';[IO.File]::WriteAllText($path,($cache|ConvertTo-Json -Depth 16),(New-Object Text.UTF8Encoding $true));$row=(Get-Web $f).records[0]
+    Check (-not $row.content.compatibilityRefreshPending -and $row.filingState -ceq 'NeedsReview' -and $row.filingBasis -ceq 'ReadError') 'A cached read failure never becomes a compatibility waiting loop'
+    $path=Set-WebFilingCache $f;$cache=Get-Content $path -Raw|ConvertFrom-Json;$cache.ContentSupportRevision=$current-1;$cache.DocumentClassification.Reason='Profile-to-Daily/Monthly mapping requires department confirmation.';$cache.MeasurementsDocument.PSObject.Properties.Remove('MeasurementVersion');[IO.File]::WriteAllText($path,($cache|ConvertTo-Json -Depth 16),(New-Object Text.UTF8Encoding $true));$row=(Get-Web $f).records[0]
+    Check ($row.filingState -ceq 'Filed' -and -not $row.content.compatibilityRefreshPending -and $row.content.reason -notmatch '(?i)requires.*confirmation|choose.*scanner settings') 'A valid recognized Auto cache uses current neutral wording despite old mandatory-mapping text and an unrelated measurement upgrade'
+    $path=Set-WebFilingCache $f 'siemens-iec-basic-v1' '' 'Recognized' 'Conflict';$row=(Get-Web $f).records[0]
+    Check ($row.filingState -ceq 'NeedsReview' -and $row.content.reason -match '(?i)conflict') 'Current conflict explanations remain visible rather than being replaced by neutral filing guidance'
+}
+
+function New-WebReadingFixture([string]$Name){
+    $cfg=New-TestConfig $Name;[void][IO.Directory]::CreateDirectory((Join-Path $cfg.AppRoot 'Config'))
+    foreach($source in $cfg.Sources){$source.DailySchedule='Off';$source.ExpectedMonthly=$false}
+    $cfg|ConvertTo-Json -Depth 15|Set-Content (Join-Path $cfg.AppRoot 'Config/Settings.json') -Encoding UTF8
+    [void](Save-QaConfig $cfg.AppRoot $cfg)
+    $path=Join-Path $cfg.Sources[0].Path ('Quality_Constancy_'+(Get-Date).ToString('yyyy-MM-dd')+'_08-00-00.pdf')
+    [IO.File]::Copy((Join-Path $PSScriptRoot 'Fixtures/PdfReader/Compressed-Text.pdf'),$path)
+    (Get-Item $path).LastWriteTimeUtc=[datetime]::UtcNow.AddMinutes(-10)
+    [void](Import-Fixture $cfg);$record=@((Get-QaDashboard $cfg).Records)[0]
+    return [pscustomobject]@{Config=$cfg;AppRoot=$cfg.AppRoot;Record=$record;Source=$path;StatePath=(Join-Path $cfg.ArchiveRoot '.ctqa/state.json')}
+}
+Scenario 'Trusted reading plans reject malformed scopes and controls without touching PDF bytes' {
+    $f=New-WebReadingFixture 'ReadingPlan';$before=(Get-FileHash $f.StatePath).Hash;$sourceHash=(Get-FileHash $f.Source).Hash
+    $guard=[IO.File]::Open($f.Record.DestinationPath,[IO.FileMode]::Open,[IO.FileAccess]::Read,[IO.FileShare]::None)
+    try{$plan=Invoke-QaWebRequest $f.AppRoot ([pscustomobject]@{action='AnalysisPlan';scope='all';measurements=$true;refreshUnsupported=$true})}finally{$guard.Dispose()}
+    Check ($plan.snapshotDeferred -and $plan.plan.pending -eq 1 -and $plan.plan.recordIds[0] -ceq $f.Record.Id) 'A locked PDF still yields a metadata-only trusted plan with its exact identity'
+    Check ($null -eq $plan.PSObject.Properties['snapshot'] -and $plan.plan.revision -cmatch '^[0-9A-Fa-f]{64}$') 'Planning returns an invalidation hint rather than a full overview'
+    foreach($request in @([pscustomobject]@{action='AnalysisPlan';scope='../all'},[pscustomobject]@{action='AnalysisPlan';measurements='yes'},[pscustomobject]@{action='AnalysisPlan';refreshUnsupported=1},[pscustomobject]@{action='AnalysisPlan';ids=@()},[pscustomobject]@{action='AnalysisPlan';ids=$null},[pscustomobject]@{action='AnalysisPlan';ids=@('../outside')},[pscustomobject]@{action='AnalysisPlan';ids=@(('f'*64))},[pscustomobject]@{action='AnalysisPlan';scope='pending';ids=@($f.Record.Id)},[pscustomobject]@{action='AnalysisPlan';ids=@(1..21|ForEach-Object{$f.Record.Id})})){
+        $rejected=$false;try{Invoke-QaWebRequest $f.AppRoot $request|Out-Null}catch{$rejected=$true};Check $rejected 'Malformed or contradictory plans do not expand into an unrestricted read'
+    }
+    Check ((Get-FileHash $f.StatePath).Hash -ceq $before -and (Get-FileHash $f.Source).Hash -ceq $sourceHash) 'Planning and rejected controls preserve core state and source bytes'
+}
+Scenario 'A compact one-PDF checkpoint defers dashboards and folders until an explicit checked synchronization' {
+    $f=New-WebReadingFixture 'CompactStep';$before=(Get-FileHash $f.StatePath).Hash;$sourceHash=(Get-FileHash $f.Source).Hash
+    foreach($request in @([pscustomobject]@{action='Analyze';analysisStep='true';ids=@($f.Record.Id)},[pscustomobject]@{action='Analyze';deferSnapshot=$true;ids=@($f.Record.Id)},[pscustomobject]@{action='Analyze';analysisStep=$true;analysisLimit=2;ids=@($f.Record.Id)},[pscustomobject]@{action='Analyze';analysisStep=$true;analysisLimit=1;id=$f.Record.Id},[pscustomobject]@{action='Analyze';analysisStep=$true;analysisLimit=1;ids=@($f.Record.Id);backlog=$true},[pscustomobject]@{action='Analyze';analysisStep=$true;analysisLimit=1;ids=@($f.Record.Id);deferLibrary='yes'})){
+        $rejected=$false;try{Invoke-QaWebRequest $f.AppRoot $request|Out-Null}catch{$rejected=$true};Check $rejected 'Only the single-record internal step may defer expensive work'
+    }
+    $library=Join-Path $f.Config.ArchiveRoot '.ctqa/web-library.json';$step=Invoke-QaWebRequest $f.AppRoot ([pscustomobject]@{action='Analyze';ids=@($f.Record.Id);analysisStep=$true;analysisLimit=1;deferSnapshot=$true;deferLibrary=$true;measurements=$true;refreshUnsupported=$true})
+    Check ($step.result.Analyzed -eq 1 -and $step.result.Failed -eq 0 -and $step.result.AnalyzedIds[0] -ceq $f.Record.Id) 'The actual compressed synthetic PDF is read and committed exactly once'
+    Check ($step.snapshotDeferred -and $step.libraryDeferred -and $null -eq $step.PSObject.Properties['snapshot']) 'The step returns truthful deferral markers without a full overview'
+    Check (-not [IO.File]::Exists($library)) 'Deferred text reading does not prematurely publish a readable-copy ledger'
+    $cachePath=Join-Path $f.Config.ArchiveRoot ('.ctqa/analysis/'+$f.Record.Hash+'.json');$cache=Get-Content $cachePath -Raw|ConvertFrom-Json
+    Check ($cache.VerifiedHash -ceq $f.Record.Hash -and $cache.VerifiedLength -eq (Get-Item $f.Record.DestinationPath).Length) 'Exact parsed-buffer provenance is preserved in the compact path'
+    $cacheBefore=(Get-FileHash $cachePath).Hash;$sync=Invoke-QaWebRequest $f.AppRoot ([pscustomobject]@{action='SyncLibrary';ids=@($f.Record.Id);fullSync=$false})
+    Check ($sync.snapshot.records.Count -eq 1 -and $sync.result.library.total -eq 1 -and $sync.result.library.failed -eq 0) 'A checkpoint synchronizes only the changed record and returns a fresh overview'
+    $ledgerBefore=(Get-FileHash $library).Hash;$metadata=Invoke-QaWebRequest $f.AppRoot ([pscustomobject]@{action='SyncLibrary';ids=@();fullSync=$false})
+    Check ($metadata.snapshot.records.Count -eq 1 -and $metadata.result.library.manifestWrites -eq 0 -and (Get-FileHash $library).Hash -ceq $ledgerBefore) 'An empty explicit checkpoint refreshes metadata without rewriting the readable ledger'
+    $legacy=Invoke-QaWebRequest $f.AppRoot ([pscustomobject]@{action='SyncLibrary'})
+    Check ($legacy.result.library.total -eq 1 -and $legacy.result.library.unchanged -eq 1) 'The legacy no-selection synchronization still covers the whole library'
+    Check ((Get-FileHash $cachePath).Hash -ceq $cacheBefore -and (Get-FileHash $f.StatePath).Hash -ceq $before -and (Get-FileHash $f.Source).Hash -ceq $sourceHash) 'Synchronization does not reread or rewrite cached evidence, clinical state or source PDFs'
+}
+Scenario 'A queued ID cannot bypass fresh archive membership or exact PDF-byte verification' {
+    $f=New-WebReadingFixture 'QueuedMembership';$plan=Invoke-QaWebRequest $f.AppRoot ([pscustomobject]@{action='AnalysisPlan';measurements=$true;refreshUnsupported=$true});$id=$plan.plan.recordIds[0]
+    $original=[IO.File]::ReadAllBytes($f.StatePath)
+    try{
+        $state=Get-Content $f.StatePath -Raw|ConvertFrom-Json;$state.Records=@();[IO.File]::WriteAllText($f.StatePath,($state|ConvertTo-Json -Depth 20),(New-Object Text.UTF8Encoding $true));$changed=(Get-FileHash $f.StatePath).Hash
+        $rejected=$false;try{Invoke-QaWebRequest $f.AppRoot ([pscustomobject]@{action='Analyze';ids=@($id);analysisStep=$true;analysisLimit=1;deferSnapshot=$true;deferLibrary=$true})|Out-Null}catch{$rejected=$true}
+        Check ($rejected -and (Get-FileHash $f.StatePath).Hash -ceq $changed) 'An ID removed after planning is rejected without restoring or changing the current state'
+    }finally{[IO.File]::WriteAllBytes($f.StatePath,$original)}
+    $bytes=[IO.File]::ReadAllBytes($f.Record.DestinationPath);$time=(Get-Item $f.Record.DestinationPath).LastWriteTimeUtc
+    try{
+        $edited=[byte[]]$bytes.Clone();$edited[$edited.Length-2]=$edited[$edited.Length-2] -bxor 1;[IO.File]::WriteAllBytes($f.Record.DestinationPath,$edited);(Get-Item $f.Record.DestinationPath).LastWriteTimeUtc=$time
+        $result=Invoke-QaWebRequest $f.AppRoot ([pscustomobject]@{action='Analyze';ids=@($id);analysisStep=$true;analysisLimit=1;deferSnapshot=$true;deferLibrary=$true;measurements=$true})
+        Check ($result.result.Analyzed -eq 0 -and $result.result.Failed -eq 1) 'Same-length same-timestamp edits still fail exact parsed-buffer hashing'
+        $cache=Get-Content (Join-Path $f.Config.ArchiveRoot ('.ctqa/analysis/'+$f.Record.Hash+'.json')) -Raw|ConvertFrom-Json
+        Check ($cache.Status -ceq 'ReadError' -and $null -eq $cache.PSObject.Properties['VerifiedHash']) 'A failed queued read cannot acquire successful verified provenance'
+    }finally{[IO.File]::WriteAllBytes($f.Record.DestinationPath,$bytes);(Get-Item $f.Record.DestinationPath).LastWriteTimeUtc=$time}
+}
+
+Scenario 'Durable file decisions reuse one validated dashboard and organization while refreshing only their selected readable PDF' {
+    $f=New-WebFixture 'DecisionSnapshotReuse';$day=(Get-Date).ToString('yyyy-MM-dd');[void](Add-Report $f.Config 'CT_Edge' 'Quality_Constancy' $day '09-00-00' 96000);[void](Invoke-QaOperation $f.Config -Mode Update)
+    Set-WebFilingRule $f 'siemens-iec-basic-v1' 'Ask';[void](Set-WebFilingCache $f);$first=Get-Web $f;$before=(Get-FileHash $f.StatePath).Hash;$pdfBefore=(Get-FileHash $f.Record.DestinationPath).Hash
+    $failure=New-WebFixture 'DecisionCopyWarning';Set-WebFilingRule $failure 'siemens-iec-basic-v1' 'Ask';[void](Set-WebFilingCache $failure);$failureInitial=Get-Web $failure;$failureBefore=(Get-FileHash $failure.StatePath).Hash
+    $module=Get-Module WebService
+    $originals=&$module {[pscustomobject]@{Dashboard=(Get-Command Get-QaDashboard).ScriptBlock;Organization=(Get-Command Get-QaWebOrganization).ScriptBlock;Library=(Get-Command Update-QaWebLibrary).ScriptBlock;Copy=(Get-Command Copy-QaWebLibraryPdf).ScriptBlock}}
+    $probe=[pscustomobject]@{DashboardCalls=0;OrganizationCalls=0;LibraryCalls=(New-Object 'Collections.Generic.List[object]');CopyFails=$false}
+    try{
+        &$module {
+            param($Probe,$Originals)
+            $script:DecisionSnapshotProbe=$Probe;$script:DecisionSnapshotOriginals=$Originals
+            function script:Get-QaDashboard {param($Config);$script:DecisionSnapshotProbe.DashboardCalls++;return &$script:DecisionSnapshotOriginals.Dashboard $Config}
+            function script:Get-QaWebOrganization {param($Config);$script:DecisionSnapshotProbe.OrganizationCalls++;return &$script:DecisionSnapshotOriginals.Organization $Config}
+            function script:Update-QaWebLibrary {
+                param($Config,[string[]]$OnlyRecords=@(),$Dashboard=$null,$Organization=$null,$Progress=$null,[switch]$Verify)
+                [void]$script:DecisionSnapshotProbe.LibraryCalls.Add([pscustomobject]@{Ids=@($OnlyRecords);HasDashboard=($null -ne $Dashboard);HasOrganization=($null -ne $Organization)})
+                return &$script:DecisionSnapshotOriginals.Library @PSBoundParameters
+            }
+            function script:Copy-QaWebLibraryPdf {param($Source,$Target,$Hash,$Progress,$Metrics);if($script:DecisionSnapshotProbe.CopyFails){throw 'Synthetic readable-copy failure'};return &$script:DecisionSnapshotOriginals.Copy @PSBoundParameters}
+        } $probe $originals
+        $snapshot=$first
+        foreach($action in @('Approve','Undo','Disapprove')){
+            $record=@($snapshot.records|Where-Object id -ceq $f.Record.Id)[0];$request=[pscustomobject]@{action=$action;id=$record.id;stamp=$record.stamp;reviewId=$record.reviewId}
+            $probe.DashboardCalls=0;$probe.OrganizationCalls=0;$probe.LibraryCalls.Clear()
+            $result=Invoke-QaWebRequest $f.AppRoot $request;$snapshot=$result.snapshot;$row=@($snapshot.records|Where-Object id -ceq $f.Record.Id)[0]
+            Check ($probe.DashboardCalls -eq 1 -and $probe.OrganizationCalls -eq 1) 'The whole actual decision request loads and validates the dashboard and organization once, including its full returned snapshot'
+            Check ($probe.LibraryCalls.Count -eq 1 -and $probe.LibraryCalls[0].Ids.Count -eq 1 -and $probe.LibraryCalls[0].Ids[0] -ceq $f.Record.Id -and $probe.LibraryCalls[0].HasDashboard -and $probe.LibraryCalls[0].HasOrganization) 'Only the selected report is refreshed with the same validated dashboard and committed organization'
+            Check ($snapshot.records.Count -eq 2 -and $snapshot.filingSummary.filed+$snapshot.filingSummary.waitingRead+$snapshot.filingSummary.needsReview -eq 2) 'The returned snapshot still contains accurate full-library counts and both selected and unselected reports'
+            $expected=if($action -ceq 'Approve'){'Approved'}elseif($action -ceq 'Disapprove'){'Disapproved'}else{'Pending'}
+            Check ($row.decision -ceq $expected -and (($action -ceq 'Undo') -eq [bool]$row.pending)) 'The complete returned snapshot reflects the durable decision or restored pending state'
+            $fields=@($result.decision.PSObject.Properties.Name|Sort-Object)
+            Check (($fields -join '|') -ceq 'classificationOnly|recordId|reviewId|stamp|warning') 'The public decision shape contains no internal dashboard, organization or reuse context'
+            Check ((Get-FileHash $f.StatePath).Hash -ceq $before -and (Get-FileHash $f.Record.DestinationPath).Hash -ceq $pdfBefore -and (Get-FileHash $f.Source).Hash -ceq $f.SourceHash) 'Snapshot reuse and selected library updates preserve all clinical core and original PDF bytes'
+        }
+        $history=Get-Content (Join-Path $f.Config.ArchiveRoot '.ctqa/organization.json') -Raw|ConvertFrom-Json
+        Check ($history.History.Count -eq 3 -and $history.History[1].action -ceq 'Undo') 'Reuse retains the full append-only durable decision history'
+        $record=$failureInitial.records[0];$probe.DashboardCalls=0;$probe.OrganizationCalls=0;$probe.LibraryCalls.Clear();$probe.CopyFails=$true
+        $result=Invoke-QaWebRequest $failure.AppRoot ([pscustomobject]@{action='Approve';id=$record.id;stamp=$record.stamp})
+        $saved=Get-Content (Join-Path $failure.Config.ArchiveRoot '.ctqa/organization.json') -Raw|ConvertFrom-Json
+        Check ($probe.DashboardCalls -eq 1 -and $probe.OrganizationCalls -eq 1 -and $probe.LibraryCalls.Count -eq 1 -and $probe.LibraryCalls[0].Ids.Count -eq 1) 'A readable-copy failure does not trigger a second full dashboard or organization scan'
+        Check ($result.warning -match '^Decision saved\.' -and $result.decision.warning -ceq $result.warning -and $saved.Records[0].decision -ceq 'Approved' -and $result.snapshot.records[0].decision -ceq 'Approved') 'The already durable approval is returned accurately with an actionable readable-copy warning'
+        Check ((Get-FileHash $failure.StatePath).Hash -ceq $failureBefore -and (Get-FileHash $failure.Source).Hash -ceq $failure.SourceHash) 'A failed readable copy neither rewrites core clinical state nor alters the scanner original'
+    }finally{
+        &$module {param($Originals);Set-Item Function:script:Get-QaDashboard $Originals.Dashboard;Set-Item Function:script:Get-QaWebOrganization $Originals.Organization;Set-Item Function:script:Update-QaWebLibrary $Originals.Library;Set-Item Function:script:Copy-QaWebLibraryPdf $Originals.Copy;Remove-Variable DecisionSnapshotProbe,DecisionSnapshotOriginals -Scope Script -ErrorAction SilentlyContinue} $originals
+    }
+}
+
 $failed=@($script:Results|Where-Object Result -eq 'FAIL').Count
-$report=[pscustomobject]@{Version='5.3.1';Runtime=$PSVersionTable.PSVersion.ToString();Tests=$script:Results.Count;Assertions=$script:Assertions;Failed=$failed;Results=@($script:Results.ToArray());Scope='Synthetic PDFs and local scanner folders; independent file organization, no fabricated clinical review, stale/changed-file rejection, append-only Undo, readable ownership, exports and stdin/stdout JSON worker.'}
+$report=[pscustomobject]@{Version='5.4.0';Runtime=$PSVersionTable.PSVersion.ToString();Tests=$script:Results.Count;Assertions=$script:Assertions;Failed=$failed;Results=@($script:Results.ToArray());Scope='Synthetic PDFs, local scanner folders and controlled cached classifier observations with matching fixture-byte provenance; actual extraction is covered separately. Hands-off filing policy, inferred-label disclosure, waiting/review counters, independent file organization, no fabricated clinical review, stale/changed-file rejection, append-only Undo, readable ownership, exports and stdin/stdout JSON worker.'}
 if($OutputPath){$report|ConvertTo-Json -Depth 12|Set-Content $OutputPath -Encoding UTF8}
 Write-Host ('Result: '+($report.Tests-$failed)+'/'+$report.Tests+' scenarios; '+$report.Assertions+' assertions.')
 if([IO.Directory]::Exists($TestRoot)){Remove-Item $TestRoot -Recurse -Force}

@@ -506,6 +506,69 @@ Run-Test 'Interrupted reclassification recovers classification, reviewer evidenc
     Assert-Equal $old.Hash $state.Reviews[0].Hash 'Review evidence stays bound to exact PDF hash'
     Assert-True (-not [string]::IsNullOrWhiteSpace([string]$state.Reviews[0].HistoryRelativePath)) 'History location retained in review provenance'
 }
+Run-Test 'State-read ancestor reuse checks each leaf and never caches missing directories' {
+    $root=Join-Path $TestRoot 'ReadStateDirectoryCache';$folder=Join-Path $root 'shared';[void][IO.Directory]::CreateDirectory($folder)
+    $leaf=New-TestPdf -Path (Join-Path $folder 'leaf.pdf');$outside=Join-Path $TestRoot 'ReadStateOutside';[void][IO.Directory]::CreateDirectory($outside)
+    $cache=New-Object 'Collections.Generic.HashSet[string]' ([StringComparer]::OrdinalIgnoreCase);$module=Get-Module Archive
+    & $module {param($p,$r,$c) Assert-QaNoReparse $p $r -DirectoryCache $c} $leaf $root $cache
+    Assert-True ($cache.Contains(([IO.Path]::GetFullPath($folder)+'|'+[IO.Path]::GetFullPath($root)))) 'An existing non-reparse ancestor can be reused within a state read'
+    Assert-True (-not $cache.Contains(([IO.Path]::GetFullPath($leaf)+'|'+[IO.Path]::GetFullPath($root)))) 'The exact requested file leaf is never cached'
+    $savedLeaf=$leaf+'.saved';[IO.File]::Move($leaf,$savedLeaf)
+    $kind=if([Environment]::OSVersion.Platform -eq [PlatformID]::Win32NT){'Junction'}else{'SymbolicLink'}
+    try{
+        New-Item -ItemType $kind -Path $leaf -Value $outside -ErrorAction Stop|Out-Null
+        $rejected=$false;try{& $module {param($p,$r,$c) Assert-QaNoReparse $p $r -DirectoryCache $c} $leaf $root $cache}catch{$rejected=$true}
+        Assert-True $rejected 'A newly linked leaf is rejected even when all its parent directories are cached'
+    }finally{if([IO.Directory]::Exists($leaf)){[IO.Directory]::Delete($leaf)};[IO.File]::Move($savedLeaf,$leaf)}
+    $missing=Join-Path $root 'not-created-yet';$missingLeaf=Join-Path $missing 'later.pdf'
+    & $module {param($p,$r,$c) Assert-QaNoReparse $p $r -DirectoryCache $c} $missingLeaf $root $cache
+    Assert-True (-not $cache.Contains(([IO.Path]::GetFullPath($missing)+'|'+[IO.Path]::GetFullPath($root)))) 'A missing ancestor directory never enters the reused-directory set'
+    try{
+        New-Item -ItemType $kind -Path $missing -Value $outside -ErrorAction Stop|Out-Null
+        $rejected=$false;try{& $module {param($p,$r,$c) Assert-QaNoReparse $p $r -DirectoryCache $c} $missingLeaf $root $cache}catch{$rejected=$true}
+        Assert-True $rejected 'A missing ancestor changed into a link is rejected even within the same reused set'
+    }finally{if([IO.Directory]::Exists($missing)){[IO.Directory]::Delete($missing)}}
+    $fresh=New-Object 'Collections.Generic.HashSet[string]' ([StringComparer]::OrdinalIgnoreCase)
+    & $module {param($p,$r,$c) Assert-QaNoReparse $p $r -DirectoryCache $c} $leaf $folder $fresh
+    Assert-True ($fresh.Contains(([IO.Path]::GetFullPath($folder)+'|'+[IO.Path]::GetFullPath($folder)))) 'The configured stop root itself is checked before it can be cached'
+    Assert-True (-not $fresh.Contains(([IO.Path]::GetFullPath($root)+'|'+[IO.Path]::GetFullPath($folder)))) 'Directory reuse retains the original stop-root boundary'
+}
+Run-Test 'A new state read rejects changed parent links after an earlier successful read' {
+    $cfg=New-TestConfig 'ReadStateFreshAncestors';[void](Add-Report $cfg 'CT_Edge' 'Quality_Daily' $Yesterday);[void](Import-Fixture $cfg)
+    $before=Get-QaDashboard -Config $cfg;$record=$before.Records[0];$hash=(Get-FileHash -LiteralPath $record.DestinationPath).Hash
+    $state=Join-Path $cfg.ArchiveRoot '.ctqa/state.json';$stateHash=(Get-FileHash -LiteralPath $state).Hash
+    $parent=[IO.Path]::GetDirectoryName($record.DestinationPath);$savedParent=$parent+'.kept';[IO.Directory]::Move($parent,$savedParent)
+    $kind=if([Environment]::OSVersion.Platform -eq [PlatformID]::Win32NT){'Junction'}else{'SymbolicLink'}
+    try{
+        New-Item -ItemType $kind -Path $parent -Value $savedParent -ErrorAction Stop|Out-Null
+        $rejected=$false;try{[void](Get-QaDashboard -Config $cfg)}catch{$rejected=$true}
+        Assert-True $rejected 'A successful prior state read cannot authorize a parent link introduced before the next call'
+        Assert-Equal $stateHash (Get-FileHash -LiteralPath $state).Hash 'Rejected linked state leaves all archive metadata unchanged'
+    }finally{if([IO.Directory]::Exists($parent)){[IO.Directory]::Delete($parent)};[IO.Directory]::Move($savedParent,$parent)}
+    $after=Get-QaDashboard -Config $cfg
+    Assert-Equal 1 $after.TotalReports 'Restoring the original direct path makes a fresh state read valid again'
+    Assert-Equal $hash (Get-FileHash -LiteralPath $after.Records[0].DestinationPath).Hash 'All existing PDF bytes survive the adversarial link fixture'
+}
+
+if([Environment]::OSVersion.Platform -ne [PlatformID]::Win32NT){
+    Run-Test 'Case-sensitive directory reuse cannot authorize a differently cased linked ancestor' {
+        $cfg=New-TestConfig 'ReadStateCaseAliases';[void](Add-Report $cfg 'CT_Edge' 'Quality_Daily' $Yesterday '06-00-00');[void](Add-Report $cfg 'CT_Edge' 'Quality_Daily' $Yesterday '07-00-00');[void](Import-Fixture $cfg)
+        $statePath=Join-Path $cfg.ArchiveRoot '.ctqa/state.json';$state=[IO.File]::ReadAllText($statePath)|ConvertFrom-Json
+        $reports=Join-Path $cfg.ArchiveRoot 'Reports';$direct=Join-Path $reports 'CaseAliasA';$alias=Join-Path $reports 'casealiasa';$outside=Join-Path $TestRoot 'CaseAliasOutside'
+        [void][IO.Directory]::CreateDirectory($direct);[void][IO.Directory]::CreateDirectory($outside)
+        [IO.File]::Copy($state.Records[0].DestinationPath,(Join-Path $direct 'one.pdf'));[IO.File]::Copy($state.Records[1].DestinationPath,(Join-Path $outside 'two.pdf'))
+        $state.Records[0].RelativePath='CaseAliasA/one.pdf';$state.Records[1].RelativePath='casealiasa/two.pdf'
+        [IO.File]::WriteAllText($statePath,($state|ConvertTo-Json -Depth 15),(New-Object Text.UTF8Encoding($true)))
+        $before=(Get-FileHash $statePath).Hash
+        try{
+            New-Item -ItemType SymbolicLink -Path $alias -Value $outside -ErrorAction Stop|Out-Null
+            $rejected=$false;try{[void](Get-QaDashboard -Config $cfg)}catch{$rejected=$true}
+            Assert-True $rejected 'A validated differently cased directory never authorizes an unchecked linked ancestor on a case-sensitive filesystem'
+            Assert-Equal $before (Get-FileHash $statePath).Hash 'Case-alias rejection preserves the complete state file'
+        }finally{if([IO.Directory]::Exists($alias)){[IO.Directory]::Delete($alias)}}
+    }
+}
+
 $failed=@($script:Results | Where-Object { $_.Result -eq 'FAIL' }).Count
 $report=[pscustomobject]@{
     Product='CT QA Manager Pro'; TimestampUtc=[datetime]::UtcNow.ToString('o');

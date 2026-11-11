@@ -1,0 +1,38 @@
+{
+  "version": "5.3.1",
+  "syntheticOnly": true,
+  "nativeContinuousPreviewActuallyRun": true,
+  "browserChannel": "msedge",
+  "tests": 6,
+  "assertions": 188,
+  "failed": 0,
+  "javascriptErrors": [],
+  "externalAssetRequests": 0,
+  "results": [
+    {
+      "name": "Read contents reads only the selected Basic PDF and shows raw printed evidence without a site-wide rule",
+      "result": "PASS"
+    },
+    {
+      "name": "The complete PDF scrolls continuously in the dedicated Review workspace",
+      "result": "PASS"
+    },
+    {
+      "name": "One-file Approve accepts the suggestion without changing scanner rules and Undo restores pending",
+      "result": "PASS"
+    },
+    {
+      "name": "Per-scanner report-format settings map an Extended profile and survive navigation without inventing clinical evidence",
+      "result": "PASS"
+    },
+    {
+      "name": "Filtered content export uses the accepted date and mapped folder while warm reads reuse evidence",
+      "result": "PASS"
+    },
+    {
+      "name": "A single saved scanner rule lets the pending queue read compatible Flash reports and file them automatically",
+      "result": "PASS"
+    }
+  ],
+  "scope": "Actual offline host, selected-PDF reader, classifier, scanner settings, durable decisions and ZIP export. Generated Basic9-page and Extended6-page documents; no uploaded report or real credentials are included."
+}

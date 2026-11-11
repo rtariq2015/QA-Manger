@@ -44,7 +44,15 @@ function Get-QaAnalysisEligibility {
     # be retried once, while already recognized formats keep their valid cache.
     # Do not repeatedly retry read errors, bad dates, incomplete text, or OCR.
     if($RefreshUnsupported -and (Get-QaAnalysisVersionValue (Get-QaInsightValue $Saved ContentSupportRevision 0)) -lt (Get-QaContentSupportRevision) -and [string](Get-QaInsightValue $doc ReasonCode '') -cin @('UnknownTemplate','UnrecognizedSections') -and -not [string](Get-QaInsightValue $doc ProfileId '')){return 'UnsupportedUpgrade'}
-    if($UpgradeMeasurements -and (Get-QaAnalysisVersionValue (Get-QaInsightValue (Get-QaInsightValue $Saved MeasurementsDocument $null) MeasurementVersion 0)) -ne (Get-QaMeasurementParserVersion)){return 'MeasurementUpgrade'}
+    $reference=([string](Get-QaInsightValue $doc ProfileId '') -ceq 'siemens-iec-reference-v1' -or (Get-QaInsightValue $doc IsReference $false) -eq $true -or (Get-QaInsightValue $doc HasReferenceEvidence $false) -eq $true)
+    if($UpgradeMeasurements -and -not $reference){
+        $measurements=Get-QaInsightValue $Saved MeasurementsDocument $null
+        if((Get-QaAnalysisVersionValue (Get-QaInsightValue $measurements MeasurementVersion 0)) -ne (Get-QaMeasurementParserVersion)){return 'MeasurementUpgrade'}
+        # Capability upgrades are selective: existing complete HU evidence stays
+        # reusable. New Daily/slice tables receive one bounded extraction attempt.
+        $supportedNewTable=([string](Get-QaInsightValue $doc ProfileId '') -ceq 'siemens-quality-daily-v1' -or @((Get-QaInsightValue $doc Sections @())|Where-Object{[string](Get-QaInsightValue $_ Code '') -ceq 'Slice'}).Count -gt 0)
+        if($supportedNewTable -and (Get-QaAnalysisVersionValue (Get-QaInsightValue $measurements MeasurementSupportRevision 0)) -lt (Get-QaMeasurementSupportRevision)){return 'MeasurementUpgrade'}
+    }
     return ''
 }
 function Select-QaAnalysisRecords {
@@ -81,8 +89,7 @@ function Test-QaAnalysisSelectedRefresh {
     param($Config,$Record)
     $saved=Get-QaSavedAnalysis $Config $Record
     if($null -eq $saved){return $false}
-    $measurements=Get-QaInsightValue $saved MeasurementsDocument $null
-    return ((Get-QaAnalysisVersionValue (Get-QaInsightValue $measurements MeasurementVersion 0)) -ne (Get-QaMeasurementParserVersion) -or [string](Get-QaInsightValue $saved RequestedReaderMode '') -cne (Get-QaAnalysisReaderMode $Config) -or (Get-QaAnalysisEligibility -Saved $saved -RefreshUnsupported) -ceq 'UnsupportedUpgrade')
+    return ([string](Get-QaInsightValue $saved RequestedReaderMode '') -cne (Get-QaAnalysisReaderMode $Config) -or (Get-QaAnalysisEligibility -Saved $saved -UpgradeMeasurements -RefreshUnsupported) -cin @('MeasurementUpgrade','UnsupportedUpgrade'))
 }
 function Get-QaAnalysisMetadata {
     param([string]$Path)
@@ -137,10 +144,11 @@ function Set-QaAnalysisWorkProgress {
     foreach($key in $values.Keys){if($Progress -is [Collections.IDictionary]){$Progress[$key]=$values[$key]}else{$Progress|Add-Member -NotePropertyName $key -NotePropertyValue $values[$key] -Force}}
 }
 function Invoke-QaAnalysis {
-    [CmdletBinding()]param($Config,$Progress=$null,[int]$Limit=20,[string[]]$RecordIds=@(),[switch]$Force,[switch]$UpgradeMeasurements,[switch]$RefreshUnsupported)
-    $dashboard=Get-QaDashboard -Config $Config;$done=0;$skipped=0;$failed=0;$cancelled=$false;$requestedReader=Get-QaAnalysisReaderMode $Config
+    [CmdletBinding()]param($Config,$Progress=$null,[int]$Limit=20,[string[]]$RecordIds=@(),[switch]$Force,[switch]$UpgradeMeasurements,[switch]$RefreshUnsupported,[AllowEmptyCollection()][object[]]$Records=@())
+    if(-not $PSBoundParameters.ContainsKey('Records')){$Records=@((Get-QaDashboard -Config $Config).Records)}
+    $done=0;$skipped=0;$failed=0;$cancelled=$false;$requestedReader=Get-QaAnalysisReaderMode $Config
     $root=Join-Path $Config.ArchiveRoot '.ctqa/analysis'
-    $records=@($dashboard.Records|Sort-Object ReportDate -Descending)
+    $records=@($Records|Sort-Object ReportDate -Descending)
     if($PSBoundParameters.ContainsKey('RecordIds')){$records=@(Select-QaAnalysisRecords -Records $records -RecordIds $RecordIds)}
     $analyzedIds=New-Object 'Collections.Generic.List[string]'
     # Determine this bounded batch once, without reopening already cached PDF text.
@@ -175,9 +183,9 @@ function Invoke-QaAnalysis {
             $classification=ConvertFrom-QaDocumentContent -Text ([string]$read.Text) -Truncated ([bool]$read.Truncated) -NeedsOCR ([bool]$read.NeedsOCR) -Pages ([int]$read.Pages) -ReadPages ([int]$read.ReadPages)
             $classification|Add-Member -NotePropertyName Pages -NotePropertyValue ([int]$read.Pages) -Force;$classification|Add-Member -NotePropertyName ReadPages -NotePropertyValue ([int]$read.ReadPages) -Force;$classification|Add-Member -NotePropertyName NeedsOCR -NotePropertyValue ([bool]$read.NeedsOCR) -Force
             $measurements=ConvertFrom-QaMeasurementText -Text ([string]$read.Text) -Truncated ([bool]$read.Truncated) -NeedsOCR ([bool]$read.NeedsOCR) -Pages ([int]$read.Pages) -ReadPages ([int]$read.ReadPages)
-            $eventProfile=switch([string]$classification.ProfileId){'siemens-iec-basic-v1'{'Basic'}'siemens-iec-extended-v1'{'Extended'}'siemens-iec-additional-v1'{'Additional'}'siemens-quality-daily-v1'{'Daily'}default{'Unknown'}}
+            $eventProfile=switch([string]$classification.ProfileId){'siemens-iec-basic-v1'{'Basic'}'siemens-iec-extended-v1'{'Extended'}'siemens-iec-additional-v1'{'Additional'}'siemens-quality-daily-v1'{'Daily'}'siemens-iec-reference-v1'{'Reference'}default{'Unknown'}}
             $documentReason=[string]$classification.ReasonCode;$measurementReason=[string]$measurements.ReasonCode
-            if($documentReason -ceq 'SupportedProfile' -and $measurementReason -cin @('NoReadableText','InputLimit','UnsupportedProfile','NoSupportedTables','MeasurementReviewNeeded','SupportedPrintedValues')){$eventReason=$measurementReason}elseif($documentReason -cin @('SupportedProfile','UnknownTemplate','IncompleteRead','UncertainReportDate','ConflictingExplicitTitles','UnrecognizedSections')){$eventReason=$documentReason}
+            if($documentReason -ceq 'SupportedProfile' -and $measurementReason -cin @('NoReadableText','InputLimit','UnsupportedProfile','NoSupportedTables','MeasurementReviewNeeded','SupportedPrintedValues')){$eventReason=$measurementReason}elseif($documentReason -cin @('SupportedProfile','UnknownTemplate','IncompleteRead','UncertainReportDate','ConflictingExplicitTitles','UnrecognizedSections','ReferenceDocument')){$eventReason=$documentReason}
             $row|Add-Member MeasurementsDocument $measurements
             $row|Add-Member ContentSupportRevision (Get-QaContentSupportRevision)
             $readerUsed=[string](Get-QaInsightValue $read ReaderUsed 'Legacy');if($readerUsed -cnotin @('Python','Standard')){$readerUsed='Legacy'}

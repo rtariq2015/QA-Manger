@@ -311,6 +311,13 @@ Scenario 'Classic diagnostics inspect cached versions without opening or changin
     $json=$report|ConvertTo-Json -Depth 20
     foreach($private in @($canary,$pdf,$privateId,$privateHash)){Check (-not $json.Contains($private)) 'Classic cache details cannot expose report evidence or identity'}
     Check ((Get-FileHash $cachePath).Hash -ceq $cacheBefore -and [Convert]::ToBase64String([IO.File]::ReadAllBytes($pdf)) -ceq [Convert]::ToBase64String($pdfBefore)) 'Export diagnostics leave both cache JSON and PDF bytes unchanged'
+    $saved.DocumentClassification.ProfileId='';$saved.DocumentClassification.Status='NeedsReview';$saved.DocumentClassification|Add-Member HasReferenceEvidence $true
+    $saved|Add-Member MeasurementsDocument ([pscustomobject]@{MeasurementVersion=1;MeasurementSupportRevision=2;Status='Extracted';Measurements=@([pscustomobject]@{Code='WaterCTNumber';Value='8';Unit='HU'})})
+    [IO.File]::WriteAllText($cachePath,($saved|ConvertTo-Json -Depth 10));$referenceCacheHash=(Get-FileHash $cachePath).Hash
+    $lock=[IO.File]::Open($pdf,[IO.FileMode]::Open,[IO.FileAccess]::ReadWrite,[IO.FileShare]::None)
+    try{$referenceReport=Get-QaSupportReport -AppRoot $workspace -Config $config -Dashboard $localDashboard}finally{$lock.Dispose()}
+    Check ($referenceReport.ReportDiagnostics[0].Profile -ceq 'Unknown' -and $referenceReport.ReportDiagnostics[0].MeasurementCount -eq 0 -and $referenceReport.ReportDiagnostics[0].MeasurementStatus -ceq 'ReferenceExcluded' -and $referenceReport.ReportDiagnostics[0].ReasonCodes -ccontains 'ReferenceExcluded') 'Reference body evidence excludes legacy measurements even when its document profile remains unresolved'
+    Check ((Get-FileHash $cachePath).Hash -ceq $referenceCacheHash -and [Convert]::ToBase64String([IO.File]::ReadAllBytes($pdf)) -ceq [Convert]::ToBase64String($pdfBefore)) 'Reference diagnostic filtering neither rereads nor rewrites protected document evidence'
 }
 Scenario 'Additional and Daily metadata, Drive models and the third filing rule remain safely diagnosable' {
     $copy=$config|ConvertTo-Json -Depth 20|ConvertFrom-Json
@@ -322,7 +329,7 @@ Scenario 'Additional and Daily metadata, Drive models and the third filing rule 
     $fallback=Get-QaSupportReport -AppRoot $workspace -Config $copy -Dashboard $dashboard -SupportContext $context
     $revision=& (Get-Module Support) { Get-QaContentSupportRevision }
     Check ($fallback.ReadSettings.SupportRevision -eq $revision) 'Absent context revision follows the current pure classifier revision dynamically'
-    Check ($fallback.ScannerRules[0].AdditionalRule -ceq 'Ask') 'No Additional mapping defaults to an explicit Ask rule'
+    Check ($fallback.ScannerRules[0].AdditionalRule -ceq 'Auto') 'An absent Additional mapping reflects automatic filing while explicit Ask remains separate'
     Check ($fallback.ReportDiagnostics[0].Profile -ceq 'Additional' -and $fallback.ReportDiagnostics[1].Profile -ceq 'Daily') 'New internal profile identifiers become fixed generic aliases'
     Check ($fallback.ReportDiagnostics[0].Model -ceq 'Drive' -and $fallback.ReportDiagnostics[1].Model -ceq 'Drive' -and $fallback.ReadSettings.SupportedModels -ccontains 'Drive') 'Drive is retained as a generic supported-model enum'
     Check ($fallback.ReportDiagnostics[2].Profile -ceq 'Unknown' -and $fallback.ReportDiagnostics[2].Model -ceq 'Unknown') 'Private profile and model strings become Unknown'
@@ -334,6 +341,9 @@ Scenario 'Additional and Daily metadata, Drive models and the third filing rule 
     $html=ConvertTo-QaSupportHtml -Report $explicit
     foreach($heading in @('Basic filing','Extended filing','Additional filing')){Check ($html.Contains('<th>'+$heading+'</th>')) ('Printable configuration labels its own column: '+$heading)}
     Check (-not ($explicit|ConvertTo-Json -Depth 20).Contains($canary) -and -not $html.Contains($canary)) 'New model, profile and rule projections cannot leak private metadata'
+    $copy.Sources[0].ContentProfiles=@([pscustomobject]@{profileId='siemens-iec-basic-v1';category='Auto'},[pscustomobject]@{profileId='siemens-iec-extended-v1';category='Ask'},[pscustomobject]@{profileId='siemens-iec-additional-v1';category=''})
+    $policies=Get-QaSupportReport -AppRoot $workspace -Config $copy -Dashboard $dashboard -SupportContext $context
+    Check ($policies.ScannerRules[0].BasicRule -ceq 'Auto' -and $policies.ScannerRules[0].ExtendedRule -ceq 'Ask' -and $policies.ScannerRules[0].AdditionalRule -ceq 'Auto') 'Automatic, explicit Ask and legacyempty rules stay distinguishable and accurately canonicalized'
     $copy.Sources[0].ContentProfiles=@([pscustomobject]@{profileId='siemens-iec-additional-v1';category=$canary},[pscustomobject]@{profileId=$canary;category='Monthly'})
     $invalid=Get-QaSupportReport -AppRoot $workspace -Config $copy -Dashboard $dashboard -SupportContext $context
     Check ($invalid.ScannerRules[0].AdditionalRule -ceq 'Ask') 'Invalid Additional categories and unknown profile identifiers cannot create an automatic rule'
@@ -375,8 +385,34 @@ Scenario 'Real connection-result handling avoids repeated prompts and remembers 
     Check ($script:ScannerEditors[$id].ConnectionResult.Text -eq 'Reports folder accessible.') 'Latest result is visible beside the scanner'
 }
 
+Scenario 'Filing basis and reading state remain separate scrubbed facts across machine and print diagnostics' {
+    $waiting=New-SyntheticDiagnosticRow @('AwaitingRead');$waiting|Add-Member filingBasis 'AwaitingRead';$waiting|Add-Member filingState 'WaitingRead';$waiting|Add-Member inferred $false
+    $automatic=New-SyntheticDiagnosticRow @('SupportedProfile','NoSupportedTables');$automatic.filingStatus='Automatic';$automatic.textCacheStatus='Valid';$automatic.profile='Basic';$automatic|Add-Member filingBasis 'BasicFormat';$automatic|Add-Member filingState 'Filed';$automatic|Add-Member inferred $true;$automatic|Add-Member measurementSupportRevision 2
+    $ask=New-SyntheticDiagnosticRow @('ManualReview');$ask|Add-Member filingBasis 'ManualReview';$ask|Add-Member filingState 'NeedsReview';$ask|Add-Member inferred $false
+    $reference=New-SyntheticDiagnosticRow @('ReferenceDocument');$reference.filingStatus='Automatic';$reference.profile='siemens-iec-reference-v1';$reference.measurementStatus='Extracted';$reference.measurementCount=11;$reference|Add-Member filingBasis 'ReferenceDocument';$reference|Add-Member filingState 'Filed';$reference|Add-Member inferred $false
+    $context=[pscustomobject]@{reports=@($waiting,$automatic,$ask,$reference)}
+    $report=Get-QaSupportReport -AppRoot $workspace -Config $config -Dashboard $dashboard -SupportContext $context
+    Check ($report.ReportDiagnostics[0].FilingState -ceq 'WaitingRead' -and $report.ReportDiagnostics[0].FilingBasis -ceq 'AwaitingRead') 'Waiting for automatic reading is distinct from a user decision'
+    Check ($report.ReportDiagnostics[1].FilingState -ceq 'Filed' -and $report.ReportDiagnostics[1].FilingBasis -ceq 'BasicFormat' -and $report.ReportDiagnostics[1].Inferred -eq $true) 'Automatically inferred grouping retains its controlled basis'
+    Check ($report.ReportDiagnostics[1].MeasurementSupportRevision -eq 2) 'The additive measurement capability revision survives diagnostics without changing schema1'
+    Check ($report.ReportDiagnostics[2].FilingState -ceq 'NeedsReview' -and $report.ReportDiagnostics[2].FilingBasis -ceq 'ManualReview') 'An explicit Ask policy remains a separate decision state'
+    Check ($report.ReportDiagnostics[3].Profile -ceq 'Reference' -and $report.ReportDiagnostics[3].MeasurementStatus -ceq 'ReferenceExcluded' -and $report.ReportDiagnostics[3].MeasurementCount -eq 0 -and $report.ReportDiagnostics[3].ReasonCodes -ccontains 'ReferenceDocument') 'Reference exclusions keep a fixed profile and reason instead of false current measurements'
+    Check ($report.DiagnosticCounts.WaitingRead -eq 1 -and $report.DiagnosticCounts.NeedsReview -eq 1 -and $report.DiagnosticCounts.Filed -eq 2 -and $report.DiagnosticCounts.Inferred -eq 1) 'Reading, review, filed and inferred totals remain independently interpretable'
+    $csv=@((& (Get-Module Support) {param($rows) ConvertTo-QaSupportReportCsv -Rows $rows} $report.ReportDiagnostics)|ConvertFrom-Csv)
+    Check ($csv[1].FilingBasis -ceq 'BasicFormat' -and $csv[1].FilingState -ceq 'Filed' -and $csv[1].Inferred -ceq 'True' -and $csv[1].MeasurementSupportRevision -eq 2) 'CSV carries all four new controlled columns'
+    $html=ConvertTo-QaSupportHtml -Report $report
+    Check ($html.Contains('Filing basis: BasicFormat') -and $html.Contains('Measurement support revision 2') -and $html.Contains('ReferenceDocument')) 'The printable report explains inference and reference exclusions'
+    $unresolvedReference=New-SyntheticDiagnosticRow @('ReferenceExcluded');$unresolvedReference.measurementStatus='Extracted';$unresolvedReference.measurementCount=8
+    $excluded=Get-QaSupportReport -AppRoot $workspace -Config $config -Dashboard $dashboard -SupportContext ([pscustomobject]@{reports=@($unresolvedReference)})
+    Check ($excluded.ReportDiagnostics[0].Profile -ceq 'Unknown' -and $excluded.ReportDiagnostics[0].MeasurementStatus -ceq 'ReferenceExcluded' -and $excluded.ReportDiagnostics[0].MeasurementCount -eq 0) 'Unknown reference-evidence context rows cannot retain stale numeric counts'
+    $bad=New-SyntheticDiagnosticRow @($canary);$bad|Add-Member filingBasis $canary;$bad|Add-Member filingState $canary;$bad|Add-Member inferred $canary;$bad|Add-Member measurementSupportRevision $canary
+    $clean=Get-QaSupportReport -AppRoot $workspace -Config $config -Dashboard $dashboard -SupportContext ([pscustomobject]@{reports=@($bad)})
+    Check ($clean.ReportDiagnostics[0].FilingBasis -ceq 'Unknown' -and $clean.ReportDiagnostics[0].Inferred -eq $false -and $clean.ReportDiagnostics[0].MeasurementSupportRevision -eq 0) 'Untrusted basis, boolean and revision inputs reduce to safe typed defaults'
+    Check (-not (($clean.ReportDiagnostics|ConvertTo-Json -Depth 10).Contains($canary))) 'New diagnostic fields never pass through private freeform strings'
+}
+
 $failed=@($script:Results|Where-Object Result -eq 'FAIL').Count
-$report=[pscustomobject]@{Version='5.3.1';Runtime=$PSVersionTable.PSVersion.ToString();WindowsPowerShell51ActuallyRun=($PSVersionTable.PSVersion.Major -eq 5);Tests=$script:Results.Count;Assertions=$script:Assertions;Failed=$failed;Results=@($script:Results.ToArray());Scope='Synthetic review grouping, strict diagnostic privacy, per-report reason categories, printable HTML limits, complete machine exports, protected destinations, cached-only classic fallback, safe events and active application lock. Production diagnostic CMD runs on Windows.'}
+$report=[pscustomobject]@{Version='5.4.0';Runtime=$PSVersionTable.PSVersion.ToString();WindowsPowerShell51ActuallyRun=($PSVersionTable.PSVersion.Major -eq 5);Tests=$script:Results.Count;Assertions=$script:Assertions;Failed=$failed;Results=@($script:Results.ToArray());Scope='Synthetic review grouping, strict diagnostic privacy, per-report reason categories, printable HTML limits, complete machine exports, protected destinations, cached-only classic fallback, safe events and active application lock. Production diagnostic CMD runs on Windows.'}
 if($OutputPath){$report|ConvertTo-Json -Depth 12|Set-Content -LiteralPath $OutputPath -Encoding UTF8}
 Write-Host ('Result: '+($report.Tests-$failed)+'/'+$report.Tests+' scenarios; '+$report.Assertions+' assertions.')
 Remove-Item -LiteralPath $testRoot -Recurse -Force

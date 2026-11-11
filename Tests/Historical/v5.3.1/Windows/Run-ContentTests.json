@@ -1,0 +1,105 @@
+﻿{
+    "Version":  "5.3.1",
+    "Runtime":  "5.1.26100.33648",
+    "Tests":  19,
+    "Assertions":  128,
+    "Failed":  0,
+    "Results":  [
+                    {
+                        "Name":  "Complete basic Siemens body sections produce a suggested profile without assigning department policy",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "The complete extended body profile is recognized independent of usual PDF size or page count",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Compatible Flash IEC body profiles retain the same layout identity without assigning department policy",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "A Flash header does not bypass incomplete, non-IEC, table-of-contents or conflicting-date safeguards",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Conflicting supported model names do not select an arbitrary model or profile",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Explicit cover titles are distinguished from profile suggestions and ordinary text mentions",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "A table of contents cannot stand in for actual completed body sections",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Unknown, duplicated, missing or reordered sections require manual review",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Incomplete text, OCR needs and missing page markers never become accepted content",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Missing, conflicting, invalid and misnumbered footer evidence cannot supply a report date",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Reader whitespace variations are accepted without relaxing structural evidence",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Mixed printed outcomes stay literal and separate from document organization",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "The supported SOMATOM Drive model retains exact Basic and Extended IEC profiles",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Numbered individual and combined additional IEC tests form a distinct policy-neutral profile",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Additional IEC recognition withholds reference material, absent evidence and invalid section structure",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Exact manufacturer Quality Daily body sections identify Daily documents on each supported model",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Daily names, table-of-contents text and mixed section families cannot substitute for the full Daily template",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Daily document classification preserves incomplete reads, footer conflicts and printed failures",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Classifier metadata and evidence codes are fixed and support safe display allowlists",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    }
+                ],
+    "Scope":  "Synthetic Edge, compatible Flash and Drive model text only. Covers exact Basic and Extended IEC profiles, bounded individual/combined additional test sets and the explicit Quality Daily body family. Exact numbered Siemens IEC body-section profiles and repeated report footer consensus. Profile suggestions are separate from department mappings and clinical QA evidence."
+}

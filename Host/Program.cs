@@ -75,11 +75,11 @@ app.MapGet("/favicon.ico", () => Results.NoContent());
 app.MapPost("/api/session", (HttpContext context) => {
     if (!HeaderAuthorized(context.Request)) return Results.Unauthorized();
     context.Response.Cookies.Append("ctqa-session", token, new CookieOptions { HttpOnly = true, SameSite = SameSiteMode.Strict, IsEssential = true, Path = "/api", MaxAge = TimeSpan.FromHours(24) });
-    return Results.Json(new { connected = true, version = "5.3.1" });
+    return Results.Json(new { connected = true, version = "5.4.0" });
 });
 app.MapPost("/api/heartbeat", () => { state.Heartbeat(); return Results.Json(new { alive = true }); });
 app.MapGet("/api/snapshot", () => state.Snapshot is JsonNode snapshot ? Results.Json(snapshot) : Results.Json(new { error = state.StartupError ?? "The saved library is loading. Please wait a moment." }, statusCode: 503));
-app.MapGet("/api/jobs", () => Results.Json(new { jobs = state.Jobs.Values.OrderByDescending(j => j.StartedUtc).Take(100).Select(j => j.PublicView()) }));
+app.MapGet("/api/jobs", () => Results.Json(new { jobs = state.Jobs.Values.OrderByDescending(j => j.StartedUtc).Take(100).Select(j => j.PublicView()), automaticReadingStopped = state.AutomaticReadingStopped }));
 app.MapPost("/api/actions", async (HttpContext context) => {
     context.Features.Get<IHttpMaxRequestBodySizeFeature>()!.MaxRequestBodySize = 2_097_152;
     var request = await JsonNode.ParseAsync(context.Request.Body, cancellationToken: context.RequestAborted) as JsonObject;
@@ -102,7 +102,7 @@ app.MapPost("/api/actions", async (HttpContext context) => {
 });
 app.MapPost("/api/jobs/{id}/cancel", (string id) => {
     if (!state.Jobs.TryGetValue(id, out var job)) return Results.NotFound();
-    if (!job.RequestCancel()) return Results.Conflict(new { error = "This step is already finishing or must finish atomically." });
+    if (!state.RequestJobCancellation(job)) return Results.Conflict(new { error = "This step is already finishing or must finish atomically." });
     if (job.Background) state.RecordReadingControl("UserStopped");
     return Results.Json(new { cancelRequested = true });
 });
@@ -113,6 +113,7 @@ app.MapPost("/api/jobs/{id}/pause", async (string id, HttpContext context) => {
     if (request?["paused"] is not JsonValue value || !value.TryGetValue<bool>(out var paused)) return Results.BadRequest(new { error = "Choose Pause or Resume for background reading." });
     if (!job.RequestPause(paused)) return Results.Conflict(new { error = "This background reading job has already finished." });
     state.RecordReadingControl(paused ? "UserPaused" : "UserResumed");
+    if (!paused) state.NoteReadingResume();
     return Results.Json(new { pauseRequested = paused, paused = job.Paused });
 });
 app.MapPost("/api/update", async (HttpContext context) => {
@@ -177,7 +178,7 @@ state.RecordLifecycle("Startup", "Started");
 app.Lifetime.ApplicationStopped.Register(() => state.RecordLifecycle("Shutdown", "Completed"));
 origin = app.Services.GetRequiredService<IServer>().Features.Get<IServerAddressesFeature>()!.Addresses.Single().TrimEnd('/');
 // Kestrel starts on an OS-selected loopback port. No URL ACL, service or firewall rule is created.
-var ready = JsonSerializer.Serialize(new { url = origin, token, pid = Environment.ProcessId, version = "5.3.1" });
+var ready = JsonSerializer.Serialize(new { url = origin, token, pid = Environment.ProcessId, version = "5.4.0" });
 SafeFiles.WritePrivate(readyPath, ready);
 var browserStartup = Stopwatch.StartNew();
 var startupFailed = 0;
@@ -195,7 +196,8 @@ _ = Task.Run(async () => {
     try {
         await state.LoadSnapshot(app.Lifetime.ApplicationStopping);
         if (state.Snapshot?["setupComplete"]?.GetValue<bool>() == true && state.Snapshot?["settings"]?["autoUpdateOnOpen"]?.GetValue<bool>() == true)
-            state.QueueWhenIdle(new JsonObject { ["action"] = "Refresh" }, app.Lifetime.ApplicationStopping);
+            state.QueueWhenIdle(new JsonObject { ["action"] = "Refresh" }, app.Lifetime.ApplicationStopping, automatic: true);
+        else state.TryQueueAutomaticAnalysis(app.Lifetime.ApplicationStopping);
     }
     catch (Exception ex) { state.StartupError = ex is WorkerException ? ex.Message : "The saved workspace could not be opened. Check folder permissions or use the previous Windows interface."; }
 });
@@ -213,8 +215,7 @@ _ = Task.Run(async () => {
                 var monitor = saved?["settings"]?["monitorMinutes"]?.GetValue<int>() ?? 0;
                 if (monitor > 0 && DateTimeOffset.UtcNow - state.LastRefresh > TimeSpan.FromMinutes(monitor))
                     state.QueueWhenIdle(new JsonObject { ["action"] = "Refresh" }, app.Lifetime.ApplicationStopping);
-                else if (saved?["settings"]?["autoAnalyze"]?.GetValue<bool>() == true && (saved?["analysis"]?["pending"]?.GetValue<int>() ?? 0) > 0 && DateTimeOffset.UtcNow - state.LastAnalysis > TimeSpan.FromMinutes(5))
-                    state.QueueWhenIdle(new JsonObject { ["action"] = "Analyze" }, app.Lifetime.ApplicationStopping);
+                else state.TryQueueAutomaticAnalysis(app.Lifetime.ApplicationStopping);
             }
             if (!state.Busy && DateTimeOffset.UtcNow - state.LastActivity > TimeSpan.FromMinutes(settings.IdleMinutes)) { app.Lifetime.StopApplication(); break; }
         }
@@ -316,18 +317,31 @@ sealed class WorkerBridge(string root, string powerShell) {
         } finally { if (!process.HasExited) { try { process.Kill(entireProcessTree: true); } catch { } } }
     }
 }
-sealed class Job(string action, bool background = false) {
+sealed class Job(string action, bool background = false, bool automatic = false) {
     private static readonly HashSet<string> CooperativeActions = new(StringComparer.Ordinal) { "Refresh", "Analyze", "AnalyzeBacklog", "Export", "Backup", "Audit", "Browse" };
-    private static readonly HashSet<string> Stages = new(StringComparer.Ordinal) { "Preparing", "Connecting", "Scanning", "Copying", "Library", "Analyzing", "Exporting", "BackingUp", "Restoring", "Verifying", "Finishing" };
+    private static readonly HashSet<string> Stages = new(StringComparer.Ordinal) { "Preparing", "Connecting", "Scanning", "Copying", "Library", "Analyzing", "Exporting", "BackingUp", "Restoring", "Verifying", "Finishing", "Planning", "Snapshot", "Parsing", "Cache" };
     private readonly object progressLock = new();
     private bool cancelRequested, pauseRequested, paused, atBoundary;
     private string stage = "Preparing";
     private long completed, total, copied, unchanged, failed;
     private double percent = -1;
     private long finishedTicks;
+    private long planBuilds, fullSnapshots, librarySyncs, processedReports, cacheSkips;
     public string Id { get; } = Guid.NewGuid().ToString("N");
     public string Action { get; } = action;
     public bool Background { get; } = background;
+    public bool Automatic { get; } = automatic;
+    public void CountPlan() => Interlocked.Increment(ref planBuilds);
+    public void CountSnapshot() => Interlocked.Increment(ref fullSnapshots);
+    public void CountLibrarySync() => Interlocked.Increment(ref librarySyncs);
+    public void CountProcessed(long count) => Interlocked.Add(ref processedReports, count);
+    public void CountSkipped(long count) => Interlocked.Add(ref cacheSkips, count);
+    public long PlanBuildCount => Interlocked.Read(ref planBuilds);
+    public long FullSnapshotCount => Interlocked.Read(ref fullSnapshots);
+    public long LibrarySyncCount => Interlocked.Read(ref librarySyncs);
+    public long ProcessedCount => Interlocked.Read(ref processedReports);
+    public long CacheSkipCount => Interlocked.Read(ref cacheSkips);
+    public object PerformanceView() => new { planBuilds = Interlocked.Read(ref planBuilds), fullSnapshots = Interlocked.Read(ref fullSnapshots), librarySyncs = Interlocked.Read(ref librarySyncs), processedReports = Interlocked.Read(ref processedReports), cacheSkips = Interlocked.Read(ref cacheSkips) };
     public DateTimeOffset StartedUtc { get; } = DateTimeOffset.UtcNow;
     public string Status { get; set; } = "queued";
     public string Message { get; set; } = "Waiting for the current safe step…";
@@ -417,7 +431,7 @@ sealed class Job(string action, bool background = false) {
     }
     public object PublicView() {
         ReadProgress();
-        lock (progressLock) return new { id = Id, action = Action, status = Status, message = cancelRequested && Status == "running" ? "Cancel requested. Waiting for the current Windows read or safe checkpoint…" : Message, result = Result, error = Error, startedUtc = StartedUtc, stage = Status == "queued" ? "Queued" : stage, completed, total, copied, unchanged, failed, percent = percent >= 0 ? (double?)percent : null, elapsedSeconds = ElapsedSeconds, cancellable = Cancellable && !cancelRequested, cancelRequested, background = Background, pausable = Background && (Status is "queued" or "running") && !cancelRequested, paused, pauseRequested };
+        lock (progressLock) return new { id = Id, action = Action, status = Status, message = cancelRequested && Status == "running" ? "Cancel requested. Waiting for the current Windows read or safe checkpoint…" : Message, result = Result, error = Error, startedUtc = StartedUtc, stage = Status == "queued" ? "Queued" : stage, completed, total, copied, unchanged, failed, percent = percent >= 0 ? (double?)percent : null, elapsedSeconds = ElapsedSeconds, cancellable = Cancellable && !cancelRequested, cancelRequested, background = Background, automatic = Automatic, performance = PerformanceView(), pausable = Background && (Status is "queued" or "running") && !cancelRequested, paused, pauseRequested };
     }
 }
 sealed record Download(string Path);
@@ -428,7 +442,8 @@ sealed class HostState(WorkerBridge bridge, string root) {
     private readonly SemaphoreSlim mutation = new(1, 1);
     private readonly object queueGate = new();
     private readonly CancellationTokenSource shutdown = new();
-    private bool closing;
+    private bool closing, automaticReadingStopped;
+    private long foregroundRevision, libraryRevision;
     private JsonNode? snapshot;
     private long lastActivity = DateTimeOffset.UtcNow.UtcTicks;
     private long lastHeartbeat = DateTimeOffset.MinValue.UtcTicks;
@@ -440,6 +455,7 @@ sealed class HostState(WorkerBridge bridge, string root) {
     public void Heartbeat() { Interlocked.Exchange(ref lastHeartbeat, DateTimeOffset.UtcNow.UtcTicks); Touch(); }
     public DateTimeOffset LastActivity => new(Interlocked.Read(ref lastActivity), TimeSpan.Zero);
     public bool Busy => Jobs.Values.Any(j => j.Status is "queued" or "running");
+    public bool AutomaticReadingStopped { get { lock (queueGate) return automaticReadingStopped; } }
     public bool ForegroundBusy => Jobs.Values.Any(j => !j.Background && (j.Status is "queued" or "running"));
     public bool TryBeginShutdown() {
         lock (queueGate) {
@@ -455,18 +471,36 @@ sealed class HostState(WorkerBridge bridge, string root) {
     }
     public void Touch() => Interlocked.Exchange(ref lastActivity, DateTimeOffset.UtcNow.UtcTicks);
     public void Stop() => shutdown.Cancel();
-    public async Task LoadSnapshot(CancellationToken token) {
-        var value = await bridge.Run(new JsonObject { ["action"] = "Snapshot" }, 90, token);
+    public async Task LoadSnapshot(CancellationToken token, Job? progressJob = null) {
+        var value = await bridge.Run(new JsonObject { ["action"] = "Snapshot" }, 90, token, progressJob);
         if (value is null) throw new WorkerException("The saved workspace returned an empty result.");
         Volatile.Write(ref snapshot, (value["snapshot"] ?? value).DeepClone()); StartupError = null;
     }
-    public void QueueWhenIdle(JsonObject request, CancellationToken hostToken) {
+    public bool RequestJobCancellation(Job job) {
         lock (queueGate) {
-            if (closing || ForegroundBusy || (request["action"]?.GetValue<string>() == "Analyze" && Busy)) { request.Clear(); return; }
-            Queue(request, hostToken);
+            var accepted = job.RequestCancel();
+            if (accepted && job.Background) automaticReadingStopped = true;
+            return accepted;
         }
     }
-    public Job Queue(JsonObject request, CancellationToken hostToken, Action<JsonNode?>? completed = null, string? cleanupPath = null) {
+    public void NoteReadingResume() { lock (queueGate) automaticReadingStopped = false; }
+    public void TryQueueAutomaticAnalysis(CancellationToken hostToken) {
+        lock (queueGate) {
+            if (closing || hostToken.IsCancellationRequested || automaticReadingStopped || Busy) return;
+            var saved = Snapshot;
+            if (saved?["setupComplete"]?.GetValue<bool>() != true || saved?["settings"]?["autoAnalyze"]?.GetValue<bool>() != true) return;
+            var pending = saved?["analysis"]?["backlogPending"]?.GetValue<int>() ?? saved?["analysis"]?["pending"]?.GetValue<int>() ?? 0;
+            if (pending <= 0 || DateTimeOffset.UtcNow - LastAnalysis < TimeSpan.FromMinutes(5)) return;
+            Queue(new JsonObject { ["action"] = "AnalyzeBacklog", ["scope"] = "all" }, hostToken, automatic: true);
+        }
+    }
+    public Job? QueueWhenIdle(JsonObject request, CancellationToken hostToken, bool automatic = false) {
+        lock (queueGate) {
+            if (closing || ForegroundBusy || (request["action"]?.GetValue<string>() is "Analyze" or "AnalyzeBacklog") && Busy) { request.Clear(); return null; }
+            return Queue(request, hostToken, automatic: automatic);
+        }
+    }
+    public Job Queue(JsonObject request, CancellationToken hostToken, Action<JsonNode?>? completed = null, string? cleanupPath = null, bool automatic = false) {
         Job job;
         var action = request["action"]!.GetValue<string>();
         var background = action == "AnalyzeBacklog" || action == "Analyze" && (request["id"] is null || request["id"] is JsonValue idValue && idValue.TryGetValue<string>(out var id) && string.IsNullOrEmpty(id));
@@ -487,11 +521,13 @@ sealed class HostState(WorkerBridge bridge, string root) {
             // Only supported reading options survive in a long-running background request.
             // In particular, do not retain unrelated transient credential fields.
             if (background) foreach (var name in request.Select(p => p.Key).Where(n => n is not ("action" or "ids" or "measurements" or "analysisLimit" or "force" or "id" or "scope" or "refreshUnsupported")).ToArray()) request.Remove(name);
-            job = new Job(action, background); Jobs[job.Id] = job;
+            if (background && !automatic) automaticReadingStopped = false;
+            job = new Job(action, background, automatic); Jobs[job.Id] = job;
             WriteActivity(action, "Started", 0, "Queued", "Queued");
             if (action == "Refresh") LastRefresh = DateTimeOffset.UtcNow;
             if (action is "Analyze" or "AnalyzeBacklog") LastAnalysis = DateTimeOffset.UtcNow;
         }
+        var enableAutomatic = action == "Settings" && request["autoAnalyze"] is JsonValue autoValue && autoValue.TryGetValue<bool>(out var enabled) && enabled;
         _ = Task.Run(async () => {
             using var execution = CancellationTokenSource.CreateLinkedTokenSource(hostToken, shutdown.Token);
             using var waiting = CancellationTokenSource.CreateLinkedTokenSource(execution.Token, job.Cancel.Token);
@@ -513,6 +549,11 @@ sealed class HostState(WorkerBridge bridge, string root) {
                         var previousArchive = Snapshot?["archiveRoot"]?.GetValue<string>();
                         if (result?["snapshot"] is JsonNode nextSnapshot) Volatile.Write(ref snapshot, nextSnapshot.DeepClone());
                         else if (action != "InstallPreparedUpdate") await LoadSnapshot(execution.Token);
+                        Interlocked.Increment(ref foregroundRevision);
+                        if (action is "Settings" or "ScannerSettings" or "ApplyProfile" or "Refresh" or "Restore" or "PickArchive") Interlocked.Increment(ref libraryRevision);
+                        if (enableAutomatic) { lock (queueGate) { automaticReadingStopped = false; LastAnalysis = DateTimeOffset.MinValue; } }
+                        if (Snapshot?["settings"]?["autoAnalyze"]?.GetValue<bool>() == false)
+                            foreach (var reading in Jobs.Values.Where(j => j.Background && j.Automatic && (j.Status is "queued" or "running"))) reading.RequestCancel();
                         var nextArchive = Snapshot?["archiveRoot"]?.GetValue<string>();
                         if (previousArchive is not null && nextArchive is not null && !SafeFiles.SamePath(previousArchive, nextArchive))
                             foreach (var reading in Jobs.Values.Where(j => j.Background && (j.Status is "queued" or "running"))) reading.RequestCancel();
@@ -535,12 +576,13 @@ sealed class HostState(WorkerBridge bridge, string root) {
                 job.Result = published; job.Status = wasCancelled ? "cancelled" : "completed";
                 job.Message = wasCancelled ? "Stopped safely. Completed verified reports remain saved." : "Finished";
                 if (wasCancelled) { LastRefresh = DateTimeOffset.UtcNow; LastAnalysis = DateTimeOffset.UtcNow; }
-                WriteActivity(action, wasCancelled ? "Cancelled" : "Completed", timer.ElapsedMilliseconds);
+                WriteActivity(action, wasCancelled ? "Cancelled" : "Completed", timer.ElapsedMilliseconds, performanceJob: job);
             } catch (Exception ex) {
                 var stoppedBeforeStarting = ex is OperationCanceledException && job.CancelRequested;
                 job.Status = stoppedBeforeStarting ? "cancelled" : "failed";
                 job.Error = stoppedBeforeStarting ? (job.Background ? "Background reading stopped safely. Completed readings remain saved." : "Cancelled before starting. Saved reports were not changed.") : ex is WorkerException ? ex.Message : ex is OperationCanceledException ? "The local session stopped." : "The action could not finish. Export support logs if this repeats.";
-                job.Message = job.Error; WriteActivity(action, stoppedBeforeStarting ? "Cancelled" : "Failed", timer.ElapsedMilliseconds);
+                if (job.Background) job.Result = new JsonObject { ["performance"] = JsonSerializer.SerializeToNode(job.PerformanceView()) };
+                job.Message = job.Error; WriteActivity(action, stoppedBeforeStarting ? "Cancelled" : "Failed", timer.ElapsedMilliseconds, performanceJob: job);
                 if (job.CancelRequested) { LastRefresh = DateTimeOffset.UtcNow; LastAnalysis = DateTimeOffset.UtcNow; }
                 if (entered && action == "Refresh" && !execution.IsCancellationRequested) { try { await LoadSnapshot(execution.Token); } catch { } }
             } finally {
@@ -550,91 +592,152 @@ sealed class HostState(WorkerBridge bridge, string root) {
                 if (action is "Analyze" or "AnalyzeBacklog") LastAnalysis = DateTimeOffset.UtcNow;
                 if (entered) mutation.Release();
                 if (cleanupPath is not null) { try { File.Delete(cleanupPath); } catch { } }
+                if (!job.Background && action is not ("Diagnostics" or "PrintDiagnostics" or "InstallPreparedUpdate")) TryQueueAutomaticAnalysis(hostToken);
             }
         });
         return job;
     }
     private async Task<JsonNode?> RunBackgroundAnalysis(JsonObject request, Job job, CancellationToken executionToken, CancellationToken waitingToken) {
         long analyzed = 0, failed = 0, cached = 0, pending = 0;
-        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        var analyzedIds = new JsonArray();
-        var cancelled = false;
-        JsonNode? last = null;
-        while (true) {
-            // Never hold the archive mutation slot while paused or waiting for a foreground action.
+        var analyzedIds = new JsonArray(); var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var dirty = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        Queue<string>? remaining = null;
+        long plannedGeneration = -1, syncedLibraryGeneration = Interlocked.Read(ref libraryRevision);
+        string? plannedRevision = null;
+        var processedSincePlan = false; var needsSnapshot = false; var cancelled = false; var normalExit = false; var finalCheckpointDone = false;
+        var checkpoint = Stopwatch.StartNew(); var sinceCheckpoint = 0;
+        string? warning = null;
+        async Task EnterSlot(CancellationToken token, bool honorPause = true) {
             job.SetBoundary(true, ForegroundBusy);
             while (true) {
-                waitingToken.ThrowIfCancellationRequested();
-                if (job.PauseRequested || ForegroundBusy) { job.SetBoundary(true, ForegroundBusy); await Task.Delay(100, waitingToken); continue; }
-                await mutation.WaitAsync(waitingToken);
-                // A foreground request may have arrived while the semaphore became available.
-                lock (queueGate) {
-                    if (!job.PauseRequested && !ForegroundBusy) break;
-                }
-                mutation.Release();
-                await Task.Delay(100, waitingToken);
+                token.ThrowIfCancellationRequested();
+                if (honorPause && job.PauseRequested || ForegroundBusy) { job.SetBoundary(true, ForegroundBusy); await Task.Delay(100, token); continue; }
+                await mutation.WaitAsync(token);
+                lock (queueGate) { if ((!honorPause || !job.PauseRequested) && !ForegroundBusy) return; }
+                mutation.Release(); await Task.Delay(100, token);
             }
-            try {
-                waitingToken.ThrowIfCancellationRequested();
-                job.SetBoundary(false);
-                var chunk = (JsonObject)request.DeepClone();
-                chunk["analysisLimit"] = 1;
-                if (job.Action == "AnalyzeBacklog") {
-                    chunk["action"] = "Analyze"; chunk["backlog"] = true;
-                    chunk["measurements"] = true; chunk["refreshUnsupported"] = true;
-                }
-                try { last = await bridge.Run(chunk, 90, executionToken, job); }
-                finally { chunk.Clear(); }
-                job.ReadProgress();
-                // Publish only while holding the same archive slot as this chunk's commit.
-                // A later foreground result can never be overwritten by an older chunk snapshot.
-                if (last?["snapshot"] is JsonNode nextSnapshot) Volatile.Write(ref snapshot, nextSnapshot.DeepClone());
-                else if (!executionToken.IsCancellationRequested) await LoadSnapshot(executionToken);
-                cancelled = last?["cancelled"]?.GetValue<bool>() == true || job.CancelRequested;
-                if (last?["result"] is JsonObject result) {
-                    long Count(string name) => result[name] is JsonValue v && v.TryGetValue<long>(out var n) && n is >= 0 and <= 100_000_000 ? n : 0;
-                    var done = Count("Analyzed"); var errors = Count("Failed"); var remaining = Count("Pending");
-                    // Cached includes earlier chunks on subsequent requests; never add it repeatedly.
-                    cached = Math.Max(cached, Math.Max(0, Count("Cached") - analyzed - failed));
-                    analyzed += done; failed += errors; pending = remaining;
-                    if (result["AnalyzedIds"] is JsonArray ids) foreach (var item in ids) {
-                        if (item is JsonValue v && v.TryGetValue<string>(out var id) && SafeFiles.ValidRecordId(id) && seen.Add(id)) analyzedIds.Add(id);
-                    }
-                    if (job.Action == "AnalyzeBacklog" && pending == 0 && !cancelled) {
-                        var synced = await bridge.Run(new JsonObject { ["action"] = "SyncLibrary" }, 1800, executionToken, job);
-                        if (synced?["snapshot"] is JsonNode syncedSnapshot) Volatile.Write(ref snapshot, syncedSnapshot.DeepClone());
-                        cancelled = synced?["cancelled"]?.GetValue<bool>() == true || job.CancelRequested;
-                    }
-                    job.SetBackgroundProgress(analyzed, failed, pending, cached);
-                    if (!cancelled && pending > 0 && done + errors == 0)
-                        throw new WorkerException("Background reading stopped because no further PDF could be saved. Completed readings remain available; export support logs before retrying.");
-                } else if (!cancelled) throw new WorkerException("The background reader did not return a complete progress result. Completed readings remain saved.");
-            } finally { mutation.Release(); }
-            if (cancelled || pending == 0 || job.Action != "AnalyzeBacklog" && analyzed + failed >= 20) break;
-            // Give foreground jobs and the workstation a scheduling opportunity after each PDF.
-            job.SetBoundary(true, ForegroundBusy);
-            await Task.Delay(200, waitingToken);
         }
+        async Task Plan() {
+            var planRequest = new JsonObject { ["action"] = "AnalysisPlan", ["scope"] = job.Action == "AnalyzeBacklog" ? request["scope"]?.DeepClone() ?? JsonValue.Create("all") : JsonValue.Create("all"),
+                ["measurements"] = job.Action == "AnalyzeBacklog" || request["measurements"]?.GetValue<bool>() == true,
+                ["refreshUnsupported"] = job.Action == "AnalyzeBacklog" || request["refreshUnsupported"]?.GetValue<bool>() == true };
+            if (request["ids"] is JsonNode ids) planRequest["ids"] = ids.DeepClone();
+            JsonNode? value;
+            try { value = await bridge.Run(planRequest, 90, executionToken, job); }
+            finally { planRequest.Clear(); }
+            job.CountPlan();
+            if (value?["cancelled"]?.GetValue<bool>() == true || job.CancelRequested) { cancelled = true; remaining = new Queue<string>(); return; }
+            var plan = value?["plan"] as JsonObject ?? throw new WorkerException("The background reader did not return a complete work plan.");
+            var next = new Queue<string>(); var unique = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            if (plan["recordIds"] is not JsonArray plannedIds || plannedIds.Count > 100_000) throw new WorkerException("The background reading plan is incomplete.");
+            foreach (var item in plannedIds) {
+                if (item is not JsonValue idValue || !idValue.TryGetValue<string>(out var id) || !SafeFiles.ValidRecordId(id) || !unique.Add(id)) throw new WorkerException("The background reading plan contains an invalid saved report.");
+                next.Enqueue(id);
+            }
+            long Count(string name) => plan[name] is JsonValue v && v.TryGetValue<long>(out var n) && n is >= 0 and <= 100_000_000 ? n : 0;
+            if (Count("pending") != next.Count) throw new WorkerException("The background reading plan is incomplete. Completed readings remain saved.");
+            remaining = next; pending = next.Count; cached = Math.Max(cached, Math.Max(0, Count("cached") - analyzed - failed));
+            plannedRevision = plan["revision"]?.GetValue<string>(); plannedGeneration = Interlocked.Read(ref foregroundRevision); processedSincePlan = false;
+            job.SetBackgroundProgress(analyzed, failed, pending, cached);
+        }
+        async Task PublishCheckpoint(bool fullSync) {
+            var ids = new JsonArray(); foreach (var id in dirty) ids.Add(id);
+            var sync = new JsonObject { ["action"] = "SyncLibrary", ["ids"] = ids, ["fullSync"] = fullSync };
+            JsonNode? value;
+            try { value = await bridge.Run(sync, 1800, executionToken, job); }
+            finally { sync.Clear(); }
+            if (dirty.Count > 0 || fullSync) job.CountLibrarySync();
+            if (value?["snapshot"] is not JsonNode nextSnapshot) throw new WorkerException("The updated report overview could not be refreshed. Completed readings remain saved.");
+            Volatile.Write(ref snapshot, nextSnapshot.DeepClone()); job.CountSnapshot(); needsSnapshot = false;
+            cancelled |= value?["cancelled"]?.GetValue<bool>() == true || job.CancelRequested;
+            if (!cancelled) { dirty.Clear(); syncedLibraryGeneration = Interlocked.Read(ref libraryRevision); }
+            checkpoint.Restart(); sinceCheckpoint = 0;
+        }
+        try {
+            while (true) {
+                await EnterSlot(waitingToken);
+                var finish = false;
+                try {
+                    waitingToken.ThrowIfCancellationRequested();
+                    if (remaining is null || plannedGeneration != Interlocked.Read(ref foregroundRevision)) await Plan();
+                    if (!cancelled && remaining!.Count == 0 && processedSincePlan) await Plan(); // One final trusted eligibility pass, rather than one pass per PDF.
+                    if (cancelled || remaining!.Count == 0) finish = true;
+                    if (!finish) {
+                        var id = remaining!.Dequeue();
+                        job.SetBoundary(false);
+                        var chunk = new JsonObject { ["action"] = "Analyze", ["ids"] = new JsonArray(id), ["analysisLimit"] = 1,
+                            ["analysisStep"] = true, ["deferSnapshot"] = true, ["deferLibrary"] = true,
+                            ["measurements"] = job.Action == "AnalyzeBacklog" || request["measurements"]?.GetValue<bool>() == true,
+                            ["refreshUnsupported"] = job.Action == "AnalyzeBacklog" || request["refreshUnsupported"]?.GetValue<bool>() == true };
+                        JsonNode? value;
+                        try { value = await bridge.Run(chunk, 90, executionToken, job); }
+                        finally { chunk.Clear(); }
+                        job.ReadProgress();
+                        var result = value?["result"] as JsonObject;
+                        var checkedRecord = false;
+                        cancelled = value?["cancelled"]?.GetValue<bool>() == true || job.CancelRequested;
+                        if (result is null && !cancelled) throw new WorkerException("The background reader did not return a complete PDF checkpoint.");
+                        if (result is not null) {
+                            long Count(string name) => result[name] is JsonValue v && v.TryGetValue<long>(out var n) && n is >= 0 and <= 100_000_000 ? n : 0;
+                            var done = Count("Analyzed"); var errors = Count("Failed"); var skipped = Count("Cached");
+                            if (done + errors + skipped > 1) throw new WorkerException("The background reader exceeded its one-PDF checkpoint.");
+                            if (!cancelled && done + errors + skipped == 0) throw new WorkerException("The selected background PDF could not be checked. Completed readings remain saved.");
+                            checkedRecord = done + errors + skipped > 0;
+                            analyzed += done; failed += errors; sinceCheckpoint += (int)(done + errors); processedSincePlan = true;
+                            job.CountProcessed(done + errors); job.CountSkipped(skipped);
+                            if (result["AnalyzedIds"] is JsonArray ids) foreach (var item in ids) if (item is JsonValue v && v.TryGetValue<string>(out var changed) && SafeFiles.ValidRecordId(changed)) { dirty.Add(changed); if (seen.Add(changed)) analyzedIds.Add(changed); }
+                            needsSnapshot |= done + errors > 0;
+                        }
+                        if (cancelled && !checkedRecord) remaining!.Enqueue(id); // An interrupted read is still waiting, not silently consumed.
+                        if (value?["snapshot"] is JsonNode nextSnapshot) { Volatile.Write(ref snapshot, nextSnapshot.DeepClone()); job.CountSnapshot(); needsSnapshot = false; }
+                        else if (value?["snapshotDeferred"]?.GetValue<bool>() != true) { await LoadSnapshot(executionToken); job.CountSnapshot(); needsSnapshot = false; }
+                        var revision = value?["analysisRevision"]?.GetValue<string>();
+                        if (revision is not null && plannedRevision is not null && revision != plannedRevision) plannedGeneration = -1;
+                        pending = remaining.Count; job.SetBackgroundProgress(analyzed, failed, pending, cached);
+                        finish = cancelled || job.Action != "AnalyzeBacklog" && analyzed + failed >= 20;
+                    }
+                    if (!cancelled && !ForegroundBusy && (finish || sinceCheckpoint >= 10 || checkpoint.Elapsed >= TimeSpan.FromSeconds(5)) && (needsSnapshot || dirty.Count > 0 || finish && job.Action == "AnalyzeBacklog")) {
+                        await PublishCheckpoint(finish && job.Action == "AnalyzeBacklog" || syncedLibraryGeneration != Interlocked.Read(ref libraryRevision));
+                        if (finish && !cancelled) finalCheckpointDone = true;
+                    }
+                } finally { mutation.Release(); }
+                if (finish || cancelled) break;
+                job.SetBoundary(true, ForegroundBusy); await Task.Delay(200, waitingToken);
+            }
+            normalExit = true;
+        } catch (OperationCanceledException) when (job.CancelRequested && !executionToken.IsCancellationRequested) { cancelled = true; }
+        finally {
+            // Cancellation/error cleanup refreshes current metadata only. It never forces
+            // more PDF copies after Stop, and never overwrites a foreground result out of order.
+            if (!executionToken.IsCancellationRequested && (needsSnapshot || !normalExit || normalExit && !cancelled && !finalCheckpointDone && job.Action == "AnalyzeBacklog")) {
+                await EnterSlot(executionToken, honorPause: false);
+                try {
+                    if (normalExit && !cancelled && !job.CancelRequested) await PublishCheckpoint(job.Action == "AnalyzeBacklog" || syncedLibraryGeneration != Interlocked.Read(ref libraryRevision));
+                    else { await LoadSnapshot(executionToken, job); job.CountSnapshot(); needsSnapshot = false; }
+                }
+                catch { warning = "Completed readings remain saved. Refresh the overview before continuing."; }
+                finally { mutation.Release(); }
+            }
+        }
+        if (dirty.Count > 0) warning = "Completed readings remain saved. Use Update reports or Open report folders to finish readable-folder updates.";
         var description = $"{analyzed} PDFs analyzed; {cached} cached; {failed} need attention.";
         WriteActivity("ReadingScheduler", cancelled ? "Cancelled" : "Completed", 0, "Finishing", cancelled ? "UserStopped" : pending == 0 ? "QueueEmpty" : "BatchLimitReached", analyzed + failed, analyzed + failed + pending, failed, cached);
         if (!cancelled && pending > 0) description += $" {pending} remain for the next reading batch.";
         if (job.Action == "AnalyzeBacklog" && !cancelled) description += $" {Snapshot?["pendingSummary"]?["pending"]?.GetValue<int>() ?? 0} report types still need a filing rule or review.";
-        return new JsonObject {
-            ["cancelled"] = cancelled, ["message"] = cancelled ? "Stopped safely. Completed readings remain saved." : description,
+        return new JsonObject { ["cancelled"] = cancelled, ["message"] = cancelled ? "Stopped safely. Completed readings remain saved." : description,
             ["result"] = new JsonObject { ["Mode"] = "Analysis", ["Analyzed"] = analyzed, ["Failed"] = failed, ["Cached"] = cached, ["Pending"] = pending, ["AnalyzedIds"] = analyzedIds,
                 ["Summary"] = new JsonObject { ["Description"] = description, ["Cancelled"] = cancelled } },
-            ["warning"] = last?["warning"]?.DeepClone()
-        };
+            ["performance"] = JsonSerializer.SerializeToNode(job.PerformanceView()), ["foldersPending"] = dirty.Count > 0, ["warning"] = warning };
     }
     private readonly object activityGate = new();
     public void RecordLifecycle(string operation, string outcome) => WriteActivity(operation, outcome, 0, "Idle");
     public void RecordReadingControl(string reason) => WriteActivity("ReadingScheduler", "Completed", 0, reason == "UserPaused" ? "Paused" : "Analyzing", reason);
-    private void WriteActivity(string action, string outcome, long duration, string stage = "Finishing", string reason = "", long completed = 0, long total = 0, long failed = 0, long cached = 0) {
+    private void WriteActivity(string action, string outcome, long duration, string stage = "Finishing", string reason = "", long completed = 0, long total = 0, long failed = 0, long cached = 0, Job? performanceJob = null) {
         try { lock (activityGate) {
             var operation = action switch { "Refresh" => "Update", "Analyze" or "AnalyzeBacklog" => "Analysis", "Approve" or "Disapprove" or "Undo" => "Reclassify", "ScannerSettings" or "ApplyProfile" => "Settings", "Browse" => "BrowseRefresh", "InstallPreparedUpdate" or "PrepareUpdate" => "OfflineUpdate", _ => action };
             var path = Path.Combine(root, "Logs", "Web", "activity.jsonl"); Directory.CreateDirectory(Path.GetDirectoryName(path)!); SafeFiles.RequireDirect(path); SafeFiles.RequireDirect(path + ".previous");
             if (File.Exists(path) && new FileInfo(path).Length > 1_048_576) File.Move(path, path + ".previous", true);
-            File.AppendAllText(path, JsonSerializer.Serialize(new { SchemaVersion = 3, TimeUtc = DateTimeOffset.UtcNow, Operation = operation, Outcome = outcome, DurationMs = duration, Stage = stage, Reason = reason.Length > 0 ? reason : outcome == "Failed" ? "WorkerFailed" : outcome == "Started" ? "OperationStarted" : "OperationCompleted", ErrorKind = outcome == "Failed" ? "Unknown" : "None", Counts = new { Completed = completed, Total = total, Failed = failed, Cached = cached } }) + Environment.NewLine, new UTF8Encoding(false));
+            File.AppendAllText(path, JsonSerializer.Serialize(new { SchemaVersion = 3, TimeUtc = DateTimeOffset.UtcNow, Operation = operation, Outcome = outcome, DurationMs = duration, Stage = stage, Reason = reason.Length > 0 ? reason : outcome == "Failed" ? "WorkerFailed" : outcome == "Started" ? "OperationStarted" : "OperationCompleted", ErrorKind = outcome == "Failed" ? "Unknown" : "None", Counts = new { Completed = completed, Total = total, Failed = failed, Cached = cached, PlanPasses = performanceJob?.PlanBuildCount ?? 0, SnapshotPasses = performanceJob?.FullSnapshotCount ?? 0, LibraryPasses = performanceJob?.LibrarySyncCount ?? 0, QueueCompleted = performanceJob?.ProcessedCount ?? 0, CacheHits = performanceJob?.CacheSkipCount ?? 0 } }) + Environment.NewLine, new UTF8Encoding(false));
         }} catch { }
     }
     private static string MessageFor(string action) => action switch { "Refresh" => "Checking scanners and collecting new reports…", "Approve" or "Disapprove" => "Saving the file decision…", "Export" => "Preparing the report package…", "Backup" => "Creating a verified backup…", "Restore" => "Choose a backup ZIP and a new destination in the Windows dialogs…", "Analyze" => "Reading new or changed PDF text…", "Reconnect" => "Testing the selected scanner connection…", "PrepareUpdate" => "Checking the update ZIP…", _ => "Working on your request…" };

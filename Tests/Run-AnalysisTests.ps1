@@ -197,7 +197,7 @@ Scenario 'An older unknown Flash template is refreshed once and then reused with
     Check (Test-QaAnalysisSelectedRefresh $fx.Config $record) 'Selecting an old unsupported report offers a current-format refresh'
     $normal=Invoke-QaAnalysis $fx.Config;Check ($normal.Cached -eq 1 -and $control.Requests.Count -eq 1) 'Existing background behavior still reuses a valid old cache'
     $first=Invoke-QaAnalysis $fx.Config -RefreshUnsupported;$saved=Get-QaSavedAnalysis $fx.Config $record;$cacheHash=(Get-FileHash (CachePath $fx $record)).Hash
-    Check ($first.Analyzed -eq 1 -and $saved.ContentSupportRevision -eq 3 -and $saved.DocumentClassification.Status -ceq 'Recognized' -and $saved.DocumentClassification.Model -ceq 'SOMATOM Definition Flash') 'One opt-in refresh recognizes the compatible complete Flash IEC body'
+    Check ($first.Analyzed -eq 1 -and $saved.ContentSupportRevision -eq (& (Get-Module Insights) {Get-QaContentSupportRevision}) -and $saved.DocumentClassification.Status -ceq 'Recognized' -and $saved.DocumentClassification.Model -ceq 'SOMATOM Definition Flash') 'One opt-in refresh recognizes the compatible complete Flash IEC body'
     Check ($saved.DocumentClassification.Category -ceq '' -and $saved.DocumentClassification.ClinicalResult -ceq 'Not inferred') 'Recognition does not assign department frequency or clinical approval'
     $second=Invoke-QaAnalysis $fx.Config -UpgradeMeasurements -RefreshUnsupported
     Check ($second.Cached -eq 1 -and $second.Analyzed -eq 0 -and $control.Requests.Count -eq 2 -and (Get-FileHash (CachePath $fx $record)).Hash -ceq $cacheHash) 'A completed current revision is reused without another read or write'
@@ -226,6 +226,72 @@ Scenario 'Equal-content destinations retain independent one-time format support 
     Check ($first.Analyzed -eq 1 -and $remaining.Pending -eq 2) 'Saving one destination revision does not mark untouched aliases as upgraded'
     $second=Invoke-QaAnalysis $fx.Config -RefreshUnsupported;$warm=Invoke-QaAnalysis $fx.Config -RefreshUnsupported
     Check ($second.Analyzed -eq 2 -and $warm.Analyzed -eq 0 -and $warm.Cached -eq 3 -and $control.Requests.Count -eq 6) 'Every alias upgrades once and then stays warm without cache ping-pong'
+}
+
+Scenario 'New measurement capabilities selectively refresh Daily and slice evidence once while preserving warm HU and reference caches' {
+    $fx=Fixture 'SelectiveMeasurementCapability' 6;$control=Install-ReadMock $fx;[void](Invoke-QaAnalysis $fx.Config)
+    foreach($n in 0..5){
+        $record=$fx.Records[$n];$row=Get-QaSavedAnalysis $fx.Config $record
+        $row.DocumentClassification.Status='Recognized';$row.DocumentClassification.ReasonCode='SupportedProfile';$row.DocumentClassification.ProfileId='siemens-iec-basic-v1';$row.DocumentClassification.Sections=@()
+        $row.MeasurementsDocument|Add-Member MeasurementSupportRevision 0 -Force
+        switch($n){
+            1 {$row.DocumentClassification.ProfileId='siemens-quality-daily-v1'}
+            2 {$row.DocumentClassification.ProfileId='siemens-iec-extended-v1';$row.DocumentClassification.Sections=@([pscustomobject]@{Code='Slice';Page=1})}
+            3 {$row.DocumentClassification.ProfileId='siemens-iec-reference-v1';$row.PSObject.Properties.Remove('MeasurementsDocument')}
+            4 {$row.Status='ReadError';$row.DocumentClassification.ProfileId='siemens-quality-daily-v1'}
+            5 {$row.DocumentClassification.ProfileId='siemens-iec-additional-v1'}
+        }
+        Write-TestAnalysisCache $fx $record $row
+    }
+    $protected=@{};foreach($n in @(0,3,4,5)){$protected[$n]=(Get-FileHash (CachePath $fx $fx.Records[$n])).Hash}
+    $state=Join-Path $fx.Config.ArchiveRoot '.ctqa/state.json';$stateHash=(Get-FileHash $state).Hash
+    $plan=Get-QaAnalysisWorkPlan -Config $fx.Config -Records $fx.Records -UpgradeMeasurements -RefreshUnsupported
+    Check ($plan.Pending -eq 2 -and $plan.MeasurementUpgradePending -eq 2 -and $plan.Errors -eq 1) 'Only older Daily and slice capability caches enter the measured upgrade queue'
+    Check ($plan.RecordIds.Count -eq 2 -and $plan.RecordIds -contains $fx.Records[1].Id -and $plan.RecordIds -contains $fx.Records[2].Id) 'Basic/additional HU, reference material and read failures remain outside the capability queue'
+    Check (Test-QaAnalysisSelectedRefresh $fx.Config $fx.Records[1]) 'Opening an older Daily measurement cache offers the targeted capability refresh'
+    Check (-not (Test-QaAnalysisSelectedRefresh $fx.Config $fx.Records[3])) 'An old reference document cannot offer a measurement refresh'
+    foreach($n in @(1,2)){
+        $record=$fx.Records[$n];$read=$control.Reads[$record.Id];$parts=New-Object 'Collections.Generic.List[string]'
+        foreach($page in 1..3){$body=switch($page){1{"SOMATOM Definition Edge`nQuality Daily"}2{"Table of contents`n1. Quality Daily Noise`n2. Quality Daily Homogeneity"}3{"1. Quality Daily Noise`nOK`n2. Quality Daily Homogeneity`nOK"}};[void]$parts.Add(("--- Page $page ---`n"+$body+"`n"+$record.ReportDate+' 06:00:00 Page: '+$page+' / 3'))}
+        $read.Text=$parts -join "`n";$read.Pages=3;$read.ReadPages=3
+    }
+    $first=Invoke-QaAnalysis $fx.Config -Limit 1 -UpgradeMeasurements -RefreshUnsupported
+    Check ($first.Analyzed -eq 1 -and $first.Pending -eq 1) 'One bounded attempt leaves exactly one eligible capability upgrade'
+    $second=Invoke-QaAnalysis $fx.Config -UpgradeMeasurements -RefreshUnsupported
+    $warm=Invoke-QaAnalysis $fx.Config -UpgradeMeasurements -RefreshUnsupported
+    Check ($second.Analyzed -eq 1 -and $warm.Analyzed -eq 0 -and $warm.Cached -eq 6 -and $control.Requests.Count -eq 8) 'Even an unsupported table saves the current attempt revision and never loops'
+    foreach($n in @(1,2)){$saved=Get-QaSavedAnalysis $fx.Config $fx.Records[$n];Check ($saved.MeasurementsDocument.MeasurementVersion -eq 1 -and $saved.MeasurementsDocument.MeasurementSupportRevision -eq 2) 'A capability upgrade preserves measurement schema1 and records supportrevision2';Check ($saved.DocumentClassification.ProfileId -ceq 'siemens-quality-daily-v1' -and $saved.MeasurementsDocument.ReasonCode -ceq 'NoSupportedTables') 'A recognized Daily body without usable tables stays cached after its current bounded attempt'}
+    foreach($n in @(0,3,4,5)){Check ((Get-FileHash (CachePath $fx $fx.Records[$n])).Hash -ceq $protected[$n]) 'Unselected warm/protected cache bytes are unchanged'}
+    Check ((Get-FileHash $state).Hash -ceq $stateHash) 'Measurement capability updates leave archive review state byte-for-byte unchanged'
+    foreach($record in $fx.Records){Check ((Get-FileHash $record.DestinationPath).Hash -ceq $record.Hash) 'All selected and untouched source PDF bytes remain unchanged'}
+}
+Scenario 'Equal-content destinations retain independent one-time measurement capability revisions' {
+    $fx=Fixture 'MeasurementCapabilityAliases' 3 -SameBytes;$control=Install-ReadMock $fx;[void](Invoke-QaAnalysis $fx.Config)
+    $combined=[IO.File]::ReadAllText((CachePath $fx $fx.Records[0]))|ConvertFrom-Json
+    foreach($entry in @($combined)+@($combined.OtherRecords)){$entry.DocumentClassification.ProfileId='siemens-quality-daily-v1';$entry.DocumentClassification.Status='Recognized';$entry.MeasurementsDocument|Add-Member MeasurementSupportRevision 0 -Force}
+    Write-TestAnalysisCache $fx $fx.Records[0] $combined
+    $plan=Get-QaAnalysisWorkPlan -Config $fx.Config -Records $fx.Records -UpgradeMeasurements
+    Check ($plan.MeasurementUpgradePending -eq 3 -and $plan.RecordIds.Count -eq 3) 'Capability revision belongs to each independently verified destination'
+    $first=Invoke-QaAnalysis $fx.Config -Limit 1 -UpgradeMeasurements;$remaining=Get-QaAnalysisWorkPlan -Config $fx.Config -Records $fx.Records -UpgradeMeasurements
+    Check ($first.Analyzed -eq 1 -and $remaining.MeasurementUpgradePending -eq 2) 'A single alias upgrade cannot mark the other two destinations as attempted'
+    $second=Invoke-QaAnalysis $fx.Config -UpgradeMeasurements;$warm=Invoke-QaAnalysis $fx.Config -UpgradeMeasurements
+    Check ($second.Analyzed -eq 2 -and $warm.Analyzed -eq 0 -and $warm.Cached -eq 3 -and $control.Requests.Count -eq 6) 'Every eligible destination upgrades once then remains warm'
+}
+
+Scenario 'Trusted supplied records avoid dashboard reconstruction without weakening exact selection or provenance' {
+    $fx=Fixture 'SuppliedRecords' 2;$control=Install-ReadMock $fx;$module=Get-Module Insights
+    try{
+        & $module {function script:Get-QaDashboard {param($Config) throw 'A supplied-record step unexpectedly rebuilt the dashboard.'}}
+        $first=Invoke-QaAnalysis -Config $fx.Config -Records $fx.Records -RecordIds @($fx.Records[0].Id) -Limit 1
+        $warm=Invoke-QaAnalysis -Config $fx.Config -Records $fx.Records -RecordIds @($fx.Records[0].Id)
+        $empty=Invoke-QaAnalysis -Config $fx.Config -Records @()
+        $rejected=$false;try{[void](Invoke-QaAnalysis -Config $fx.Config -Records @($fx.Records[0],$fx.Records[0]) -RecordIds @($fx.Records[0].Id))}catch{$rejected=$true}
+    }finally{& $module {Remove-Item Function:Get-QaDashboard -ErrorAction SilentlyContinue}}
+    Check ($first.Analyzed -eq 1 -and $first.AnalyzedIds[0] -ceq $fx.Records[0].Id -and $control.Requests.Count -eq 1) 'The supplied step reads exactly its selected identity without rebuilding a dashboard'
+    Check ($warm.Analyzed -eq 0 -and $warm.Cached -eq 1 -and $empty.Analyzed -eq 0 -and $empty.Pending -eq 0) 'Warm and empty supplied-record steps parse no PDF'
+    Check $rejected 'Ambiguous supplied identities are still rejected before the batch starts'
+    $saved=Get-QaSavedAnalysis $fx.Config $fx.Records[0]
+    Check ($saved.VerifiedHash -ceq $fx.Records[0].Hash -and $saved.VerifiedLength -eq $fx.Records[0].Length -and $saved.VerifiedWriteTicks -eq (Get-Item $fx.Records[0].DestinationPath).LastWriteTimeUtc.Ticks) 'Successful supplied steps retain the exact byte and metadata provenance contract'
 }
 
 $failed=@($script:Results|Where-Object Result -eq 'FAIL').Count

@@ -1,0 +1,215 @@
+﻿{
+    "Product":  "CT QA Manager Pro",
+    "Version":  "5.3.0",
+    "Feature":  "Reader comparison",
+    "Runtime":  "5.1.26100.33648",
+    "NativeWindowsActuallyRun":  true,
+    "SyntheticOnly":  true,
+    "RepetitionsPerProfilePerReader":  3,
+    "Profiles":  [
+                     "Basic:9pages",
+                     "Extended:6pages"
+                 ],
+    "ColdReadSamples":  12,
+    "Stats":  [
+                  {
+                      "Engine":  "Standard",
+                      "ReaderVersion":  "PdfPig 0.1.16",
+                      "WholeIsolatedReadMilliseconds":  {
+                                                            "Samples":  6,
+                                                            "Minimum":  1073.671,
+                                                            "Median":  1135.01,
+                                                            "Maximum":  1202.508
+                                                        },
+                      "ReaderMilliseconds":  {
+                                                 "Samples":  6,
+                                                 "Minimum":  426.546,
+                                                 "Median":  484.815,
+                                                 "Maximum":  511.414
+                                             }
+                  },
+                  {
+                      "Engine":  "Python",
+                      "ReaderVersion":  "Python 3.14.10 / pypdf 7.0.1",
+                      "WholeIsolatedReadMilliseconds":  {
+                                                            "Samples":  6,
+                                                            "Minimum":  1584.48,
+                                                            "Median":  1614.14,
+                                                            "Maximum":  1714.327
+                                                        },
+                      "ReaderMilliseconds":  {
+                                                 "Samples":  6,
+                                                 "Minimum":  926.022,
+                                                 "Median":  941.164,
+                                                 "Maximum":  952.14
+                                             }
+                  }
+              ],
+    "Samples":  [
+                    {
+                        "Engine":  "Standard",
+                        "ReaderVersion":  "PdfPig 0.1.16",
+                        "Profile":  "Basic",
+                        "Pages":  9,
+                        "Iteration":  1,
+                        "WholeIsolatedReadMilliseconds":  1182.906,
+                        "ReaderMilliseconds":  511.414,
+                        "CompleteRead":  true,
+                        "ClassificationAgreed":  true
+                    },
+                    {
+                        "Engine":  "Python",
+                        "ReaderVersion":  "Python 3.14.10 / pypdf 7.0.1",
+                        "Profile":  "Basic",
+                        "Pages":  9,
+                        "Iteration":  1,
+                        "WholeIsolatedReadMilliseconds":  1656.205,
+                        "ReaderMilliseconds":  942.629,
+                        "CompleteRead":  true,
+                        "ClassificationAgreed":  true
+                    },
+                    {
+                        "Engine":  "Standard",
+                        "ReaderVersion":  "PdfPig 0.1.16",
+                        "Profile":  "Extended",
+                        "Pages":  6,
+                        "Iteration":  1,
+                        "WholeIsolatedReadMilliseconds":  1202.508,
+                        "ReaderMilliseconds":  495.133,
+                        "CompleteRead":  true,
+                        "ClassificationAgreed":  true
+                    },
+                    {
+                        "Engine":  "Python",
+                        "ReaderVersion":  "Python 3.14.10 / pypdf 7.0.1",
+                        "Profile":  "Extended",
+                        "Pages":  6,
+                        "Iteration":  1,
+                        "WholeIsolatedReadMilliseconds":  1714.327,
+                        "ReaderMilliseconds":  941.074,
+                        "CompleteRead":  true,
+                        "ClassificationAgreed":  true
+                    },
+                    {
+                        "Engine":  "Python",
+                        "ReaderVersion":  "Python 3.14.10 / pypdf 7.0.1",
+                        "Profile":  "Basic",
+                        "Pages":  9,
+                        "Iteration":  2,
+                        "WholeIsolatedReadMilliseconds":  1619.536,
+                        "ReaderMilliseconds":  928.884,
+                        "CompleteRead":  true,
+                        "ClassificationAgreed":  true
+                    },
+                    {
+                        "Engine":  "Standard",
+                        "ReaderVersion":  "PdfPig 0.1.16",
+                        "Profile":  "Basic",
+                        "Pages":  9,
+                        "Iteration":  2,
+                        "WholeIsolatedReadMilliseconds":  1131.989,
+                        "ReaderMilliseconds":  487.754,
+                        "CompleteRead":  true,
+                        "ClassificationAgreed":  true
+                    },
+                    {
+                        "Engine":  "Python",
+                        "ReaderVersion":  "Python 3.14.10 / pypdf 7.0.1",
+                        "Profile":  "Extended",
+                        "Pages":  6,
+                        "Iteration":  2,
+                        "WholeIsolatedReadMilliseconds":  1584.48,
+                        "ReaderMilliseconds":  941.253,
+                        "CompleteRead":  true,
+                        "ClassificationAgreed":  true
+                    },
+                    {
+                        "Engine":  "Standard",
+                        "ReaderVersion":  "PdfPig 0.1.16",
+                        "Profile":  "Extended",
+                        "Pages":  6,
+                        "Iteration":  2,
+                        "WholeIsolatedReadMilliseconds":  1133.782,
+                        "ReaderMilliseconds":  481.876,
+                        "CompleteRead":  true,
+                        "ClassificationAgreed":  true
+                    },
+                    {
+                        "Engine":  "Standard",
+                        "ReaderVersion":  "PdfPig 0.1.16",
+                        "Profile":  "Basic",
+                        "Pages":  9,
+                        "Iteration":  3,
+                        "WholeIsolatedReadMilliseconds":  1073.671,
+                        "ReaderMilliseconds":  426.546,
+                        "CompleteRead":  true,
+                        "ClassificationAgreed":  true
+                    },
+                    {
+                        "Engine":  "Python",
+                        "ReaderVersion":  "Python 3.14.10 / pypdf 7.0.1",
+                        "Profile":  "Basic",
+                        "Pages":  9,
+                        "Iteration":  3,
+                        "WholeIsolatedReadMilliseconds":  1608.743,
+                        "ReaderMilliseconds":  952.14,
+                        "CompleteRead":  true,
+                        "ClassificationAgreed":  true
+                    },
+                    {
+                        "Engine":  "Standard",
+                        "ReaderVersion":  "PdfPig 0.1.16",
+                        "Profile":  "Extended",
+                        "Pages":  6,
+                        "Iteration":  3,
+                        "WholeIsolatedReadMilliseconds":  1136.239,
+                        "ReaderMilliseconds":  480.897,
+                        "CompleteRead":  true,
+                        "ClassificationAgreed":  true
+                    },
+                    {
+                        "Engine":  "Python",
+                        "ReaderVersion":  "Python 3.14.10 / pypdf 7.0.1",
+                        "Profile":  "Extended",
+                        "Pages":  6,
+                        "Iteration":  3,
+                        "WholeIsolatedReadMilliseconds":  1588.492,
+                        "ReaderMilliseconds":  926.022,
+                        "CompleteRead":  true,
+                        "ClassificationAgreed":  true
+                    }
+                ],
+    "StandardMedianDividedByPythonMedian":  0.703,
+    "FasterReaderForThisFixture":  "Standard",
+    "CachedAnalysis":  {
+                           "ColdAnalyzed":  2,
+                           "ColdMilliseconds":  2550.358,
+                           "WarmAnalyzed":  0,
+                           "WarmCached":  2,
+                           "WarmMilliseconds":  94.46,
+                           "WarmCacheWrites":  0
+                       },
+    "MemoryMeasured":  false,
+    "PerformanceThresholdAsserted":  false,
+    "Tests":  3,
+    "Assertions":  80,
+    "Failed":  0,
+    "Results":  [
+                    {
+                        "Name":  "Cold isolated readers receive identical PDFs and produce the same complete profile/date evidence",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "A warm analysis pass reuses both saved results without reading either PDF again",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Reader comparison and analysis leave source PDFs and core clinical archive state unchanged",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    }
+                ],
+    "Scope":  "Actual cold ReadPdf PowerShell workers with the same generated local PDF bytes, complete body profiles, footer dates and component observations. Whole-wall timing includes worker startup, validation, transport and reader work. Lower-level timing is reported separately. Alternate engine ordering mitigates consistent first-position bias. No artificial speed threshold is asserted; these local generated files do not establish hospital network speed or performance for every real report. Warm reuse is checked by actual parse and cache-write counts; no hospital PDF or network is used."
+}

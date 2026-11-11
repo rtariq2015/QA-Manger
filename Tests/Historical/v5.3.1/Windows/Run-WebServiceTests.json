@@ -1,0 +1,155 @@
+﻿{
+    "Version":  "5.3.1",
+    "Runtime":  "5.1.26100.33648",
+    "Tests":  29,
+    "Assertions":  129,
+    "Failed":  0,
+    "Results":  [
+                    {
+                        "Name":  "Approve is one action without reviewer fields and leaves core clinical evidence unchanged",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Disapprove retains the PDF under Other and stays resolved across restart and unchanged import",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Undo after reload restores pending while preserving a separate append-only action history",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Stale actions and changed PDFs cannot overwrite decisions",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Classification export includes all chosen PDFs, readable folders, CSV and HTML without inventing clinical approval",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "An existing unowned readable PDF is never adopted, overwritten or retired",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Malformed organization history is preserved rather than reset",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Tampered organization types cannot become filesystem or ZIP paths",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Only selected report IDs resolve to verified local PDFs",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "The JSON worker supports stdin and stdout without logging request content",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Scanner settings retain historical checklist rules and existing record ownership",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Existing formal clinical checklist evidence remains in exported inventories",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "An inaccessible fresh workspace is not marked as successfully set up",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "The web worker records scrubbed action outcomes without retaining request secrets",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Manual scanner folder and sign-in edits survive Save and connect plus later startup",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "The web adapter returns an actual native Windows PDF page",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Standard Daily and explicit Monthly document names are organized automatically without human approval",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Saved user decisions and valid legacy reviews take precedence over automatic grouping",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Readable-library refresh batches its ledger and reuses only verified metadata matches",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Full verification catches edited bytes even when length and write time were restored",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "A cancelled library batch commits completed ownership and resumes without duplicate copies",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Pre-upgrade approvals retain their decisions and Undo restores their original pending state",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Concurrent edits cannot seed a verified source or readable-file metadata cache",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Appearance persists across fresh snapshots without changing report evidence",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Explicit empty or conflicting reading groups cannot expand into an archive-wide read",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "PDF reading chunk limits accept only bounded integers",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Trend queries read cached metadata without creating PDF readings or rewriting the archive",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Diagnostic downloads remain available when a verified cache contains malformed numeric fields",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Diagnostic exports report unreadable organization history without treating saved decisions as absent",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    }
+                ],
+    "Scope":  "Synthetic PDFs and local scanner folders; independent file organization, no fabricated clinical review, stale/changed-file rejection, append-only Undo, readable ownership, exports and stdin/stdout JSON worker."
+}

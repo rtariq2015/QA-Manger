@@ -37,7 +37,7 @@ try{
         $watchCode=@'
 param($Progress,$Path,$Cancellation)
 $ErrorActionPreference='Stop'
-$stages=@('Preparing','Connecting','Scanning','Copying','Library','Analyzing','Exporting','BackingUp','Restoring','Verifying','Finishing')
+$stages=@('Preparing','Connecting','Scanning','Copying','Library','Analyzing','Exporting','BackingUp','Restoring','Verifying','Finishing','Planning','Snapshot','Parsing','Cache')
 function Get-Count([string]$Name){$n=0L;if([long]::TryParse([string]$Progress[$Name],[ref]$n) -and $n -ge 0 -and $n -le 100000000){return $n};return 0L}
 try{
     while($true){

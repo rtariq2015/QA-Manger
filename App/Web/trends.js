@@ -2,7 +2,10 @@
 (() => {
   const NS = 'http://www.w3.org/2000/svg';
   const MAX_POINTS = 1000;
-  const METRICS = {WaterCTNumber:'Water CT number', ImageNoise:'Image noise'};
+  const METRICS = {WaterCTNumber:{label:'Water CT number',unit:'HU',axisLabel:'Hounsfield units (HU)'},ImageNoise:{label:'Image noise',unit:'HU',axisLabel:'Hounsfield units (HU)'},SliceThickness:{label:'Slice thickness',unit:'mm',axisLabel:'Millimetres (mm)'}};
+  const metricDefinition=()=>METRICS[state.metric]||METRICS.WaterCTNumber;
+  const metricLabel=()=>metricDefinition().label;
+  const metricUnit=()=>metricDefinition().unit;
   const PERIODS = new Set(['30','90','365','all']);
   const state = {ready:false, api:null, openRecord:null, readPending:null, isBusy:()=>false, isBackgroundReading:()=>false, snapshot:null, scanners:[], scanner:'', metric:'WaterCTNumber', series:'', seriesLabel:'', period:'90', data:null, dataKey:'', dirty:true, loading:false, controller:null, generation:0, requestKey:'', reading:false, error:'', notice:''};
   const $ = id => document.getElementById(id);
@@ -97,11 +100,11 @@
     const points=[];
     if(selectedSeries)for(const item of list(raw.points)) {
       const date=text(item.date).slice(0,10), value=number(item.value),recordId=text(item.recordId),unit=text(item.unit);
-      if(!localDate(date)||value===null||!recordId||(unit&&unit!=='HU')){omitted++;continue;}
+      if(!localDate(date)||value===null||!recordId||unit!==metricUnit()){omitted++;continue;}
       if((dates.start&&date<dates.start)||(dates.end&&date>dates.end)){omitted++;continue;}
       let lower=number(item.lower),upper=number(item.upper);
       if(lower!==null&&upper!==null&&lower>upper){lower=null;upper=null;invalidBounds++;}
-      points.push({recordId,date,time:text(item.time),value,unit:'HU',lower,upper,page:Number.isInteger(item.page)&&item.page>0?item.page:null,reviewWarning:item.reviewWarning===true,outsidePrintedRange:item.outsidePrintedRange===true||(lower!==null&&value<lower)||(upper!==null&&value>upper),warnings:list(item.warnings).map(text)});
+      points.push({recordId,date,time:text(item.time),value,unit:metricUnit(),lower,upper,page:Number.isInteger(item.page)&&item.page>0?item.page:null,reviewWarning:item.reviewWarning===true,outsidePrintedRange:item.outsidePrintedRange===true||(lower!==null&&value<lower)||(upper!==null&&value>upper),warnings:list(item.warnings).map(text)});
     }
     points.sort((a,b)=>a.date.localeCompare(b.date)||a.time.localeCompare(b.time)||a.recordId.localeCompare(b.recordId));
     const pendingIds=[...new Set(list(raw.pendingIds).map(text).filter(Boolean))].slice(0,100);
@@ -119,17 +122,17 @@
     const coverage=state.data?.coverage;
     if(!coverage){setText('trend-coverage',state.loading?'Checking saved measurement coverage…':'Measurements appear after supported PDFs have been read.');return;}
     const details=[`${count(coverage.readReports)} of ${count(coverage.savedReports)} saved PDFs read`,`${count(coverage.pendingReports)} need measurement reading`];
-    for(const [key,label] of [['unsupportedReports','without usable readings for this measurement'],['failedReports','could not be read'],['conflicts','with conflicting evidence'],['unknownDates','without a usable printed date']])if(Number(coverage[key])>0)details.push(`${count(coverage[key])} ${label}`);
+    for(const [key,label] of [['unsupportedReports','without usable readings for this measurement'],['failedReports','could not be read'],['conflicts','with conflicting evidence'],['unknownDates','without a usable printed date'],['referenceReports','reference documents excluded from current readings']])if(Number(coverage[key])>0)details.push(`${count(coverage[key])} ${label}`);
     setText('trend-coverage',details.join(' · ')+'.');
   }
   function boundsLabel(point) {
-    if(point.lower!==null&&point.upper!==null)return `${format(point.lower)} to ${format(point.upper)} HU`;
-    if(point.lower!==null)return `Lower: ${format(point.lower)} HU`;
-    if(point.upper!==null)return `Upper: ${format(point.upper)} HU`;
+    if(point.lower!==null&&point.upper!==null)return `${format(point.lower)} to ${format(point.upper)} ${point.unit||metricUnit()}`;
+    if(point.lower!==null)return `Lower: ${format(point.lower)} ${point.unit||metricUnit()}`;
+    if(point.upper!==null)return `Upper: ${format(point.upper)} ${point.unit||metricUnit()}`;
     return 'Not printed';
   }
   function pointLabel(point,series) {
-    return `${dateLabel(point.date)}${point.time?' at '+point.time:''}: ${format(point.value)} HU. Printed limits: ${boundsLabel(point)}. ${contextLabel(series)}.${point.outsidePrintedRange?' Outside printed range.':''}${point.reviewWarning?' Source report needs review.':''} Open source PDF${point.page?', page '+point.page:''}.`;
+    return `${dateLabel(point.date)}${point.time?' at '+point.time:''}: ${format(point.value)} ${point.unit||metricUnit()}. Printed limits: ${boundsLabel(point)}. ${contextLabel(series)}.${point.outsidePrintedRange?' Outside printed range.':''}${point.reviewWarning?' Source report needs review.':''} Open source PDF${point.page?', page '+point.page:''}.`;
   }
   function openSource(event,point) {
     event.preventDefault();
@@ -143,7 +146,7 @@
       const row=html('tr'),date=html('td'),value=html('td'),bounds=html('td','',boundsLabel(point)),context=html('td','',contextLabel(series)),source=html('td');
       const dateText=html('time','',dateLabel(point.date));dateText.dateTime=point.date;date.append(dateText);
       if(point.time)date.append(html('div','muted',point.time));
-      value.append(html('span','',`${format(point.value)} HU`));
+      value.append(html('span','',`${format(point.value)} ${point.unit||metricUnit()}`));
       if(point.outsidePrintedRange){const warning=html('div','', 'Outside printed range');warning.style.color='var(--amber)';value.append(warning);}
       if(point.reviewWarning)context.append(html('div','muted','Review source report'));
       const link=html('a','text-button',`Open PDF${point.page?' · p. '+point.page:''}`);link.href='#review';link.setAttribute('aria-label',`Open source PDF for ${dateLabel(point.date)}${point.page?', page '+point.page:''}`);link.addEventListener('click',event=>openSource(event,point));source.append(link);
@@ -161,11 +164,11 @@
   function renderChart(points,series) {
     const container=$('trend-chart');if(!container)return;
     if(!points.length){emptyChart(state.loading?'Loading measurements…':state.error?'Measurements could not load':'No readings in this period',state.error||state.data?.message||'Choose another period or read supported saved PDFs. Different modes, systems and slices remain separate.',Boolean(state.error));return;}
-    container.replaceChildren();container.style.display='block';container.setAttribute('role','group');container.setAttribute('aria-label',`${METRICS[state.metric]} readings and source reports`);
+    container.replaceChildren();container.style.display='block';container.setAttribute('role','group');container.setAttribute('aria-label',`${metricLabel()} readings and source reports`);
     const width=960,height=410,left=75,right=790,top=62,bottom=330;
     const chart=svg('svg',{viewBox:`0 0 ${width} ${height}`,role:'group','aria-labelledby':'qa-trend-svg-title qa-trend-svg-description'});
-    chart.append(svg('title',{id:'qa-trend-svg-title'},`${METRICS[state.metric]} in HU — ${contextLabel(series)}`));
-    chart.append(svg('desc',{id:'qa-trend-svg-description'},`${points.length} dated printed readings. Horizontal axis: printed report date. Vertical axis: Hounsfield units (HU). Dashed lines and shading show reference limits printed in each source PDF where available. Amber diamonds are outside the printed range. These descriptions do not create clinical approval. Focus a point for its value and limits, then activate it to open the source report. The table below contains the same readings.`));
+    chart.append(svg('title',{id:'qa-trend-svg-title'},`${metricLabel()} in ${metricUnit()} — ${contextLabel(series)}`));
+    chart.append(svg('desc',{id:'qa-trend-svg-description'},`${points.length} dated printed readings. Horizontal axis: printed report date. Vertical axis: ${metricDefinition().axisLabel}. Dashed lines and shading show reference limits printed in each source PDF where available. Amber diamonds are outside the printed range. These descriptions do not create clinical approval. Focus a point for its value and limits, then activate it to open the source report. The table below contains the same readings.`));
     const allValues=points.flatMap(point=>[point.value,...(point.lower===null?[]:[point.lower]),...(point.upper===null?[]:[point.upper])]);
     let min=Math.min(...allValues),max=Math.max(...allValues);const padding=Math.max((max-min)*.12,(max===min?Math.max(Math.abs(min)*.1,.5):.05));min-=padding;max+=padding;
     const first=localDate(points[0].date).getTime(),last=localDate(points[points.length-1].date).getTime();
@@ -177,7 +180,7 @@
       chart.append(svg('text',{x:left-12,y:position+4,'text-anchor':'end',class:'chart-label'},new Intl.NumberFormat(undefined,{maximumFractionDigits:3}).format(value)));
     }
     chart.append(svg('line',{x1:left,y1:top,x2:left,y2:bottom,class:'chart-axis'}),svg('line',{x1:left,y1:bottom,x2:right,y2:bottom,class:'chart-axis'}));
-    chart.append(svg('text',{x:20,y:(top+bottom)/2,transform:`rotate(-90 20 ${(top+bottom)/2})`,'text-anchor':'middle'},'Hounsfield units (HU)'));
+    chart.append(svg('text',{x:20,y:(top+bottom)/2,transform:`rotate(-90 20 ${(top+bottom)/2})`,'text-anchor':'middle'},metricDefinition().axisLabel));
     const dates=[...new Set(points.map(point=>point.date))],tickIndexes=[...new Set([0,Math.floor((dates.length-1)/2),dates.length-1])];
     for(const index of tickIndexes){const date=dates[index],position=x({date});chart.append(svg('line',{x1:position,y1:bottom,x2:position,y2:bottom+5,class:'chart-axis'}),svg('text',{x:position,y:bottom+22,'text-anchor':'middle',class:'chart-label'},dateLabel(date,first===last||new Date(first).getFullYear()!==new Date(last).getFullYear())));}
     chart.append(svg('text',{x:(left+right)/2,y:bottom+49,'text-anchor':'middle',class:'chart-label'},'Printed report date'));
@@ -190,7 +193,7 @@
       const flush=()=>{if(!segment.length)return;const vertices=segment.map(point=>`${x(point)},${y(point[bound])}`).join(' ');if(segment.length===1)chart.append(svg('line',{x1:x(segment[0])-7,y1:y(segment[0][bound]),x2:x(segment[0])+7,y2:y(segment[0][bound]),class:'limit-line'}));else chart.append(svg('polyline',{points:vertices,class:'limit-line'}));segment=[];};
       for(const point of points){if(point[bound]!==null)segment.push(point);else flush();}flush();
       const recent=points.slice().reverse().find(point=>point[bound]!==null);
-      if(recent){const other=bound==='lower'?recent.upper:recent.lower,offset=other===recent[bound]?(bound==='lower'?15:-6):4;chart.append(svg('text',{x:right+12,y:y(recent[bound])+offset,class:'chart-label'},`${label}: ${format(recent[bound])} HU`));}
+      if(recent){const other=bound==='lower'?recent.upper:recent.lower,offset=other===recent[bound]?(bound==='lower'?15:-6):4;chart.append(svg('text',{x:right+12,y:y(recent[bound])+offset,class:'chart-label'},`${label}: ${format(recent[bound])} ${metricUnit()}`));}
     }
     if(points.length>1)chart.append(svg('polyline',{points:points.map(point=>`${x(point)},${y(point.value)}`).join(' '),class:'data-line'}));
     const tooltip=html('p','small','Focus or point to a reading to see its printed value and source PDF.');tooltip.id='trend-tooltip';tooltip.style.minHeight='3.5em';tooltip.style.color='var(--ink)';tooltip.style.lineHeight='1.8';tooltip.setAttribute('aria-live','polite');tooltip.setAttribute('aria-atomic','true');
@@ -227,14 +230,14 @@
     if(state.series&&!seriesOptions.some(item=>item.value===state.series))seriesOptions.unshift({value:state.series,label:`${state.seriesLabel||'Selected context'} · ${state.loading?'loading…':'no readings in this period'}`});
     else if(!state.series&&seriesOptions.length)seriesOptions.unshift({value:'',label:'Choose a series'});
     options($('trend-series'),seriesOptions,state.series,state.loading?'Loading series…':'No measured series');
-    setText('trend-chart-title',`${METRICS[state.metric]} · printed values & reference limits`);
+    setText('trend-chart-title',`${metricLabel()} · printed values & reference limits`);
     const latest=allPoints[allPoints.length-1],first=allPoints[0];
-    setText('trend-latest',latest?`${format(latest.value)} HU`:'—');
+    setText('trend-latest',latest?`${format(latest.value)} ${metricUnit()}`:'—');
     setText('trend-latest-detail',latest?`${dateLabel(latest.date)}${latest.outsidePrintedRange?' · Outside printed range':''}`:'No dated printed value in this period');
     const summary=data?.summary||{},fullSummary=summary.scope==='selectedPeriod'&&number(summary.first)!==null&&number(summary.latest)!==null&&!data.omitted;
     const complete=Boolean(first&&latest&&!data?.dataLimitReached&&(!data?.pointLimitReached||fullSummary));
     const change=complete?(fullSummary?summary.latest-summary.first:latest.value-first.value):null;
-    setText('trend-change',change===null?'—':`${change>0?'+':''}${format(change)} HU`);
+    setText('trend-change',change===null?'—':`${change>0?'+':''}${format(change)} ${metricUnit()}`);
     setText('trend-change-detail',!complete&&(data?.pointLimitReached||data?.dataLimitReached)?'Narrow the period to compare its first and latest readings.':first&&latest?`${dateLabel(fullSummary?summary.firstDate:first.date)} to ${dateLabel(fullSummary?summary.latestDate:latest.date)} · latest minus first`:'Latest minus first value in the selected period');
     setText('trend-count',points.length.toLocaleString());
     renderCoverage();renderChart(points,series);renderTable(points,series);updateReadButton();

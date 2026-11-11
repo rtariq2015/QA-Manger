@@ -210,16 +210,26 @@ function Test-QaChildPath { param([string]$Path,[string]$Parent)
     $prefix=[IO.Path]::GetFullPath($Parent).TrimEnd('\','/')+[IO.Path]::DirectorySeparatorChar
     return $full.StartsWith($prefix,[StringComparison]::OrdinalIgnoreCase)
 }
-function Assert-QaNoReparse { param([string]$Path,[string]$StopAt='')
-    $current=[IO.Path]::GetFullPath($Path)
+function Assert-QaNoReparse { param([string]$Path,[string]$StopAt='',$DirectoryCache=$null)
+    $current=[IO.Path]::GetFullPath($Path);$stop=if($StopAt){[IO.Path]::GetFullPath($StopAt)}else{''};$leaf=$true
+    $checked=$null;if($null -ne $DirectoryCache){$checked=[Collections.Generic.List[string]]::new()}
     while ($current) {
+        $key=$current+'|'+$stop
+        # Only an existing ancestor directory validated by this same state read
+        # may be reused. The requested leaf is always checked afresh, even when
+        # it is itself a directory. Missing paths never enter the cache.
+        if(-not $leaf -and $null -ne $DirectoryCache -and $DirectoryCache.Contains($key)){break}
         if ([IO.Directory]::Exists($current) -or [IO.File]::Exists($current)) {
-            if (([IO.File]::GetAttributes($current) -band [IO.FileAttributes]::ReparsePoint) -ne 0) { throw 'A symbolic link or junction was found in an archive path. Choose a direct folder.' }
+            $attributes=[IO.File]::GetAttributes($current)
+            if (($attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0) { throw 'A symbolic link or junction was found in an archive path. Choose a direct folder.' }
+            if(-not $leaf -and $null -ne $DirectoryCache -and ($attributes -band [IO.FileAttributes]::Directory) -ne 0){[void]$checked.Add($key)}
         }
-        if ($StopAt -and $current.Equals([IO.Path]::GetFullPath($StopAt),[StringComparison]::OrdinalIgnoreCase)) { break }
+        if ($stop -and $current.Equals($stop,[StringComparison]::OrdinalIgnoreCase)) { break }
         $parent=[IO.Path]::GetDirectoryName($current)
-        if ($parent -eq $current) { break }; $current=$parent
+        if ($parent -eq $current) { break }; $current=$parent;$leaf=$false
     }
+    # Populate only after the complete ancestor chain has passed validation.
+    if($null -ne $DirectoryCache){foreach($key in $checked){[void]$DirectoryCache.Add($key)}}
 }
 function New-QaState { return [pscustomobject]@{Version=4;SetupComplete=$false;UpdatedUtc='';Records=@();Scanners=@();Issues=@();Reviews=@()} }
 function Read-QaState { param($Paths)
@@ -227,13 +237,15 @@ function Read-QaState { param($Paths)
     try { $state=[IO.File]::ReadAllText($Paths.State) | ConvertFrom-Json }
     catch { throw 'The archive state could not be read. It has not been replaced. Keep the archive and contact IT; a previous state is in .ctqa/state.json.bak.' }
     if ([int]$state.Version -ne 4) { throw 'This archive uses an unsupported state version. No archive data was changed.' }
+    $pathComparer=if([Environment]::OSVersion.Platform -eq [PlatformID]::Win32NT){[StringComparer]::OrdinalIgnoreCase}else{[StringComparer]::Ordinal}
+    $directoryCache=New-Object 'Collections.Generic.HashSet[string]' $pathComparer
     foreach($record in @($state.Records)) {
         if ([string]$record.Hash -notmatch '^[0-9A-Fa-f]{64}$' -or [string]$record.Id -notmatch '^[0-9A-Fa-f]{64}$' -or -not $record.SourcePath -or [string]$record.Scanner -notmatch '^[A-Za-z][A-Za-z0-9_]{0,31}$' -or @($Paths.ScannerIds) -cnotcontains [string]$record.Scanner -or $record.Category -notin $script:QaCategories) { throw 'The archive state contains an incomplete report record; no updates were made.' }
         $relative=[string]$record.RelativePath
         if (-not $relative -or [IO.Path]::IsPathRooted($relative)) { throw 'An archive record has an unsafe relative path.' }
         $dst=Join-Path $Paths.Reports $relative
         if (-not (Test-QaChildPath $dst $Paths.Reports)) { throw 'An archive record points outside Reports; no updates were made.' }
-        Assert-QaNoReparse $dst $Paths.Root
+        Assert-QaNoReparse $dst $Paths.Root -DirectoryCache $directoryCache
         Set-QaValue $record 'DestinationPath' $dst
         Set-QaValue $record 'ConfirmedComponents' ([object[]]@(Get-QaComponentLabels (Get-QaValue $record 'ConfirmedComponents' $null) 'Reviewed report items'))
     }

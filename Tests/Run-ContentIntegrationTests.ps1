@@ -36,7 +36,9 @@ function Preserve {
     Check ((Get-FileHash (Join-Path $baseline.ArchiveRoot '.ctqa/state.json')).Hash -ceq $baseline.StateSHA256) 'Derived labels, dates and printed outcomes leave the entire clinical archive state byte-for-byte unchanged'
     foreach($original in $baseline.Records){Check ((Get-FileHash $original.source).Hash -ceq $original.hash) 'The synthetic scanner original remains unchanged';Check ((Get-FileHash $original.destination).Hash -ceq $original.hash) 'The original archived PDF remains unchanged'}
 }
-Scenario 'Read one PDF extracts real body headings, footer dates and raw OK evidence while mappings default to Ask' {
+[void](Map-Profiles 'Ask' 'Ask')
+[void](Request @{action='ScannerSettings';scanner='CT_Flash';contentProfiles=@([pscustomobject]@{profileId='siemens-iec-basic-v1';category='Ask'},[pscustomobject]@{profileId='siemens-iec-extended-v1';category='Ask'})})
+Scenario 'Explicit Ask keeps real body readings available while manual filing is requested' {
     $before=@((Snapshot).records|Where-Object{$_.content.status -eq 'NotRead'}).Count;$beforeRead=Record 'basic'
     $result=Read-One 'basic';$row=Record 'basic'
     Check ($result.result.Analyzed -eq 1 -and @($result.result.AnalyzedIds).Count -eq 1 -and $result.result.AnalyzedIds[0] -ceq (Original 'basic').id) 'Selected analysis reads only the requested indexed PDF'
@@ -70,12 +72,12 @@ Scenario 'Conflicting or missing footer dates remain unresolved and a disagreein
 Scenario 'Approve accepts one content suggestion without teaching all files and saved decisions override later profile mappings' {
     $row=Record 'basic';$approved=Request @{action='Approve';id=$row.id;stamp=$row.stamp};$after=Record 'basic'
     Check ($after.decision -eq 'Approved' -and $after.category -eq 'Daily' -and -not $after.pending) 'Approve accepts the selected Basic document suggestion'
-    Check ((Mapping 'CT_Edge' 'siemens-iec-basic-v1') -eq '') 'Approving a file does not save a scanner mapping'
+    Check ((Mapping 'CT_Edge' 'siemens-iec-basic-v1') -eq 'Ask') 'Approving a file preserves the explicit Ask preference without teaching a scanner rule'
     Check ((Record 'filenameAgrees').pending) 'Another recognized Basic file remains pending after one-file approval'
     [void](Map-Profiles 'Other' 'Monthly');$after=Record 'basic'
     Check ($after.category -eq 'Daily' -and $after.decision -eq 'Approved') 'A saved human file decision wins over a later different profile mapping'
     Check ((Record 'extended').category -eq 'Monthly' -and -not (Record 'extended').pending) 'An explicitly saved Extended mapping organizes future matching content'
-    Check ((Record 'otherScanner').pending -and (Mapping 'CT_Flash' 'siemens-iec-basic-v1') -eq '') 'Mappings are scoped to the selected scanner'
+    Check ((Record 'otherScanner').pending -and (Mapping 'CT_Flash' 'siemens-iec-basic-v1') -eq 'Ask') 'Mappings are scoped to the selected scanner'
     $settingsPath=Join-Path $FixtureRoot 'Config/Settings.local.json';$before=(Get-FileHash $settingsPath).Hash;$rejected=$false
     try{Request @{action='ScannerSettings';scanner='CT_Edge';contentProfiles=@([pscustomobject]@{profileId='unknown-profile';category='Daily'})}|Out-Null}catch{$rejected=$true}
     Check ($rejected -and (Get-FileHash $settingsPath).Hash -ceq $before) 'Unsupported profile identifiers are rejected without overwriting saved scanner settings'
@@ -109,7 +111,7 @@ Scenario 'Warm selected reads reuse the current classifier cache and stale legac
     $row=[IO.File]::ReadAllText($cache)|ConvertFrom-Json;$row.PSObject.Properties.Remove('DocumentClassification');[IO.File]::WriteAllText($cache,($row|ConvertTo-Json -Depth 20),(New-Object Text.UTF8Encoding $true))
     $upgrade=Read-One 'extended';Check ($upgrade.result.Analyzed -eq 1 -and @($upgrade.result.AnalyzedIds).Count -eq 1) 'Only the requested stale classifier entry is reread once';Check ((Record 'extended').content.status -eq 'Recognized') 'The upgraded entry contains recognized current content evidence'
     $again=Read-One 'extended';Check ($again.result.Analyzed -eq 0) 'The upgraded cache is reused on subsequent reads'
-    [void](Map-Profiles '' '');Check ((Mapping 'CT_Edge' 'siemens-iec-extended-v1') -eq '' -and (Record 'extended').pending) 'Choosing Ask clears a previously automatic scanner mapping'
+    [void](Map-Profiles 'Ask' 'Ask');Check ((Mapping 'CT_Edge' 'siemens-iec-extended-v1') -eq 'Ask' -and (Record 'extended').pending) 'Choosing Ask clears a previously automatic scanner mapping'
     [void](Map-Profiles 'Daily' 'Monthly')
     Preserve
 }
@@ -186,7 +188,7 @@ Scenario 'Real Drive Additional and manufacturer Daily PDFs retain separate fili
         $baseline.Records+=@([pscustomobject]@{key=$spec.Key;id=$raw.Id;hash=$raw.Hash;scanner=$raw.Scanner;source=$raw.SourcePath;destination=$raw.DestinationPath;rawDate=$raw.ReportDate;rawCategory=$raw.Category;pages=$spec.Pages;profile=$spec.Key;expectedDate='2025-02-03';expectedTime=$spec.Time})
     }
     $baseline.StateSHA256=(Get-FileHash (Join-Path $baseline.ArchiveRoot '.ctqa/state.json')).Hash;$baseline.RecordCount=@($imported.Records).Count
-    [void](Request @{action='ScannerSettings';scanner=$scanner;contentProfiles=@([pscustomobject]@{profileId='siemens-iec-basic-v1';category=''},[pscustomobject]@{profileId='siemens-iec-extended-v1';category=''},[pscustomobject]@{profileId='siemens-iec-additional-v1';category=''})})
+    [void](Request @{action='ScannerSettings';scanner=$scanner;contentProfiles=@([pscustomobject]@{profileId='siemens-iec-basic-v1';category=''},[pscustomobject]@{profileId='siemens-iec-extended-v1';category=''},[pscustomobject]@{profileId='siemens-iec-additional-v1';category='Ask'})})
     [void](Read-One 'driveAdditional');[void](Read-One 'driveDaily');$additional=Record 'driveAdditional';$daily=Record 'driveDaily'
     Check ($additional.content.status -ceq 'Recognized' -and $additional.content.profileId -ceq 'siemens-iec-additional-v1' -and $additional.content.components.Count -eq 5) 'The actual reader identifies all five known numbered Drive additional test bodies'
     Check ($additional.pending -and $additional.content.mappedCategory -ceq '' -and $additional.content.suggestedCategory -ceq 'Monthly') 'Additional IEC checks remain Ask until a department filing rule is explicitly configured'
@@ -210,6 +212,77 @@ Scenario 'Real Drive Additional and manufacturer Daily PDFs retain separate fili
         foreach($entry in $pdfs){$stream=$entry.Open();$sha=[Security.Cryptography.SHA256]::Create();try{$hash=([BitConverter]::ToString($sha.ComputeHash($stream))).Replace('-','');Check ($hash -cin @((Original 'driveAdditional').hash,(Original 'driveDaily').hash)) 'Exported PDFs retain one of the two exact original byte fingerprints'}finally{$sha.Dispose();$stream.Dispose()}}
     }finally{$archive.Dispose()}
     Preserve
+}
+
+Scenario 'Automatic filing uses already-read Basic and Extended profiles without approvals or new reads' {
+    [void](Request @{action='Analyze';id=(Original 'extended').id;force=$true}) # Restore valid derived evidence after the earlier intentional corruption test.
+    [void](Map-Profiles 'Auto' 'Auto')
+    $basic=Record 'filenameAgrees';$extended=Record 'extended'
+    Check ($basic.category -ceq 'Daily' -and $basic.decision -ceq 'Automatic' -and -not $basic.pending -and $basic.inferred) 'A complete matching Basic PDF is filed as inferred Daily without a manual choice'
+    Check ($extended.category -ceq 'Monthly' -and $extended.decision -ceq 'Automatic' -and -not $extended.pending -and $extended.inferred) 'A complete Extended PDF is filed as inferred Monthly using its cached contents'
+    Check ($basic.filingState -ceq 'Filed' -and $extended.filingState -ceq 'Filed') 'Reading and filing states identify the two completed documents truthfully'
+    Check ((Record 'basic').decision -ceq 'Disapproved' -and (Record 'basic').category -ceq 'Other') 'Automatic inference preserves the earlier explicit Disapprove decision'
+    $again=Read-One 'filenameAgrees';Check ($again.result.Analyzed -eq 0 -and $again.result.Cached -ge 1) 'Applying automatic filing to a recognized cache starts no unnecessary parse'
+    Check (@($basic.clinicalComponents).Count -eq 0 -and @($extended.clinicalComponents).Count -eq 0) 'Automatic folder labels fabricate no clinical checklist completion'
+    Preserve
+}
+
+# Reuse only generated text builders from the semantic measurement tests; the
+# PDF below is a real, independently read document, not a mocked reader result.
+$measurementAst=[Management.Automation.Language.Parser]::ParseFile((Join-Path $PSScriptRoot 'Run-MeasurementTests.ps1'),[ref]$null,[ref]$null)
+foreach($name in @('New-ValueRow','New-MeasurementDocument','New-DailyMeasurementDocument')){$fn=$measurementAst.Find({param($n)$n -is [Management.Automation.Language.FunctionDefinitionAst] -and $n.Name -eq $name},$true);. ([scriptblock]::Create($fn.Extent.Text))}
+function New-ActualMeasurementPdf([string]$Path,[string]$Text){
+    $pages=@([regex]::Matches($Text,'(?ms)^--- Page (?<number>[0-9]+) ---\r?\n(?<body>.*?)(?=^--- Page [0-9]+ ---\r?\n|\z)'))
+    if($pages.Count -ne 3){throw 'The generated measurement PDF requires exactly three complete synthetic pages.'}
+    $objects=New-Object 'Collections.Generic.List[string]';[void]$objects.Add('<< /Type /Catalog /Pages 2 0 R >>');[void]$objects.Add('<< /Type /Pages /Kids [4 0 R 6 0 R 8 0 R] /Count 3 >>');[void]$objects.Add('<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>')
+    for($p=1;$p -le 3;$p++){
+        [void]$objects.Add('<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 3 0 R >> >> /Contents '+(5+2*($p-1))+' 0 R >>')
+        $stream=New-Object Text.StringBuilder;[void]$stream.Append('BT /F1 8 Tf 42 35 Td (2025-02-03 08:15:00 Page: '+$p+" / 3) Tj ET`n")
+        $body=[regex]::Replace($pages[$p-1].Groups['body'].Value,'(?m)^2025-02-03 08:15:00\r?\nPage: [1-3] / 3\r?$','');$y=745
+        foreach($line in ($body -split '\r?\n')){if(-not $line.Trim()){continue};if($y -lt 55){throw 'The synthetic measurement PDF body would overlap its footer.'};[void]$stream.Append('BT /F1 8 Tf 42 '+$y+' Td ('+(ConvertTo-ContentPdfString $line)+") Tj ET`n");$y-=10}
+        [void]$objects.Add('<< /Length '+[Text.Encoding]::ASCII.GetByteCount($stream.ToString())+" >>`nstream`n"+$stream.ToString()+'endstream')
+    }
+    $pdf=New-Object Text.StringBuilder;[void]$pdf.Append("%PDF-1.4`n");$offsets=New-Object 'Collections.Generic.List[int]'
+    for($i=0;$i -lt $objects.Count;$i++){[void]$offsets.Add([Text.Encoding]::ASCII.GetByteCount($pdf.ToString()));[void]$pdf.Append(($i+1).ToString()+" 0 obj`n"+$objects[$i]+"`nendobj`n")}
+    $xref=[Text.Encoding]::ASCII.GetByteCount($pdf.ToString());[void]$pdf.Append("xref`n0 "+($objects.Count+1)+"`n0000000000 65535 f `n");foreach($offset in $offsets){[void]$pdf.Append($offset.ToString('0000000000')+" 00000 n `n")};[void]$pdf.Append("trailer`n<< /Size "+($objects.Count+1)+" /Root 1 0 R >>`nstartxref`n"+$xref+"`n%%EOF`n")
+    [IO.File]::WriteAllText($Path,$pdf.ToString(),[Text.Encoding]::ASCII);(Get-Item $Path).LastWriteTimeUtc=[datetime]::UtcNow.AddMinutes(-10)
+}
+function Add-MeasurementIntegrationPdf([string]$Key,[string]$Text){
+    $cfg=Read-QaConfig $FixtureRoot;$name='Synthetic_'+$Key+'.pdf';New-ActualMeasurementPdf -Path (Join-Path $cfg.Sources[0].Path $name) -Text $Text
+    [void](Invoke-QaOperation $cfg -Mode Update);$dashboard=Get-QaDashboard $cfg;$raw=@($dashboard.Records|Where-Object OriginalFileName -ceq $name)[0]
+    $baseline.Records+=@([pscustomobject]@{key=$Key;id=$raw.Id;hash=$raw.Hash;scanner=$raw.Scanner;source=$raw.SourcePath;destination=$raw.DestinationPath;rawDate=$raw.ReportDate;rawCategory=$raw.Category;pages=3;profile=$Key;expectedDate='2025-02-03';expectedTime='08:15:00'})
+    $baseline.StateSHA256=(Get-FileHash (Join-Path $baseline.ArchiveRoot '.ctqa/state.json')).Hash;$baseline.RecordCount=@($dashboard.Records).Count
+}
+function Get-MeasurementIntegrationReaders {
+    $readers=@('Standard');if([Environment]::OSVersion.Platform -eq [PlatformID]::Win32NT -and [IO.File]::Exists((Join-Path $FixtureRoot 'App/Python/runtime/python.exe')) -and [IO.File]::Exists((Join-Path $FixtureRoot 'App/Python/Integrity.json'))){$readers+=@('Python')};return $readers
+}
+Scenario 'Actual isolated PDF readers collect manufacturer Daily inline measurements and source-linked cached trends' {
+    Add-MeasurementIntegrationPdf 'measurementDaily' (New-DailyMeasurementDocument)
+    $originalMode=[string](Snapshot).settings.pdfReaderMode
+    try{foreach($engine in @(Get-MeasurementIntegrationReaders)){
+        [void](Request @{action='Settings';pdfReaderMode=$engine});$result=Request @{action='Analyze';id=(Original 'measurementDaily').id;force=$true};$row=Record 'measurementDaily'
+        $cfg=Read-QaConfig $FixtureRoot;$raw=@((Get-QaDashboard $cfg).Records|Where-Object Id -ceq (Original 'measurementDaily').id)[0];$cache=&(Get-Module WebService){param($c,$r) Get-QaSavedAnalysis $c $r} $cfg $raw
+        Check ($result.result.Analyzed -eq 1 -and $result.result.Failed -eq 0 -and $cache.ReaderUsed -ceq $engine) 'Each available explicit engine actually reads the generated Daily PDF without a fallback or mock'
+        Check ($cache.VerifiedHash -ceq (Original 'measurementDaily').hash -and $cache.VerifiedLength -eq (Get-Item $raw.DestinationPath).Length -and $cache.DocumentClassification.DateStatus -ceq 'Consensus') 'Measurement evidence retains the verified PDF fingerprint, length and matching complete footer dates'
+        Check ($cache.MeasurementsDocument.MeasurementSupportRevision -eq 2 -and @($cache.MeasurementsDocument.Measurements).Count -eq 20 -and @($row.content.measurements).Count -eq 20) 'The actual reader, cached parser and public report facade all retain twenty current Daily readings'
+        $trend=Request @{action='Trends';scanner=$raw.Scanner;metric='ImageNoise';series=($raw.Scanner+'|ImageNoise|Body|A|1')}
+        Check (@($trend.points|Where-Object recordId -ceq $raw.Id).Count -eq 1 -and $trend.unit -ceq 'HU' -and $trend.points[0].page -eq 3) 'The actual authenticated trend action links an exact unit-matched Body/A/slice reading to its source page'
+        Preserve
+    }}finally{[void](Request @{action='Settings';pdfReaderMode=$originalMode})}
+}
+Scenario 'Actual isolated PDF readers keep current slice-thickness millimetres separate from existing HU trends' {
+    $text=New-MeasurementDocument -Extended;$slice="5. Quality IEC Constancy Slice`nSlice thickness parameter 999 mm`nTest: Typical body mode`nResult`nSystem A`n"+(New-ValueRow -Value '6.25' -Reference '6.10' -Lower '5.50' -Upper '7.50' -Unit 'mm')+"`nTest Results OK";$text=$text.Replace("5. Quality IEC Constancy Slice`nTest Results OK",$slice)
+    Add-MeasurementIntegrationPdf 'measurementSlice' $text;$originalMode=[string](Snapshot).settings.pdfReaderMode
+    try{foreach($engine in @(Get-MeasurementIntegrationReaders)){
+        [void](Request @{action='Settings';pdfReaderMode=$engine});$result=Request @{action='Analyze';id=(Original 'measurementSlice').id;force=$true};$row=Record 'measurementSlice'
+        $cfg=Read-QaConfig $FixtureRoot;$raw=@((Get-QaDashboard $cfg).Records|Where-Object Id -ceq (Original 'measurementSlice').id)[0];$cache=&(Get-Module WebService){param($c,$r) Get-QaSavedAnalysis $c $r} $cfg $raw;$sliceRows=@($cache.MeasurementsDocument.Measurements|Where-Object Code -ceq 'SliceThickness')
+        Check ($result.result.Analyzed -eq 1 -and $result.result.Failed -eq 0 -and $cache.ReaderUsed -ceq $engine -and $cache.VerifiedHash -ceq (Original 'measurementSlice').hash) 'Each available engine actually reads the same verified slice-test PDF bytes'
+        Check ($sliceRows.Count -eq 1 -and $sliceRows[0].Value -ceq '6.25' -and $sliceRows[0].Unit -ceq 'mm' -and @($row.content.measurements|Where-Object unit -ceq 'mm').Count -eq 1) 'The current mm value remains distinct from its parenthesized reference and the unbound acquisition parameter'
+        $trend=Request @{action='Trends';scanner=$raw.Scanner;metric='SliceThickness';series=($raw.Scanner+'|SliceThickness|Body|A|1')}
+        Check ($trend.points.Count -eq 1 -and $trend.points[0].recordId -ceq $raw.Id -and $trend.points[0].value -eq 6.25 -and $trend.points[0].lower -eq 5.5 -and $trend.points[0].upper -eq 7.5 -and $trend.metricDefinition.unit -ceq 'mm') 'The real trend route admits only the correct current millimetre metric, explicit bounds and source identity'
+        Check ($row.clinicalComponents.Count -eq 0 -and $row.printedResult -ceq 'Not inferred from file classification') 'Numeric extraction and automatic filing add no clinical approval or reviewed checklist'
+        Preserve
+    }}finally{[void](Request @{action='Settings';pdfReaderMode=$originalMode})}
 }
 
 $failed=@($script:Results|Where-Object Result -eq 'FAIL').Count

@@ -1,0 +1,79 @@
+﻿{
+    "Product":  "CT QA Manager Pro",
+    "Feature":  "Portable PDF text reader",
+    "TimestampUtc":  "2026-11-11T17:07:51.2740106Z",
+    "Runtime":  "5.1.26100.33648",
+    "Platform":  "Microsoft Windows NT 10.0.26100.0",
+    "WindowsPowerShell51ActuallyRun":  true,
+    "Tests":  13,
+    "Assertions":  44,
+    "Failed":  0,
+    "Results":  [
+                    {
+                        "Name":  "Compressed multi-page PDF text is read locally without changing classification or bytes",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Reading one PDF does not rebuild the dashboard and retains the configured scanner label",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Selected-record lookup still rejects an unsafe unrelated archive record and releases the lock",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "PDF provenance describes the exact verified bytes and metadata captured before reading",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "A destination changed after hashing cannot acquire successful cached-read provenance",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Image-only PDF reports no readable text and does not invent a report type",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Encrypted PDF fails clearly and releases the archive lock",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Page and character limits explicitly identify incomplete text",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Oversized PDF is rejected before parsing and without changes",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Damaged saved PDF cannot be read as a verified report",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Reader works offline using archive only and refuses an active writer",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Cancelled reading and unknown report selections have no side effects",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Background analysis reports its actual bounded queue and reuses all cached results",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    }
+                ],
+    "Notes":  "Synthetic compressed, image-only and encrypted PDFs only. Native Windows .NET Framework/PdfPig loading and hospital PDFs still require Windows validation."
+}

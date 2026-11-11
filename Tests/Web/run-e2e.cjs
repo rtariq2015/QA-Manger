@@ -16,6 +16,7 @@ fs.mkdirSync(output, { recursive: true });
 let ready, child, browser, page, context;
 let assertions = 0;
 let nativePreviewActuallyRun = false;
+let browserBacklogSubmissions=0;
 const insightFile=path.join(root,'App/Insights.psm1'),originalInsights=fs.readFileSync(insightFile);
 const analyzeHold=path.join(root,'test-analyze-hold'),analyzeReached=path.join(root,'test-analyze-reached');
 function analysisBarrier(){
@@ -94,7 +95,7 @@ async function loadBrowserPage() {
   if (page) await page.close();
   page = await context.newPage();
   page.on('pageerror', error => errors.push(clean(error.message)));
-  page.on('request', request => { const pathname = new URL(request.url()).pathname; if (pathname.startsWith('/api/preview/')) previewRequests.push(pathname); });
+  page.on('request', request => { const pathname = new URL(request.url()).pathname; if (pathname.startsWith('/api/preview/')) previewRequests.push(pathname);if(pathname==='/api/actions'&&request.method()==='POST'){try{if(request.postDataJSON().action==='AnalyzeBacklog')browserBacklogSubmissions++;}catch{}} });
   page.on('dialog', async dialog => { dialogs.push(dialog.type()); await dialog.dismiss(); });
   await page.goto(ready.url + '#session=' + encodeURIComponent(ready.token), { waitUntil: 'domcontentloaded' });
   await page.locator('#refresh-button').waitFor({ state: 'visible' });
@@ -144,7 +145,13 @@ function verifyArchivePreserved() {
       response = await api('/api/actions', { method: 'POST', headers: { Origin: 'https://untrusted.invalid', 'Content-Type': 'application/json' }, body: '{"action":"Refresh"}' }); check(response.status === 403, 'A different origin cannot invoke local actions');
       response = await api('/api/actions', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{"action":"RunShell","command":"not executed"}' }); check(response.status === 400, 'An arbitrary shell action is rejected');
       response = await api('/api/pdf/not-a-report'); check(response.status === 400, 'PDF access requires a report ID');
-      before = await waitSnapshot(); chosen = before.records.find(record => record.pending && record.scanner === 'CT_Edge' && /monthly/i.test(record.category)); check(!!chosen, 'The real imported fixture includes a pending Monthly report');
+      before = await waitSnapshot(); chosen = before.records.find(record => record.pending && record.scanner === 'CT_Edge' && /monthly/i.test(record.category)); check(!!chosen, 'The real imported fixture includes an unresolved Monthly report');
+      // Read two generated uncertain files so decision tests exercise genuine
+      // exceptions rather than PDFs still waiting in the background queue.
+      const decisionFixtures=[chosen,...before.records.filter(record=>record.pending&&record.id!==chosen.id)].slice(0,2);
+      for(const record of decisionFixtures)await action({action:'Analyze',id:record.id});
+      before=await waitSnapshot(value=>decisionFixtures.every(record=>value.records.some(row=>row.id===record.id&&row.filingState==='NeedsReview')));chosen=before.records.find(record=>record.id===chosen.id);
+      check(before.filingSummary.needsReview>=2,'Two completely read uncertain reports are available for the decision and advance workflow');
     });
     const launchOptions = { headless: true, args: ['--no-sandbox', '--disable-dev-shm-usage'] };
     if (args['browser-channel']) launchOptions.channel = args['browser-channel'];
@@ -169,6 +176,10 @@ function verifyArchivePreserved() {
       check(await page.locator('#review-queue-toggle').getAttribute('aria-expanded')==='false','The review queue starts collapsed to give the PDF more room');
       check(await page.locator('#page-review').isVisible()&&!(await page.locator('#page-reports').isVisible()),'Opening a report enters the separate Review workspace');
       check(externalRequests.length === 0, 'All requested interface assets came from the local host');
+      check(browserBacklogSubmissions===0,'Rendering and switching tabs never submits repeated automatic reading jobs');
+      const filing=await snapshot();check(Number(await page.locator('#nav-pending').innerText())===filing.filingSummary.needsReview,'The Review badge counts file exceptions rather than all unread PDFs');
+      await nav('reports');await page.locator('#status-filter').selectOption('waiting');check(await page.locator('.report-item').count()===filing.filingSummary.waitingRead,'Awaiting-reading filter is separate from manual review exceptions');await page.locator('#clear-filters').click();
+      await nav('trends');check(await page.locator('#trend-metric option[value=SliceThickness]').innerText()==='Slice thickness','The additional millimetre-based metric is selectable');await selectPending(chosen.id);
     });
     await scenario('Light and Dark appearance apply consistently across all six tabs and persist in saved settings',async()=>{
       check((await snapshot()).settings.theme==='Light','The imported baseline starts in Light appearance');
@@ -404,7 +415,7 @@ function verifyArchivePreserved() {
       await settings('reading');check(await page.locator('#pdf-reader-mode').isEnabled(),'Reading preferences stay editable while background analysis is paused');
       await nav('reports');await page.locator('#clear-filters').click();await page.locator('#report-search').fill('Monthly');
       check(await page.locator('.report-item').count()>0,'Reports stay searchable while the reader is paused');
-      const pending=(await snapshot()).records.find(row=>row.pending);check(!!pending,'A pending report remains for the foreground review test');
+      const pending=(await snapshot()).records.find(row=>row.filingState==='NeedsReview');check(!!pending,'A file exception remains for the foreground review test');
       await selectPending(pending.id);check(await page.locator('#approve-button').isEnabled(),'Approve stays available during background work');
       let foreground=new Set((await jobs()).map(job=>job.id));await page.locator('#approve-button').click();
       await until(async()=>(await jobs()).some(job=>!foreground.has(job.id)&&job.action==='Approve'&&job.status==='completed'),'Foreground review did not finish while background analysis was paused.');
@@ -469,7 +480,7 @@ function verifyArchivePreserved() {
     });
     await scenario('The interface remains usable at a smaller workstation size', async () => {
       await page.setViewportSize({ width: 1024, height: 768 }); await nav('reports'); await page.locator('#clear-filters').click(); await page.locator('#status-filter').selectOption('pending');
-      const pending = (await waitSnapshot()).records.find(r => r.pending); await page.locator('.report-item[data-record-id="' + pending.id + '"]').click();
+      const pending = (await waitSnapshot()).records.find(r => r.filingState==='NeedsReview'); await page.locator('.report-item[data-record-id="' + pending.id + '"]').click();
       const approve = await page.locator('#approve-button').boundingBox(); check(approve && approve.x >= 0 && approve.x + approve.width <= 1024, 'The primary review control fits the smaller screen horizontally');
       check(approve && approve.y >= 0 && approve.y + approve.height <= 768, 'Approve stays visible without scrolling the smaller workstation window');
       const disapprove = await page.locator('#disapprove-button').boundingBox();
@@ -486,7 +497,7 @@ function verifyArchivePreserved() {
     releaseAnalysis();
     if (browser) await browser.close(); await stopHost();
     fs.writeFileSync(insightFile,originalInsights);
-    const summary = { version: '5.3.1', syntheticOnly: true, browser: 'Chromium via Playwright', browserChannel: args['browser-channel'] || 'chromium', nativePdfPreviewActuallyRun: nativePreviewActuallyRun, tests: results.length, assertions, failed: results.filter(r => r.result === 'FAIL').length, externalAssetRequests: externalRequests.length, javascriptErrors: errors, results, scope: 'Actual local host, PowerShell adapter and synthetic archived PDFs. Does not establish hospital network access or workstation endpoint-policy approval.' };
+    const summary = { version: '5.4.0', syntheticOnly: true, browser: 'Chromium via Playwright', browserChannel: args['browser-channel'] || 'chromium', nativePdfPreviewActuallyRun: nativePreviewActuallyRun, tests: results.length, assertions, failed: results.filter(r => r.result === 'FAIL').length, externalAssetRequests: externalRequests.length, javascriptErrors: errors, results, scope: 'Actual local host, PowerShell adapter and synthetic archived PDFs. Does not establish hospital network access or workstation endpoint-policy approval.' };
     fs.writeFileSync(path.join(output, 'browser-summary.json'), JSON.stringify(summary, null, 2) + '\n');
     process.stdout.write('Result: ' + (summary.tests - summary.failed) + '/' + summary.tests + ' scenarios; ' + assertions + ' assertions.\n');
   }

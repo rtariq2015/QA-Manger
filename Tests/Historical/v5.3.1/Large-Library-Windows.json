@@ -1,0 +1,58 @@
+{
+    "version":  "5.1.0",
+    "syntheticOnly":  true,
+    "records":  1367,
+    "tests":  4,
+    "assertions":  5463,
+    "failed":  0,
+    "measurements":  {
+                         "snapshotMs":  7522,
+                         "coldMs":  22788,
+                         "cold":  {
+                                      "libraryRoot":  "C:\\Users\\runneradmin\\AppData\\Local\\Temp\\CTQA-Web-E2E-1794416129457-6432-large\\Data\\Report Library",
+                                      "copied":  1367,
+                                      "unchanged":  0,
+                                      "total":  1367,
+                                      "completed":  1367,
+                                      "hashedFiles":  2734,
+                                      "manifestWrites":  1,
+                                      "retired":  0,
+                                      "failed":  0,
+                                      "cancelled":  false,
+                                      "metadataFastPath":  true
+                                  },
+                         "warmMs":  6091,
+                         "warm":  {
+                                      "libraryRoot":  "C:\\Users\\runneradmin\\AppData\\Local\\Temp\\CTQA-Web-E2E-1794416129457-6432-large\\Data\\Report Library",
+                                      "copied":  0,
+                                      "unchanged":  1367,
+                                      "total":  1367,
+                                      "completed":  1367,
+                                      "hashedFiles":  0,
+                                      "manifestWrites":  0,
+                                      "retired":  0,
+                                      "failed":  0,
+                                      "cancelled":  false,
+                                      "metadataFastPath":  true
+                                  }
+                     },
+    "results":  [
+                    {
+                        "name":  "A realistic 1,367-report archive resolves known documents while retaining uncertain candidates and prior decisions",
+                        "result":  "PASS"
+                    },
+                    {
+                        "name":  "A cold readable-library batch writes one ownership ledger for all 1,367 verified PDFs",
+                        "result":  "PASS"
+                    },
+                    {
+                        "name":  "An unchanged warm library uses metadata without rereading every PDF hash or rewriting its full ledger",
+                        "result":  "PASS"
+                    },
+                    {
+                        "name":  "An explicit integrity audit bypasses the fast cache and detects edits even with restored size and timestamp",
+                        "result":  "PASS"
+                    }
+                ],
+    "scope":  "Actual PowerShell adapter and 1,367 synthetic source/archive PDFs. Durations are diagnostic; cache correctness uses hash-read and ledger-write counters, not hardware-dependent time thresholds."
+}

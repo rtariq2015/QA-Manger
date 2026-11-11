@@ -1,0 +1,66 @@
+{
+  "Version": "5.3.1",
+  "ValidatedSource": "006268bb12a6ca93c428ac5cbe1078d7d3976bf3",
+  "ValidatedRunId": 43062859219,
+  "TestedHostSHA256": "7016cbd150d99f9b707c14593fca32c46dd4d31b59d680d9790b17961318f53b",
+  "TestedHostArtifactSHA256": "224b68b7b3f0c778d1bfc3d80505a9400a966c4be058f52989e4e57178266702",
+  "TestedPythonRuntimeArtifactSHA256": "a72161ecdadc2699af66c79b28e68d338850d95108aedca097ac6f5a1f6c2942",
+  "TestedPythonIntegritySHA256": "7bb612a33fa72070b608fc7a67ab93d9de48aebafc6c3ebd1978aff3fd9f27d4",
+  "Runtime": "Linux / PowerShell 7.4.13: ZIP and installation/staging logic only; Windows executables were not launched in these local checks.",
+  "StaticChecks": 904,
+  "StaticFailed": 0,
+  "ActualPackageChecks": 874,
+  "ActualPackageFailed": 0,
+  "ActualPackagedUpgradeFrom": "5.3.0",
+  "GenericUpgradePreservesConfigDataCredentialsAndArchiveHashes": true,
+  "PreviousProgramBackupCreated": true,
+  "PackagedStandaloneDiagnosticsPassed": true,
+  "PrivateUpgradePreservesArchiveAndDepartmentSettings": true,
+  "PrivateUpgradeAppliesThreeConfiguredScannerPaths": true,
+  "AllFivePackageHostHashesMatchNativeArtifact": true,
+  "AllFivePackagePythonComponentsMatchNativeManifest": true,
+  "PythonManifestFiles": 103,
+  "ActualInAppUpdateValidatorVersion": "5.3.0",
+  "ActualInAppUpdateFrom": "5.3.0",
+  "ActualInAppUpdateTo": "5.3.1",
+  "InAppUpdatePreservedSentinelFiles": 7,
+  "InAppUpdatePreservesConfigDataCredentialsArchiveHistoryAndPriorLogs": true,
+  "InAppUpdateStageCleaned": true,
+  "OfflinePreviewSyntheticScreenshots": 20,
+  "PasswordsBundled": false,
+  "HospitalNetworkContacted": false,
+  "PrivatePackagesPublished": false,
+  "Packages": [
+    {
+      "Name": "CT_QA_Manager_Pro_v5.3.1_Portable.zip",
+      "Bytes": 59552487,
+      "SHA256": "f4c2a1a3abca5081927990c2613af3bd986d05643dc4d6b44d705eaef661e050"
+    },
+    {
+      "Name": "CT_QA_Manager_Pro_v5.3.1_Update.zip",
+      "Bytes": 59552487,
+      "SHA256": "4a52bd68d652551695734d384c5be3ea37a666e5246ddb2b0cd99bf950d11fc9"
+    },
+    {
+      "Name": "CT_QA_Manager_Pro_v5.3.1_Upgrade.zip",
+      "Bytes": 59553839,
+      "SHA256": "43a2ad7a897a471916437090a77c3fab19620c7a36058a58198b51bb5441b446"
+    },
+    {
+      "Name": "CT_QA_Manager_Pro_v5.3.1_Work_Portable.zip",
+      "Bytes": 59552895,
+      "SHA256": "f418ef39da2654a3e3cbfc9e2e5f7922a589852d50e4c7f165c6633833f9fb9b"
+    },
+    {
+      "Name": "CT_QA_Manager_Pro_v5.3.1_Work_Upgrade.zip",
+      "Bytes": 59554050,
+      "SHA256": "974f631d34ad26b1c21f3d4aaaf8eee25cd94a106a72e4ce3df371aa9963acf8"
+    },
+    {
+      "Name": "CT_QA_Manager_Pro_v5.3.1_Preview.html",
+      "Bytes": 4216626,
+      "SHA256": "2b6930dff4bfc67b1aeccff3b9456ffb34da6e3d7315f06c3323a90e2f416c92"
+    }
+  ],
+  "Scope": "Actual ZIP manifests, clean contents, generic and local-only private upgrade helpers, and a staged in-app Update ZIP accepted by the old 5.3.0 validator. Synthetic preservation sentinels only. All five ZIP payloads retain the tested Windows host and all 103 tested Python manifest members. Local PowerShell 7.4.13 filesystem/staging checks do not launch Windows executables. Separate final native Windows evidence is pinned to its exact source and run; neither execution establishes hospital connectivity or workplace endpoint-policy approval."
+}
