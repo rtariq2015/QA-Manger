@@ -1,8 +1,8 @@
 {
-  "Version": "5.3.0",
+  "Version": "5.3.1",
   "Runtime": "7.4.13",
-  "Tests": 25,
-  "Assertions": 106,
+  "Tests": 27,
+  "Assertions": 119,
   "Failed": 0,
   "Results": [
     {
@@ -127,6 +127,16 @@
     },
     {
       "Name": "Trend queries read cached metadata without creating PDF readings or rewriting the archive",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "Diagnostic downloads remain available when a verified cache contains malformed numeric fields",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "Diagnostic exports report unreadable organization history without treating saved decisions as absent",
       "Result": "PASS",
       "Details": ""
     }

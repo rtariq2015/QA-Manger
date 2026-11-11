@@ -1,6 +1,7 @@
 {
-  "version": "5.3.0",
+  "version": "5.3.1",
   "syntheticOnly": true,
+  "browserChannel": "msedge",
   "records": 1367,
   "tests": 4,
   "assertions": 27328,

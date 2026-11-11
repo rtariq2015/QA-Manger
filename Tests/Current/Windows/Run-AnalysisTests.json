@@ -1,12 +1,12 @@
 ﻿{
     "Product":  "CT QA Manager Pro",
     "Feature":  "Versioned content analysis cache",
-    "TimestampUtc":  "2026-11-11T15:13:51.2070643Z",
+    "TimestampUtc":  "2026-11-11T17:04:38.9541847Z",
     "Runtime":  "5.1.26100.33648",
     "Platform":  "Microsoft Windows NT 10.0.26100.0",
     "WindowsPowerShell51ActuallyRun":  true,
-    "Tests":  11,
-    "Assertions":  49,
+    "Tests":  15,
+    "Assertions":  73,
     "Failed":  0,
     "Results":  [
                     {
@@ -61,6 +61,26 @@
                     },
                     {
                         "Name":  "Linked analysis directories cannot supply trusted document classifications",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "A metadata-only work plan distinguishes unread files, measurement upgrades, format upgrades and cached errors",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "An older unknown Flash template is refreshed once and then reused with the same protected PDF provenance",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Explicit measurement backlog upgrades an older successful cache once without reprocessing current or failed readings",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Equal-content destinations retain independent one-time format support revisions",
                         "Result":  "PASS",
                         "Details":  ""
                     }

@@ -4,8 +4,8 @@
     "Runtime":  "5.1.26100.33648",
     "WindowsPowerShell51ActuallyRun":  true,
     "SyntheticOnly":  true,
-    "Tests":  10,
-    "Assertions":  245,
+    "Tests":  12,
+    "Assertions":  313,
     "Failed":  0,
     "Results":  [
                     {
@@ -46,6 +46,14 @@
                     },
                     {
                         "Name":  "An explicit Daily document title conflicts with a saved Monthly profile rule even when the filename is generic",
+                        "Result":  "PASS"
+                    },
+                    {
+                        "Name":  "A compatible Flash PDF upgrades a prior unknown-template cache and follows one saved scanner filing rule",
+                        "Result":  "PASS"
+                    },
+                    {
+                        "Name":  "Real Drive Additional and manufacturer Daily PDFs retain separate filing rules and protected original evidence",
                         "Result":  "PASS"
                     }
                 ],

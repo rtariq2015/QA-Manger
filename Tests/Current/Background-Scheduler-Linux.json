@@ -11,7 +11,8 @@
     "A foreground action queued during a PDF runs before the archive batch completes",
     "One-PDF requests are sanitized, mutations stay serialized, and cancel preserves cumulative work",
     "A bulk action stops after twenty actual PDFs and reports the remaining work",
+    "An explicitly started backlog continues beyond twenty and synchronizes readable folders",
     "Shutdown cancels background reading at a safe checkpoint and leaves no running helper"
   ],
-  "checkCount": 9
+  "checkCount": 10
 }

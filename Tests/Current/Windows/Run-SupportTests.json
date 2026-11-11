@@ -1,9 +1,9 @@
 ﻿{
-    "Version":  "4.3.0",
+    "Version":  "5.3.1",
     "Runtime":  "5.1.26100.33648",
     "WindowsPowerShell51ActuallyRun":  true,
-    "Tests":  16,
-    "Assertions":  79,
+    "Tests":  22,
+    "Assertions":  171,
     "Failed":  0,
     "Results":  [
                     {
@@ -82,10 +82,40 @@
                         "Details":  ""
                     },
                     {
+                        "Name":  "Detailed report diagnoses keep independent reasons and opaque bundle references without private data",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Unknown diagnostic and event fields cannot inject text or spreadsheet formulas",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Printable diagnostics cap readable sections honestly while machine files retain every report and event",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Standalone HTML exports protect files and sanitize even direct printable-report input",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Classic diagnostics inspect cached versions without opening or changing PDF content",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Additional and Daily metadata, Drive models and the third filing rule remain safely diagnosable",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
                         "Name":  "Real connection-result handling avoids repeated prompts and remembers only accepted sign-ins",
                         "Result":  "PASS",
                         "Details":  ""
                     }
                 ],
-    "Scope":  "Synthetic review grouping, diagnostic privacy, protected destinations, safe events, standalone export and active application lock. Production diagnostic CMD runs on Windows."
+    "Scope":  "Synthetic review grouping, strict diagnostic privacy, per-report reason categories, printable HTML limits, complete machine exports, protected destinations, cached-only classic fallback, safe events and active application lock. Production diagnostic CMD runs on Windows."
 }

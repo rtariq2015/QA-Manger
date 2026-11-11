@@ -17,15 +17,15 @@
                       "ReaderVersion":  "PdfPig 0.1.16",
                       "WholeIsolatedReadMilliseconds":  {
                                                             "Samples":  6,
-                                                            "Minimum":  1661.623,
-                                                            "Median":  1689.885,
-                                                            "Maximum":  1832.179
+                                                            "Minimum":  1073.671,
+                                                            "Median":  1135.01,
+                                                            "Maximum":  1202.508
                                                         },
                       "ReaderMilliseconds":  {
                                                  "Samples":  6,
-                                                 "Minimum":  725.273,
-                                                 "Median":  746.408,
-                                                 "Maximum":  813.404
+                                                 "Minimum":  426.546,
+                                                 "Median":  484.815,
+                                                 "Maximum":  511.414
                                              }
                   },
                   {
@@ -33,15 +33,15 @@
                       "ReaderVersion":  "Python 3.14.10 / pypdf 7.0.1",
                       "WholeIsolatedReadMilliseconds":  {
                                                             "Samples":  6,
-                                                            "Minimum":  2432.891,
-                                                            "Median":  2475.332,
-                                                            "Maximum":  2597.779
+                                                            "Minimum":  1584.48,
+                                                            "Median":  1614.14,
+                                                            "Maximum":  1714.327
                                                         },
                       "ReaderMilliseconds":  {
                                                  "Samples":  6,
-                                                 "Minimum":  1483.447,
-                                                 "Median":  1524.688,
-                                                 "Maximum":  1596.252
+                                                 "Minimum":  926.022,
+                                                 "Median":  941.164,
+                                                 "Maximum":  952.14
                                              }
                   }
               ],
@@ -52,8 +52,8 @@
                         "Profile":  "Basic",
                         "Pages":  9,
                         "Iteration":  1,
-                        "WholeIsolatedReadMilliseconds":  1818.124,
-                        "ReaderMilliseconds":  813.404,
+                        "WholeIsolatedReadMilliseconds":  1182.906,
+                        "ReaderMilliseconds":  511.414,
                         "CompleteRead":  true,
                         "ClassificationAgreed":  true
                     },
@@ -63,8 +63,8 @@
                         "Profile":  "Basic",
                         "Pages":  9,
                         "Iteration":  1,
-                        "WholeIsolatedReadMilliseconds":  2597.779,
-                        "ReaderMilliseconds":  1596.252,
+                        "WholeIsolatedReadMilliseconds":  1656.205,
+                        "ReaderMilliseconds":  942.629,
                         "CompleteRead":  true,
                         "ClassificationAgreed":  true
                     },
@@ -74,8 +74,8 @@
                         "Profile":  "Extended",
                         "Pages":  6,
                         "Iteration":  1,
-                        "WholeIsolatedReadMilliseconds":  1832.179,
-                        "ReaderMilliseconds":  803.119,
+                        "WholeIsolatedReadMilliseconds":  1202.508,
+                        "ReaderMilliseconds":  495.133,
                         "CompleteRead":  true,
                         "ClassificationAgreed":  true
                     },
@@ -85,8 +85,8 @@
                         "Profile":  "Extended",
                         "Pages":  6,
                         "Iteration":  1,
-                        "WholeIsolatedReadMilliseconds":  2561.559,
-                        "ReaderMilliseconds":  1543.914,
+                        "WholeIsolatedReadMilliseconds":  1714.327,
+                        "ReaderMilliseconds":  941.074,
                         "CompleteRead":  true,
                         "ClassificationAgreed":  true
                     },
@@ -96,8 +96,8 @@
                         "Profile":  "Basic",
                         "Pages":  9,
                         "Iteration":  2,
-                        "WholeIsolatedReadMilliseconds":  2474.753,
-                        "ReaderMilliseconds":  1517.346,
+                        "WholeIsolatedReadMilliseconds":  1619.536,
+                        "ReaderMilliseconds":  928.884,
                         "CompleteRead":  true,
                         "ClassificationAgreed":  true
                     },
@@ -107,8 +107,8 @@
                         "Profile":  "Basic",
                         "Pages":  9,
                         "Iteration":  2,
-                        "WholeIsolatedReadMilliseconds":  1677.3,
-                        "ReaderMilliseconds":  743.959,
+                        "WholeIsolatedReadMilliseconds":  1131.989,
+                        "ReaderMilliseconds":  487.754,
                         "CompleteRead":  true,
                         "ClassificationAgreed":  true
                     },
@@ -118,8 +118,8 @@
                         "Profile":  "Extended",
                         "Pages":  6,
                         "Iteration":  2,
-                        "WholeIsolatedReadMilliseconds":  2432.891,
-                        "ReaderMilliseconds":  1504.51,
+                        "WholeIsolatedReadMilliseconds":  1584.48,
+                        "ReaderMilliseconds":  941.253,
                         "CompleteRead":  true,
                         "ClassificationAgreed":  true
                     },
@@ -129,8 +129,8 @@
                         "Profile":  "Extended",
                         "Pages":  6,
                         "Iteration":  2,
-                        "WholeIsolatedReadMilliseconds":  1702.47,
-                        "ReaderMilliseconds":  732.281,
+                        "WholeIsolatedReadMilliseconds":  1133.782,
+                        "ReaderMilliseconds":  481.876,
                         "CompleteRead":  true,
                         "ClassificationAgreed":  true
                     },
@@ -140,8 +140,8 @@
                         "Profile":  "Basic",
                         "Pages":  9,
                         "Iteration":  3,
-                        "WholeIsolatedReadMilliseconds":  1661.623,
-                        "ReaderMilliseconds":  725.273,
+                        "WholeIsolatedReadMilliseconds":  1073.671,
+                        "ReaderMilliseconds":  426.546,
                         "CompleteRead":  true,
                         "ClassificationAgreed":  true
                     },
@@ -151,8 +151,8 @@
                         "Profile":  "Basic",
                         "Pages":  9,
                         "Iteration":  3,
-                        "WholeIsolatedReadMilliseconds":  2475.912,
-                        "ReaderMilliseconds":  1532.03,
+                        "WholeIsolatedReadMilliseconds":  1608.743,
+                        "ReaderMilliseconds":  952.14,
                         "CompleteRead":  true,
                         "ClassificationAgreed":  true
                     },
@@ -162,8 +162,8 @@
                         "Profile":  "Extended",
                         "Pages":  6,
                         "Iteration":  3,
-                        "WholeIsolatedReadMilliseconds":  1673.087,
-                        "ReaderMilliseconds":  748.856,
+                        "WholeIsolatedReadMilliseconds":  1136.239,
+                        "ReaderMilliseconds":  480.897,
                         "CompleteRead":  true,
                         "ClassificationAgreed":  true
                     },
@@ -173,20 +173,20 @@
                         "Profile":  "Extended",
                         "Pages":  6,
                         "Iteration":  3,
-                        "WholeIsolatedReadMilliseconds":  2465.841,
-                        "ReaderMilliseconds":  1483.447,
+                        "WholeIsolatedReadMilliseconds":  1588.492,
+                        "ReaderMilliseconds":  926.022,
                         "CompleteRead":  true,
                         "ClassificationAgreed":  true
                     }
                 ],
-    "StandardMedianDividedByPythonMedian":  0.683,
+    "StandardMedianDividedByPythonMedian":  0.703,
     "FasterReaderForThisFixture":  "Standard",
     "CachedAnalysis":  {
                            "ColdAnalyzed":  2,
-                           "ColdMilliseconds":  4031.192,
+                           "ColdMilliseconds":  2550.358,
                            "WarmAnalyzed":  0,
                            "WarmCached":  2,
-                           "WarmMilliseconds":  155.901,
+                           "WarmMilliseconds":  94.46,
                            "WarmCacheWrites":  0
                        },
     "MemoryMeasured":  false,

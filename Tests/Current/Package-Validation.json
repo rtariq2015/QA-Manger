@@ -1,15 +1,17 @@
 {
-  "Version": "5.3.0",
-  "ValidatedSource": "5400798e55e4895fd16f5b9f575401ac52aef089",
-  "ValidatedRunId": 43043750417,
-  "TestedHostSHA256": "91ba4775c3beed7b48c114761d6c66a6d44043b486e60cc33a39a2848bde21bb",
-  "TestedHostArtifactSHA256": "1c1511050b99a356221664a41f694cbbd589009abf410cf6b816bbb579ac5175",
-  "TestedPythonRuntimeArtifactSHA256": "778a18d90a25737f737a010dd53e048aaf2e21a76890cf02e945cd67303d77ee",
+  "Version": "5.3.1",
+  "ValidatedSource": "006268bb12a6ca93c428ac5cbe1078d7d3976bf3",
+  "ValidatedRunId": 43062859219,
+  "TestedHostSHA256": "7016cbd150d99f9b707c14593fca32c46dd4d31b59d680d9790b17961318f53b",
+  "TestedHostArtifactSHA256": "224b68b7b3f0c778d1bfc3d80505a9400a966c4be058f52989e4e57178266702",
+  "TestedPythonRuntimeArtifactSHA256": "a72161ecdadc2699af66c79b28e68d338850d95108aedca097ac6f5a1f6c2942",
   "TestedPythonIntegritySHA256": "7bb612a33fa72070b608fc7a67ab93d9de48aebafc6c3ebd1978aff3fd9f27d4",
-  "Runtime": "Linux / PowerShell 7.4.13; package installation logic, not Windows browser execution",
-  "StaticChecks": 885,
+  "Runtime": "Linux / PowerShell 7.4.13: ZIP and installation/staging logic only; Windows executables were not launched in these local checks.",
+  "StaticChecks": 904,
   "StaticFailed": 0,
-  "ActualPackagedUpgradeFrom": "5.2.0",
+  "ActualPackageChecks": 874,
+  "ActualPackageFailed": 0,
+  "ActualPackagedUpgradeFrom": "5.3.0",
   "GenericUpgradePreservesConfigDataCredentialsAndArchiveHashes": true,
   "PreviousProgramBackupCreated": true,
   "PackagedStandaloneDiagnosticsPassed": true,
@@ -17,40 +19,48 @@
   "PrivateUpgradeAppliesThreeConfiguredScannerPaths": true,
   "AllFivePackageHostHashesMatchNativeArtifact": true,
   "AllFivePackagePythonComponentsMatchNativeManifest": true,
-  "OfflinePreviewSyntheticScreenshots": 17,
+  "PythonManifestFiles": 103,
+  "ActualInAppUpdateValidatorVersion": "5.3.0",
+  "ActualInAppUpdateFrom": "5.3.0",
+  "ActualInAppUpdateTo": "5.3.1",
+  "InAppUpdatePreservedSentinelFiles": 7,
+  "InAppUpdatePreservesConfigDataCredentialsArchiveHistoryAndPriorLogs": true,
+  "InAppUpdateStageCleaned": true,
+  "OfflinePreviewSyntheticScreenshots": 20,
   "PasswordsBundled": false,
   "HospitalNetworkContacted": false,
+  "PrivatePackagesPublished": false,
   "Packages": [
     {
-      "Name": "CT_QA_Manager_Pro_v5.3.0_Portable.zip",
-      "Bytes": 59534602,
-      "SHA256": "a8b09b12361d933363b54bd21469688481ebb9bdc8d1342d0ae0f30953b3ac24"
+      "Name": "CT_QA_Manager_Pro_v5.3.1_Portable.zip",
+      "Bytes": 59552487,
+      "SHA256": "f4c2a1a3abca5081927990c2613af3bd986d05643dc4d6b44d705eaef661e050"
     },
     {
-      "Name": "CT_QA_Manager_Pro_v5.3.0_Update.zip",
-      "Bytes": 59534602,
-      "SHA256": "5053ac77e6b0f87cd0f9069f64bd0bf1c2d1550670887aea37d44d8525b7407d"
+      "Name": "CT_QA_Manager_Pro_v5.3.1_Update.zip",
+      "Bytes": 59552487,
+      "SHA256": "4a52bd68d652551695734d384c5be3ea37a666e5246ddb2b0cd99bf950d11fc9"
     },
     {
-      "Name": "CT_QA_Manager_Pro_v5.3.0_Upgrade.zip",
-      "Bytes": 59535953,
-      "SHA256": "3faa74e8808f7188be331df7d7b318ea144a46072ba89e888fde03936af5c952"
+      "Name": "CT_QA_Manager_Pro_v5.3.1_Upgrade.zip",
+      "Bytes": 59553839,
+      "SHA256": "43a2ad7a897a471916437090a77c3fab19620c7a36058a58198b51bb5441b446"
     },
     {
-      "Name": "CT_QA_Manager_Pro_v5.3.0_Work_Portable.zip",
-      "Bytes": 59535009,
-      "SHA256": "dbaa966c1f52954e79ad581b85e3b2be5f453c9389dc4076893ea05d7fc86be4"
+      "Name": "CT_QA_Manager_Pro_v5.3.1_Work_Portable.zip",
+      "Bytes": 59552895,
+      "SHA256": "f418ef39da2654a3e3cbfc9e2e5f7922a589852d50e4c7f165c6633833f9fb9b"
     },
     {
-      "Name": "CT_QA_Manager_Pro_v5.3.0_Work_Upgrade.zip",
-      "Bytes": 59536164,
-      "SHA256": "70616e16b2720d033e0d0caa8c85efc522b759ebdd2aaf56130a93bec3bc9f3f"
+      "Name": "CT_QA_Manager_Pro_v5.3.1_Work_Upgrade.zip",
+      "Bytes": 59554050,
+      "SHA256": "974f631d34ad26b1c21f3d4aaaf8eee25cd94a106a72e4ce3df371aa9963acf8"
     },
     {
-      "Name": "CT_QA_Manager_Pro_v5.3.0_Preview.html",
-      "Bytes": 2964598,
-      "SHA256": "8b52e59a4aed4cd5613a3bd6852db38777c492191978aa226df7b46c260f09fb"
+      "Name": "CT_QA_Manager_Pro_v5.3.1_Preview.html",
+      "Bytes": 4216626,
+      "SHA256": "2b6930dff4bfc67b1aeccff3b9456ffb34da6e3d7315f06c3323a90e2f416c92"
     }
   ],
-  "Scope": "Actual ZIP manifests, clean contents, generic and local-only private one-time upgrade helpers using the exact tested Windows host and Python components. Synthetic preservation sentinels only. The five ZIP payloads retain all 103 tested Python manifest members. Separate native Windows evidence is pinned to the validated source and run; these package checks do not establish real scanner sign-in or endpoint approval."
+  "Scope": "Actual ZIP manifests, clean contents, generic and local-only private upgrade helpers, and a staged in-app Update ZIP accepted by the old 5.3.0 validator. Synthetic preservation sentinels only. All five ZIP payloads retain the tested Windows host and all 103 tested Python manifest members. Local PowerShell 7.4.13 filesystem/staging checks do not launch Windows executables. Separate final native Windows evidence is pinned to its exact source and run; neither execution establishes hospital connectivity or workplace endpoint-policy approval."
 }

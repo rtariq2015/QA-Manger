@@ -1,0 +1,29 @@
+{
+  "version": "5.3.0",
+  "syntheticOnly": true,
+  "browserChannel": "msedge",
+  "tests": 4,
+  "assertions": 118,
+  "failed": 0,
+  "javascriptErrors": [],
+  "externalAssetRequests": 0,
+  "results": [
+    {
+      "name": "The reader preference defaults to Automatic and unsaved edits survive a real background snapshot",
+      "result": "PASS"
+    },
+    {
+      "name": "The selected PDF is read by the portable Python engine and its printed measurements are shown without clinical inference",
+      "result": "PASS"
+    },
+    {
+      "name": "No-name filing, Undo and reader switching preserve decisions and cache the current result",
+      "result": "PASS"
+    },
+    {
+      "name": "Trends displays cached printed values and opens the exact source report page without reparsing",
+      "result": "PASS"
+    }
+  ],
+  "scope": "Actual local host, reader preferences and background snapshot, selected bundled Python PDF reading, conservative printed measurement values/limits, small-window review, no-name filing, Undo and Standard reader cache, saved-value trends and exact source-page navigation without hidden parsing. Generated three-page Basic PDF only; no uploaded report, private text or credentials are included."
+}

@@ -1,54 +1,75 @@
 {
   "Product": "CT QA Manager Pro",
-  "Version": "5.3.0",
-  "SourceCommit": "5400798e55e4895fd16f5b9f575401ac52aef089",
-  "Runtime": "PowerShell 7.4.13 on Linux; seven targeted development suites only",
+  "Version": "5.3.1",
+  "SourceCommit": "006268bb12a6ca93c428ac5cbe1078d7d3976bf3",
+  "Runtime": "PowerShell 7.4.13 on Linux; six v5.3.1 development reports and three retained unchanged-scope v5.3.0 reports",
   "ValidationStatus": "Passed: final pinned Windows artifact with separately labeled targeted Linux development checks.",
-  "Tests": 100,
-  "Assertions": 585,
+  "Tests": 149,
+  "Assertions": 988,
   "Failed": 0,
   "Suites": [
     {
-      "Name": "Run-PdfTests",
-      "Tests": 13,
-      "Assertions": 44,
-      "Failed": 0
+      "Name": "Run-ContentTests",
+      "Tests": 19,
+      "Assertions": 128,
+      "Failed": 0,
+      "ExecutionScope": "v5.3.1 development execution; raw report does not pin a commit"
     },
     {
       "Name": "Run-AnalysisTests",
-      "Tests": 11,
-      "Assertions": 49,
-      "Failed": 0
+      "Tests": 15,
+      "Assertions": 73,
+      "Failed": 0,
+      "ExecutionScope": "v5.3.1 development execution; raw report does not pin a commit"
     },
     {
       "Name": "Run-ContentIntegrationTests",
-      "Tests": 10,
-      "Assertions": 245,
-      "Failed": 0
+      "Tests": 12,
+      "Assertions": 313,
+      "Failed": 0,
+      "ExecutionScope": "v5.3.1 development execution; raw report does not pin a commit"
     },
     {
       "Name": "Run-WebServiceTests",
-      "Tests": 25,
-      "Assertions": 106,
-      "Failed": 0
+      "Tests": 27,
+      "Assertions": 119,
+      "Failed": 0,
+      "ExecutionScope": "v5.3.1 development execution; raw report does not pin a commit"
     },
     {
-      "Name": "Run-MeasurementTests",
-      "Tests": 14,
-      "Assertions": 37,
-      "Failed": 0
+      "Name": "Run-SupportTests",
+      "Tests": 22,
+      "Assertions": 170,
+      "Failed": 0,
+      "ExecutionScope": "v5.3.1 development execution; raw report does not pin a commit"
     },
     {
       "Name": "Run-UpdateTests",
       "Tests": 11,
       "Assertions": 60,
-      "Failed": 0
+      "Failed": 0,
+      "ExecutionScope": "v5.3.1 development execution; raw report does not pin a commit"
+    },
+    {
+      "Name": "Run-PdfTests",
+      "Tests": 13,
+      "Assertions": 44,
+      "Failed": 0,
+      "ExecutionScope": "Retained unchanged-scope v5.3.0 Linux execution; not a new final-source run"
+    },
+    {
+      "Name": "Run-MeasurementTests",
+      "Tests": 14,
+      "Assertions": 37,
+      "Failed": 0,
+      "ExecutionScope": "Retained unchanged-scope v5.3.0 Linux execution; not a new final-source run"
     },
     {
       "Name": "Run-TrendTests",
       "Tests": 16,
       "Assertions": 44,
-      "Failed": 0
+      "Failed": 0,
+      "ExecutionScope": "Retained unchanged-scope v5.3.0 Linux execution; not a new final-source run"
     }
   ],
   "LinuxWorkerProtocol": {
@@ -62,20 +83,20 @@
   "BackgroundSchedulerLinux": {
     "Evidence": "Background-Scheduler-Linux.json",
     "Passed": true,
-    "CheckCount": 9,
+    "CheckCount": 10,
     "SyntheticOnly": true,
     "ExecutionPlatform": "Linux development execution",
-    "Scope": "Actual self-contained host scheduler with a deterministic synthetic PowerShell adapter. These nine check outcomes are separate from PowerShell suite scenarios/assertions and do not measure real PDF-reader speed."
+    "Scope": "Actual self-contained host scheduler with a deterministic synthetic PowerShell adapter. These ten check outcomes are separate from PowerShell suite scenarios/assertions and do not measure real PDF-reader speed."
   },
   "WindowsPowerShell51ActuallyRun": false,
   "NativeWPFActuallyRun": false,
   "WindowsDPAPIActuallyRun": false,
   "WindowsValidation": {
     "Status": "Passed",
-    "SourceCommit": "5400798e55e4895fd16f5b9f575401ac52aef089",
-    "WorkflowRun": "https://github.com/rtariq2015/QA-Manger/actions/runs/43043750417",
-    "PowerShellTests": 283,
-    "PowerShellAssertions": 2333,
+    "SourceCommit": "006268bb12a6ca93c428ac5cbe1078d7d3976bf3",
+    "WorkflowRun": "https://github.com/rtariq2015/QA-Manger/actions/runs/43062859219",
+    "PowerShellTests": 306,
+    "PowerShellAssertions": 2608,
     "ReaderBenchmark": {
       "Evidence": "../Reader-Benchmark-Windows.json",
       "Tests": 3,
@@ -87,17 +108,17 @@
         "Extended:6pages"
       ],
       "WholeIsolatedReadMediansMilliseconds": {
-        "Standard": 1689.885,
-        "Python": 2475.332
+        "Standard": 1135.01,
+        "Python": 1614.14
       },
       "FasterReaderForThisFixture": "Standard",
-      "StandardMedianDividedByPythonMedian": 0.683,
+      "StandardMedianDividedByPythonMedian": 0.703,
       "CachedAnalysis": {
         "ColdAnalyzed": 2,
-        "ColdMilliseconds": 4031.192,
+        "ColdMilliseconds": 2550.358,
         "WarmAnalyzed": 0,
         "WarmCached": 2,
-        "WarmMilliseconds": 155.901,
+        "WarmMilliseconds": 94.46,
         "WarmCacheWrites": 0
       },
       "MemoryMeasured": false,
@@ -105,8 +126,8 @@
     },
     "Browser": {
       "Evidence": "../Browser-Web-Windows.json",
-      "Tests": 14,
-      "Assertions": 475,
+      "Tests": 15,
+      "Assertions": 553,
       "Failed": 0
     },
     "LargeLibrary": {
@@ -123,8 +144,8 @@
     },
     "ContentBrowser": {
       "Evidence": "../Browser-Content-Windows.json",
-      "Tests": 5,
-      "Assertions": 130,
+      "Tests": 6,
+      "Assertions": 188,
       "Failed": 0
     },
     "PythonBrowser": {
@@ -136,13 +157,25 @@
     "BackgroundScheduler": {
       "Evidence": "../Background-Scheduler-Windows.json",
       "Passed": true,
-      "CheckCount": 9,
+      "CheckCount": 10,
       "SyntheticOnly": true,
       "ExecutionPlatform": "Native Windows workflow execution",
-      "Scope": "Actual self-contained host scheduler with a deterministic synthetic PowerShell adapter. These nine check outcomes are separate from PowerShell suite scenarios/assertions and do not measure real PDF-reader speed."
+      "Scope": "Actual self-contained host scheduler with a deterministic synthetic PowerShell adapter. These ten check outcomes are separate from PowerShell suite scenarios/assertions and do not measure real PDF-reader speed."
     },
     "Failed": 0
   },
-  "HistoricalEvidence": "Tests/Historical/v5.2.0 preserves the previous complete Current evidence. Stale v5.2.0 Linux reports are removed from Current rather than relabeled.",
-  "Scope": "Top-level Tests/Assertions describe the seven actual Linux PowerShell reports only. These raw reports do not embed source commit hashes. The eleven Linux Python worker protocol scenarios and nine host-scheduler check outcomes are separately reported because their raw JSON contains no PowerShell assertion count. Scheduler execution uses the actual host with a deterministic synthetic PowerShell adapter; it makes no actual PDF-reader speed claim. Final native execution is independently pinned to its workflow artifact. Public reports and screenshots use generated data only; uploaded private PDFs and extracted private text are excluded."
+  "HistoricalEvidence": "Tests/Historical/v5.3.0 preserves the previous complete Current evidence unchanged; older versions remain in their own folders. Reused reader, measurement and trend Linux reports keep their original bytes and execution scope.",
+  "Scope": "Top-level Tests/Assertions sum nine raw Linux PowerShell reports: six were run during v5.3.1 development and three retain earlier unchanged reader/measurement/trend scope. They do not establish that final source was rerun on Linux. These raw reports do not embed source commit hashes. The unchanged eleven-case worker protocol report and the new ten host-scheduler check outcomes are separate because their raw JSON contains no PowerShell assertion count. Scheduler execution uses the actual host with a deterministic synthetic PowerShell adapter; it makes no actual PDF-reader speed claim. Final native execution is independently pinned to its workflow artifact. Public reports and screenshots use generated data only; uploaded private PDFs and extracted private text are excluded.",
+  "LinuxExecutionGroups": {
+    "CurrentDevelopment": {
+      "Reports": 6,
+      "Tests": 106,
+      "Assertions": 863
+    },
+    "RetainedUnchangedScope": {
+      "Reports": 3,
+      "Tests": 43,
+      "Assertions": 125
+    }
+  }
 }

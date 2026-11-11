@@ -1,10 +1,10 @@
 {
-  "Version": "5.3.0",
-  "SourceCommit": "5400798e55e4895fd16f5b9f575401ac52aef089",
-  "WorkflowRun": "https://github.com/rtariq2015/QA-Manger/actions/runs/43043750417",
+  "Version": "5.3.1",
+  "SourceCommit": "006268bb12a6ca93c428ac5cbe1078d7d3976bf3",
+  "WorkflowRun": "https://github.com/rtariq2015/QA-Manger/actions/runs/43062859219",
   "Runtime": "Windows PowerShell 5.1",
-  "Tests": 283,
-  "Assertions": 2333,
+  "Tests": 306,
+  "Assertions": 2608,
   "Failed": 0,
   "Suites": [
     {
@@ -21,26 +21,26 @@
     },
     {
       "Name": "Run-ContentTests",
-      "Tests": 10,
-      "Assertions": 52,
+      "Tests": 19,
+      "Assertions": 128,
       "Failed": 0
     },
     {
       "Name": "Run-AnalysisTests",
-      "Tests": 11,
-      "Assertions": 49,
+      "Tests": 15,
+      "Assertions": 73,
       "Failed": 0
     },
     {
       "Name": "Run-ContentIntegrationTests",
-      "Tests": 10,
-      "Assertions": 245,
+      "Tests": 12,
+      "Assertions": 313,
       "Failed": 0
     },
     {
       "Name": "Run-WebServiceTests",
-      "Tests": 27,
-      "Assertions": 116,
+      "Tests": 29,
+      "Assertions": 129,
       "Failed": 0
     },
     {
@@ -57,8 +57,8 @@
     },
     {
       "Name": "Run-SupportTests",
-      "Tests": 16,
-      "Assertions": 79,
+      "Tests": 22,
+      "Assertions": 171,
       "Failed": 0
     },
     {
@@ -70,7 +70,7 @@
     {
       "Name": "Run-Tests",
       "Tests": 24,
-      "Assertions": 245,
+      "Assertions": 247,
       "Failed": 0
     },
     {
@@ -136,25 +136,25 @@
       "Extended:6pages"
     ],
     "WholeIsolatedReadMediansMilliseconds": {
-      "Standard": 1689.885,
-      "Python": 2475.332
+      "Standard": 1135.01,
+      "Python": 1614.14
     },
     "FasterReaderForThisFixture": "Standard",
-    "StandardMedianDividedByPythonMedian": 0.683,
+    "StandardMedianDividedByPythonMedian": 0.703,
     "CachedAnalysis": {
       "ColdAnalyzed": 2,
-      "ColdMilliseconds": 4031.192,
+      "ColdMilliseconds": 2550.358,
       "WarmAnalyzed": 0,
       "WarmCached": 2,
-      "WarmMilliseconds": 155.901,
+      "WarmMilliseconds": 94.46,
       "WarmCacheWrites": 0
     },
     "MemoryMeasured": false,
     "HospitalNetworkSpeedMeasured": false
   },
-  "SelfContainedWindowsHostSHA256": "91ba4775c3beed7b48c114761d6c66a6d44043b486e60cc33a39a2848bde21bb",
-  "PortablePythonRuntimeArtifactZipSHA256": "778a18d90a25737f737a010dd53e048aaf2e21a76890cf02e945cd67303d77ee",
-  "ValidationArtifactZipSHA256": "0dacf236164a4993f1292ee24636f4da288bf0892d975c92f9a5aab7b7f82f43",
+  "SelfContainedWindowsHostSHA256": "7016cbd150d99f9b707c14593fca32c46dd4d31b59d680d9790b17961318f53b",
+  "PortablePythonRuntimeArtifactZipSHA256": "a72161ecdadc2699af66c79b28e68d338850d95108aedca097ac6f5a1f6c2942",
+  "ValidationArtifactZipSHA256": "5fa0296b6ffa967e24ef754baea0eca1c53c7d013c60e1163ac65321fed801cb",
   "Screenshots": [
     "today-light-web-demo.png",
     "today-dark-web-demo.png",
@@ -175,11 +175,14 @@
     "trends-web-demo.png",
     "settings-web-demo.png",
     "reports-small-web-demo.png",
+    "support-activity-web-demo.png",
+    "support-print-web-demo.png",
     "large-library-pending.png",
     "large-refresh-progress.png",
     "content-basic-web-demo.png",
     "content-continuous-pdf-web-demo.png",
     "content-settings-web-demo.png",
+    "automatic-filing-web-demo.png",
     "python-measurements-web-demo.png",
     "python-measurements-small-web-demo.png",
     "python-reader-settings-web-demo.png",
@@ -188,17 +191,17 @@
   "BackgroundScheduler": {
     "Evidence": "../Background-Scheduler-Windows.json",
     "Passed": true,
-    "CheckCount": 9,
+    "CheckCount": 10,
     "SyntheticOnly": true,
     "ExecutionPlatform": "Native Windows workflow execution",
-    "Scope": "Actual self-contained host scheduler with a deterministic synthetic PowerShell adapter. These nine check outcomes are separate from PowerShell suite scenarios/assertions and do not measure real PDF-reader speed."
+    "Scope": "Actual self-contained host scheduler with a deterministic synthetic PowerShell adapter. These ten check outcomes are separate from PowerShell suite scenarios/assertions and do not measure real PDF-reader speed."
   },
-  "Scope": "Final pinned execution with generated PDFs and local scanner folders. Eighteen native PowerShell suites, nine separate actual-host/synthetic-adapter scheduler checks, a separate three-scenario reader comparison, real Edge standard/content/Python/large-browser workloads, and a separate large-library workload are counted independently. Standard-user Python execution and live cancellation, continuous native PDF scrolling, six interface tabs and both themes are actually exercised. No hospital sign-in, workplace policy approval, real reports or hospital SMB timing is established. Raw reports and screenshots are copied unchanged.",
+  "Scope": "Final pinned execution with generated PDFs and local scanner folders. Eighteen native PowerShell suites, ten separate actual-host/synthetic-adapter scheduler checks, a separate three-scenario reader comparison, real Edge standard/content/Python/large-browser workloads, and a separate large-library workload are counted independently. Standard-user Python execution and live cancellation, continuous native PDF scrolling, six interface tabs, both themes, seven-entry scrubbed diagnostics, printable reports and explicit pending-file automatic processing are actually exercised. Additional, Daily and Drive parser regressions use synthetic layouts only; departmental filing mappings remain Ask until confirmed. No hospital sign-in, workplace policy approval, real reports or hospital SMB timing is established. Raw reports and screenshots are copied unchanged.",
   "PortablePythonIntegrityManifestSHA256": "7bb612a33fa72070b608fc7a67ab93d9de48aebafc6c3ebd1978aff3fd9f27d4",
   "Browser": {
     "Evidence": "../Browser-Web-Windows.json",
-    "Tests": 14,
-    "Assertions": 475,
+    "Tests": 15,
+    "Assertions": 553,
     "Failed": 0
   },
   "LargeLibrary": {
@@ -215,8 +218,8 @@
   },
   "ContentBrowser": {
     "Evidence": "../Browser-Content-Windows.json",
-    "Tests": 5,
-    "Assertions": 130,
+    "Tests": 6,
+    "Assertions": 188,
     "Failed": 0
   },
   "PythonBrowser": {

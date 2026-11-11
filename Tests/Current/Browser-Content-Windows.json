@@ -1,10 +1,10 @@
 {
-  "version": "5.3.0",
+  "version": "5.3.1",
   "syntheticOnly": true,
   "nativeContinuousPreviewActuallyRun": true,
   "browserChannel": "msedge",
-  "tests": 5,
-  "assertions": 130,
+  "tests": 6,
+  "assertions": 188,
   "failed": 0,
   "javascriptErrors": [],
   "externalAssetRequests": 0,
@@ -27,6 +27,10 @@
     },
     {
       "name": "Filtered content export uses the accepted date and mapped folder while warm reads reuse evidence",
+      "result": "PASS"
+    },
+    {
+      "name": "A single saved scanner rule lets the pending queue read compatible Flash reports and file them automatically",
       "result": "PASS"
     }
   ],

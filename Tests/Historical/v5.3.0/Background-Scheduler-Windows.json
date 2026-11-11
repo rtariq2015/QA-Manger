@@ -1,0 +1,17 @@
+{
+  "passed": true,
+  "syntheticOnly": true,
+  "scope": "Real host scheduler with a deterministic PowerShell adapter; no real PDF reader speed claim.",
+  "checks": [
+    "Duplicate background reads are rejected without blocking foreground controls",
+    "Pause finishes the current PDF and preserves a cumulative 1/8 checkpoint",
+    "Paused reading launches no additional PDF helper",
+    "Foreground Approve completes while paused and its latest snapshot is retained",
+    "Independent Trends data and static asset routes are available during reading",
+    "A foreground action queued during a PDF runs before the archive batch completes",
+    "One-PDF requests are sanitized, mutations stay serialized, and cancel preserves cumulative work",
+    "A bulk action stops after twenty actual PDFs and reports the remaining work",
+    "Shutdown cancels background reading at a safe checkpoint and leaves no running helper"
+  ],
+  "checkCount": 9
+}

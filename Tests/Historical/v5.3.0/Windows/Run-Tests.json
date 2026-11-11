@@ -1,0 +1,133 @@
+﻿{
+    "Product":  "CT QA Manager Pro",
+    "TimestampUtc":  "2026-11-11T15:16:33.0414026Z",
+    "Runtime":  "5.1.26100.33648",
+    "Platform":  "Microsoft Windows NT 10.0.26100.0",
+    "WindowsPowerShell51ActuallyRun":  true,
+    "Tests":  24,
+    "Assertions":  245,
+    "Failed":  0,
+    "Results":  [
+                    {
+                        "Name":  "All product scripts parse; PowerShell 5.1 compatibility evidence is explicit",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Preview never copies source PDFs or creates the archive",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Partial scanner availability preserves accessible reports and distinct sessions",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Large generic and named Constancy reports require verification",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Repeated daily update is idempotent; changed source creates a retained revision",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Unavailable archive destination yields an actionable error without source changes",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Corrupt non-PDF input is rejected; no false successful archive record",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Daily gaps distinguish an awaiting-classification report from absent evidence",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Integrity audit detects changed destination content even with preserved size",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Review requires reviewer and reason; confirmed monthly survives an unchanged update",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Unrecognized report date never invents daily or monthly coverage",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Duplicate basenames in different source folders preserve report identity",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Previewed files changed before confirmation are not silently imported",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Files appearing after setup preview are not imported without a fresh preview",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Scanner source and destination overlap is rejected before archive writes",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Changed report content cannot inherit prior reviewed Monthly confirmation",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Completed month with only pending evidence is never counted as confirmed Monthly QA",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Cancellation during a real multi-buffer transfer preserves committed reports and retries safely",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Commit interrupted after PDF installation recovers from transaction journal without duplicates",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Tampered archive state cannot escape the Reports folder",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Archive metadata and report directory links cannot redirect writes into scanner sources",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Legacy migration verifies old hashes, preserves originals, and distrusts old Monthly labels",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Concurrent update lock blocks a second writer without changing archive state",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Interrupted reclassification recovers classification, reviewer evidence, and prior PDF history",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    }
+                ],
+    "FixturesKept":  false
+}

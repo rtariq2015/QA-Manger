@@ -1,11 +1,11 @@
 {
-  "version": "5.3.0",
+  "version": "5.3.1",
   "syntheticOnly": true,
   "browser": "Chromium via Playwright",
   "browserChannel": "msedge",
   "nativePdfPreviewActuallyRun": true,
-  "tests": 14,
-  "assertions": 475,
+  "tests": 15,
+  "assertions": 553,
   "failed": 0,
   "externalAssetRequests": 0,
   "javascriptErrors": [],
@@ -60,6 +60,10 @@
     },
     {
       "name": "Background PDF reading pauses at a saved boundary and allows review, settings and exports to continue",
+      "result": "PASS"
+    },
+    {
+      "name": "One support export includes detailed scrubbed activity, report reasons and a separately printable report",
       "result": "PASS"
     },
     {

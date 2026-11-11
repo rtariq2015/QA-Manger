@@ -1,0 +1,95 @@
+﻿{
+    "Product":  "CT QA Manager Pro",
+    "Suite":  "Reviewed Monthly QA component coverage",
+    "TimestampUtc":  "2026-11-11T15:17:24.6968324Z",
+    "Runtime":  "5.1.26100.33648",
+    "Platform":  "Microsoft Windows NT 10.0.26100.0",
+    "WindowsPowerShell51ActuallyRun":  true,
+    "Tests":  16,
+    "Assertions":  89,
+    "Passed":  16,
+    "Failed":  0,
+    "Results":  [
+                    {
+                        "Name":  "Separate reviewed PDFs contribute a component union only within the same scanner and month",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "A single reviewed PDF can confirm every configured monthly component",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Pending filenames and text hints cannot count as confirmed component evidence",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Confirmed labels with no configured checklist never imply monthly completeness",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "No report and pending report states remain distinct for configured checklists",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Unknown components and components attached to a non-Monthly decision are rejected",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Component review canonicalizes configured names without inventing extra evidence",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Component evidence cannot cross scanner or calendar-month boundaries",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "A changed source revision cannot inherit reviewed components for earlier bytes",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "A corrupted archived PDF cannot acquire component confirmation",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Interrupted review commit recovers exact reviewed components and their audit evidence",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Monthly attention presents one combined missing-component item for each scanner-month",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Configured fourth scanners have independent monthly checklist coverage",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Coverage calculations are read-only and reject malformed month identifiers",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Repairing saved bytes from an unchanged source preserves exact-hash reviewed components",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Reclassification away from Monthly clears component evidence for monthly coverage",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    }
+                ],
+    "FixturesKept":  false
+}
