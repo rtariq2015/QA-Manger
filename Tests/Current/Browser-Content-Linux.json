@@ -1,0 +1,29 @@
+{
+  "version": "5.2.0",
+  "syntheticOnly": true,
+  "browserChannel": "chromium",
+  "tests": 4,
+  "assertions": 105,
+  "failed": 0,
+  "javascriptErrors": [],
+  "externalAssetRequests": 0,
+  "results": [
+    {
+      "name": "Read contents reads only the selected Basic PDF and shows raw printed evidence without a site-wide rule",
+      "result": "PASS"
+    },
+    {
+      "name": "One-file Approve accepts the suggestion without changing scanner rules and Undo restores pending",
+      "result": "PASS"
+    },
+    {
+      "name": "Per-scanner report-format settings map an Extended profile and survive navigation without inventing clinical evidence",
+      "result": "PASS"
+    },
+    {
+      "name": "Filtered content export uses the accepted date and mapped folder while warm reads reuse evidence",
+      "result": "PASS"
+    }
+  ],
+  "scope": "Actual offline host, selected-PDF reader, classifier, scanner settings, durable decisions and ZIP export. Generated Basic9-page and Extended6-page documents; no uploaded report or real credentials are included."
+}

@@ -1,82 +1,64 @@
 {
   "Product": "CT QA Manager Pro",
-  "Version": "5.1.0",
-  "ValidationStatus": "Passed: final pinned Windows validation and separately labeled targeted Linux development checks",
-  "Runtime": "PowerShell 7.4.13 on Linux; Chromium via Playwright against the real local host",
-  "SourceCommit": "0c20b818542c819c601c85af314b727bb9159558",
-  "Tests": 56,
-  "Assertions": 317,
+  "Version": "5.2.0",
+  "SourceCommit": "d3f17e0c36ab304ea34cddb9820c73bba165a707",
+  "Runtime": "PowerShell 7.4.13 on Linux; four targeted suites only",
+  "ValidationStatus": "Passed: final pinned Windows artifact plus separately labeled targeted Linux development checks",
+  "Tests": 44,
+  "Assertions": 390,
   "Failed": 0,
   "Suites": [
     {
-      "Name": "Run-Tests",
-      "Tests": 24,
-      "Assertions": 197,
+      "Name": "Run-AnalysisTests",
+      "Tests": 11,
+      "Assertions": 49,
+      "Failed": 0
+    },
+    {
+      "Name": "Run-ContentTests",
+      "Tests": 10,
+      "Assertions": 52,
+      "Failed": 0
+    },
+    {
+      "Name": "Run-ContentIntegrationTests",
+      "Tests": 10,
+      "Assertions": 245,
       "Failed": 0
     },
     {
       "Name": "Run-PdfTests",
-      "Tests": 11,
-      "Assertions": 39,
-      "Failed": 0
-    },
-    {
-      "Name": "Run-WebServiceTests",
-      "Tests": 21,
-      "Assertions": 81,
+      "Tests": 13,
+      "Assertions": 44,
       "Failed": 0
     }
   ],
-  "LinuxLargeLibrary": {
-    "Evidence": "Large-Library-Linux.json",
-    "Records": 1367,
-    "Tests": 4,
-    "Assertions": 5463,
-    "Failed": 0,
-    "ColdManifestWrites": 1,
-    "ColdHashOperations": 2734,
-    "WarmManifestWrites": 0,
-    "WarmHashOperations": 0
-  },
   "LinuxBrowser": {
-    "Evidence": "Browser-Web.json",
-    "Tests": 12,
-    "Assertions": 292,
-    "Failed": 0,
-    "NativeWindowsPdfRendererActuallyRun": false
-  },
-  "LinuxLargeBrowser": {
-    "Evidence": "Browser-Large-Linux.json",
-    "Records": 1367,
+    "Evidence": "Browser-Content-Linux.json",
     "Tests": 4,
-    "Assertions": 27328,
-    "Failed": 0
+    "Assertions": 105,
+    "Failed": 0,
+    "BrowserChannel": "chromium"
   },
   "WindowsPowerShell51ActuallyRun": false,
   "NativeWPFActuallyRun": false,
   "WindowsDPAPIActuallyRun": false,
   "WindowsValidation": {
     "Status": "Passed",
-    "Version": "5.1.0",
-    "SourceCommit": "0c20b818542c819c601c85af314b727bb9159558",
-    "WorkflowRun": "https://github.com/rtariq2015/QA-Manger/actions/runs/42923789148",
-    "PowerShellTests": 200,
-    "PowerShellAssertions": 1256,
+    "SourceCommit": "d3f17e0c36ab304ea34cddb9820c73bba165a707",
+    "WorkflowRun": "https://github.com/rtariq2015/QA-Manger/actions/runs/42933748650",
+    "PowerShellTests": 233,
+    "PowerShellAssertions": 1617,
     "BrowserTests": 12,
     "BrowserAssertions": 296,
     "LargeLibraryTests": 4,
     "LargeLibraryAssertions": 5463,
     "LargeBrowserTests": 4,
     "LargeBrowserAssertions": 27328,
+    "ContentBrowserTests": 4,
+    "ContentBrowserAssertions": 105,
     "Failed": 0
   },
-  "HistoricalEvidence": "Tests/Historical/v5.0.1 preserves the previous complete evidence set, including the explicit old-UI focus regression proof. Tests/Historical/v5.0.0 preserves earlier broad development runs.",
-  "Scope": "Top-level Tests/Assertions and native-run flags describe the three targeted Linux PowerShell reports only. Final Windows execution is independently counted in WindowsValidation and Windows/Summary.json. Linux large-library and browser workloads are separately counted; these development runs preceded the final PowerShell 5.1 array-representation compatibility fix, which the final Windows run exercises. No hospital network, reports or real credentials were used.",
-  "LinuxSourceCommit": "dc3dcb6b49ee2643fdd27bd8c7380dcf266ad20e",
-  "LinuxAdapterFinalArrayFixRerun": {
-    "SourceCommit": "0c20b818542c819c601c85af314b727bb9159558",
-    "Tests": 21,
-    "Assertions": 81,
-    "Failed": 0
-  }
+  "HistoricalEvidence": "Tests/Historical/v5.1.0 preserves all previous broad Linux and Windows evidence. Stale v5.1.0 Linux reports are removed from Current instead of relabeled.",
+  "Scope": "Top-level Tests/Assertions and native-run flags describe the four local Linux PowerShell reports only. The local JSON files do not embed source commit hashes. Pinned final Windows execution is independently counted and sourced by its workflow artifact. All reports and screenshots are synthetic; no uploaded private PDF, extracted report text or real identifiers are included."
 }

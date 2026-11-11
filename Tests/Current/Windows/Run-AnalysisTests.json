@@ -1,0 +1,69 @@
+﻿{
+    "Product":  "CT QA Manager Pro",
+    "Feature":  "Versioned content analysis cache",
+    "TimestampUtc":  "2026-11-11T00:46:16.6353329Z",
+    "Runtime":  "5.1.26100.33648",
+    "Platform":  "Microsoft Windows NT 10.0.26100.0",
+    "WindowsPowerShell51ActuallyRun":  true,
+    "Tests":  11,
+    "Assertions":  49,
+    "Failed":  0,
+    "Results":  [
+                    {
+                        "Name":  "A real verified PDF is classified once and reused without changing review state",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Legacy successful cache receives one bounded classifier upgrade",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Legacy failed reads stay cached until manual force or file change",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Selected analysis never reads newer unselected reports or invalid identities",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Stored provenance invalidates changed bytes, lengths, timestamps, and classifier contents",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Reader provenance mismatches and post-read mutation cannot create successful classification",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Cancellation neither writes partial classification nor replaces a prior cache",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Unknown image and truncated reads are cached once without auto approval",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Equal-content destinations retain separate valid metadata without cache ping-pong",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Cache stores bounded evidence fields without the full PDF text or private reader error",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Linked analysis directories cannot supply trusted document classifications",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    }
+                ],
+    "Notes":  "Synthetic PDFs and controlled reader responses only. The first scenario invokes the real isolated verified PDF reader."
+}

@@ -1,53 +1,16 @@
 {
-  "Version": "5.1.0",
-  "SourceCommit": "0c20b818542c819c601c85af314b727bb9159558",
-  "WorkflowRun": "https://github.com/rtariq2015/QA-Manger/actions/runs/42923789148",
+  "Version": "5.2.0",
+  "SourceCommit": "d3f17e0c36ab304ea34cddb9820c73bba165a707",
+  "WorkflowRun": "https://github.com/rtariq2015/QA-Manger/actions/runs/42933748650",
   "Runtime": "5.1.26100.33648",
-  "Host": "GitHub-hosted Windows Server 2025",
-  "Tests": 200,
-  "Assertions": 1256,
+  "Tests": 233,
+  "Assertions": 1617,
   "Failed": 0,
   "Suites": [
     {
-      "Name": "Run-BrowseTests",
-      "Tests": 17,
-      "Assertions": 117,
-      "Failed": 0
-    },
-    {
-      "Name": "Run-ConnectionTests",
-      "Tests": 15,
-      "Assertions": 181,
-      "Failed": 0
-    },
-    {
-      "Name": "Run-ExportTests",
-      "Tests": 24,
-      "Assertions": 250,
-      "Failed": 0
-    },
-    {
-      "Name": "Run-MonthlyTests",
-      "Tests": 16,
-      "Assertions": 89,
-      "Failed": 0
-    },
-    {
-      "Name": "Run-NetworkTests",
-      "Tests": 13,
-      "Assertions": 43,
-      "Failed": 0
-    },
-    {
-      "Name": "Run-PdfTests",
-      "Tests": 11,
-      "Assertions": 39,
-      "Failed": 0
-    },
-    {
-      "Name": "Run-PortableTests",
-      "Tests": 17,
-      "Assertions": 48,
+      "Name": "Run-WebServiceTests",
+      "Tests": 23,
+      "Assertions": 91,
       "Failed": 0
     },
     {
@@ -57,27 +20,81 @@
       "Failed": 0
     },
     {
-      "Name": "Run-SupportTests",
-      "Tests": 16,
-      "Assertions": 79,
-      "Failed": 0
-    },
-    {
-      "Name": "Run-Tests",
-      "Tests": 24,
-      "Assertions": 201,
-      "Failed": 0
-    },
-    {
       "Name": "Run-UpdateTests",
       "Tests": 10,
       "Assertions": 35,
       "Failed": 0
     },
     {
-      "Name": "Run-WebServiceTests",
-      "Tests": 23,
-      "Assertions": 91,
+      "Name": "Run-SupportTests",
+      "Tests": 16,
+      "Assertions": 79,
+      "Failed": 0
+    },
+    {
+      "Name": "Run-NetworkTests",
+      "Tests": 13,
+      "Assertions": 43,
+      "Failed": 0
+    },
+    {
+      "Name": "Run-Tests",
+      "Tests": 24,
+      "Assertions": 211,
+      "Failed": 0
+    },
+    {
+      "Name": "Run-ExportTests",
+      "Tests": 24,
+      "Assertions": 250,
+      "Failed": 0
+    },
+    {
+      "Name": "Run-ConnectionTests",
+      "Tests": 15,
+      "Assertions": 181,
+      "Failed": 0
+    },
+    {
+      "Name": "Run-BrowseTests",
+      "Tests": 17,
+      "Assertions": 117,
+      "Failed": 0
+    },
+    {
+      "Name": "Run-MonthlyTests",
+      "Tests": 16,
+      "Assertions": 89,
+      "Failed": 0
+    },
+    {
+      "Name": "Run-PdfTests",
+      "Tests": 13,
+      "Assertions": 44,
+      "Failed": 0
+    },
+    {
+      "Name": "Run-PortableTests",
+      "Tests": 17,
+      "Assertions": 48,
+      "Failed": 0
+    },
+    {
+      "Name": "Run-ContentTests",
+      "Tests": 10,
+      "Assertions": 52,
+      "Failed": 0
+    },
+    {
+      "Name": "Run-AnalysisTests",
+      "Tests": 11,
+      "Assertions": 49,
+      "Failed": 0
+    },
+    {
+      "Name": "Run-ContentIntegrationTests",
+      "Tests": 10,
+      "Assertions": 245,
       "Failed": 0
     }
   ],
@@ -86,36 +103,34 @@
   "NativeWPFCompatibilityActuallyRun": true,
   "NativePdfRendererActuallyRun": true,
   "SelfContainedWindowsWebHostActuallyRun": true,
-  "WorkerRawUtf8PipeTransportActuallyRun": true,
-  "BrowserEvidence": "../Browser-Web-Windows.json",
-  "BrowserTests": 12,
-  "BrowserAssertions": 296,
-  "BrowserFailed": 0,
-  "BrowserChannel": "msedge",
-  "NativePngPdfPreviewInBrowserActuallyRun": true,
-  "BrowserExternalAssetRequests": 0,
-  "LargeLibraryEvidence": "../Large-Library-Windows.json",
-  "LargeLibraryTests": 4,
-  "LargeLibraryAssertions": 5463,
-  "LargeLibraryFailed": 0,
-  "LargeBrowserEvidence": "../Browser-Large-Windows.json",
-  "LargeBrowserTests": 4,
-  "LargeBrowserAssertions": 27328,
-  "LargeBrowserFailed": 0,
-  "SyntheticLargeLibraryRecords": 1367,
-  "ColdManifestWrites": 1,
-  "ColdHashOperations": 2734,
-  "WarmManifestWrites": 0,
-  "WarmHashOperations": 0,
-  "SelfContainedWindowsHostArtifactSHA256": "44fe235cc4b00954ca06e8a0edefaa55045aa0edfa1f121a0d31d4b3b0ce1bc9",
-  "ValidationArtifactZipSHA256": "922dbad2a3b485e575930b1076b43754877657a02e24572c6ae40a3e37844507",
-  "Screens": [
-    "Today (HTML)",
-    "Reports (HTML)",
-    "Settings (HTML)",
-    "Reports at 1024x768 (HTML)",
-    "Large pending review library (HTML)",
-    "Active Refresh progress (HTML)"
-  ],
-  "Scope": "Final pinned source executed with fresh synthetic Windows fixtures. Twelve native PowerShell suites, real Edge/Kestrel/PowerShell browser checks, and separate 1,367-PDF library and browser workloads all passed. Large tests cover automatic versus pending classifications, preserved prior decisions and clinical evidence, batched ownership commits, zero-hash/zero-write warm refresh, explicit integrity checks, live progress, duplicate Refresh coalescing, cooperative cancellation, browser reload recovery and support ZIP download during an active update. A deterministic barrier is inserted only in a disposable fixture copy. Raw suite reports are unmodified. No hospital authentication, real clinical data, workplace policy approval or hospital SMB performance was tested."
+  "Browser": {
+    "Evidence": "../Browser-Web-Windows.json",
+    "Tests": 12,
+    "Assertions": 296,
+    "Failed": 0,
+    "BrowserChannel": "msedge",
+    "NativePngPdfPreviewActuallyRun": true
+  },
+  "LargeLibrary": {
+    "Evidence": "../Large-Library-Windows.json",
+    "Tests": 4,
+    "Assertions": 5463,
+    "Failed": 0
+  },
+  "LargeBrowser": {
+    "Evidence": "../Browser-Large-Windows.json",
+    "Tests": 4,
+    "Assertions": 27328,
+    "Failed": 0
+  },
+  "ContentBrowser": {
+    "Evidence": "../Browser-Content-Windows.json",
+    "Tests": 4,
+    "Assertions": 105,
+    "Failed": 0
+  },
+  "SelfContainedWindowsHostArtifactSHA256": "74fa1e82385a1cc18ad1522fdc46ffb7d41bc97c00a029c11d9dfa813a71144e",
+  "ValidationArtifactZipSHA256": "dea5f146d2c5e17db22a4b4f2b76151b1506afbd924dc4de8a936626155d3207",
+  "Scope": "Final pinned synthetic execution. Fifteen native PowerShell suites plus separate real Edge standard, large-library and content browser workloads. No real scanner sign-in, clinical data, endpoint-policy approval or hospital SMB timing is established. Raw reports are copied unchanged; older Version fields may identify feature introduction.",
+  "Host": "GitHub-hosted Windows runner"
 }

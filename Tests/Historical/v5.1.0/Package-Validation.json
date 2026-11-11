@@ -1,0 +1,17 @@
+{
+  "Version": "5.1.0",
+  "ValidatedSource": "0c20b818542c819c601c85af314b727bb9159558",
+  "TestedHostArtifactSHA256": "44fe235cc4b00954ca06e8a0edefaa55045aa0edfa1f121a0d31d4b3b0ce1bc9",
+  "Runtime": "Linux / PowerShell 7.4.13; package installation logic, not Windows browser execution",
+  "StaticChecks": 799,
+  "StaticFailed": 0,
+  "ActualPackagedUpgradeFrom": "5.0.1",
+  "GenericUpgradePreservesConfigDataCredentialsAndArchiveHashes": true,
+  "PreviousProgramBackupCreated": true,
+  "PackagedStandaloneDiagnosticsPassed": true,
+  "PrivateUpgradePreservesArchiveAndDepartmentSettings": true,
+  "PrivateUpgradeAppliesThreeConfiguredScannerPaths": true,
+  "PasswordsBundled": false,
+  "HospitalNetworkContacted": false,
+  "Scope": "Actual ZIP manifests, clean contents, generic and local-only private one-time upgrade helpers using the exact tested Windows host artifact. Synthetic preservation sentinels only. This does not establish real sign-in, work-computer execution or endpoint policy approval."
+}

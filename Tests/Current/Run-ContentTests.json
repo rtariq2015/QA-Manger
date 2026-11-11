@@ -1,0 +1,60 @@
+{
+  "Version": "5.2.0",
+  "Runtime": "7.4.13",
+  "Tests": 10,
+  "Assertions": 52,
+  "Failed": 0,
+  "Results": [
+    {
+      "Name": "Complete basic Siemens body sections produce a suggested profile without assigning department policy",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "The complete extended body profile is recognized independent of usual PDF size or page count",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "Explicit cover titles are distinguished from profile suggestions and ordinary text mentions",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "A table of contents cannot stand in for actual completed body sections",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "Unknown, duplicated, missing or reordered sections require manual review",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "Incomplete text, OCR needs and missing page markers never become accepted content",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "Missing, conflicting, invalid and misnumbered footer evidence cannot supply a report date",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "Reader whitespace variations are accepted without relaxing structural evidence",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "Mixed printed outcomes stay literal and separate from document organization",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "Classifier metadata and evidence codes are fixed and support safe display allowlists",
+      "Result": "PASS",
+      "Details": ""
+    }
+  ],
+  "Scope": "Synthetic report text only. Exact numbered Siemens IEC body-section profiles and repeated report footer consensus. Profile suggestions are separate from department mappings and clinical QA evidence."
+}

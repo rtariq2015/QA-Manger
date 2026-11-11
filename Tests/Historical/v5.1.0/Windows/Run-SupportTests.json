@@ -1,0 +1,91 @@
+﻿{
+    "Version":  "4.3.0",
+    "Runtime":  "5.1.26100.33648",
+    "WindowsPowerShell51ActuallyRun":  true,
+    "Tests":  16,
+    "Assertions":  79,
+    "Failed":  0,
+    "Results":  [
+                    {
+                        "Name":  "Hundreds of date checks are grouped without deleting or changing a review item",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Information can be filtered separately and all original details remain accessible",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Shareable diagnostics exclude free text, identifiers, names, paths and secrets",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Unrecognized status and settings values cannot inject sensitive text into diagnostics",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "PDF analysis diagnostics retain counts without copying extracted evidence",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Diagnostic exports are atomic new JSON files and protect existing application files",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Safe operation history excludes arbitrary old log content and injected fields",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Support events rotate, expire and keep legacy raw files separate",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Standalone diagnostics work against an installation with an active application lock",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Pending verification includes provisional daily files and clears only on actual confirmation",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "A scrubbed ZIP includes all retained activity and strips injected fields from every entry",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Earlier activity contributes only recognized dates, operations and numeric counts",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Error descriptions become safe categories rather than raw strings",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Concurrent program workers keep every structured event without overwriting each other",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "A failed PDF read stays cached until the destination changes",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Real connection-result handling avoids repeated prompts and remembers only accepted sign-ins",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    }
+                ],
+    "Scope":  "Synthetic review grouping, diagnostic privacy, protected destinations, safe events, standalone export and active application lock. Production diagnostic CMD runs on Windows."
+}

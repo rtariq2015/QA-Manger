@@ -1,59 +1,60 @@
 # Testing and practical limits
 
-Final v5.1.0 Windows validation passed at source `0c20b818542c819c601c85af314b727bb9159558` in [workflow 42923789148](https://github.com/rtariq2015/QA-Manger/actions/runs/42923789148). All PDFs, scanner folders, identities and password canaries are synthetic; no hospital records or real credentials were used.
+Final v5.2.0 Windows validation passed at source `d3f17e0c36ab304ea34cddb9820c73bba165a707` in [workflow 42933748650](https://github.com/rtariq2015/QA-Manger/actions/runs/42933748650). All public test PDFs, folders, identities and password canaries are generated synthetic data. Uploaded private reports and extracted private text are excluded from repository evidence and screenshots.
 
 | Execution | Scenarios | Assertions | Failed | Evidence |
 | --- | ---: | ---: | ---: | --- |
-| Windows PowerShell 5.1: twelve native suites | 200 | 1,256 | 0 | [Windows summary](../Tests/Current/Windows/Summary.json) and unmodified raw suite reports |
-| Windows Edge: actual self-contained host and adapter | 12 | 296 | 0 | [Windows browser report](../Tests/Current/Browser-Web-Windows.json) |
-| Windows PowerShell: 1,367-report library workload | 4 | 5,463 | 0 | [Windows library report](../Tests/Current/Large-Library-Windows.json) |
-| Windows Edge: 1,367-report progress and cancellation workload | 4 | 27,328 | 0 | [Large Windows browser report](../Tests/Current/Browser-Large-Windows.json) |
-| Linux PowerShell 7.4.13: core, PDF reader and adapter | 56 | 317 | 0 | [Current summary](../Tests/Current/Summary.json) and three raw `Run-*.json` reports |
-| Linux PowerShell: 1,367-report library workload | 4 | 5,463 | 0 | [Library report](../Tests/Current/Large-Library-Linux.json) |
-| Linux Chromium: actual local host and adapter | 12 | 292 | 0 | [Browser report](../Tests/Current/Browser-Web.json) |
-| Linux Chromium: 1,367-report progress and cancellation workload | 4 | 27,328 | 0 | [Large browser report](../Tests/Current/Browser-Large-Linux.json) |
+| Windows PowerShell 5.1: fifteen native suites | 233 | 1,617 | 0 | [Windows summary](../Tests/Current/Windows/Summary.json) and unmodified raw reports |
+| Windows Edge: standard actual-host workflow | 12 | 296 | 0 | [Browser report](../Tests/Current/Browser-Web-Windows.json) |
+| Windows PowerShell: 1,367-report library workload | 4 | 5,463 | 0 | [Library report](../Tests/Current/Large-Library-Windows.json) |
+| Windows Edge: large-library progress/cancellation | 4 | 27,328 | 0 | [Large browser report](../Tests/Current/Browser-Large-Windows.json) |
+| Windows Edge: selected content/format workflow | 4 | 105 | 0 | [Content browser report](../Tests/Current/Browser-Content-Windows.json) |
+| Linux PowerShell 7.4.13: analysis, classifier, content integration and PDF reader | 44 | 390 | 0 | [Current summary](../Tests/Current/Summary.json) and four raw `Run-*.json` reports |
+| Linux Chromium: actual-host content workflow | 4 | 105 | 0 | [Content browser report](../Tests/Current/Browser-Content-Linux.json) |
 
-The Windows reports are the final pinned release execution, including native PNG rendering in Edge. Most separately labeled Linux development runs preceded the final PowerShell 5.1 array-representation compatibility fix. The adapter was rerun afterward and again passed 21 scenarios / 81 assertions. These are supporting checks rather than a claim that every final-source suite was rerun on Linux. The complete previous evidence, including the controlled mouse-release typing regression, is preserved in [Tests/Historical/v5.0.1](../Tests/Historical/v5.0.1). Earlier broad runs remain under `Tests/Historical/v5.0.0`. Some raw report version fields identify feature introduction; raw reports are copied without alteration. Host-binary and validation-artifact SHA-256 values are recorded in the Windows summary.
+Windows counts above come from the final successful pinned artifact. Linux checks are separately labeled development evidence; their raw reports do not embed commit hashes. Previous v5.1.0 broad Linux/browser/Windows evidence remains under [Tests/Historical/v5.1.0](../Tests/Historical/v5.1.0), with older releases under their respective historical folders. It is not relabeled as new execution. Some raw report Version fields identify a feature's introduction and are preserved unchanged. Host and validation-artifact SHA-256 values are recorded in the Windows summary.
 
-## What changed and what was exercised
+## Content-based document filing
 
-Standard Daily filenames, including provisional generic Constancy Daily grouping, are automatically filed as Daily documents. An explicit valid Monthly filename can be filed as a Monthly document. Saved Approve/Disapprove decisions and valid prior clinical reviews take precedence. Size-only Monthly candidates, generic text hints and unknown types remain pending. These are document labels: automatic filing and Approve do not create a clinical reviewer, printed PASS/FAIL or completed Monthly checklist.
+The reader identifies supported Siemens IEC Basic and Extended profiles from the complete numbered body sections. A table of contents, file size or page count is insufficient. Tests deliberately use a nine-page Basic report and a six-page Extended report, and retain raw printed `OK` tokens with their section/page evidence rather than turning them into a clinical PASS.
 
-The large fixture contains 1,367 real synthetic source and archive PDFs: 1,050 automatically organized, 217 pending, 81 approved and 19 disapproved. The adapter and browser verify the exact populations and preserve prior reviewer fields, checklist evidence, clinical history and file-organization decisions. The browser uses the actual local host and PowerShell worker; its application API is not mocked.
+A recognized profile defaults to Ask unless the department saves a scanner-specific filing rule. Approve can accept one file's suggestion without teaching a rule for every file. A verified explicit Daily/Monthly document title can identify that document's stated type. Tests cover saved mapping, clearing it back to Ask, invalid-rule rejection and scanner isolation. Existing manual decisions, valid prior reviews and Undo retain priority. Undo preserves the visible suggested category, and re-Approve files that same category again.
 
-The readable-library checks measure work rather than impose hardware-dependent duration limits. A cold batch verifies each new PDF and commits its ownership ledger once: 2,734 hash operations for 1,367 copies. An unchanged warm batch performs zero PDF hash reads, zero copies and zero ledger writes. An explicit integrity audit bypasses that metadata shortcut and detects altered bytes even when the file length and timestamp were restored. Those counters describe local synthetic files, not a promise about hospital network speed.
+Only consistent report-footer timestamps from a complete read can supply a missing report date. A disagreeing indexed filename date remains unchanged and requires review. Tests include conflicting page footers behind an explicit Monthly filename and a printed Daily title that conflicts with a saved Monthly rule. Neither shortcut can silently resolve the conflict. CRLF text, incomplete/OCR-needed input and unsupported body sections also stay explicit in classifier evidence. Accepted derived dates drive report filters, readable folders and ZIP year/month paths while core clinical state remains byte-for-byte unchanged.
 
-A deterministic barrier is inserted only into a disposable fixture's copied progress checkpoint. The real archive loop, worker progress channel, cancellation marker and persistence run normally. The browser confirms:
+## Cache provenance and actual workflow checks
 
-- Real stage, count and elapsed progress; repeated Refresh requests reuse the active job.
-- Saved reports remain searchable and viewable while an update runs, including after reloading the browser.
-- Cancel stops at a safe checkpoint, stops the progress display and prevents subsequent library work; all original source and archive hashes and prior evidence remain preserved.
-- A later unchanged update completes after browser reload and reuses all 1,367 cached readable copies.
-- Support collection completes and its actual ZIP downloads while Refresh remains held. A dedicated support link remains available after the later Refresh result replaces the progress notification.
+Analysis records captured provenance for the actual parsed buffer: its verified SHA-256, length, archive record identity and write timestamp. Reader metadata is checked around parsing before results are cached. Older caches without the current classifier receive a bounded upgrade read; current entries are reused. Equal-content records retain independent destination provenance. Tests cover changed bytes, interrupted reads, metadata/provenance mismatch, failed-read retention and explicit selected retry.
 
-The regular browser suite retains authentication/origin guards, bundled offline assets, actual keyboard typing and connection drafts, no-name Approve/Disapprove, Undo, stale-decision rejection, restart persistence, exact filtered ZIP exports, visible connection errors and a 1024×768 layout check. Windows runs also check real native PNG rendering inside the review pane. The four standard interface screenshots and two large-workload screenshots in [docs/images](images) are actual synthetic Windows captures copied from the successful final workflow. The large captures show the [pending library](images/large-library-pending.png) and [active Refresh progress](images/large-refresh-progress.png); they are not design mockups.
+The content browser uses the real localhost host, PowerShell worker, PDF reader and durable state. Its application API is not mocked. It clicks Read contents for the selected PDF, shows raw section evidence, approves/undoes without names or secondary confirmations, saves Report formats in Settings, exports the correctly dated PDF, and verifies warm reads do not parse it again. Two simultaneous cold selected-PDF requests must receive different serialized jobs and each populate its own expected page count/cache. Source and archived PDF hashes and the entire clinical-state file remain unchanged. At 1024×768, both decision buttons remain visible with the evidence inspector open.
 
-Core and PDF tests cover source preservation, revised files, archive locks, interrupted-copy recovery, cancellation, structured extraction and reuse of cached analysis, including multi-PDF batches. The adapter additionally covers explicit-review precedence, old approval/Undo behavior, interrupted library ownership commits and concurrent edits during verification.
+The fifteen native suites also retain archive revision/lock/recovery checks, Monthly checklist evidence, exports, protected Windows sign-ins, support privacy, portability, verified backup/restore and offline updates. Standard browser checks retain authentication/origin guards, bundled assets, actual typing/draft handling, native PNG rendering, stale decisions, restart persistence and exact filtered ZIP hashes.
 
-Support bundles reconstruct allowlisted counts, outcomes, timings and Windows error numbers. Synthetic privacy canaries check that passwords, report text, filenames, paths, usernames, network addresses and raw logs do not enter the shareable bundle. Nothing is uploaded automatically.
+The large synthetic workload retains 1,367 PDFs: 1,050 automatically filed, 217 pending, 81 approved and 19 disapproved. A cold readable-library batch verifies 2,734 hash operations and commits one ownership ledger. An unchanged warm batch performs zero PDF hash reads, copies or ledger writes. Explicit integrity verification detects altered bytes even with restored length/timestamp. These counters verify work performed, rather than impose hardware-dependent time limits.
+
+A barrier is inserted only into a disposable fixture's copied progress checkpoint. The real archive loop and cooperative cancellation then verify factual counters, duplicate Refresh coalescing, browsing/reload while busy, safe cancellation, resumed completion, and an independently downloadable support ZIP while Refresh remains held. The dedicated support link survives later job notifications.
+
+All eight documentation captures were copied from the successful final Windows workflow: the four standard interface images, [large pending library](images/large-library-pending.png), [active update](images/large-refresh-progress.png), [content evidence](images/content-basic-web-demo.png) and [report-format settings](images/content-settings-web-demo.png). They are actual synthetic interface captures, not mockups.
+
+Support bundles reconstruct allowlisted counts, outcomes, timings and Windows error numbers. Synthetic canaries test that passwords, report contents, filenames, paths, usernames, addresses and raw logs do not enter shareable bundles. Nothing is uploaded automatically.
 
 ## Reproducing checks
 
-Development validation needs the .NET SDK and Node/Playwright. These are build/test tools; they are not installations required on the work computer. The Windows workflow builds the self-contained host, runs the native suites in Windows PowerShell 5.1, then runs:
+Build/test validation uses the .NET SDK and Node/Playwright; these are development tools, not installations required on the work computer. The Windows workflow builds the self-contained host, runs fifteen suites in Windows PowerShell 5.1, then runs:
 
 ```text
 node Tests/Web/run-all.cjs --windows --output artifacts/web
 ```
 
-This creates separate fresh small and 1,367-report synthetic workspaces, runs both real-host browser suites and the large-library PowerShell checks, and saves separate JSON reports. Fixture helpers refuse existing destinations. See [Windows-Smoke.md](../Tests/Windows-Smoke.md) for workstation checks.
+That command creates separate fresh standard, large and content workspaces, runs real-host browser checks and the large-library PowerShell workload, and saves separate JSON reports/screenshots. Fixture destinations must be new. See [Windows-Smoke.md](../Tests/Windows-Smoke.md) for workstation checks.
 
 ## Practical limits
 
-- The portable host includes its runtime, but still uses existing Windows PowerShell 5.1 and native Windows components. Endpoint policy can restrict executables, scripts, loopback browser access or scanner shares. Hosted tests cannot establish hospital access or approve workstation policy.
-- Scanner collection requires the internal hospital network. Saved reports, classification, search and export work locally. An unavailable scanner or absent PDF does not establish a clinical QA failure.
-- The interface is served on loopback, with bundled assets and no automatic upload. Checks run only while the local app is running; no service, scheduled task or closed-app notification is installed.
-- Cancellation is cooperative. A Windows network file read already in progress may have to return before the next safe checkpoint. Local synthetic timings do not reproduce slow SMB shares, endpoint scanning or workstation load.
-- PDF analysis caches content fingerprints. OCR and department-specific numerical QA limits are not included. Incomplete text stays for review; report receipt, document labels, extracted results and formal checklist evidence remain separate.
-- The readable library is a convenience copy. Metadata reuse speeds ordinary refresh; explicit integrity verification rereads bytes. Same-drive copies do not protect against drive loss. Keep an approved separate backup.
-- Windows-encrypted scanner sign-ins may need re-entry after moving to another user or computer. Updates preserve local settings and data. Manifest checks detect inconsistent files but do not authenticate an unknown publisher; retained history is not a signed audit system.
-- Physical keyboard/IME behavior, manual folder pickers, workstation DPI, very long paths, real hospital reports and actual scanner-share performance still need approved workstation checks.
+- The portable host includes its runtime but still uses existing Windows PowerShell and native Windows components. Hosted tests cannot establish hospital access or approve endpoint policy, which may restrict executables, scripts, loopback browser access or scanner shares.
+- Scanner collection needs the internal network. Saved reports, document filing, search and export work locally. An unavailable scanner or absent PDF does not establish a clinical QA failure.
+- The interface uses loopback and bundled assets; no public website or automatic upload is required. Checks run only while the app runs. No installed service, scheduled task or closed-app notification is added.
+- Cancellation is cooperative. A Windows network read already in progress may need to return before a safe checkpoint. Synthetic local work counters and timings do not predict hospital SMB speed, endpoint scanning or workstation load.
+- Supported content profiles do not replace department policy or clinical review. OCR and department-specific numerical QA limits are not included. Receipt, document labels, extracted printed observations and formally reviewed checklist evidence remain separate.
+- The readable library is a convenience copy. Metadata reuse speeds normal refresh; explicit verification rereads bytes. Same-drive copies do not protect against drive loss. Keep an approved separate backup.
+- Windows-encrypted sign-ins may need re-entry after moving to another account/computer. Updates preserve local settings and data. Manifests detect inconsistent files but do not authenticate an unknown publisher; retained history is not a signed audit system.
+- Physical keyboard/IME, folder pickers, DPI, very long paths, real hospital reports and scanner-share behavior still need approved workstation checks.

@@ -1,12 +1,12 @@
 {
   "Product": "CT QA Manager Pro",
   "Feature": "Portable PDF text reader",
-  "TimestampUtc": "2026-11-10T23:17:52.0886126Z",
+  "TimestampUtc": "2026-11-11T00:15:26.3726222Z",
   "Runtime": "7.4.13",
   "Platform": "Unix 6.18.57.0",
   "WindowsPowerShell51ActuallyRun": false,
-  "Tests": 11,
-  "Assertions": 39,
+  "Tests": 13,
+  "Assertions": 44,
   "Failed": 0,
   "Results": [
     {
@@ -21,6 +21,16 @@
     },
     {
       "Name": "Selected-record lookup still rejects an unsafe unrelated archive record and releases the lock",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "PDF provenance describes the exact verified bytes and metadata captured before reading",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "A destination changed after hashing cannot acquire successful cached-read provenance",
       "Result": "PASS",
       "Details": ""
     },
