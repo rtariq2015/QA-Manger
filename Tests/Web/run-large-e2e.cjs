@@ -13,7 +13,7 @@ if(!baseline.Synthetic)throw Error('Only explicitly synthetic fixtures may be te
 fs.mkdirSync(output,{recursive:true});
 const hold=path.join(root,'test-refresh-hold'), reached=path.join(root,'test-refresh-reached');
 const archiveFile=path.join(root,'App/Archive.psm1'), originalArchive=fs.readFileSync(archiveFile);
-let host,browser,page,ready,supportDownloadUrl,assertions=0;
+let host,browser,page,ready,supportDownloadUrl,initialFiling,assertions=0;
 const results=[],errors=[],external=[];
 const delay=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 const hash=bytes=>crypto.createHash('sha256').update(bytes).digest('hex').toUpperCase();
@@ -59,12 +59,20 @@ function injectBarrier(){
   browser=await chromium.launch(launch);const context=await browser.newContext({viewport:{width:1440,height:1000}});
   await context.route('**/*',route=>{const url=new URL(route.request().url());if(['http:','https:'].includes(url.protocol)&&!['127.0.0.1','localhost','[::1]'].includes(url.hostname)){external.push(url.hostname);route.abort();}else route.continue();});
   page=await context.newPage();page.on('pageerror',error=>errors.push(clean(error.message)));await reload();
-  await scenario('The full library shows known reports as automatic and reserves review for 217 uncertain PDFs',async()=>{
-   const value=await snapshot();check(value.pendingSummary.automatic===1050&&value.pendingSummary.pending===217,'The real API exposes exact automatic and pending counts');
+  await scenario('The full library separates unread filing work from actual review exceptions',async()=>{
+   const value=await snapshot();check(value.pendingSummary.automatic===1050&&value.pendingSummary.pending===217,'The real API retains exact legacy automatic and unresolved totals');
+   const waiting=value.records.filter(record=>record.filingState==='WaitingRead').length,exceptions=value.records.filter(record=>record.filingState==='NeedsReview').length;
+   initialFiling={waiting,exceptions};check(waiting===217&&exceptions===0,'The unread synthetic workload begins with 217 awaiting-reading reports and no completed-read exception');
+   check(value.filingSummary.waitingRead===waiting&&value.filingSummary.needsReview===exceptions,'The aggregate filing counts match actual per-record states');
+   await navigate('today');await until(async()=>Number((await page.locator('#report-total').innerText()).replaceAll(',',''))===1367,'The Today workspace did not load its saved library.');
+   check(await page.locator('#nav-pending').isHidden(),'The Review badge does not turn unread PDFs into urgent manual decisions');
+   check((await page.locator('#review-callout').getAttribute('class')).split(/\s+/).includes('waiting'),'Today uses the neutral reading-queue callout for unread PDFs');
+   check((await page.locator('#review-callout-title').innerText()).includes(waiting.toLocaleString()),'The neutral callout states the factual waiting count');
    await navigate('reports');await page.locator('#clear-filters').click();await page.locator('#status-filter').selectOption('automatic');
    await until(async()=>await page.locator('.report-item').count()===1050,'The Automatic filter did not include every confidently organized report.');check(true,'The Automatic filter contains 1,050 known documents');
-   await page.locator('#status-filter').selectOption('pending');await until(async()=>await page.locator('.report-item').count()===217,'The Pending filter did not match actual uncertain reports.');check(true,'The Pending filter contains 217 genuinely uncertain documents');
-   check(!/1033/.test(await page.locator('#list-pending-summary').innerText()),'The review count is not inflated by generic Daily reports');
+   await page.locator('#status-filter').selectOption('pending');await until(async()=>await page.locator('.report-item').count()===exceptions,'The exception filter did not match completed-read filing exceptions.');check(true,'The exception filter excludes all unread PDFs');
+   await page.locator('#status-filter').selectOption('waiting');await until(async()=>await page.locator('.report-item').count()===waiting,'The awaiting-reading filter did not match the saved queue.');check(true,'All 217 unread PDFs remain accessible in the separate awaiting-reading filter');
+   check((await page.locator('#list-pending-summary').innerText()).includes('0 file exceptions'),'The list summary distinguishes actual exceptions from awaiting reading');
    await page.screenshot({path:path.join(output,'large-library-pending.png'),fullPage:true});
   });
   await scenario('An active Refresh reports real progress, merges duplicate requests and permits offline browsing after reload',async()=>{
@@ -106,6 +114,22 @@ function injectBarrier(){
    await until(async()=>!(await page.locator('#job-spinner').isVisible())&&!(await page.locator('#job-progress').isVisible()),'The reloaded browser left the completed update spinning.');check(true,'A completed job ends progress even when submitted by the previous browser document');
    const after=await snapshot();check(after.pendingSummary.pending===217&&after.pendingSummary.automatic===1050,'Unchanged scanning preserves correct automatic and pending classifications');preserveRecords();
    check(errors.length===0,'No JavaScript errors occurred');check(external.length===0,'No external asset request was attempted');
+  });
+  await scenario('Reading one unsupported synthetic PDF creates one genuine review exception',async()=>{
+   const before=await snapshot(),selected=before.records.find(record=>record.filingState==='WaitingRead'&&/Unlabelled/.test(record.filename));check(!!selected,'One existing unread synthetic layout is available for selected reading');
+   const original=baseline.Expected.find(record=>record.Id===selected.id),statePath=path.join(root,'Data/.ctqa/state.json'),stateHash=hash(fs.readFileSync(statePath));
+   const response=await api('/api/actions',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'Analyze',id:selected.id})});check(response.status===202,'Only the selected synthetic PDF is submitted for reading');
+   const accepted=await response.json(),done=await until(async()=>(await jobs()).find(job=>job.id===accepted.id&&['completed','failed','cancelled'].includes(job.status)),'The selected synthetic PDF did not finish reading.');check(done.status==='completed','The selected read completes and records unsupported content honestly');
+   const result=done.result?.result||done.result;check(result.Analyzed===1&&result.AnalyzedIds.length===1&&result.AnalyzedIds[0]===selected.id,'Exactly one report is parsed rather than the entire waiting queue');
+   const after=await snapshot(),row=after.records.find(record=>record.id===selected.id);check(row.filingState==='NeedsReview'&&row.pending&&['Unsupported','ReadError'].includes(row.filingBasis),'The actually attempted unsupported report becomes a genuine review exception');
+   check(after.filingSummary.needsReview===initialFiling.exceptions+1&&after.filingSummary.waitingRead===initialFiling.waiting-1,'One attempted read moves exactly one item from awaiting reading to review');
+   await navigate('reports');await page.locator('#clear-filters').click();await page.locator('#status-filter').selectOption('pending');
+   await until(async()=>await page.locator('.report-item').count()===1,'The UI did not show the one newly created exception.');check((await page.locator('.report-item').getAttribute('data-record-id'))===selected.id,'The exception filter points to the actually read unsupported PDF');
+   check((await page.locator('#nav-pending').innerText())==='1'&&await page.locator('#nav-pending').isVisible(),'The Review badge now exposes the factual single exception');
+   await page.locator('#status-filter').selectOption('waiting');await until(async()=>await page.locator('.report-item').count()===after.filingSummary.waitingRead,'The remaining unread queue did not stay separate.');check(true,'The other unread PDFs remain in the neutral reading queue');
+   check(hash(fs.readFileSync(statePath))===stateHash,'Selected reading leaves the complete clinical archive state unchanged');
+   const archived=readJSON(statePath).Records.find(record=>record.Id===selected.id);check(original&&hash(fs.readFileSync(original.SourcePath))===original.Hash&&hash(fs.readFileSync(archived.DestinationPath))===original.Hash,'The selected source and archived PDF bytes remain unchanged');
+   check(errors.length===0,'No JavaScript errors occurred after the exception transition');check(external.length===0,'The exception workflow makes no external asset request');
   });
  }catch(error){process.exitCode=1;if(!results.some(r=>r.result==='FAIL'))results.push({name:'Setup or completion',result:'FAIL',details:clean(error.stack)});if(page)try{await page.screenshot({path:path.join(output,'large-failure.png'),fullPage:true});}catch{}}
  finally{

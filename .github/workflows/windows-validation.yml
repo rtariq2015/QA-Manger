@@ -85,6 +85,7 @@ jobs:
         if: always()
         shell: powershell
         run: |
+          New-Item -ItemType Directory -Path artifacts/windows -Force | Out-Null
           & powershell.exe -NoProfile -STA -File .\App\Start.ps1 -ValidateLayout
           if ($LASTEXITCODE -ne 0) { exit 1 }
           & powershell.exe -NoProfile -STA -File .\App\Start.ps1 -DemoPreview -ScreenshotPath .\artifacts\windows\dashboard-native-demo.png
