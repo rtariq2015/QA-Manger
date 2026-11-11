@@ -1,11 +1,11 @@
 {
-  "version": "5.2.0",
+  "version": "5.3.0",
   "syntheticOnly": true,
   "browser": "Chromium via Playwright",
   "browserChannel": "msedge",
   "nativePdfPreviewActuallyRun": true,
-  "tests": 12,
-  "assertions": 296,
+  "tests": 14,
+  "assertions": 475,
   "failed": 0,
   "externalAssetRequests": 0,
   "javascriptErrors": [],
@@ -15,7 +15,11 @@
       "result": "PASS"
     },
     {
-      "name": "The three-screen interface loads locally without external assets",
+      "name": "The six-tab interface loads locally without external assets",
+      "result": "PASS"
+    },
+    {
+      "name": "Light and Dark appearance apply consistently across all six tabs and persist in saved settings",
       "result": "PASS"
     },
     {
@@ -52,6 +56,10 @@
     },
     {
       "name": "Connection failures remain visible and job records do not expose entered passwords",
+      "result": "PASS"
+    },
+    {
+      "name": "Background PDF reading pauses at a saved boundary and allows review, settings and exports to continue",
       "result": "PASS"
     },
     {

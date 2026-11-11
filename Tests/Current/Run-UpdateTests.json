@@ -1,0 +1,66 @@
+{
+  "Version": "4.3.0",
+  "Runtime": "7.4.13",
+  "WindowsPowerShell51ActuallyRun": false,
+  "Tests": 11,
+  "Assertions": 60,
+  "Failed": 0,
+  "Results": [
+    {
+      "Name": "A clean offline ZIP is checked in isolation without changing a running installation",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "A checked staged update preserves settings and data and keeps the previous program",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "An active application prevents installation and is never forcibly terminated",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "A tampered staged program cannot pass the final pre-install check",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "Traversal, absolute paths, ADS names and Windows path aliases are rejected before extraction",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "Duplicate paths, link entries and extra development files cannot enter a clean update",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "Malformed metadata and incomplete manifests cannot replace the installed program",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "Staging cleanup refuses ordinary user folders and invalid markers",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "The helper waits for the running app to release its lock and then installs",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "A complete Python-enabled update stages its runtime, reader and notices without changing user data",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "Python payload admission stays narrow and a missing required interpreter cannot pass package checks",
+      "Result": "PASS",
+      "Details": ""
+    }
+  ],
+  "Scope": "Offline package validation, isolated staging, lock waits, report and settings preservation, rollback copy, corruption, traversal, duplicate paths, link entries, narrow Python payload admission and cleanup safeguards. The Python staging fixtures contain dummy bytes and are never executed. No downloaded code executed."
+}

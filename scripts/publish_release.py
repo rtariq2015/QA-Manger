@@ -21,7 +21,7 @@ assert not (root/'Config/NetworkProfile.local.json').exists(),'Private profiles 
 out=root/'artifacts/release';out.mkdir(parents=True,exist_ok=True)
 subprocess.run(['python3','scripts/build_release.py','--version',version,'--output-dir',str(out)],cwd=root,check=True)
 preview=out/f'CT_QA_Manager_Pro_v{version}_Preview.html'
-subprocess.run(['python3','scripts/build_preview.py','--version',version,'--output',str(preview)],cwd=root,check=True)
+subprocess.run(['python3','scripts/build_preview.py','--version',version,'--include-details','--output',str(preview)],cwd=root,check=True)
 files=[out/f'CT_QA_Manager_Pro_v{version}_{kind}.zip' for kind in ['Portable','Update','Upgrade']]+[preview]
 assert all(p.is_file() for p in files)
 checks=out/'SHA256SUMS.txt';checks.write_text(''.join(hashlib.sha256(p.read_bytes()).hexdigest()+'  '+p.name+'\n' for p in files));files.append(checks)

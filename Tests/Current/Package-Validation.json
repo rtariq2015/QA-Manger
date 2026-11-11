@@ -1,19 +1,56 @@
 {
-  "Version": "5.2.0",
-  "ValidatedSource": "d3f17e0c36ab304ea34cddb9820c73bba165a707",
-  "TestedHostArtifactSHA256": "74fa1e82385a1cc18ad1522fdc46ffb7d41bc97c00a029c11d9dfa813a71144e",
+  "Version": "5.3.0",
+  "ValidatedSource": "5400798e55e4895fd16f5b9f575401ac52aef089",
+  "ValidatedRunId": 43043750417,
+  "TestedHostSHA256": "91ba4775c3beed7b48c114761d6c66a6d44043b486e60cc33a39a2848bde21bb",
+  "TestedHostArtifactSHA256": "1c1511050b99a356221664a41f694cbbd589009abf410cf6b816bbb579ac5175",
+  "TestedPythonRuntimeArtifactSHA256": "778a18d90a25737f737a010dd53e048aaf2e21a76890cf02e945cd67303d77ee",
+  "TestedPythonIntegritySHA256": "7bb612a33fa72070b608fc7a67ab93d9de48aebafc6c3ebd1978aff3fd9f27d4",
   "Runtime": "Linux / PowerShell 7.4.13; package installation logic, not Windows browser execution",
-  "StaticChecks": 832,
+  "StaticChecks": 885,
   "StaticFailed": 0,
-  "ActualPackagedUpgradeFrom": "5.1.0",
+  "ActualPackagedUpgradeFrom": "5.2.0",
   "GenericUpgradePreservesConfigDataCredentialsAndArchiveHashes": true,
   "PreviousProgramBackupCreated": true,
   "PackagedStandaloneDiagnosticsPassed": true,
   "PrivateUpgradePreservesArchiveAndDepartmentSettings": true,
   "PrivateUpgradeAppliesThreeConfiguredScannerPaths": true,
   "AllFivePackageHostHashesMatchNativeArtifact": true,
-  "OfflinePreviewSyntheticScreenshots": 6,
+  "AllFivePackagePythonComponentsMatchNativeManifest": true,
+  "OfflinePreviewSyntheticScreenshots": 17,
   "PasswordsBundled": false,
   "HospitalNetworkContacted": false,
-  "Scope": "Actual ZIP manifests, clean contents, generic and local-only private one-time upgrade helpers using the exact tested Windows host artifact. Synthetic preservation sentinels only. This does not establish real sign-in, work-computer execution or endpoint policy approval."
+  "Packages": [
+    {
+      "Name": "CT_QA_Manager_Pro_v5.3.0_Portable.zip",
+      "Bytes": 59534602,
+      "SHA256": "a8b09b12361d933363b54bd21469688481ebb9bdc8d1342d0ae0f30953b3ac24"
+    },
+    {
+      "Name": "CT_QA_Manager_Pro_v5.3.0_Update.zip",
+      "Bytes": 59534602,
+      "SHA256": "5053ac77e6b0f87cd0f9069f64bd0bf1c2d1550670887aea37d44d8525b7407d"
+    },
+    {
+      "Name": "CT_QA_Manager_Pro_v5.3.0_Upgrade.zip",
+      "Bytes": 59535953,
+      "SHA256": "3faa74e8808f7188be331df7d7b318ea144a46072ba89e888fde03936af5c952"
+    },
+    {
+      "Name": "CT_QA_Manager_Pro_v5.3.0_Work_Portable.zip",
+      "Bytes": 59535009,
+      "SHA256": "dbaa966c1f52954e79ad581b85e3b2be5f453c9389dc4076893ea05d7fc86be4"
+    },
+    {
+      "Name": "CT_QA_Manager_Pro_v5.3.0_Work_Upgrade.zip",
+      "Bytes": 59536164,
+      "SHA256": "70616e16b2720d033e0d0caa8c85efc522b759ebdd2aaf56130a93bec3bc9f3f"
+    },
+    {
+      "Name": "CT_QA_Manager_Pro_v5.3.0_Preview.html",
+      "Bytes": 2964598,
+      "SHA256": "8b52e59a4aed4cd5613a3bd6852db38777c492191978aa226df7b46c260f09fb"
+    }
+  ],
+  "Scope": "Actual ZIP manifests, clean contents, generic and local-only private one-time upgrade helpers using the exact tested Windows host and Python components. Synthetic preservation sentinels only. The five ZIP payloads retain all 103 tested Python manifest members. Separate native Windows evidence is pinned to the validated source and run; these package checks do not establish real scanner sign-in or endpoint approval."
 }

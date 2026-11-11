@@ -1,8 +1,8 @@
 ﻿{
-    "Version":  "5.1.0",
+    "Version":  "5.3.0",
     "Runtime":  "5.1.26100.33648",
-    "Tests":  23,
-    "Assertions":  91,
+    "Tests":  27,
+    "Assertions":  116,
     "Failed":  0,
     "Results":  [
                     {
@@ -117,6 +117,26 @@
                     },
                     {
                         "Name":  "Concurrent edits cannot seed a verified source or readable-file metadata cache",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Appearance persists across fresh snapshots without changing report evidence",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Explicit empty or conflicting reading groups cannot expand into an archive-wide read",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "PDF reading chunk limits accept only bounded integers",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Trend queries read cached metadata without creating PDF readings or rewriting the archive",
                         "Result":  "PASS",
                         "Details":  ""
                     }

@@ -1,23 +1,23 @@
 {
   "Product": "CT QA Manager Pro",
-  "Version": "5.2.0",
-  "SourceCommit": "d3f17e0c36ab304ea34cddb9820c73bba165a707",
-  "Runtime": "PowerShell 7.4.13 on Linux; four targeted suites only",
-  "ValidationStatus": "Passed: final pinned Windows artifact plus separately labeled targeted Linux development checks",
-  "Tests": 44,
-  "Assertions": 390,
+  "Version": "5.3.0",
+  "SourceCommit": "5400798e55e4895fd16f5b9f575401ac52aef089",
+  "Runtime": "PowerShell 7.4.13 on Linux; seven targeted development suites only",
+  "ValidationStatus": "Passed: final pinned Windows artifact with separately labeled targeted Linux development checks.",
+  "Tests": 100,
+  "Assertions": 585,
   "Failed": 0,
   "Suites": [
+    {
+      "Name": "Run-PdfTests",
+      "Tests": 13,
+      "Assertions": 44,
+      "Failed": 0
+    },
     {
       "Name": "Run-AnalysisTests",
       "Tests": 11,
       "Assertions": 49,
-      "Failed": 0
-    },
-    {
-      "Name": "Run-ContentTests",
-      "Tests": 10,
-      "Assertions": 52,
       "Failed": 0
     },
     {
@@ -27,38 +27,122 @@
       "Failed": 0
     },
     {
-      "Name": "Run-PdfTests",
-      "Tests": 13,
+      "Name": "Run-WebServiceTests",
+      "Tests": 25,
+      "Assertions": 106,
+      "Failed": 0
+    },
+    {
+      "Name": "Run-MeasurementTests",
+      "Tests": 14,
+      "Assertions": 37,
+      "Failed": 0
+    },
+    {
+      "Name": "Run-UpdateTests",
+      "Tests": 11,
+      "Assertions": 60,
+      "Failed": 0
+    },
+    {
+      "Name": "Run-TrendTests",
+      "Tests": 16,
       "Assertions": 44,
       "Failed": 0
     }
   ],
-  "LinuxBrowser": {
-    "Evidence": "Browser-Content-Linux.json",
-    "Tests": 4,
-    "Assertions": 105,
+  "LinuxWorkerProtocol": {
+    "Evidence": "Python-Worker-Linux.json",
+    "Tests": 11,
     "Failed": 0,
-    "BrowserChannel": "chromium"
+    "Runtime": "Linux Python 3.12.14",
+    "ProductionWindowsActuallyRun": false,
+    "AssertionsReported": false
+  },
+  "BackgroundSchedulerLinux": {
+    "Evidence": "Background-Scheduler-Linux.json",
+    "Passed": true,
+    "CheckCount": 9,
+    "SyntheticOnly": true,
+    "ExecutionPlatform": "Linux development execution",
+    "Scope": "Actual self-contained host scheduler with a deterministic synthetic PowerShell adapter. These nine check outcomes are separate from PowerShell suite scenarios/assertions and do not measure real PDF-reader speed."
   },
   "WindowsPowerShell51ActuallyRun": false,
   "NativeWPFActuallyRun": false,
   "WindowsDPAPIActuallyRun": false,
   "WindowsValidation": {
     "Status": "Passed",
-    "SourceCommit": "d3f17e0c36ab304ea34cddb9820c73bba165a707",
-    "WorkflowRun": "https://github.com/rtariq2015/QA-Manger/actions/runs/42933748650",
-    "PowerShellTests": 233,
-    "PowerShellAssertions": 1617,
-    "BrowserTests": 12,
-    "BrowserAssertions": 296,
-    "LargeLibraryTests": 4,
-    "LargeLibraryAssertions": 5463,
-    "LargeBrowserTests": 4,
-    "LargeBrowserAssertions": 27328,
-    "ContentBrowserTests": 4,
-    "ContentBrowserAssertions": 105,
+    "SourceCommit": "5400798e55e4895fd16f5b9f575401ac52aef089",
+    "WorkflowRun": "https://github.com/rtariq2015/QA-Manger/actions/runs/43043750417",
+    "PowerShellTests": 283,
+    "PowerShellAssertions": 2333,
+    "ReaderBenchmark": {
+      "Evidence": "../Reader-Benchmark-Windows.json",
+      "Tests": 3,
+      "Assertions": 80,
+      "Failed": 0,
+      "ColdReadSamples": 12,
+      "Profiles": [
+        "Basic:9pages",
+        "Extended:6pages"
+      ],
+      "WholeIsolatedReadMediansMilliseconds": {
+        "Standard": 1689.885,
+        "Python": 2475.332
+      },
+      "FasterReaderForThisFixture": "Standard",
+      "StandardMedianDividedByPythonMedian": 0.683,
+      "CachedAnalysis": {
+        "ColdAnalyzed": 2,
+        "ColdMilliseconds": 4031.192,
+        "WarmAnalyzed": 0,
+        "WarmCached": 2,
+        "WarmMilliseconds": 155.901,
+        "WarmCacheWrites": 0
+      },
+      "MemoryMeasured": false,
+      "HospitalNetworkSpeedMeasured": false
+    },
+    "Browser": {
+      "Evidence": "../Browser-Web-Windows.json",
+      "Tests": 14,
+      "Assertions": 475,
+      "Failed": 0
+    },
+    "LargeLibrary": {
+      "Evidence": "../Large-Library-Windows.json",
+      "Tests": 4,
+      "Assertions": 5463,
+      "Failed": 0
+    },
+    "LargeBrowser": {
+      "Evidence": "../Browser-Large-Windows.json",
+      "Tests": 4,
+      "Assertions": 27328,
+      "Failed": 0
+    },
+    "ContentBrowser": {
+      "Evidence": "../Browser-Content-Windows.json",
+      "Tests": 5,
+      "Assertions": 130,
+      "Failed": 0
+    },
+    "PythonBrowser": {
+      "Evidence": "../Browser-Python-Windows.json",
+      "Tests": 4,
+      "Assertions": 118,
+      "Failed": 0
+    },
+    "BackgroundScheduler": {
+      "Evidence": "../Background-Scheduler-Windows.json",
+      "Passed": true,
+      "CheckCount": 9,
+      "SyntheticOnly": true,
+      "ExecutionPlatform": "Native Windows workflow execution",
+      "Scope": "Actual self-contained host scheduler with a deterministic synthetic PowerShell adapter. These nine check outcomes are separate from PowerShell suite scenarios/assertions and do not measure real PDF-reader speed."
+    },
     "Failed": 0
   },
-  "HistoricalEvidence": "Tests/Historical/v5.1.0 preserves all previous broad Linux and Windows evidence. Stale v5.1.0 Linux reports are removed from Current instead of relabeled.",
-  "Scope": "Top-level Tests/Assertions and native-run flags describe the four local Linux PowerShell reports only. The local JSON files do not embed source commit hashes. Pinned final Windows execution is independently counted and sourced by its workflow artifact. All reports and screenshots are synthetic; no uploaded private PDF, extracted report text or real identifiers are included."
+  "HistoricalEvidence": "Tests/Historical/v5.2.0 preserves the previous complete Current evidence. Stale v5.2.0 Linux reports are removed from Current rather than relabeled.",
+  "Scope": "Top-level Tests/Assertions describe the seven actual Linux PowerShell reports only. These raw reports do not embed source commit hashes. The eleven Linux Python worker protocol scenarios and nine host-scheduler check outcomes are separately reported because their raw JSON contains no PowerShell assertion count. Scheduler execution uses the actual host with a deterministic synthetic PowerShell adapter; it makes no actual PDF-reader speed claim. Final native execution is independently pinned to its workflow artifact. Public reports and screenshots use generated data only; uploaded private PDFs and extracted private text are excluded."
 }

@@ -1,0 +1,101 @@
+﻿{
+    "Product":  "CT QA Manager Pro",
+    "Suite":  "Readable Browse Reports mirror",
+    "TimestampUtc":  "2026-11-11T00:48:42.4762205Z",
+    "Runtime":  "5.1.26100.33648",
+    "Platform":  "Microsoft Windows NT 10.0.26100.0",
+    "WindowsPowerShell51ActuallyRun":  true,
+    "Tests":  17,
+    "Assertions":  117,
+    "Passed":  17,
+    "Skipped":  0,
+    "Failed":  0,
+    "Results":  [
+                    {
+                        "Name":  "Browse Reports creates readable scanner, year, month, and QA folders with independent PDF copies",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Repeated mirror refresh skips unchanged copies without rewriting them",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Editing a browse copy cannot change the archive; edited bytes are never silently replaced",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Unowned notes and PDFs in Browse Reports survive refresh unchanged",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Reclassification retires only the owned prior category copy into private browse history",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "An edited prior category browse copy survives reclassification as a reported conflict",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Offline scanner sources do not block a verified local browse refresh",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Archive writer lock blocks a conflicting browse refresh",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Browse output and private staging links cannot redirect writes into scanner folders",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Cancellation during a real multi-buffer browse transfer leaves no half PDF and retries safely",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Installed browse PDF recovers from interruption before ledger commit without duplicate copies",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Tampered browse ledger cannot redirect a managed path outside Browse Reports",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Corrupt archived content is never published as a verified browse PDF",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "A fourth configured scanner gains a readable mirror while the original three remain intact",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Duplicate configured scanner display names are rejected before creating conflicting mirror folders",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "An archive row for an unconfigured scanner cannot acquire a fallback mirror folder",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Distinct display names that sanitize identically still produce separate safe scanner folders",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    }
+                ],
+    "FixturesKept":  false
+}

@@ -4,7 +4,7 @@ A portable offline HTML interface built on the original Windows archive, network
 
 [Download the program, offline update or upgrade helper from Releases](https://github.com/rtariq2015/QA-Manger/releases/latest).
 
-![Reports, PDF review and exports in the tested Windows browser interface, using synthetic demonstration data](docs/images/reports-web-demo.png)
+![The redesigned Today workspace in the tested Windows browser interface, using synthetic demonstration data](docs/images/today-light-web-demo.png)
 
 The release includes an offline visual preview of the main workspace screens. These are actual Windows interface captures using synthetic data.
 

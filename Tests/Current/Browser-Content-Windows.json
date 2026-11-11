@@ -1,15 +1,20 @@
 {
-  "version": "5.2.0",
+  "version": "5.3.0",
   "syntheticOnly": true,
+  "nativeContinuousPreviewActuallyRun": true,
   "browserChannel": "msedge",
-  "tests": 4,
-  "assertions": 105,
+  "tests": 5,
+  "assertions": 130,
   "failed": 0,
   "javascriptErrors": [],
   "externalAssetRequests": 0,
   "results": [
     {
       "name": "Read contents reads only the selected Basic PDF and shows raw printed evidence without a site-wide rule",
+      "result": "PASS"
+    },
+    {
+      "name": "The complete PDF scrolls continuously in the dedicated Review workspace",
       "result": "PASS"
     },
     {

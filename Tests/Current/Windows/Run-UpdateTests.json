@@ -2,8 +2,8 @@
     "Version":  "4.3.0",
     "Runtime":  "5.1.26100.33648",
     "WindowsPowerShell51ActuallyRun":  true,
-    "Tests":  10,
-    "Assertions":  35,
+    "Tests":  12,
+    "Assertions":  63,
     "Failed":  0,
     "Results":  [
                     {
@@ -52,10 +52,20 @@
                         "Details":  ""
                     },
                     {
+                        "Name":  "A complete Python-enabled update stages its runtime, reader and notices without changing user data",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Python payload admission stays narrow and a missing required interpreter cannot pass package checks",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
                         "Name":  "A successful Windows update starts the normal launcher after releasing the lock",
                         "Result":  "PASS",
                         "Details":  ""
                     }
                 ],
-    "Scope":  "Offline package validation, isolated staging, lock waits, report and settings preservation, rollback copy, corruption, traversal, duplicate paths, link entries and cleanup safeguards. No downloaded code executed."
+    "Scope":  "Offline package validation, isolated staging, lock waits, report and settings preservation, rollback copy, corruption, traversal, duplicate paths, link entries, narrow Python payload admission and cleanup safeguards. The Python staging fixtures contain dummy bytes and are never executed. No downloaded code executed."
 }
