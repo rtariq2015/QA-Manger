@@ -82,6 +82,176 @@ function Get-QaTextIndicators {
     foreach($pattern in $patterns){if($Text -match $pattern[1]){[void]$found.Add([string]$pattern[0])}}
     return @($found.ToArray())
 }
+function Initialize-QaPythonJobType {
+    if('CtQaPortablePythonJob' -as [type]){return}
+    Add-Type -TypeDefinition @'
+using System;
+using System.Runtime.InteropServices;
+public sealed class CtQaPortablePythonJob : IDisposable {
+    private IntPtr handle;
+    [StructLayout(LayoutKind.Sequential)] private struct BasicLimit {
+        public long PerProcessUserTimeLimit, PerJobUserTimeLimit;
+        public uint LimitFlags;
+        public UIntPtr MinimumWorkingSetSize, MaximumWorkingSetSize;
+        public uint ActiveProcessLimit;
+        public UIntPtr Affinity;
+        public uint PriorityClass, SchedulingClass;
+    }
+    [StructLayout(LayoutKind.Sequential)] private struct IoCounters {
+        public ulong ReadOperationCount, WriteOperationCount, OtherOperationCount;
+        public ulong ReadTransferCount, WriteTransferCount, OtherTransferCount;
+    }
+    [StructLayout(LayoutKind.Sequential)] private struct ExtendedLimit {
+        public BasicLimit BasicLimitInformation;
+        public IoCounters IoInfo;
+        public UIntPtr ProcessMemoryLimit, JobMemoryLimit, PeakProcessMemoryUsed, PeakJobMemoryUsed;
+    }
+    [DllImport("kernel32.dll", CharSet=CharSet.Unicode, SetLastError=true)] private static extern IntPtr CreateJobObjectW(IntPtr attributes, string name);
+    [DllImport("kernel32.dll", SetLastError=true)] private static extern bool SetInformationJobObject(IntPtr job, int informationClass, ref ExtendedLimit information, uint length);
+    [DllImport("kernel32.dll", SetLastError=true)] private static extern bool AssignProcessToJobObject(IntPtr job, IntPtr process);
+    [DllImport("kernel32.dll")] private static extern bool CloseHandle(IntPtr value);
+    private CtQaPortablePythonJob(IntPtr value){ handle=value; }
+    public static CtQaPortablePythonJob Attach(IntPtr process) {
+        IntPtr value=CreateJobObjectW(IntPtr.Zero,null);
+        if(value==IntPtr.Zero) throw new InvalidOperationException("PythonContainmentUnavailable");
+        try {
+            ExtendedLimit limits=new ExtendedLimit();
+            limits.BasicLimitInformation.LimitFlags=0x00002000;
+            if(!SetInformationJobObject(value,9,ref limits,(uint)Marshal.SizeOf(typeof(ExtendedLimit))) || !AssignProcessToJobObject(value,process)) throw new InvalidOperationException("PythonContainmentUnavailable");
+            return new CtQaPortablePythonJob(value);
+        } catch { CloseHandle(value); throw; }
+    }
+    public void Dispose(){ IntPtr value=handle;handle=IntPtr.Zero;if(value!=IntPtr.Zero) CloseHandle(value); }
+}
+'@ -ErrorAction Stop
+}
+function Test-QaPythonReaderAvailable {
+    if([Environment]::OSVersion.Platform -ne [PlatformID]::Win32NT){return $false}
+    $bundle=Join-Path $PSScriptRoot 'Python'
+    return ([IO.File]::Exists((Join-Path $bundle 'runtime/python.exe')) -and [IO.File]::Exists((Join-Path $bundle 'read_pdf.py')) -and [IO.File]::Exists((Join-Path $bundle 'Integrity.json')))
+}
+function Assert-QaPythonReaderBundle {
+    $bundle=[IO.Path]::GetFullPath((Join-Path $PSScriptRoot 'Python'))
+    $manifestPath=Join-Path $bundle 'Integrity.json'
+    Assert-QaReaderDirectPath $manifestPath
+    if(-not [IO.File]::Exists($manifestPath)){throw 'The portable Python reader is incomplete. Extract the full program package again.'}
+    try{$manifest=[IO.File]::ReadAllText($manifestPath)|ConvertFrom-Json}catch{throw 'The portable Python reader component list is invalid.'}
+    if([int]$manifest.SchemaVersion -ne 1 -or [string]$manifest.PythonVersion -cne '3.14.10' -or [string]$manifest.PypdfVersion -cne '7.0.1'){throw 'The portable Python reader component list is invalid.'}
+    $expected=@{}
+    foreach($entry in @($manifest.Files)) {
+        $name=[string]$entry.Name;$hash=[string]$entry.SHA256
+        if($name -notmatch '^(?:runtime|vendor)/[A-Za-z0-9_.+() /-]+$|^(?:read_pdf\.py|Sources\.json)$' -or $name.Contains('..') -or $name.EndsWith('/') -or $hash -notmatch '^[0-9A-Fa-f]{64}$' -or $expected.ContainsKey($name)){throw 'The portable Python reader component list is invalid.'}
+        $path=Join-Path $bundle $name
+        Assert-QaReaderDirectPath $path
+        if(-not [IO.File]::Exists($path) -or (Get-FileHash -LiteralPath $path -Algorithm SHA256).Hash -ine $hash){throw 'A portable Python reader component differs from its packaged checksum. Extract the full program package again.'}
+        $expected[$name]=$true
+    }
+    foreach($required in @('read_pdf.py','Sources.json','runtime/python.exe','runtime/python314.zip','runtime/python314._pth','vendor/pypdf/__init__.py')){if(-not $expected.ContainsKey($required)){throw 'The portable Python reader is incomplete. Extract the full program package again.'}}
+    $actual=0
+    $directories=New-Object 'Collections.Generic.Stack[string]'
+    $directories.Push($bundle)
+    while($directories.Count) {
+        foreach($item in @(Get-ChildItem -LiteralPath ($directories.Pop()) -Force)) {
+            # Check directory links before walking them, including unexpected
+            # components which were not named in the verified manifest.
+            Assert-QaReaderDirectPath $item.FullName
+            if($item.PSIsContainer){$directories.Push($item.FullName);continue}
+            $relative=$item.FullName.Substring($bundle.TrimEnd('\','/').Length+1).Replace('\','/')
+            if($relative -ceq 'Integrity.json'){continue}
+            if(-not $expected.ContainsKey($relative)){throw 'The portable Python reader contains an unexpected component. Extract the full program package again.'}
+            $actual++
+        }
+    }
+    if($actual -ne $expected.Count){throw 'The portable Python reader is incomplete. Extract the full program package again.'}
+    return $bundle
+}
+function Invoke-QaPythonPdfText {
+    param([byte[]]$Bytes,[string]$ExpectedHash,$Progress,[int]$MaximumPages,[int]$MaximumCharacters,[int]$MaximumSeconds)
+    $process=$null;$job=$null;$sendTask=$null;$stdoutTask=$null;$stderrTask=$null
+    $timer=[Diagnostics.Stopwatch]::StartNew()
+    try {
+        if(Test-QaReaderCancel $Progress){throw [OperationCanceledException]::new('Reading cancelled.')}
+        if(-not (Test-QaPythonReaderAvailable)){throw 'The portable Python reader is unavailable on this computer. Choose Automatic or Standard reading.'}
+        $bundle=Assert-QaPythonReaderBundle
+        Initialize-QaPythonJobType
+        $info=New-Object Diagnostics.ProcessStartInfo
+        $info.FileName=Join-Path $bundle 'runtime/python.exe'
+        $info.Arguments='-I -B -S "'+(Join-Path $bundle 'read_pdf.py')+'"'
+        $info.WorkingDirectory=$bundle
+        $info.UseShellExecute=$false;$info.CreateNoWindow=$true
+        $info.RedirectStandardInput=$true;$info.RedirectStandardOutput=$true;$info.RedirectStandardError=$true
+        $info.StandardOutputEncoding=New-Object Text.UTF8Encoding($false)
+        $info.StandardErrorEncoding=New-Object Text.UTF8Encoding($false)
+        $process=New-Object Diagnostics.Process
+        $process.StartInfo=$info
+        if(-not $process.Start()){throw 'The portable Python reader could not start. Choose Automatic or Standard reading.'}
+        # The owning PowerShell process holds the only job handle. Forced task
+        # cancellation therefore terminates the Python child as well.
+        $job=[CtQaPortablePythonJob]::Attach($process.Handle)
+        $stdoutTask=$process.StandardOutput.ReadToEndAsync()
+        $stderrTask=$process.StandardError.ReadToEndAsync()
+        $header=[Text.Encoding]::UTF8.GetBytes((@{schemaVersion=1;length=$Bytes.Length;maximumPages=$MaximumPages;maximumCharacters=$MaximumCharacters;maximumSeconds=$MaximumSeconds}|ConvertTo-Json -Compress))
+        $prefix=[BitConverter]::GetBytes([int]$header.Length)
+        $process.StandardInput.BaseStream.Write($prefix,0,$prefix.Length)
+        $process.StandardInput.BaseStream.Write($header,0,$header.Length)
+        $sendTask=$process.StandardInput.BaseStream.WriteAsync($Bytes,0,$Bytes.Length)
+        $inputClosed=$false
+        while(-not $process.WaitForExit(50)) {
+            if(Test-QaReaderCancel $Progress){throw [OperationCanceledException]::new('Reading cancelled.')}
+            if($timer.Elapsed.TotalSeconds -gt ($MaximumSeconds+5)){throw 'The portable Python reader exceeded its time limit. Try Automatic or Standard reading.'}
+            if(-not $inputClosed -and $sendTask.IsCompleted){[void]$sendTask.GetAwaiter().GetResult();$process.StandardInput.Close();$inputClosed=$true}
+            Set-QaReaderProgress $Progress 'Reading this PDF with the portable reader...' 45
+        }
+        if(Test-QaReaderCancel $Progress){throw [OperationCanceledException]::new('Reading cancelled.')}
+        if(-not $inputClosed){[void]$sendTask.GetAwaiter().GetResult();$process.StandardInput.Close()}
+        # Library diagnostics and exception text are never propagated. Only the
+        # versioned successful response schema is accepted as report evidence.
+        $raw=$stdoutTask.GetAwaiter().GetResult()
+        [void]$stderrTask.GetAwaiter().GetResult()
+        if($process.ExitCode -ne 0 -or [string]::IsNullOrWhiteSpace($raw) -or $raw.Length -gt (12*$MaximumCharacters+65536)){throw 'The portable Python reader could not read this PDF. It may be encrypted, damaged or unsupported.'}
+        try{$result=$raw|ConvertFrom-Json}catch{throw 'The portable Python reader returned an invalid response. Try Automatic or Standard reading.'}
+        if([int]$result.schemaVersion -ne 1 -or $result.success -isnot [bool] -or -not $result.success){throw 'The portable Python reader could not read this PDF. It may be encrypted, damaged or unsupported.'}
+        if([string]$result.hash -cne $ExpectedHash -or [long]$result.length -ne $Bytes.Length){throw 'The portable Python reader returned a different PDF fingerprint. No extracted result was accepted.'}
+        if($result.text -isnot [string] -or $result.text.Length -gt $MaximumCharacters -or $result.truncated -isnot [bool] -or $result.needsOCR -isnot [bool] -or [int]$result.pages -lt 1 -or [int]$result.pages -gt 100000 -or [int]$result.readPages -lt 0 -or [int]$result.readPages -gt [math]::Min([int]$result.pages,$MaximumPages) -or [string]$result.engine -cne 'Python' -or [string]$result.readerVersion -cne 'Python 3.14.10 / pypdf 7.0.1'){throw 'The portable Python reader returned an invalid response. No extracted result was accepted.'}
+        return [pscustomobject]@{Text=[string]$result.text;Pages=[int]$result.pages;ReadPages=[int]$result.readPages;Truncated=[bool]$result.truncated;NeedsOCR=[bool]$result.needsOCR;ReaderUsed='Python';ReaderVersion=[string]$result.readerVersion}
+    } catch [OperationCanceledException] {throw}
+    catch {throw 'The portable Python reader could not read this PDF or was blocked. Choose Automatic or Standard reading. Encrypted or damaged files may be unsupported.'}
+    finally {
+        if($null -ne $process){try{if(-not $process.HasExited){$process.Kill();[void]$process.WaitForExit(3000)}}catch{}}
+        if($null -ne $job){try{$job.Dispose()}catch{}}
+        if($null -ne $process){$process.Dispose()}
+    }
+}
+function Invoke-QaStandardPdfText {
+    param([byte[]]$Bytes,$Progress,[int]$MaximumPages,[int]$MaximumCharacters,[int]$MaximumSeconds)
+    $document=$null
+    try {
+        Initialize-QaPdfReader
+        if(Test-QaReaderCancel $Progress){throw [OperationCanceledException]::new('Reading cancelled.')}
+        $timer=[Diagnostics.Stopwatch]::StartNew()
+        try{$document=[UglyToad.PdfPig.PdfDocument]::Open([byte[]]$Bytes,$null)}catch{throw 'Text could not be read from this PDF. It may be encrypted, damaged, or use an unsupported feature. Open it in your approved PDF viewer.'}
+        $pages=[int]$document.NumberOfPages;$readPages=0;$truncated=($pages -gt $MaximumPages)
+        $builder=New-Object Text.StringBuilder
+        for($pageNumber=1;$pageNumber -le [math]::Min($pages,$MaximumPages);$pageNumber++) {
+            if(Test-QaReaderCancel $Progress){throw [OperationCanceledException]::new('Reading cancelled.')}
+            if($timer.Elapsed.TotalSeconds -gt $MaximumSeconds){$truncated=$true;break}
+            Set-QaReaderProgress $Progress ('Reading page '+$pageNumber+' of '+$pages+'...') (10+90*$pageNumber/[math]::Max(1,$pages))
+            try{$page=$document.GetPage($pageNumber);$text=[UglyToad.PdfPig.DocumentLayoutAnalysis.TextExtractor.ContentOrderTextExtractor]::GetText($page,$true)}catch{throw ('Page '+$pageNumber+' could not be read. Open the original PDF in your approved viewer.')}
+            $remaining=$MaximumCharacters-$builder.Length
+            if($remaining -le 50){$truncated=$true;break}
+            $heading="--- Page $pageNumber ---`r`n"
+            [void]$builder.Append($heading)
+            $remaining=$MaximumCharacters-$builder.Length
+            if($text.Length -gt $remaining){[void]$builder.Append($text.Substring(0,$remaining));$truncated=$true;$readPages++;break}
+            [void]$builder.Append($text);[void]$builder.Append("`r`n`r`n");$readPages++
+        }
+        $fullText=$builder.ToString()
+        if($fullText.Length -gt $MaximumCharacters){$fullText=$fullText.Substring(0,$MaximumCharacters);$truncated=$true}
+        $visibleText=([regex]::Replace($fullText,'--- Page \d+ ---','')).Trim()
+        return [pscustomobject]@{Text=$fullText;Pages=$pages;ReadPages=$readPages;Truncated=$truncated;NeedsOCR=[string]::IsNullOrWhiteSpace($visibleText);ReaderUsed='Standard';ReaderVersion='PdfPig 0.1.16'}
+    } finally {if($null -ne $document){try{$document.Dispose()}catch{}}}
+}
+
 function Read-QaReportText {
     [CmdletBinding()]param(
         [Parameter(Mandatory=$true)]$Config,
@@ -90,8 +260,16 @@ function Read-QaReportText {
         [ValidateRange(1,1000)][int]$MaximumPages=250,
         [ValidateRange(500,2000000)][int]$MaximumCharacters=1000000,
         [ValidateRange(1024,104857600)][long]$MaximumBytes=52428800,
-        [ValidateRange(5,120)][int]$MaximumSeconds=45
+        [ValidateRange(5,120)][int]$MaximumSeconds=45,
+        [ValidateSet('Auto','Python','Standard')][string]$Reader='Auto'
     )
+    if(-not $PSBoundParameters.ContainsKey('Reader')) {
+        $configured=''
+        if($Config -is [Collections.IDictionary]){if($Config.Contains('PDFReaderMode')){$configured=[string]$Config.PDFReaderMode}}
+        elseif($null -ne $Config.PSObject.Properties['PDFReaderMode']){$configured=[string]$Config.PDFReaderMode}
+        if($configured){if($configured -cnotin @('Auto','Python','Standard')){throw 'Choose Automatic, Python or Standard PDF reading.'};$Reader=$configured}
+    }
+    if($Reader -ieq 'Auto'){$Reader='Auto'}elseif($Reader -ieq 'Python'){$Reader='Python'}else{$Reader='Standard'}
     if($RecordId -notmatch '^[0-9A-Fa-f]{64}$'){throw 'Select one saved report from the report list first.'}
     $archiveModule=Get-Module Archive
     if($null -eq $archiveModule){Import-Module (Join-Path $PSScriptRoot 'Archive.psm1') -ErrorAction Stop;$archiveModule=Get-Module Archive}
@@ -144,27 +322,35 @@ function Read-QaReportText {
         try{$hash=([BitConverter]::ToString($sha.ComputeHash($bytes))).Replace('-','')}finally{$sha.Dispose()}
         if($hash -ne $record.Hash){throw 'The saved PDF differs from its verified SHA-256. Run the integrity audit before reading it.'}
         Assert-QaReaderStableMetadata $path $verifiedLength $verifiedWriteTicks
-        Initialize-QaPdfReader
-        if(Test-QaReaderCancel $Progress){throw [OperationCanceledException]::new('Reading cancelled.')}
-        $timer=[Diagnostics.Stopwatch]::StartNew()
-        try{$document=[UglyToad.PdfPig.PdfDocument]::Open([byte[]]$bytes,$null)}catch{throw 'Text could not be read from this PDF. It may be encrypted, damaged, or use an unsupported feature. Open it in your approved PDF viewer.'}
-        $pages=[int]$document.NumberOfPages;$readPages=0;$truncated=($pages -gt $MaximumPages)
-        $builder=New-Object Text.StringBuilder
-        for($pageNumber=1;$pageNumber -le [math]::Min($pages,$MaximumPages);$pageNumber++) {
-            if(Test-QaReaderCancel $Progress){throw [OperationCanceledException]::new('Reading cancelled.')}
-            if($timer.Elapsed.TotalSeconds -gt $MaximumSeconds){$truncated=$true;break}
-            Set-QaReaderProgress $Progress ('Reading page '+$pageNumber+' of '+$pages+'...') (10+90*$pageNumber/[math]::Max(1,$pages))
-            try{$page=$document.GetPage($pageNumber);$text=[UglyToad.PdfPig.DocumentLayoutAnalysis.TextExtractor.ContentOrderTextExtractor]::GetText($page,$true)}catch{throw ('Page '+$pageNumber+' could not be read. Open the original PDF in your approved viewer.')}
-            $remaining=$MaximumCharacters-$builder.Length
-            if($remaining -le 50){$truncated=$true;break}
-            $heading="--- Page $pageNumber ---`r`n"
-            [void]$builder.Append($heading)
-            $remaining=$MaximumCharacters-$builder.Length
-            if($text.Length -gt $remaining){[void]$builder.Append($text.Substring(0,$remaining));$truncated=$true;$readPages++;break}
-            [void]$builder.Append($text);[void]$builder.Append("`r`n`r`n");$readPages++
+        $engineTimer=[Diagnostics.Stopwatch]::StartNew()
+        $extracted=$null;$fallbackReason='';$pythonFailure=''
+        if($Reader -in @('Auto','Python')) {
+            if(Test-QaPythonReaderAvailable) {
+                try{$extracted=Invoke-QaPythonPdfText -Bytes $bytes -ExpectedHash $hash -Progress $Progress -MaximumPages $MaximumPages -MaximumCharacters $MaximumCharacters -MaximumSeconds $MaximumSeconds}
+                catch [OperationCanceledException] {throw}
+                catch{if($Reader -ceq 'Python'){throw};$fallbackReason='PythonReadError';$pythonFailure='The portable reader could not finish within the reading limit. Try Standard reading for this PDF.'}
+            }else{
+                if($Reader -ceq 'Python'){throw 'The portable Python reader is unavailable on this computer. Choose Automatic or Standard reading.'}
+                $fallbackReason='PythonUnavailable'
+            }
         }
-        $fullText=$builder.ToString()
-        if($fullText.Length -gt $MaximumCharacters){$fullText=$fullText.Substring(0,$MaximumCharacters);$truncated=$true}
+        if($null -ne $extracted -and $Reader -ceq 'Auto' -and $extracted.NeedsOCR -and -not $extracted.Truncated) {
+            $remaining=[int][math]::Floor($MaximumSeconds-$engineTimer.Elapsed.TotalSeconds)
+            if($remaining -ge 5){
+                try{
+                    $alternate=Invoke-QaStandardPdfText -Bytes $bytes -Progress $Progress -MaximumPages $MaximumPages -MaximumCharacters $MaximumCharacters -MaximumSeconds $remaining
+                    if(-not $alternate.NeedsOCR){$extracted=$alternate;$fallbackReason='PythonNoText'}
+                }catch [OperationCanceledException]{throw}catch{}
+            }
+        }
+        if($null -eq $extracted) {
+            $remaining=[int][math]::Floor($MaximumSeconds-$engineTimer.Elapsed.TotalSeconds)
+            if($remaining -lt 5 -and $pythonFailure){throw $pythonFailure}
+            $budget=[math]::Max(5,[math]::Min($MaximumSeconds,$remaining))
+            $extracted=Invoke-QaStandardPdfText -Bytes $bytes -Progress $Progress -MaximumPages $MaximumPages -MaximumCharacters $MaximumCharacters -MaximumSeconds $budget
+        }
+        $pages=[int]$extracted.Pages;$readPages=[int]$extracted.ReadPages;$truncated=[bool]$extracted.Truncated
+        $fullText=[string]$extracted.Text
         $visibleText=([regex]::Replace($fullText,'--- Page \d+ ---','')).Trim()
         $needsOcr=[string]::IsNullOrWhiteSpace($visibleText)
         $message='Text is read locally. Found test names are hints only; no QA label or result has been changed.'
@@ -175,10 +361,10 @@ function Read-QaReportText {
         $summary.Description=('Read '+$readPages+' of '+$pages+' pages. '+$message)
         Assert-QaReaderStableMetadata $path $verifiedLength $verifiedWriteTicks
         Set-QaReaderProgress $Progress $summary.Description 100
-        return [pscustomobject]@{Mode='PdfRead';RecordId=$RecordId;VerifiedHash=$hash;VerifiedLength=$verifiedLength;VerifiedWriteTicks=$verifiedWriteTicks;Title=$title;Text=$fullText;Pages=$pages;ReadPages=$readPages;Indicators=@(Get-QaTextIndicators $visibleText);Message=$message;Truncated=$truncated;NeedsOCR=$needsOcr;Summary=$summary}
+        return [pscustomobject]@{Mode='PdfRead';RecordId=$RecordId;VerifiedHash=$hash;VerifiedLength=$verifiedLength;VerifiedWriteTicks=$verifiedWriteTicks;ReaderUsed=[string]$extracted.ReaderUsed;ReaderVersion=[string]$extracted.ReaderVersion;ReadMilliseconds=[math]::Round($engineTimer.Elapsed.TotalMilliseconds,3);FallbackReason=$fallbackReason;Title=$title;Text=$fullText;Pages=$pages;ReadPages=$readPages;Indicators=@(Get-QaTextIndicators $visibleText);Message=$message;Truncated=$truncated;NeedsOCR=$needsOcr;Summary=$summary}
     } catch [OperationCanceledException] {
         $summary.Cancelled=$true;$summary.Description='Reading cancelled. No reports were changed.'
-        return [pscustomobject]@{Mode='PdfRead';RecordId=$RecordId;VerifiedHash='';VerifiedLength=[long]0;VerifiedWriteTicks=[long]0;Title='';Text='';Pages=0;ReadPages=0;Indicators=@();Message=$summary.Description;Truncated=$false;NeedsOCR=$false;Summary=$summary}
+        return [pscustomobject]@{Mode='PdfRead';RecordId=$RecordId;VerifiedHash='';VerifiedLength=[long]0;VerifiedWriteTicks=[long]0;ReaderUsed='';ReaderVersion='';ReadMilliseconds=0;FallbackReason='';Title='';Text='';Pages=0;ReadPages=0;Indicators=@();Message=$summary.Description;Truncated=$false;NeedsOCR=$false;Summary=$summary}
     } finally {
         if($null -ne $document){try{$document.Dispose()}catch{}}
         if($null -ne $inputStream){try{$inputStream.Dispose()}catch{}}

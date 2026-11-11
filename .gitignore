@@ -54,3 +54,9 @@ Exports/
 
 # Local portable Python probe output
 Tools/PythonProbe/Results/
+
+# Rebuilt portable Python PDF runtime
+App/Python/runtime/
+App/Python/vendor/
+App/Python/Integrity.json
+App/Python/Build-Info.json

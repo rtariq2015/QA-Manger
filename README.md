@@ -1,4 +1,4 @@
-# CT QA Manager Pro 5.2.0
+# CT QA Manager Pro 5.3.0
 
 A portable offline HTML interface built on the original Windows archive, network, PDF and export modules. Run **Start CT QA Manager.cmd**. The local helper and runtime are bundled; the work computer needs no separate runtime installation or administrator launch. Its application policy must permit the included Windows x64 executable and local browser access.
 
@@ -7,6 +7,12 @@ A portable offline HTML interface built on the original Windows archive, network
 ![Reports, PDF review and exports in the tested Windows browser interface, using synthetic demonstration data](docs/images/reports-web-demo.png)
 
 The release includes an offline visual preview with Today, Reports and Settings screenshots. These are actual Windows interface captures using synthetic data.
+
+Version 5.3.0 integrates the portable Python PDF reader that passed the workstation compatibility test, with a Standard reader fallback. The report inspector now shows current **water CT values and image-noise measurements**, their clearly printed HU bounds, Head/Body and slice context, and page references. Parenthesized references and unsupported multicolumn tables are not treated as current measurements. Reading and filing remain separate from clinical approval.
+
+Existing successful PDF readings are preserved during the upgrade. New reports use the configured reader; selecting Read contents on an older report refreshes only that report to add measurement details. Settings → PDF reader provides Automatic, Portable Python and Standard options. Changing that preference preserves the archive cache until individual reports are read again.
+
+**Upgrading from version 5.2 or earlier:** use the **Upgrade ZIP**, extract it separately, close the program, run **Install update.cmd**, and select the existing program folder. This one-time step adds the Python runtime and updates the validator for its file types while retaining reports, sign-ins, settings and decisions. Normal in-app Update ZIPs are supported from version 5.3 onward.
 
 Version 5.2.0 adds **Read report contents** for a selected PDF. It recognizes supported Siemens IEC basic and extended constancy layouts from their numbered test sections, extracts a consistent report-footer date, and shows literal printed observations with section references. It uses the bundled offline reader and needs no model download or AI subscription.
 
@@ -32,7 +38,7 @@ The HTML, styles, icons, JavaScript, host and runtime are local files. No CDN, p
 
 The Microsoft ASP.NET Core host listens only on 127.0.0.1 with an OS-selected port, same-origin checks and a per-run authenticated session. It invokes narrow PowerShell operations rather than arbitrary commands or file paths. Scanner passwords travel through local authenticated requests and process stdin, never URLs, command arguments or browser storage. Remembered passwords use Windows account/workstation protection and may need re-entry after moving to another computer.
 
-The larger download contains the self-contained runtime. Runtime licensing notices are included with the host. Build dependencies are development-only; normal use requires no Python, Node, Git or SDK installation.
+The larger download contains the self-contained runtime. Runtime licensing notices are included with the host. Build dependencies are development-only; the Python reader and its libraries are bundled. Normal use requires no Python, Node, Git or SDK installation.
 
 ## Build and validate
 

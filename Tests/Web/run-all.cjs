@@ -36,6 +36,8 @@ const largeFixture = fixture + '-large';
 const largeOutput = path.join(output, 'large');
 const contentFixture = fixture + '-content';
 const contentOutput = path.join(output, 'content');
+const pythonFixture = fixture + '-python';
+const pythonOutput = path.join(output, 'python');
 if (finalStatus === 0) {
   fs.mkdirSync(largeOutput, { recursive: true });
   const createLarge = spawnSync(powershell, ['-NoProfile', '-File', path.join(__dirname, 'New-LargeWebFixture.ps1'), '-FixtureRoot', largeFixture, '-ProductRoot', product], { cwd: product, encoding: 'utf8', windowsHide: true, timeout: 300000 });
@@ -67,9 +69,21 @@ if (finalStatus === 0) {
     finalStatus = integration.status || (integration.error ? 1 : 0);
   }
 }
+if (finalStatus === 0 && isWindows) {
+  fs.mkdirSync(pythonOutput, { recursive: true });
+  const createPython = spawnSync(powershell, ['-NoProfile', '-File', path.join(__dirname, 'New-PythonWebFixture.ps1'), '-FixtureRoot', pythonFixture, '-ProductRoot', product], { cwd: product, encoding: 'utf8', windowsHide: true, timeout: 300000 });
+  process.stdout.write(createPython.stdout || '');
+  if (createPython.status !== 0) { process.stderr.write(createPython.stderr || 'Synthetic Python fixture creation failed.\n'); finalStatus = createPython.status || 1; }
+  if (finalStatus === 0) {
+    const pythonArgs = [path.join(__dirname, 'run-python-e2e.cjs'), '--root', pythonFixture, '--host', host, '--powershell', powershell, '--browser-channel', 'msedge', '--output-dir', pythonOutput];
+    const integration = spawnSync(process.execPath, pythonArgs, { cwd: product, stdio: 'inherit', windowsHide: true, timeout: 900000 });
+    finalStatus = integration.status || (integration.error ? 1 : 0);
+  }
+}
 if (finalStatus === 0 && !args['keep-fixture']) {
   fs.rmSync(fixture, { recursive: true, force: true });
   fs.rmSync(largeFixture, { recursive: true, force: true });
   fs.rmSync(contentFixture, { recursive: true, force: true });
+  if (isWindows) fs.rmSync(pythonFixture, { recursive: true, force: true });
 } else fs.writeFileSync(path.join(output, 'synthetic-fixture-location.txt'), fixture + '\n' + largeFixture + '\n' + contentFixture + '\n');
 process.exit(finalStatus);

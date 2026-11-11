@@ -15,12 +15,15 @@ on:
       - 'Export CT QA Diagnostics.cmd'
       - 'Update CT QA Manager.cmd' 
   workflow_dispatch:
+concurrency:
+  group: ctqa-windows-validation
+  cancel-in-progress: true
 permissions:
   contents: read
 jobs:
   windows:
     runs-on: windows-latest
-    timeout-minutes: 30
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-dotnet@v4
@@ -38,16 +41,31 @@ jobs:
             $version=Get-ChildItem (Join-Path $packageRoot $runtime.Package) -Directory | Sort-Object { [version]$_.Name } -Descending | Select-Object -First 1
             foreach ($item in @(Get-ChildItem $version.FullName -File | Where-Object Name -match 'LICENSE|THIRD-PARTY-NOTICES')) { Copy-Item $item.FullName (Join-Path 'App/Host' ($runtime.Prefix+'-'+$item.Name)) }
           }
+      - name: Build the pinned portable Python PDF reader
+        shell: powershell
+        run: |
+          python scripts/build_app_python.py --output-dir App/Python --build-info artifacts/python-build-info.json
+          if ($LASTEXITCODE -ne 0) { exit 1 }
       - name: Synthetic suites on Windows PowerShell 5.1
         shell: powershell
         run: |
           New-Item -ItemType Directory -Path artifacts/windows -Force | Out-Null
           $failed = $false
-          foreach ($name in @('Run-ContentTests','Run-AnalysisTests','Run-ContentIntegrationTests','Run-WebServiceTests','Run-ReviewQueueTests','Run-UpdateTests','Run-SupportTests','Run-NetworkTests','Run-Tests','Run-ExportTests','Run-ConnectionTests','Run-BrowseTests','Run-MonthlyTests','Run-PdfTests','Run-PortableTests')) {
+          foreach ($name in @('Run-PythonReaderTests','Run-MeasurementTests','Run-ContentTests','Run-AnalysisTests','Run-ContentIntegrationTests','Run-WebServiceTests','Run-ReviewQueueTests','Run-UpdateTests','Run-SupportTests','Run-NetworkTests','Run-Tests','Run-ExportTests','Run-ConnectionTests','Run-BrowseTests','Run-MonthlyTests','Run-PdfTests','Run-PortableTests')) {
             & powershell.exe -NoProfile -File ".\Tests\$name.ps1" -OutputPath ".\artifacts\windows\$name.json"
             if ($LASTEXITCODE -ne 0) { $failed = $true; break }
           }
           if ($failed) { exit 1 }
+      - name: Compare both PDF readers on identical saved PDFs
+        shell: powershell
+        run: |
+          & powershell.exe -NoProfile -File .\Tests\Run-ReaderBenchmark.ps1 -OutputPath .\artifacts\windows\Reader-Benchmark.json
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+      - name: Save reader comparison before browser workloads
+        uses: actions/upload-artifact@v4
+        with:
+          name: reader-benchmark
+          path: artifacts/windows/Reader-Benchmark.json
       - name: Load native WPF and capture synthetic dashboard
         if: always()
         shell: powershell
@@ -81,6 +99,14 @@ jobs:
         with:
           name: portable-web-host
           path: App/Host/
+      - name: Save tested portable Python runtime
+        uses: actions/upload-artifact@v4
+        with:
+          name: portable-python-runtime
+          path: |
+            App/Python/runtime/
+            App/Python/vendor/
+            App/Python/Integrity.json
       - name: Save test results and image
         if: always()
         uses: actions/upload-artifact@v4
@@ -89,3 +115,4 @@ jobs:
           path: |
             artifacts/windows/
             artifacts/web/
+            artifacts/python-build-info.json

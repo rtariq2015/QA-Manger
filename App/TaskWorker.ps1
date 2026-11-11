@@ -20,7 +20,9 @@ try {
         }
         'ReadPdf' {
             Import-Module (Join-Path $PSScriptRoot 'PdfReader.psm1') -Force
-            $value=Read-QaReportText -Config $request.Config -RecordId $request.RecordId
+            $readArgs=@{Config=$request.Config;RecordId=[string]$request.RecordId}
+            if($null -ne $request.PSObject.Properties['Reader']){$readArgs.Reader=[string]$request.Reader}
+            $value=Read-QaReportText @readArgs
         }
     }
     [pscustomobject]@{Success=$true;Value=$value;Error=''}|Export-Clixml -LiteralPath $OutputPath -Depth 20 -Encoding UTF8

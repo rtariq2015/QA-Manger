@@ -76,7 +76,7 @@ Scenario 'A destination changed after hashing cannot acquire successful cached-r
   $script:ProvenanceMutationPath=$Path;$script:OriginalReaderInitialize=(Get-Command Initialize-QaPdfReader).ScriptBlock
   function script:Initialize-QaPdfReader {& $script:OriginalReaderInitialize;[IO.File]::SetLastWriteTimeUtc($script:ProvenanceMutationPath,[datetime]::UtcNow.AddMinutes(1))}
  } $fx.Record.DestinationPath
- try{$rejected=$false;try{Read-QaReportText -Config $fx.Config -RecordId $fx.Record.Id|Out-Null}catch{$rejected=$_.Exception.Message -match 'changed while it was being read'};Check $rejected 'Post-hash modification prevents a successful text result'}
+ try{$rejected=$false;try{Read-QaReportText -Config $fx.Config -RecordId $fx.Record.Id -Reader Standard|Out-Null}catch{$rejected=$_.Exception.Message -match 'changed while it was being read'};Check $rejected 'Post-hash modification prevents a successful text result'}
  finally{& $readerModule {Set-Item Function:Initialize-QaPdfReader $script:OriginalReaderInitialize;Remove-Variable OriginalReaderInitialize,ProvenanceMutationPath -Scope Script}}
  Check ((Get-FileHash $statePath).Hash -eq $before) 'Stale read leaves archive metadata untouched'
  $guard=[IO.File]::Open((Join-Path $fx.Config.ArchiveRoot '.ctqa/archive.lock'),[IO.FileMode]::Open,[IO.FileAccess]::ReadWrite,[IO.FileShare]::None);$guard.Dispose()

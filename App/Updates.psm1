@@ -12,6 +12,12 @@ function Test-QaUpdateRelativePath([string]$Name) {
 function Test-QaUpdatePayloadName([string]$Name) {
     if($Name -in @('Package.json','Package-SHA256SUMS.txt','Start CT QA Manager.cmd','Update CT QA Manager.cmd','Export CT QA Diagnostics.cmd','User Guide.html','Config/Settings.json')){return $true}
     if($Name -ceq 'App/Host/CTQa.Host.exe' -or $Name -in @('App/Web/app.js','App/Web/app.css')){return $true}
+    # Python assets are admitted only inside the bundled reader namespace.
+    # Other executable and script locations retain the existing restrictions.
+    if($Name -ceq 'App/Python/read_pdf.py' -or $Name -ceq 'App/Python/vendor/pypdf/py.typed'){return $true}
+    if($Name -cmatch '^App/Python/runtime/(?:python(?:w)?\.exe|python[0-9]{2,4}\.(?:zip|_pth)|python\.cat|[A-Za-z0-9_.-]+\.pyd)$'){return $true}
+    if($Name -cmatch '^App/Python/vendor/pypdf/(?:[A-Za-z0-9_.-]+/)*[A-Za-z0-9_.-]+\.py$'){return $true}
+    if($Name -cmatch '^App/Python/vendor/pypdf-[0-9][0-9A-Za-z.+_-]*\.dist-info/(?:METADATA|RECORD|WHEEL|LICENSE|licenses/LICENSE)$'){return $true}
     return ($Name.StartsWith('App/',[StringComparison]::Ordinal) -and $Name -match '\.(ps1|psm1|xaml|dll|json|txt|html)$')
 }
 function Test-QaUpdateFolder {
@@ -32,6 +38,11 @@ function Test-QaUpdateFolder {
     }
     foreach($required in @('Package.json','Start CT QA Manager.cmd','User Guide.html','Config/Settings.json','App/Start.ps1','App/MainWindow.xaml','App/Upgrade.ps1','App/Updates.psm1','App/Workspace.psm1')){if(-not $hashes.ContainsKey($required)){throw ('Update package is missing '+$required+'.')}}
     if([version]$package.Version -ge [version]'5.0.0'){foreach($required in @('App/Start-Web.ps1','App/WebWorker.ps1','App/WebService.psm1','App/Host/CTQa.Host.exe','App/Web/index.html','App/Web/app.css','App/Web/app.js')){if(-not $hashes.ContainsKey($required)){throw ('The offline HTML update is missing '+$required)}}}
+    if([version]$package.Version -ge [version]'5.3.0'){foreach($required in @('App/MeasurementParser.psm1','App/Python/read_pdf.py','App/Python/Sources.json','App/Python/Integrity.json','App/Python/runtime/python.exe','App/Python/vendor/pypdf/__init__.py')){if(-not $hashes.ContainsKey($required)){throw ('The portable PDF reader update is missing '+$required)}}}
+    if([version]$package.Version -ge [version]'5.3.0'){
+        $runtimePaths=@($hashes.Keys|Where-Object{$_ -cmatch '^App/Python/runtime/python[0-9]{2,4}\._pth$'})
+        if($runtimePaths.Count -ne 1 -or -not $hashes.ContainsKey(($runtimePaths[0] -replace '\._pth$','.zip')) -or -not $hashes.ContainsKey(($runtimePaths[0] -replace '\._pth$','.dll'))){throw 'The portable Python standard library or import configuration is missing.'}
+    }
     $files=@(Get-ChildItem -LiteralPath $source -Recurse -File);$seen=@{};$bytes=[long]0
     foreach($file in $files){
         Assert-QaUpdateDirectPath $file.FullName;$name=$file.FullName.Substring($source.Length+1).Replace('\','/')

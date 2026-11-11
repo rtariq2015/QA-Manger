@@ -110,6 +110,60 @@ Scenario 'The helper waits for the running app to release its lock and then inst
         Check (@(Get-ChildItem (Join-Path $target 'Backups') -Recurse -Filter WaitingVersion.txt).Count -eq 1) 'Pre-update program backed up'
     }finally{if($null -ne $lock){$lock.Dispose()};$process.Dispose();Remove-QaUpdateStage $target $plan.StageRoot}
 }
+function New-PythonUpdateFixture {
+    param([string]$Folder)
+    Copy-Item -LiteralPath $source -Destination $Folder -Recurse
+    $names=@(
+        'App/Start-Web.ps1','App/WebWorker.ps1','App/WebService.psm1','App/Host/CTQa.Host.exe',
+        'App/Web/index.html','App/Web/app.css','App/Web/app.js','App/MeasurementParser.psm1',
+        'App/Python/read_pdf.py','App/Python/Sources.json','App/Python/Integrity.json',
+        'App/Python/runtime/python.exe','App/Python/runtime/pythonw.exe','App/Python/runtime/python314._pth',
+        'App/Python/runtime/python314.zip','App/Python/runtime/python.cat','App/Python/runtime/_socket.pyd',
+        'App/Python/runtime/python314.dll','App/Python/runtime/LICENSE.txt',
+        'App/Python/vendor/pypdf/__init__.py','App/Python/vendor/pypdf/_reader.py','App/Python/vendor/pypdf/py.typed',
+        'App/Python/vendor/pypdf-7.0.1.dist-info/METADATA','App/Python/vendor/pypdf-7.0.1.dist-info/WHEEL',
+        'App/Python/vendor/pypdf-7.0.1.dist-info/RECORD','App/Python/vendor/pypdf-7.0.1.dist-info/licenses/LICENSE'
+    )
+    foreach($name in $names){
+        $path=Join-Path $Folder $name
+        [void][IO.Directory]::CreateDirectory((Split-Path -Parent $path))
+        [IO.File]::WriteAllText($path,'Synthetic packaged bytes only; never execute this fixture.')
+    }
+    [pscustomobject]@{SchemaVersion=1;Name='CT QA Manager Pro';Version='5.3.0'}|ConvertTo-Json|Set-Content (Join-Path $Folder 'Package.json') -Encoding UTF8
+    Save-Manifest $Folder
+}
+Scenario 'A complete Python-enabled update stages its runtime, reader and notices without changing user data' {
+    $modern=Join-Path $testRoot 'Python Update Fixture';New-PythonUpdateFixture $modern
+    $modernZip=Join-Path $testRoot 'Python Update.zip';[IO.Compression.ZipFile]::CreateFromDirectory($modern,$modernZip)
+    $settingsBefore=(Get-FileHash -LiteralPath (Join-Path $target 'Config/Settings.local.json') -Algorithm SHA256).Hash
+    $dataBefore=(Get-FileHash -LiteralPath (Join-Path $target 'Data/preserved-report.txt') -Algorithm SHA256).Hash
+    $plan=$null
+    try{
+        $plan=New-QaUpdateStage -AppRoot $target -ZipPath $modernZip
+        Check ($plan.Version -eq '5.3.0') 'Python-enabled package metadata survives complete ZIP staging.'
+        foreach($name in @('runtime/python.exe','runtime/python314._pth','runtime/python314.zip','runtime/python.cat','runtime/_socket.pyd','read_pdf.py','vendor/pypdf/py.typed','vendor/pypdf-7.0.1.dist-info/METADATA','vendor/pypdf-7.0.1.dist-info/WHEEL','vendor/pypdf-7.0.1.dist-info/RECORD','vendor/pypdf-7.0.1.dist-info/licenses/LICENSE')){
+            Check ([IO.File]::Exists((Join-Path $plan.SourceFolder ('App/Python/'+$name)))) 'Required portable interpreter, reader or licensing bytes are admitted only as checked package files.'
+        }
+        Check ((Get-FileHash -LiteralPath (Join-Path $target 'Config/Settings.local.json') -Algorithm SHA256).Hash -eq $settingsBefore) 'Staging the new runtime does not rewrite existing scanner or archive settings.'
+        Check ((Get-FileHash -LiteralPath (Join-Path $target 'Data/preserved-report.txt') -Algorithm SHA256).Hash -eq $dataBefore) 'Staging leaves the existing saved report untouched.'
+        Check (-not [IO.Directory]::Exists((Join-Path $target 'App/Python'))) 'No new reader files enter the live program before installation.'
+    }finally{if($null -ne $plan){Remove-QaUpdateStage $target $plan.StageRoot}}
+}
+Scenario 'Python payload admission stays narrow and a missing required interpreter cannot pass package checks' {
+    $module=Get-Module Updates
+    foreach($name in @('App/python.exe','App/read_pdf.py','Config/read_pdf.py','App/Python/another_worker.py','App/Python/runtime/helper.exe','App/Python/runtime/python.exe.bak','App/Python/runtime/sidecar.py','App/Python/vendor/other/__init__.py','App/Python/vendor/pypdf/run.exe','App/Python/vendor/pypdf-7.0.1.dist-info/INSTALLER')){
+        $allowed=& $module {param($PayloadName) Test-QaUpdatePayloadName $PayloadName} $name
+        Check (-not $allowed) 'Arbitrary executables, Python modules and unapproved dependency metadata stay outside the update payload allowlist.'
+    }
+    foreach($component in @('python.exe','python314.zip')){
+        $missing=Join-Path $testRoot ('Missing Python Fixture '+$component);New-PythonUpdateFixture $missing
+        Remove-Item -LiteralPath (Join-Path $missing ('App/Python/runtime/'+$component))
+        Save-Manifest $missing
+        $caught=$false;try{Test-QaUpdateFolder -SourceFolder $missing|Out-Null}catch{$caught=$true}
+        Check $caught 'A validly hashed newer package still fails if its interpreter or matching standard library is missing.'
+    }
+    Check ([IO.File]::ReadAllText((Join-Path $target 'Data/preserved-report.txt')) -eq 'Synthetic saved report') 'Rejected runtime packages cannot alter archived user data.'
+}
 if([Environment]::OSVersion.Platform -eq [PlatformID]::Win32NT){
     Scenario 'A successful Windows update starts the normal launcher after releasing the lock' {
         $restartSource=Join-Path $testRoot 'Restart Package';Copy-Item $source $restartSource -Recurse
@@ -126,7 +180,7 @@ if([Environment]::OSVersion.Platform -eq [PlatformID]::Win32NT){
 }
 
 $failed=@($script:Results|Where-Object Result -eq 'FAIL').Count
-$report=[pscustomobject]@{Version='4.3.0';Runtime=$PSVersionTable.PSVersion.ToString();WindowsPowerShell51ActuallyRun=($PSVersionTable.PSVersion.Major -eq 5);Tests=$script:Results.Count;Assertions=$script:Assertions;Failed=$failed;Results=@($script:Results.ToArray());Scope='Offline package validation, isolated staging, lock waits, report and settings preservation, rollback copy, corruption, traversal, duplicate paths, link entries and cleanup safeguards. No downloaded code executed.'}
+$report=[pscustomobject]@{Version='4.3.0';Runtime=$PSVersionTable.PSVersion.ToString();WindowsPowerShell51ActuallyRun=($PSVersionTable.PSVersion.Major -eq 5);Tests=$script:Results.Count;Assertions=$script:Assertions;Failed=$failed;Results=@($script:Results.ToArray());Scope='Offline package validation, isolated staging, lock waits, report and settings preservation, rollback copy, corruption, traversal, duplicate paths, link entries, narrow Python payload admission and cleanup safeguards. The Python staging fixtures contain dummy bytes and are never executed. No downloaded code executed.'}
 if($OutputPath){$report|ConvertTo-Json -Depth 12|Set-Content -LiteralPath $OutputPath -Encoding UTF8}
 Write-Host ('Result: '+($report.Tests-$failed)+'/'+$report.Tests+' scenarios; '+$report.Assertions+' assertions.')
 Remove-Item -LiteralPath $testRoot -Recurse -Force

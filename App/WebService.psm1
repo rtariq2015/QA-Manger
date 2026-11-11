@@ -48,10 +48,33 @@ function ConvertTo-QaWebContentProfiles($Values){
 }
 function Get-QaWebContentContext($Config,$Record){
     $date=[string]$Record.ReportDate;$time=[string]$Record.ReportTime
-    $view=[pscustomobject]@{status='NotRead';profileId='';profileName='';date='';time='';dateStatus='Missing';reason='Read this PDF to look for a supported report format.';mappedCategory='';suggestedCategory='';components=@();readPages=0;pages=0;completeRead=$false}
+    $view=[pscustomobject]@{status='NotRead';profileId='';profileName='';date='';time='';dateStatus='Missing';reason='Read this PDF to look for a supported report format.';mappedCategory='';suggestedCategory='';components=@();readPages=0;pages=0;completeRead=$false;reader=[pscustomobject]@{name='';version='';elapsedMs=0;fallback=$false};measurements=@();measurementStatus='NotRead'}
     $context=[pscustomobject]@{view=$view;profileUsable=$false;dateConflict=$false;typeConflict=$false;dateSafe=$false;effectiveDate=$date;effectiveTime=$time;mappedCategory='';explicitCategory='';suggestedCategory='';stamp=''}
     $analysis=Get-QaSavedAnalysis -Config $Config -Record $Record
     if($null -eq $analysis){return $context}
+    $reader=[string](Get-QaWebValue $analysis ReaderUsed 'Legacy');if($reader -cnotin @('Python','Standard')){$reader='Legacy'}
+    $readerVersion=[string](Get-QaWebValue $analysis ReaderVersion '');if($readerVersion.Length -gt 64 -or $readerVersion -notmatch '^[A-Za-z0-9 ._+/;-]*$'){$readerVersion=''}
+    $readerMs=[long]0;[void][long]::TryParse([string](Get-QaWebValue $analysis ReaderElapsedMs 0),[ref]$readerMs);if($readerMs -lt 0 -or $readerMs -gt 3600000){$readerMs=0}
+    $view.reader=[pscustomobject]@{name=$reader;version=$readerVersion;elapsedMs=$readerMs;fallback=([string](Get-QaWebValue $analysis ReaderFallbackReason '') -cin @('PythonUnavailable','PythonReadError','PythonNoText'))}
+    $measured=Get-QaWebValue $analysis MeasurementsDocument $null
+    if([int](Get-QaWebValue $measured MeasurementVersion 0) -eq 1){
+        $view.measurementStatus=if([string](Get-QaWebValue $measured Status '') -ceq 'Extracted'){'Read'}else{'NeedsReview'}
+        $measurementRows=New-Object 'Collections.Generic.List[object]'
+        foreach($item in @(Get-QaWebValue $measured Measurements @()|Select-Object -First 100)){
+            $code=[string](Get-QaWebValue $item Code '');if($code -cnotin @('WaterCTNumber','ImageNoise')){continue}
+            $value=[string](Get-QaWebValue $item Value '');$unit=[string](Get-QaWebValue $item Unit '');$page=[int](Get-QaWebValue $item Page 0)
+            $numeric='^[+-]?(?:[0-9]{1,9}(?:\.[0-9]{1,9})?|\.[0-9]{1,9})$'
+            if($value -notmatch $numeric -or $unit -cne 'HU' -or $page -lt 1 -or $page -gt 1000){continue}
+            $lower=[string](Get-QaWebValue $item LowerLimit '');$upper=[string](Get-QaWebValue $item UpperLimit '')
+            if(($lower -and $lower -notmatch $numeric) -or ($upper -and $upper -notmatch $numeric)){$lower='';$upper=''}
+            $parts=New-Object 'Collections.Generic.List[string]'
+            $mode=[string](Get-QaWebValue $item Mode '');if($mode -cin @('Head','Body')){[void]$parts.Add($mode)}
+            $system=[string](Get-QaWebValue $item SourceSystem '');if($system -cin @('A','B')){[void]$parts.Add(('System '+$system))}
+            $slice=[string](Get-QaWebValue $item Slice '');if($slice -cmatch '^[1-9][0-9]{0,2}$'){[void]$parts.Add(('Slice '+$slice))}
+            [void]$measurementRows.Add([pscustomobject]@{label=$(if($code -ceq 'WaterCTNumber'){'Water CT value'}else{'Image noise'});value=$value;unit=$unit;page=$page;lower=$lower;upper=$upper;context=($parts -join ' / ')})
+        }
+        $view.measurements=@($measurementRows.ToArray())
+    }
     if([string](Get-QaWebValue $analysis Status '') -eq 'ReadError'){$view.status='ReadError';$view.reason='This PDF could not be read. Open the original PDF or retry reading it.';return $context}
     $doc=Get-QaWebValue $analysis DocumentClassification
     if($null -eq $doc -or [int](Get-QaWebValue $doc ClassifierVersion 0) -ne 1){return $context}
@@ -164,7 +187,7 @@ function Get-QaWebSnapshot {
     foreach($history in @($organization.History|Select-Object -Last 1)){
         if($history.action -eq 'Undo'){continue};$matching=@($records|Where-Object id -ceq $history.recordId);if($matching.Count -eq 1 -and $matching[0].reviewId -ceq $history.reviewId){$last=[pscustomobject]@{recordId=$history.recordId;reviewId=$history.reviewId;stamp=$matching[0].stamp}}
     }
-    return [pscustomobject]@{version='5.2.0';previewMode=$(if([Environment]::OSVersion.Platform -eq [PlatformID]::Win32NT){'windows'}else{'browser'});workspace=[string]$Config.AppRoot;archiveRoot=[string]$Config.ArchiveRoot;libraryRoot=(Join-Path $Config.ArchiveRoot 'Report Library');setupComplete=[bool]$dashboard.SetupComplete;records=@($records.ToArray());scanners=@($scanners.ToArray());today=[pscustomobject]@{headline=$headline;received=$received;expected=$expected;date=$day};months=@(Get-QaMonthOverview $Config $dashboard|ForEach-Object{[pscustomobject]@{scanner=$_.Scanner;name=$_.Name;month=$_.Month;progress=$_.Progress;due=$_.Due;timing=$_.Timing;detail=$_.Detail;status=$_.Status}});analysis=$( $a=Get-QaAnalysisProgress $Config @($dashboard.Records);[pscustomobject]@{total=$a.Total;cached=$a.Cached;pending=$a.Pending;errors=$a.Errors});settings=[pscustomobject]@{monitorMinutes=[int](Get-QaWebValue $Config MonitorMinutes 15);autoAnalyze=[bool](Get-QaWebValue $Config AutoAnalyze $true);autoUpdateOnOpen=[bool](Get-QaWebValue $Config AutoUpdateOnOpen $true)};pendingSummary=[pscustomobject]@{pending=@($records|Where-Object pending).Count;automatic=@($records|Where-Object decision -eq 'Automatic').Count;approved=@($records|Where-Object decision -eq 'Approved').Count;disapproved=@($records|Where-Object decision -eq 'Disapproved').Count};lastDecision=$last;attentionCount=@($dashboard.Attention).Count;onlineEnabled=$false}
+    return [pscustomobject]@{version='5.3.0';previewMode=$(if([Environment]::OSVersion.Platform -eq [PlatformID]::Win32NT){'windows'}else{'browser'});workspace=[string]$Config.AppRoot;archiveRoot=[string]$Config.ArchiveRoot;libraryRoot=(Join-Path $Config.ArchiveRoot 'Report Library');setupComplete=[bool]$dashboard.SetupComplete;records=@($records.ToArray());scanners=@($scanners.ToArray());today=[pscustomobject]@{headline=$headline;received=$received;expected=$expected;date=$day};months=@(Get-QaMonthOverview $Config $dashboard|ForEach-Object{[pscustomobject]@{scanner=$_.Scanner;name=$_.Name;month=$_.Month;progress=$_.Progress;due=$_.Due;timing=$_.Timing;detail=$_.Detail;status=$_.Status}});analysis=$( $a=Get-QaAnalysisProgress $Config @($dashboard.Records);[pscustomobject]@{total=$a.Total;cached=$a.Cached;pending=$a.Pending;errors=$a.Errors});settings=[pscustomobject]@{monitorMinutes=[int](Get-QaWebValue $Config MonitorMinutes 15);autoAnalyze=[bool](Get-QaWebValue $Config AutoAnalyze $true);autoUpdateOnOpen=[bool](Get-QaWebValue $Config AutoUpdateOnOpen $true);pdfReaderMode=(Get-QaAnalysisReaderMode $Config)};pendingSummary=[pscustomobject]@{pending=@($records|Where-Object pending).Count;automatic=@($records|Where-Object decision -eq 'Automatic').Count;approved=@($records|Where-Object decision -eq 'Approved').Count;disapproved=@($records|Where-Object decision -eq 'Disapproved').Count};lastDecision=$last;attentionCount=@($dashboard.Attention).Count;onlineEnabled=$false}
 }
 function ConvertTo-QaWebName([string]$Name){$name=($Name -replace '[<>:"/\\|?*\x00-\x1f]','-').Trim().TrimEnd('.',' ');if(-not $name){$name='Report'};if($name -match '^(?i:CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])(?:\.|$)'){$name='Report-'+$name};if($name.Length -gt 42){$name=$name.Substring(0,42)};return $name}
 function Test-QaWebRelative([string]$Path){if(-not $Path -or $Path -match '[\\:\x00-\x1f]' -or $Path.StartsWith('/')){return $false};foreach($part in $Path.Split('/')){if($part -in @('','.','..')){return $false}};return $true}
@@ -378,6 +401,7 @@ function Invoke-QaWebRequest {
         }
         'Settings'{
             $root=[string](Get-QaWebValue $Request archiveRoot $config.ArchiveRoot);if(-not [IO.Path]::IsPathRooted($root)){throw 'Choose an absolute local archive folder.'};$config.ArchiveRoot=[IO.Path]::GetFullPath($root)
+            if($null -ne (Get-QaWebValue $Request pdfReaderMode)){if([string]$Request.pdfReaderMode -cnotin @('Auto','Python','Standard')){throw 'Choose Automatic, Portable Python, or Standard reader.'};$config|Add-Member PdfReaderMode ([string]$Request.pdfReaderMode) -Force}
             if($null -ne (Get-QaWebValue $Request monitorMinutes)){$config|Add-Member MonitorMinutes ([int]$Request.monitorMinutes) -Force};if($null -ne (Get-QaWebValue $Request autoUpdateOnOpen)){if($Request.autoUpdateOnOpen -isnot [bool]){throw 'Update on opening must be on or off.'};$config|Add-Member AutoUpdateOnOpen $Request.autoUpdateOnOpen -Force};if($null -ne (Get-QaWebValue $Request autoAnalyze)){if($Request.autoAnalyze -isnot [bool]){throw 'Automatic reading must be on or off.'};$config|Add-Member AutoAnalyze $Request.autoAnalyze -Force}
             [void](Save-QaConfig $AppRoot $config);$message='Settings saved. Existing report folders were not moved or deleted.'
         }
@@ -397,8 +421,8 @@ function Invoke-QaWebRequest {
         }
         'Export'{$path=New-QaWebExport $config ([string[]]@(Get-QaWebValue $Request ids @())) $Progress;$cancelled=(-not $path -and (Test-QaWebCancelled $Progress));$message='Report package is ready to download.'}
         'Analyze'{
-            $ids=@();$selected=[string](Get-QaWebValue $Request id '');if($selected){[void](Get-QaWebRecord (Get-QaDashboard $config) $selected);$ids=@($selected)}
-            if($null -ne (Get-QaWebValue $Request force) -and (Get-QaWebValue $Request force) -isnot [bool]){throw 'Retry must be on or off.'};$force=[bool](Get-QaWebValue $Request force $false);if($force -and -not $selected){throw 'Choose one PDF before retrying a read.'};Set-QaWebProgress $Progress 'Analyzing' 0 0;if($selected){$analysis=Invoke-QaAnalysis $config -Limit 1 -RecordIds $ids -Force:$force -Progress $Progress}else{$analysis=Invoke-QaAnalysis $config -Limit 20 -Progress $Progress};$cancelled=[bool]$analysis.Summary.Cancelled
+            $ids=@();$selectedRecord=$null;$selected=[string](Get-QaWebValue $Request id '');if($selected){$selectedRecord=Get-QaWebRecord (Get-QaDashboard $config) $selected;$ids=@($selected)}
+            if($null -ne (Get-QaWebValue $Request force) -and (Get-QaWebValue $Request force) -isnot [bool]){throw 'Retry must be on or off.'};$force=[bool](Get-QaWebValue $Request force $false);if($force -and -not $selected){throw 'Choose one PDF before retrying a read.'};if($selected -and (Test-QaAnalysisSelectedRefresh $config $selectedRecord)){$force=$true};Set-QaWebProgress $Progress 'Analyzing' 0 0;if($selected){$analysis=Invoke-QaAnalysis $config -Limit 1 -RecordIds $ids -Force:$force -Progress $Progress}else{$analysis=Invoke-QaAnalysis $config -Limit 20 -Progress $Progress};$cancelled=[bool]$analysis.Summary.Cancelled
             $message=([string]$analysis.Analyzed+' PDFs analyzed; '+[string]$analysis.Cached+' cached; '+[string]$analysis.Failed+' need attention.');$value=$analysis
             if(-not $cancelled){$changed=@(Get-QaWebValue $analysis AnalyzedIds @());if($selected){$changed=@($selected)};if($changed.Count){try{[void](Update-QaWebLibrary -Config $config -OnlyRecords $changed -Progress $Progress)}catch{$warning='Contents were read. Readable folders need refresh: '+$_.Exception.Message}}}
         }

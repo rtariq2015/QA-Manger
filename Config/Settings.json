@@ -54,5 +54,6 @@
     }
   ],
   "MonitorMinutes": 15,
-  "AutoAnalyze": true
+  "AutoAnalyze": true,
+  "PdfReaderMode": "Auto"
 }
