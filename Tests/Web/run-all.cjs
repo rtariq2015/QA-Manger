@@ -34,6 +34,8 @@ if (result.error) process.stderr.write(result.error.message + '\n');
 let finalStatus = result.status || (result.error ? 1 : 0);
 const largeFixture = fixture + '-large';
 const largeOutput = path.join(output, 'large');
+const contentFixture = fixture + '-content';
+const contentOutput = path.join(output, 'content');
 if (finalStatus === 0) {
   fs.mkdirSync(largeOutput, { recursive: true });
   const createLarge = spawnSync(powershell, ['-NoProfile', '-File', path.join(__dirname, 'New-LargeWebFixture.ps1'), '-FixtureRoot', largeFixture, '-ProductRoot', product], { cwd: product, encoding: 'utf8', windowsHide: true, timeout: 300000 });
@@ -51,8 +53,23 @@ if (finalStatus === 0) {
     finalStatus = integration.status || (integration.error ? 1 : 0);
   }
 }
+if (finalStatus === 0) {
+  fs.mkdirSync(contentOutput, { recursive: true });
+  const createContent = spawnSync(powershell, ['-NoProfile', '-File', path.join(__dirname, 'New-ContentFixture.ps1'), '-FixtureRoot', contentFixture, '-ProductRoot', product], { cwd: product, encoding: 'utf8', windowsHide: true, timeout: 300000 });
+  process.stdout.write(createContent.stdout || '');
+  if (createContent.status !== 0) { process.stderr.write(createContent.stderr || 'Synthetic content fixture creation failed.\n'); finalStatus = createContent.status || 1; }
+  if (finalStatus === 0) {
+    const contentArgs = [path.join(__dirname, 'run-content-e2e.cjs'), '--root', contentFixture, '--host', host, '--powershell', powershell, '--output-dir', contentOutput];
+    if (dotnet) contentArgs.push('--dotnet', dotnet);
+    if (args.chromium) contentArgs.push('--chromium', args.chromium); else if (isWindows) contentArgs.push('--browser-channel', 'msedge');
+    if (args.python) contentArgs.push('--python', args.python);
+    const integration = spawnSync(process.execPath, contentArgs, { cwd: product, stdio: 'inherit', windowsHide: true, timeout: 900000 });
+    finalStatus = integration.status || (integration.error ? 1 : 0);
+  }
+}
 if (finalStatus === 0 && !args['keep-fixture']) {
   fs.rmSync(fixture, { recursive: true, force: true });
   fs.rmSync(largeFixture, { recursive: true, force: true });
-} else fs.writeFileSync(path.join(output, 'synthetic-fixture-location.txt'), fixture + '\n' + largeFixture + '\n');
+  fs.rmSync(contentFixture, { recursive: true, force: true });
+} else fs.writeFileSync(path.join(output, 'synthetic-fixture-location.txt'), fixture + '\n' + largeFixture + '\n' + contentFixture + '\n');
 process.exit(finalStatus);

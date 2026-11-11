@@ -15,6 +15,12 @@ function Assert-QaReaderDirectPath {
         if($parent -eq $current){break};$current=$parent
     }
 }
+function Assert-QaReaderStableMetadata {
+    param([string]$Path,[long]$Length,[long]$WriteTicks)
+    Assert-QaReaderDirectPath $Path
+    $info=New-Object IO.FileInfo($Path);$info.Refresh()
+    if(-not $info.Exists -or $info.Length -ne $Length -or $info.LastWriteTimeUtc.Ticks -ne $WriteTicks){throw 'The saved PDF changed while it was being read. Read the current report again before using its extracted text.'}
+}
 function Initialize-QaPdfReader {
     if([Environment]::OSVersion.Platform -eq [PlatformID]::Win32NT) {
         $release=0
@@ -119,7 +125,10 @@ function Read-QaReportText {
         if(-not [IO.File]::Exists($path)){throw 'The saved PDF is missing. Run Update Reports or the integrity audit.'}
         if([string]$record.Hash -notmatch '^[0-9A-Fa-f]{64}$'){throw 'The saved report has no verified hash. Run the integrity audit.'}
         Set-QaReaderProgress $Progress 'Checking this saved PDF before reading it...' 5
+        $verifiedInfo=New-Object IO.FileInfo($path);$verifiedInfo.Refresh()
+        $verifiedLength=[long]$verifiedInfo.Length;$verifiedWriteTicks=[long]$verifiedInfo.LastWriteTimeUtc.Ticks
         $inputStream=[IO.File]::Open($path,[IO.FileMode]::Open,[IO.FileAccess]::Read,[IO.FileShare]::Read)
+        if($inputStream.Length -ne $verifiedLength){throw 'The saved PDF changed before reading started. Read the current report again.'}
         if($inputStream.Length -gt $MaximumBytes){throw 'This PDF exceeds the safe text-reading size limit. Open the original PDF in your approved viewer.'}
         if($inputStream.Length -ne [long]$record.Length){throw 'The saved PDF size has changed. Run the integrity audit before reading it.'}
         # Hash the exact bounded buffer that will be parsed; never reopen the file after hashing.
@@ -134,6 +143,7 @@ function Read-QaReportText {
         $sha=[Security.Cryptography.SHA256]::Create()
         try{$hash=([BitConverter]::ToString($sha.ComputeHash($bytes))).Replace('-','')}finally{$sha.Dispose()}
         if($hash -ne $record.Hash){throw 'The saved PDF differs from its verified SHA-256. Run the integrity audit before reading it.'}
+        Assert-QaReaderStableMetadata $path $verifiedLength $verifiedWriteTicks
         Initialize-QaPdfReader
         if(Test-QaReaderCancel $Progress){throw [OperationCanceledException]::new('Reading cancelled.')}
         $timer=[Diagnostics.Stopwatch]::StartNew()
@@ -163,11 +173,12 @@ function Read-QaReportText {
         $title=[string]$record.OriginalFileName
         if(Get-Command Get-QaReportTitle -ErrorAction SilentlyContinue){$title=Get-QaReportTitle -Record $record}
         $summary.Description=('Read '+$readPages+' of '+$pages+' pages. '+$message)
+        Assert-QaReaderStableMetadata $path $verifiedLength $verifiedWriteTicks
         Set-QaReaderProgress $Progress $summary.Description 100
-        return [pscustomobject]@{Mode='PdfRead';RecordId=$RecordId;Title=$title;Text=$fullText;Pages=$pages;ReadPages=$readPages;Indicators=@(Get-QaTextIndicators $visibleText);Message=$message;Truncated=$truncated;NeedsOCR=$needsOcr;Summary=$summary}
+        return [pscustomobject]@{Mode='PdfRead';RecordId=$RecordId;VerifiedHash=$hash;VerifiedLength=$verifiedLength;VerifiedWriteTicks=$verifiedWriteTicks;Title=$title;Text=$fullText;Pages=$pages;ReadPages=$readPages;Indicators=@(Get-QaTextIndicators $visibleText);Message=$message;Truncated=$truncated;NeedsOCR=$needsOcr;Summary=$summary}
     } catch [OperationCanceledException] {
         $summary.Cancelled=$true;$summary.Description='Reading cancelled. No reports were changed.'
-        return [pscustomobject]@{Mode='PdfRead';RecordId=$RecordId;Title='';Text='';Pages=0;ReadPages=0;Indicators=@();Message=$summary.Description;Truncated=$false;NeedsOCR=$false;Summary=$summary}
+        return [pscustomobject]@{Mode='PdfRead';RecordId=$RecordId;VerifiedHash='';VerifiedLength=[long]0;VerifiedWriteTicks=[long]0;Title='';Text='';Pages=0;ReadPages=0;Indicators=@();Message=$summary.Description;Truncated=$false;NeedsOCR=$false;Summary=$summary}
     } finally {
         if($null -ne $document){try{$document.Dispose()}catch{}}
         if($null -ne $inputStream){try{$inputStream.Dispose()}catch{}}

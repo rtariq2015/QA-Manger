@@ -1,0 +1,130 @@
+﻿# Deterministic, offline document-profile hints. These are not clinical QA results.
+Set-StrictMode -Version 2.0
+$ErrorActionPreference='Stop'
+
+function Get-QaContentClassifierVersion { return 1 }
+function Get-QaContentSectionDefinitions {
+    return @(
+        [pscustomobject]@{Code='HomogeneityWater';Name='Homogeneity / Water'},
+        [pscustomobject]@{Code='Noise';Name='Noise'},
+        [pscustomobject]@{Code='Lightmarker';Name='Lightmarker'},
+        [pscustomobject]@{Code='ExternalLightmarker';Name='External lightmarker'},
+        [pscustomobject]@{Code='SagittalCoronalLightmarker';Name='Sagittal / coronal lightmarker'},
+        [pscustomobject]@{Code='TopogramPosition';Name='Topogram position'},
+        [pscustomobject]@{Code='Slice';Name='Slice'},
+        [pscustomobject]@{Code='MTF';Name='MTF'},
+        [pscustomobject]@{Code='Contrast';Name='Contrast'},
+        [pscustomobject]@{Code='TablePosition';Name='Table position'}
+    )
+}
+function Get-QaContentSectionCode([string]$Label) {
+    $normalized=([regex]::Replace($Label,'\s+',' ')).Trim().TrimEnd('.')
+    switch -Regex ($normalized) {
+        '^Homogeneity\s*/\s*Water$' {return 'HomogeneityWater'}
+        '^Noise$' {return 'Noise'}
+        '^Lightmarker$' {return 'Lightmarker'}
+        '^External\s+Lightm\.?$' {return 'ExternalLightmarker'}
+        '^Sag\.?\s*/\s*Cor\.?\s+Lightm\.?$' {return 'SagittalCoronalLightmarker'}
+        '^Topogram\s+Pos\.?$' {return 'TopogramPosition'}
+        '^Slice$' {return 'Slice'}
+        '^MTF$' {return 'MTF'}
+        '^Contrast$' {return 'Contrast'}
+        '^Table\s+Position$' {return 'TablePosition'}
+        default {return ''}
+    }
+}
+function ConvertFrom-QaDocumentContent {
+    [CmdletBinding()]param(
+        [AllowEmptyString()][string]$Text='',
+        [bool]$Truncated=$false,
+        [bool]$NeedsOCR=$false,
+        [int]$Pages=0,
+        [int]$ReadPages=0
+    )
+    $template='siemens-iec-constancy-v1';$sections=New-Object 'Collections.Generic.List[object]';$issues=New-Object 'Collections.Generic.List[string]'
+    $result=[pscustomobject]@{ClassifierVersion=1;TemplateVersion=$template;ProfileId='';ProfileName='';Model='';Status='NeedsReview';Category='';SuggestedCategory='';ReportDate='';ReportTime='';DateStatus='Missing';CompleteRead=$false;ReasonCode='UnknownTemplate';Reason='The document does not match a supported complete report profile.';Sections=@();DateEvidence=[pscustomobject]@{MatchedPages=0;ExpectedPages=$Pages};Issues=@();ClinicalResult='Not inferred'}
+    # Text must come from the verified full-document reader. Page counts alone
+    # never determine whether a document is Daily or Monthly.
+    $normalized=$Text.Replace([string][char]0x00a0,' ').Replace([string][char]0x202f,' ').Replace("`r`n","`n").Replace("`r","`n")
+    $pageMatches=@([regex]::Matches($normalized,'(?ms)^--- Page (?<page>\d+) ---\r?\n(?<body>.*?)(?=^--- Page \d+ ---\r?\n|\z)'))
+    $seenPages=@{};$pageBodies=New-Object 'Collections.Generic.List[object]'
+    foreach($match in $pageMatches){$number=[int]$match.Groups['page'].Value;if($seenPages.ContainsKey($number)){[void]$issues.Add('DuplicatePageMarker')}else{$seenPages[$number]=$true};[void]$pageBodies.Add([pscustomobject]@{Number=$number;Body=$match.Groups['body'].Value})}
+    $complete=($Pages -gt 0 -and $ReadPages -eq $Pages -and $pageBodies.Count -eq $Pages -and -not $Truncated -and -not $NeedsOCR)
+    for($p=1;$p -le [math]::Max(0,$Pages);$p++){if(-not $seenPages.ContainsKey($p)){$complete=$false}}
+    if($seenPages.Count -ne $pageBodies.Count){$complete=$false}
+    $result.CompleteRead=$complete
+    if(-not $complete){[void]$issues.Add('IncompleteRead');$result.DateStatus='Incomplete'}
+    if($NeedsOCR){[void]$issues.Add('NoReadableText')}
+
+    $footerValues=@{};$matchedPages=0;$invalidFooter=$false;$footerConflict=$false
+    foreach($page in $pageBodies){
+        # The report footer has a timestamp and its own Page:n/total marker.
+        # Handed-over dates and reference-measurement dates are never candidates.
+        $footers=@([regex]::Matches($page.Body,'(?im)^[ \t]*(?<date>\d{4}-\d{2}-\d{2})[ \t]+(?<time>\d{2}:\d{2}:\d{2})[ \t\r\n|]*Page[ \t]*:[ \t]*(?<number>\d+)[ \t]*/[ \t]*(?<total>\d+)[ \t]*$'))
+        if($footers.Count -ne 1){if($footers.Count -gt 1){$footerConflict=$true};continue}
+        $footer=$footers[0];$stamp=[datetime]::MinValue
+        if(-not [datetime]::TryParseExact(($footer.Groups['date'].Value+' '+$footer.Groups['time'].Value),'yyyy-MM-dd HH:mm:ss',[Globalization.CultureInfo]::InvariantCulture,[Globalization.DateTimeStyles]::None,[ref]$stamp)){$invalidFooter=$true;continue}
+        if([int]$footer.Groups['number'].Value -ne $page.Number -or [int]$footer.Groups['total'].Value -ne $Pages){$footerConflict=$true;continue}
+        $matchedPages++;$footerValues[$stamp.ToString('yyyy-MM-dd HH:mm:ss')]= $true
+    }
+    $result.DateEvidence=[pscustomobject]@{MatchedPages=$matchedPages;ExpectedPages=$Pages}
+    if($invalidFooter){$result.DateStatus='Invalid';[void]$issues.Add('InvalidFooterDate')}
+    elseif($footerConflict -or $footerValues.Count -gt 1){$result.DateStatus='Conflict';[void]$issues.Add('ConflictingFooterDates')}
+    elseif($complete -and $matchedPages -eq $Pages -and $footerValues.Count -eq 1){$result.DateStatus='Consensus';$only=@($footerValues.Keys)[0];$result.ReportDate=$only.Substring(0,10);$result.ReportTime=$only.Substring(11,8)}
+    elseif($complete){$result.DateStatus='Missing';[void]$issues.Add('MissingFooterDate')}
+
+    $supportedTemplate=($normalized -match '(?i)\bSOMATOM\s+Definition\s+Edge\b' -and $normalized -match '(?i)\bQuality\s+IEC\s+Constancy\b')
+    $bodyHeadings=New-Object 'Collections.Generic.List[object]'
+    foreach($page in $pageBodies){
+        if($page.Number -lt 3){continue}
+        $headings=@([regex]::Matches($page.Body,'(?im)^[ \t]*(?<number>\d{1,2})\.[ \t\r\n]*Quality\s+IEC\s+Constancy[ \t]*(?:\r?\n[ \t]*)?(?<label>[^\r\n]+?)[ \t]*$'))
+        foreach($heading in $headings){[void]$bodyHeadings.Add([pscustomobject]@{Number=[int]$heading.Groups['number'].Value;Page=$page.Number;Code=(Get-QaContentSectionCode $heading.Groups['label'].Value);Start=$heading.Index;HeadingEnd=($heading.Index+$heading.Length)})}
+    }
+    $seenSections=@{};$hasUnknown=$false;$badSequence=$false;$expectedNumber=1
+    for($i=0;$i -lt $bodyHeadings.Count;$i++){
+        $heading=$bodyHeadings[$i];$code=[string]$heading.Code
+        if(-not $code){$hasUnknown=$true;[void]$issues.Add('UnknownBodySection')}
+        if($heading.Number -ne $expectedNumber){$badSequence=$true};$expectedNumber++
+        if($seenSections.ContainsKey($code)){$badSequence=$true}else{$seenSections[$code]=$true}
+        $endPage=if($i+1 -lt $bodyHeadings.Count){$bodyHeadings[$i+1].Page}else{$Pages}
+        $outcomes=New-Object 'Collections.Generic.List[string]'
+        foreach($page in $pageBodies){
+            if($page.Number -lt $heading.Page -or $page.Number -gt $endPage){continue};$body=$page.Body
+            if($i+1 -lt $bodyHeadings.Count -and $page.Number -eq $bodyHeadings[$i+1].Page){$body=$body.Substring(0,$bodyHeadings[$i+1].Start)}
+            if($page.Number -eq $heading.Page){$body=$body.Substring([math]::Min($heading.HeadingEnd,$body.Length))}
+            # Retain only literal end-of-line status tokens from body sections.
+            # Table labels and numeric measurements are not copied or interpreted.
+            foreach($outcome in @([regex]::Matches($body,'(?im)(?<!\S)(?<value>NOT[ \t]+OK|OK|FAIL(?:ED)?|PASS(?:ED)?|ERROR|WARNING|NOT[ \t]+EVALUATED)[ \t]*$'))){$raw=([regex]::Replace($outcome.Groups['value'].Value,'[ \t]+',' ')).Trim().ToUpperInvariant();if(-not $outcomes.Contains($raw)){[void]$outcomes.Add($raw)}}
+        }
+        $outcomeStatus=if($outcomes.Count -gt 1){'Conflict'}elseif($outcomes.Count -eq 1){'Printed'}else{'Missing'}
+        if($outcomeStatus -eq 'Conflict'){[void]$issues.Add('MixedPrintedOutcomes')}
+        [void]$sections.Add([pscustomobject]@{Code=$code;Number=$heading.Number;Page=$heading.Page;PrintedOutcomes=@($outcomes.ToArray());OutcomeStatus=$outcomeStatus;EvidenceCode=$(if($code){'NumberedBodySection.'+$code}else{'UnknownNumberedBodySection'})})
+    }
+    $result.Sections=@($sections.ToArray())
+    $basic=@('HomogeneityWater','Noise');$extended=@('Lightmarker','ExternalLightmarker','SagittalCoronalLightmarker','TopogramPosition','Slice','HomogeneityWater','Noise','MTF','Contrast','TablePosition')
+    $profile='';$suggestion=''
+    if($supportedTemplate -and -not $hasUnknown -and -not $badSequence){
+        $codes=@($sections|ForEach-Object Code)
+        if($codes.Count -eq $basic.Count -and ($codes -join '|') -ceq ($basic -join '|')){$profile='siemens-iec-basic-v1';$suggestion='Daily'}
+        elseif($codes.Count -eq $extended.Count -and ($codes -join '|') -ceq ($extended -join '|')){$profile='siemens-iec-extended-v1';$suggestion='Monthly'}
+    }
+    $result.ProfileId=$profile;$result.SuggestedCategory=$suggestion
+    if($supportedTemplate){$result.Model='SOMATOM Definition Edge'}
+    if($profile -eq 'siemens-iec-basic-v1'){$result.ProfileName='Siemens IEC basic checks'}elseif($profile -eq 'siemens-iec-extended-v1'){$result.ProfileName='Siemens IEC extended checks'}
+    if($badSequence){[void]$issues.Add('ConflictingSectionSequence')}
+    # An explicit document title is distinct from a department's optional profile
+    # mapping. Ordinary mentions in instructions or a table of contents do not count.
+    $titleCategories=@{}
+    if($pageBodies.Count){foreach($title in @([regex]::Matches($pageBodies[0].Body,'(?im)^[ \t]*(?<kind>Daily|Monthly)[ \t]+(?:QA|Quality[ \t]+(?:Assurance|Control)|IEC[ \t]+Constancy)(?:[ \t]+(?:Report|Protocol|Tests?|Check))?[ \t]*\r?$'))){$kind=$title.Groups['kind'].Value;if($kind -ieq 'Daily'){$titleCategories['Daily']=$true}else{$titleCategories['Monthly']=$true}}}
+    if($titleCategories.Count -gt 1){[void]$issues.Add('ConflictingExplicitTitles')}
+    if($profile -and $complete -and $result.DateStatus -eq 'Consensus' -and $titleCategories.Count -le 1){
+        $result.Status='Recognized';$result.ReasonCode='SupportedProfile';$result.Reason='A complete supported document profile and matching report-footer dates were read. Profile-to-Daily/Monthly mapping requires department confirmation.'
+        if($titleCategories.Count -eq 1){$result.Category=@($titleCategories.Keys)[0]}
+    }elseif(-not $complete){$result.ReasonCode='IncompleteRead';$result.Reason='The complete verified report text was not available; no document type or date was accepted.'}
+    elseif($result.DateStatus -ne 'Consensus'){$result.ReasonCode='UncertainReportDate';$result.Reason='The printed report-footer date is missing, invalid or inconsistent; review the original PDF.'}
+    elseif($titleCategories.Count -gt 1){$result.ReasonCode='ConflictingExplicitTitles';$result.Reason='Conflicting Daily and Monthly document titles need review.'}
+    elseif($hasUnknown -or $badSequence){$result.ReasonCode='UnrecognizedSections';$result.Reason='The report has unknown, duplicated or conflicting numbered body sections.'}
+    $result.Issues=@($issues|Select-Object -Unique)
+    return $result
+}
+Export-ModuleMember -Function ConvertFrom-QaDocumentContent,Get-QaContentClassifierVersion,Get-QaContentSectionDefinitions

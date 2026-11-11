@@ -1,7 +1,7 @@
 ﻿# Offline HTML application adapter. Organization decisions are not clinical review.
 Set-StrictMode -Version 2.0
 $ErrorActionPreference='Stop'
-foreach($name in @('Archive','Workspace','Review','Network','Credentials','Insights','Reports','Maintenance','Support','Updates','PdfPreview')){Import-Module (Join-Path $PSScriptRoot ($name+'.psm1')) -DisableNameChecking -WarningAction SilentlyContinue}
+foreach($name in @('Archive','Workspace','Review','Network','Credentials','Insights','Reports','Maintenance','Support','Updates','PdfPreview','ContentClassifier')){Import-Module (Join-Path $PSScriptRoot ($name+'.psm1')) -DisableNameChecking -WarningAction SilentlyContinue}
 function Get-QaWebValue($Object,[string]$Name,$Default=$null){
     if($null -eq $Object){return $Default};if($Object -is [Collections.IDictionary]){if($Object.Contains($Name)){return $Object[$Name]}}elseif($null -ne $Object.PSObject.Properties[$Name]){return $Object.$Name};return $Default
 }
@@ -30,14 +30,77 @@ function Get-QaWebOrganization($Config){
     return $state
 }
 function Get-QaWebEntry($Organization,$Record){$entries=@($Organization.Records|Where-Object{[string]$_.id -ceq [string]$Record.Id -and [string]$_.hash -ceq [string]$Record.Hash});if($entries.Count -gt 1){throw 'A report has conflicting organization records.'};if($entries.Count){return $entries[0]};return $null}
-function Get-QaWebStamp($Record,$Entry){return Get-QaWebHash ((Get-QaRecordReviewStamp $Record)+'|'+[string](Get-QaWebValue $Entry revision '')+'|'+[string](Get-QaWebValue $Entry decision '')+'|'+[string](Get-QaWebValue $Entry category ''))}
+function Get-QaWebStamp($Record,$Entry,$ContentContext=$null){$value=(Get-QaRecordReviewStamp $Record)+'|'+[string](Get-QaWebValue $Entry revision '')+'|'+[string](Get-QaWebValue $Entry decision '')+'|'+[string](Get-QaWebValue $Entry category '');$tag=[string](Get-QaWebValue $ContentContext stamp '');if($tag){$value+='|'+$tag};return Get-QaWebHash $value}
 function Get-QaWebCategory($Record,$Entry){
     if([string](Get-QaWebValue $Entry decision '') -in @('Approved','Disapproved')){return [string]$Entry.category}
     switch([string]$Record.Category){'Daily_QA'{return 'Daily'}'Monthly_QA'{return 'Monthly'}'Monthly_QA/Pending_Verification'{return 'Monthly'}default{return 'Other'}}
 }
+function ConvertTo-QaWebContentProfiles($Values){
+    $rows=New-Object 'Collections.Generic.List[object]';$seen=@{}
+    foreach($item in @($Values)){
+        if($null -eq $item){continue}
+        $id=[string](Get-QaWebValue $item profileId '');$category=[string](Get-QaWebValue $item category '')
+        if($id -cnotin @('siemens-iec-basic-v1','siemens-iec-extended-v1') -or $seen.ContainsKey($id) -or $category -cnotin @('','Daily','Monthly','Other')){throw 'Choose one supported report-format rule for each layout.'}
+        $seen[$id]=$true;[void]$rows.Add([pscustomobject]@{profileId=$id;category=$category})
+    }
+    if($rows.Count -gt 2){throw 'Only the two supported report-format rules can be saved.'}
+    return @($rows.ToArray())
+}
+function Get-QaWebContentContext($Config,$Record){
+    $date=[string]$Record.ReportDate;$time=[string]$Record.ReportTime
+    $view=[pscustomobject]@{status='NotRead';profileId='';profileName='';date='';time='';dateStatus='Missing';reason='Read this PDF to look for a supported report format.';mappedCategory='';suggestedCategory='';components=@();readPages=0;pages=0;completeRead=$false}
+    $context=[pscustomobject]@{view=$view;profileUsable=$false;dateConflict=$false;typeConflict=$false;dateSafe=$false;effectiveDate=$date;effectiveTime=$time;mappedCategory='';explicitCategory='';suggestedCategory='';stamp=''}
+    $analysis=Get-QaSavedAnalysis -Config $Config -Record $Record
+    if($null -eq $analysis){return $context}
+    if([string](Get-QaWebValue $analysis Status '') -eq 'ReadError'){$view.status='ReadError';$view.reason='This PDF could not be read. Open the original PDF or retry reading it.';return $context}
+    $doc=Get-QaWebValue $analysis DocumentClassification
+    if($null -eq $doc -or [int](Get-QaWebValue $doc ClassifierVersion 0) -ne 1){return $context}
+    $profile=[string](Get-QaWebValue $doc ProfileId '');$status=[string](Get-QaWebValue $doc Status 'NeedsReview')
+    $view.status=if([bool](Get-QaWebValue $doc NeedsOCR $false)){'NeedsOCR'}elseif($status -ceq 'Recognized'){'Recognized'}else{'NeedsReview'}
+    $view.profileId=$profile;$view.profileName=[string](Get-QaWebValue $doc ProfileName '');$view.reason=[string](Get-QaWebValue $doc Reason 'The report format needs review.')
+    $view.dateStatus=[string](Get-QaWebValue $doc DateStatus 'Missing');$view.readPages=[int](Get-QaWebValue $doc ReadPages 0);$view.pages=[int](Get-QaWebValue $doc Pages 0);$view.completeRead=[bool](Get-QaWebValue $doc CompleteRead $false)
+    $view.suggestedCategory=[string](Get-QaWebValue $doc SuggestedCategory '');if($view.suggestedCategory -cnotin @('Daily','Monthly','Other')){$view.suggestedCategory=''}
+    $names=@{};foreach($definition in @(Get-QaContentSectionDefinitions)){$names[[string]$definition.Code]=[string]$definition.Name}
+    $components=New-Object 'Collections.Generic.List[object]'
+    foreach($section in @(Get-QaWebValue $doc Sections @())){
+        $code=[string](Get-QaWebValue $section Code '');if(-not $names.ContainsKey($code)){continue}
+        $printed=@(Get-QaWebValue $section PrintedOutcomes @()|ForEach-Object{([regex]::Replace([string]$_,'\s+',' ')).Trim().ToUpperInvariant()}|Where-Object{[string]$_ -cmatch '^(OK|NOT OK|NOT EVALUATED|PASS|PASSED|FAIL|FAILED|ERROR|WARNING|UNKNOWN)$'}|Select-Object -Unique)
+        [void]$components.Add([pscustomobject]@{name=$names[$code];result=$(if($printed.Count){$printed -join ' / '}else{'No printed result recognized'});page=[int](Get-QaWebValue $section Page 0)})
+    };$view.components=@($components.ToArray())
+    $printedDate=[string](Get-QaWebValue $doc ReportDate '');$printedTime=[string](Get-QaWebValue $doc ReportTime '');$parsed=[datetime]::MinValue
+    $validDate=($view.dateStatus -ceq 'Consensus' -and [datetime]::TryParseExact(($printedDate+' '+$printedTime),'yyyy-MM-dd HH:mm:ss',[Globalization.CultureInfo]::InvariantCulture,[Globalization.DateTimeStyles]::None,[ref]$parsed) -and $parsed -le (Get-Date).AddDays(1))
+    if($validDate){
+        $view.date=$printedDate;$view.time=$printedTime
+        $context.dateConflict=(($date -and $date -cne $printedDate) -or ($time -and $time -cne $printedTime))
+        if(-not $context.dateConflict){$context.effectiveDate=$printedDate;$context.effectiveTime=$printedTime;$context.dateSafe=$true}
+    }elseif($view.dateStatus -eq 'Missing' -and $date -match '^\d{4}-\d{2}-\d{2}$'){$context.dateSafe=$true}
+    elseif($view.dateStatus -in @('Conflict','Invalid')){$context.dateConflict=$true}
+    if($context.dateConflict){$view.status='NeedsReview';$view.dateStatus='Conflict';$view.reason='The report date conflicts with its saved date or other pages. Inspect the original PDF before filing it.'}
+    $source=@($Config.Sources|Where-Object Scanner -ceq $Record.Scanner|Select-Object -First 1)
+    if($source.Count){
+        $rules=@(Get-QaWebValue $source[0] ContentProfiles @()|Where-Object{[string](Get-QaWebValue $_ profileId '') -ceq $profile})
+        if($rules.Count -eq 1){$mapped=[string](Get-QaWebValue $rules[0] category '');if($mapped -cin @('Daily','Monthly','Other')){$context.mappedCategory=$mapped;$view.mappedCategory=$mapped}}
+    }
+    $context.profileUsable=($status -ceq 'Recognized' -and $view.completeRead -and $profile -cin @('siemens-iec-basic-v1','siemens-iec-extended-v1'))
+    $titleCategory=[string](Get-QaWebValue $doc Category '');if($titleCategory -cin @('Daily','Monthly')){$context.explicitCategory=$titleCategory;$view.suggestedCategory=$titleCategory}
+    $context.suggestedCategory=$view.suggestedCategory
+    if($context.mappedCategory -and $context.explicitCategory -and $context.mappedCategory -cne $context.explicitCategory){$context.typeConflict=$true;$view.status='NeedsReview';$view.reason='The explicit report title and saved report-format rule disagree. Inspect the PDF before choosing a label.'}
+    $explicit='';$name=[string]$Record.OriginalFileName
+    if($name -match '(?i)^(?:.*_)?(?:DAILY|QUALITYDAILY)_\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2}\.pdf$'){$explicit='Daily'}
+    elseif($name -match '(?i)(?:^|_)MONTHLY(?:_|$)'){$explicit='Monthly'}
+    $contentType=if($context.mappedCategory){[string]$context.mappedCategory}else{[string]$context.explicitCategory};if($context.profileUsable -and $contentType -and $explicit -and $explicit -cne $contentType){$context.typeConflict=$true;$view.status='NeedsReview';$view.reason='The explicit filename and configured report-content type disagree. Inspect the PDF before choosing a label.'}
+    if($context.profileUsable -and -not $context.mappedCategory -and -not $context.explicitCategory -and -not $context.dateConflict){$view.reason+=' Choose Daily, Monthly or Other for this report format in scanner settings, or approve this file individually.'}
+    $context.stamp=Get-QaWebHash (($profile,[string]$view.status,[string]$view.dateStatus,[string]$context.effectiveDate,[string]$context.effectiveTime,[string]$context.mappedCategory,[string]$context.suggestedCategory,[string]$context.dateConflict,[string]$context.typeConflict,[string]$context.dateSafe,[string]$view.completeRead) -join '|')
+    return $context
+}
+function Get-QaWebEffectiveRecord($Record,$Context){
+    if($null -eq $Context -or ([string]$Record.ReportDate -ceq [string]$Context.effectiveDate -and [string]$Record.ReportTime -ceq [string]$Context.effectiveTime)){return $Record}
+    $copy=$Record|Select-Object *;$copy.ReportDate=[string]$Context.effectiveDate;$copy.ReportTime=[string]$Context.effectiveTime;return $copy
+}
+
 function Get-QaWebEntryIndex($Organization){$index=@{};foreach($entry in @($Organization.Records)){$index[[string]$entry.id]=$entry};return $index}
 function Get-QaWebIndexedEntry($Index,$Record){if($Index.ContainsKey([string]$Record.Id)){$entry=$Index[[string]$Record.Id];if([string]$entry.hash -ceq [string]$Record.Hash){return $entry}};return $null}
-function Get-QaWebClassification($Record,$Entry){
+function Get-QaWebClassification($Record,$Entry,$ContentContext=$null){
     $category=Get-QaWebCategory $Record $Entry;$decision=[string](Get-QaWebValue $Entry decision '')
     if($decision -in @('Approved','Disapproved')){return [pscustomobject]@{category=$category;pending=$false;decision=$decision;source='user';reason='Saved file-organization decision. Clinical results are separate.'}}
     $legacyName=[string](Get-QaWebValue $Record ConfirmedBy '');$legacyTime=[string](Get-QaWebValue $Record ConfirmedAt '');$parsed=[datetime]::MinValue
@@ -47,7 +110,14 @@ function Get-QaWebClassification($Record,$Entry){
     if($validLegacy -and [string]$Record.Category -in @('Daily_QA','Monthly_QA','Acceptance_Tests')){return [pscustomobject]@{category=$category;pending=$false;decision='Approved';source='legacy';reason='Previously saved reviewed classification and evidence retained.'}}
     # An undone pre-upgrade decision restores the previous pending state.
     # Its empty decision plus revision is intentional history, not a new file.
-    if($null -ne $Entry -and -not $decision -and (Test-QaReportPending $Record)){return [pscustomobject]@{category=$category;pending=$true;decision='Pending';source='pending';reason='The previous pending classification was restored by Undo. Choose Approve or Disapprove after viewing the document.'}}
+    if($null -ne $Entry -and -not $decision -and (Test-QaReportPending $Record)){$restoredCategory=$category;if($null -ne $ContentContext -and $ContentContext.profileUsable){if($ContentContext.mappedCategory){$restoredCategory=[string]$ContentContext.mappedCategory}elseif($ContentContext.suggestedCategory){$restoredCategory=[string]$ContentContext.suggestedCategory}};return [pscustomobject]@{category=$restoredCategory;pending=$true;decision='Pending';source='pending';reason='The previous pending classification was restored by Undo. Choose Approve or Disapprove after viewing the document.'}}
+    if($null -ne $ContentContext -and ($ContentContext.dateConflict -or $ContentContext.typeConflict)){$conflictCategory=if($ContentContext.mappedCategory){[string]$ContentContext.mappedCategory}elseif($ContentContext.suggestedCategory){[string]$ContentContext.suggestedCategory}else{$category};return [pscustomobject]@{category=$conflictCategory;pending=$true;decision='Pending';source='content';reason=$ContentContext.view.reason}}
+    if($null -ne $ContentContext -and $ContentContext.profileUsable){
+        $candidate=if($ContentContext.mappedCategory){[string]$ContentContext.mappedCategory}elseif($ContentContext.suggestedCategory){[string]$ContentContext.suggestedCategory}else{$category}
+        if($ContentContext.dateConflict -or $ContentContext.typeConflict -or -not $ContentContext.dateSafe){return [pscustomobject]@{category=$candidate;pending=$true;decision='Pending';source='content';reason=$ContentContext.view.reason}}
+        if($ContentContext.mappedCategory -or $ContentContext.explicitCategory){return [pscustomobject]@{category=$candidate;pending=$false;decision='Automatic';source='content';reason='Organized from verified report contents and an explicit report title or this scanner''s saved report-format rule. Clinical review remains separate.'}}
+        if(Test-QaReportPending $Record){return [pscustomobject]@{category=$candidate;pending=$true;decision='Pending';source='content';reason=$ContentContext.view.reason}}
+    }
     $match=[regex]::Match([string]$Record.OriginalFileName,'(?i)^(?<kind>.+)_(?<date>\d{4}-\d{2}-\d{2})_(?<time>\d{2}-\d{2}-\d{2})\.pdf$');$date=[datetime]::MinValue;$valid=$false
     if($match.Success){$valid=[datetime]::TryParseExact(($match.Groups['date'].Value+' '+$match.Groups['time'].Value),'yyyy-MM-dd HH-mm-ss',[Globalization.CultureInfo]::InvariantCulture,[Globalization.DateTimeStyles]::None,[ref]$date);$valid=($valid -and $date -le (Get-Date).AddDays(1) -and [string]$Record.ReportDate -ceq $date.ToString('yyyy-MM-dd') -and [string]$Record.ReportTime -ceq $date.ToString('HH:mm:ss'))}
     $basis=[string](Get-QaWebValue $Record ClassificationBasis '');$kind=$match.Groups['kind'].Value
@@ -74,16 +144,16 @@ function Get-QaWebSnapshot {
     if($null -eq $Dashboard){$Dashboard=Get-QaDashboard $Config};if($null -eq $Organization){$Organization=Get-QaWebOrganization $Config};$entryIndex=Get-QaWebEntryIndex $Organization;$records=New-Object 'Collections.Generic.List[object]';$connections=@(Get-QaWebConnectionRows $Config);$sources=@{}
     foreach($source in $Config.Sources){$sources[[string]$source.Scanner]=$source}
     foreach($record in @($dashboard.Records|Sort-Object ReportDate,ReportTime -Descending)){
-        $entry=Get-QaWebIndexedEntry $entryIndex $record;$classification=Get-QaWebClassification $record $entry;$category=$classification.category;$pending=$classification.pending
-        $date=[string]$record.ReportDate;$name=[string]$sources[[string]$record.Scanner].Name
-        [void]$records.Add([pscustomobject]@{id=[string]$record.Id;scanner=[string]$record.Scanner;scannerName=$name;date=$date;time=[string]$record.ReportTime;title=($name+' - '+$date+' - '+$category+' QA');filename=[string]$record.OriginalFileName;category=$category;pending=[bool]$pending;decision=$classification.decision;organizationSource=$classification.source;organizationReason=$classification.reason;stamp=(Get-QaWebStamp $record $entry);reviewId=[string](Get-QaWebValue $entry revision '');printedResult='Not inferred from file classification';clinicalComponents=@(Get-QaWebValue $record ConfirmedComponents @());classificationOnly=$true})
+        $entry=Get-QaWebIndexedEntry $entryIndex $record;$content=Get-QaWebContentContext $Config $record;$classification=Get-QaWebClassification $record $entry $content;$category=$classification.category;$pending=$classification.pending
+        $date=[string]$content.effectiveDate;$name=[string]$sources[[string]$record.Scanner].Name
+        [void]$records.Add([pscustomobject]@{id=[string]$record.Id;scanner=[string]$record.Scanner;scannerName=$name;date=$date;time=[string]$content.effectiveTime;title=($name+' - '+$date+' - '+$category+' QA');filename=[string]$record.OriginalFileName;category=$category;pending=[bool]$pending;decision=$classification.decision;organizationSource=$classification.source;organizationReason=$classification.reason;stamp=(Get-QaWebStamp $record $entry $content);content=$content.view;reviewId=[string](Get-QaWebValue $entry revision '');printedResult='Not inferred from file classification';clinicalComponents=@(Get-QaWebValue $record ConfirmedComponents @());classificationOnly=$true})
     }
     $scanners=New-Object 'Collections.Generic.List[object]'
     foreach($source in $Config.Sources){
         $row=@($dashboard.Scanners|Where-Object Scanner -eq $source.Scanner|Select-Object -First 1);$connection=@($connections|Where-Object Scanner -eq $source.Scanner|Select-Object -Last 1)
         $status=if(Test-QaPlaceholderConnection $source){'NotConfigured'}elseif($connection.Count){[string]$connection[0].Status}elseif($row.Count){[string]$row[0].Status}else{'Unknown'}
         $message=if($status -eq 'NotConfigured'){'Apply your scanner connection profile or enter the real reports folder.'}elseif($connection.Count){[string]$connection[0].Message}elseif($row.Count){[string]$row[0].Message}else{'Use Test connection to check this scanner.'}
-        [void]$scanners.Add([pscustomobject]@{id=[string]$source.Scanner;name=[string]$source.Name;path=[string]$source.Path;username=[string]$source.Username;drive=[string]$source.DriveLetter;status=$status;message=$message;code=$(if($connection.Count){[int](Get-QaWebValue $connection[0] NativeCode 0)}else{0});savedReports=@($records|Where-Object scanner -eq $source.Scanner).Count;dailySchedule=[string]$source.DailySchedule;activeFrom=[string]$source.ActiveFrom;expectedMonthly=[bool]$source.ExpectedMonthly;monthlyDueDay=[int](Get-QaWebValue $source MonthlyDueDay 0);checklist=@(Get-QaWebValue $source MonthlyChecklist @());excludedDates=@(Get-QaWebValue $source ExcludedDates @())})
+        [void]$scanners.Add([pscustomobject]@{id=[string]$source.Scanner;name=[string]$source.Name;path=[string]$source.Path;username=[string]$source.Username;drive=[string]$source.DriveLetter;status=$status;message=$message;code=$(if($connection.Count){[int](Get-QaWebValue $connection[0] NativeCode 0)}else{0});savedReports=@($records|Where-Object scanner -eq $source.Scanner).Count;dailySchedule=[string]$source.DailySchedule;activeFrom=[string]$source.ActiveFrom;expectedMonthly=[bool]$source.ExpectedMonthly;monthlyDueDay=[int](Get-QaWebValue $source MonthlyDueDay 0);contentProfiles=@(Get-QaWebValue $source ContentProfiles @());checklist=@(Get-QaWebValue $source MonthlyChecklist @());excludedDates=@(Get-QaWebValue $source ExcludedDates @())})
     }
     $today=Get-QaTodayOverview $Config $dashboard
     # Organizationally approved Daily documents can satisfy receipt, never clinical passage.
@@ -94,7 +164,7 @@ function Get-QaWebSnapshot {
     foreach($history in @($organization.History|Select-Object -Last 1)){
         if($history.action -eq 'Undo'){continue};$matching=@($records|Where-Object id -ceq $history.recordId);if($matching.Count -eq 1 -and $matching[0].reviewId -ceq $history.reviewId){$last=[pscustomobject]@{recordId=$history.recordId;reviewId=$history.reviewId;stamp=$matching[0].stamp}}
     }
-    return [pscustomobject]@{version='5.1.0';previewMode=$(if([Environment]::OSVersion.Platform -eq [PlatformID]::Win32NT){'windows'}else{'browser'});workspace=[string]$Config.AppRoot;archiveRoot=[string]$Config.ArchiveRoot;libraryRoot=(Join-Path $Config.ArchiveRoot 'Report Library');setupComplete=[bool]$dashboard.SetupComplete;records=@($records.ToArray());scanners=@($scanners.ToArray());today=[pscustomobject]@{headline=$headline;received=$received;expected=$expected;date=$day};months=@(Get-QaMonthOverview $Config $dashboard|ForEach-Object{[pscustomobject]@{scanner=$_.Scanner;name=$_.Name;month=$_.Month;progress=$_.Progress;due=$_.Due;timing=$_.Timing;detail=$_.Detail;status=$_.Status}});analysis=$( $a=Get-QaAnalysisProgress $Config @($dashboard.Records);[pscustomobject]@{total=$a.Total;cached=$a.Cached;pending=$a.Pending;errors=$a.Errors});settings=[pscustomobject]@{monitorMinutes=[int](Get-QaWebValue $Config MonitorMinutes 15);autoAnalyze=[bool](Get-QaWebValue $Config AutoAnalyze $true);autoUpdateOnOpen=[bool](Get-QaWebValue $Config AutoUpdateOnOpen $true)};pendingSummary=[pscustomobject]@{pending=@($records|Where-Object pending).Count;automatic=@($records|Where-Object decision -eq 'Automatic').Count;approved=@($records|Where-Object decision -eq 'Approved').Count;disapproved=@($records|Where-Object decision -eq 'Disapproved').Count};lastDecision=$last;attentionCount=@($dashboard.Attention).Count;onlineEnabled=$false}
+    return [pscustomobject]@{version='5.2.0';previewMode=$(if([Environment]::OSVersion.Platform -eq [PlatformID]::Win32NT){'windows'}else{'browser'});workspace=[string]$Config.AppRoot;archiveRoot=[string]$Config.ArchiveRoot;libraryRoot=(Join-Path $Config.ArchiveRoot 'Report Library');setupComplete=[bool]$dashboard.SetupComplete;records=@($records.ToArray());scanners=@($scanners.ToArray());today=[pscustomobject]@{headline=$headline;received=$received;expected=$expected;date=$day};months=@(Get-QaMonthOverview $Config $dashboard|ForEach-Object{[pscustomobject]@{scanner=$_.Scanner;name=$_.Name;month=$_.Month;progress=$_.Progress;due=$_.Due;timing=$_.Timing;detail=$_.Detail;status=$_.Status}});analysis=$( $a=Get-QaAnalysisProgress $Config @($dashboard.Records);[pscustomobject]@{total=$a.Total;cached=$a.Cached;pending=$a.Pending;errors=$a.Errors});settings=[pscustomobject]@{monitorMinutes=[int](Get-QaWebValue $Config MonitorMinutes 15);autoAnalyze=[bool](Get-QaWebValue $Config AutoAnalyze $true);autoUpdateOnOpen=[bool](Get-QaWebValue $Config AutoUpdateOnOpen $true)};pendingSummary=[pscustomobject]@{pending=@($records|Where-Object pending).Count;automatic=@($records|Where-Object decision -eq 'Automatic').Count;approved=@($records|Where-Object decision -eq 'Approved').Count;disapproved=@($records|Where-Object decision -eq 'Disapproved').Count};lastDecision=$last;attentionCount=@($dashboard.Attention).Count;onlineEnabled=$false}
 }
 function ConvertTo-QaWebName([string]$Name){$name=($Name -replace '[<>:"/\\|?*\x00-\x1f]','-').Trim().TrimEnd('.',' ');if(-not $name){$name='Report'};if($name -match '^(?i:CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])(?:\.|$)'){$name='Report-'+$name};if($name.Length -gt 42){$name=$name.Substring(0,42)};return $name}
 function Test-QaWebRelative([string]$Path){if(-not $Path -or $Path -match '[\\:\x00-\x1f]' -or $Path.StartsWith('/')){return $false};foreach($part in $Path.Split('/')){if($part -in @('','.','..')){return $false}};return $true}
@@ -160,9 +230,9 @@ function Update-QaWebLibrary {
         foreach($record in $rows){
             if(Test-QaWebCancelled $Progress){$metrics.cancelled=$true;break}
             try{
-                $id=[string]$record.Id;$entry=Get-QaWebIndexedEntry $entries $record;$classification=Get-QaWebClassification $record $entry;$category=$classification.category;$relative=Get-QaWebRelative $record $category $folderNames[[string]$record.Scanner];$previous=$null
+                $id=[string]$record.Id;$entry=Get-QaWebIndexedEntry $entries $record;$content=Get-QaWebContentContext $Config $record;$effective=Get-QaWebEffectiveRecord $record $content;$classification=Get-QaWebClassification $record $entry $content;$category=$classification.category;$relative=Get-QaWebRelative $effective $category $folderNames[[string]$record.Scanner];$previous=$null
                 if($byId.ContainsKey($id)){$previous=$byId[$id]}
-                if($null -ne $previous -and [string]$previous.category -ceq $category){$relative=[string]$previous.relative}
+                if($null -ne $previous -and [string]$previous.category -ceq $category -and [string](Get-QaWebValue $previous filingDate ([string]$record.ReportDate)) -ceq [string]$effective.ReportDate -and [string](Get-QaWebValue $previous filingTime ([string]$record.ReportTime)) -ceq [string]$effective.ReportTime){$relative=[string]$previous.relative}
                 $target=Join-Path $library ($relative.Replace('/',[IO.Path]::DirectorySeparatorChar));$sourcePath=[IO.Path]::GetFullPath([string]$record.DestinationPath)
                 if(-not $sourcePath.StartsWith($reportsRoot,[StringComparison]::OrdinalIgnoreCase) -or [IO.Path]::GetExtension($sourcePath) -ine '.pdf'){throw 'A report points outside the verified local archive.'}
                 Assert-QaWebDirectCached $sourcePath $checked;Assert-QaWebDirectCached $target $checked
@@ -186,7 +256,7 @@ function Update-QaWebLibrary {
                     }else{$verifiedCopy=Copy-QaWebLibraryPdf $sourcePath $target ([string]$record.Hash) $Progress $metrics;$targetLength=[long]$verifiedCopy.length;$targetTicks=[long]$verifiedCopy.writeTicks;$metrics.copied++}
                     $sourceInfo.Refresh();$targetInfo.Refresh()
                     if(-not $sourceInfo.Exists -or $sourceInfo.Length -ne $sourceLength -or $sourceInfo.LastWriteTimeUtc.Ticks -ne $sourceTicks -or -not $targetInfo.Exists -or $targetInfo.Length -ne $targetLength -or $targetInfo.LastWriteTimeUtc.Ticks -ne $targetTicks){throw 'A saved or readable PDF changed while it was being verified. No metadata cache was saved for it; run the archive check before trying again.'}
-                    $new=[pscustomobject]@{id=$id;hash=[string]$record.Hash;relative=$relative;category=$category;original=[string]$record.OriginalFileName;sourcePath=$sourcePath;sourceLength=$sourceLength;sourceWriteTicks=$sourceTicks;targetLength=$targetLength;targetWriteTicks=$targetTicks}
+                    $new=[pscustomobject]@{id=$id;hash=[string]$record.Hash;relative=$relative;category=$category;filingDate=[string]$effective.ReportDate;filingTime=[string]$effective.ReportTime;original=[string]$record.OriginalFileName;sourcePath=$sourcePath;sourceLength=$sourceLength;sourceWriteTicks=$sourceTicks;targetLength=$targetLength;targetWriteTicks=$targetTicks}
                     $byId[$id]=$new;$used[$relative]=$id;$dirty=$true
                     if($null -ne $previous -and [string]$previous.relative -cne $relative){[void]$retire.Add($previous)}
                 }
@@ -210,25 +280,25 @@ function Invoke-QaWebOrganization {
     $meta=Join-Path $Config.ArchiveRoot '.ctqa';Assert-QaWebDirect $meta;[void][IO.Directory]::CreateDirectory($meta);$lock=$null
     try{
         try{$lock=[IO.File]::Open((Join-Path $meta 'archive.lock'),[IO.FileMode]::OpenOrCreate,[IO.FileAccess]::ReadWrite,[IO.FileShare]::None)}catch{throw 'An archive operation is already running. Wait for it to finish, then try again.'}
-        $dashboard=Get-QaDashboard $Config;$record=Get-QaWebRecord $dashboard ([string](Get-QaWebValue $Request id ''));$organization=Get-QaWebOrganization $Config;$before=Get-QaWebEntry $organization $record
-        if([string](Get-QaWebValue $Request stamp '') -cne (Get-QaWebStamp $record $before)){throw 'This report changed after it was displayed. Refresh before deciding.'}
+        $dashboard=Get-QaDashboard $Config;$record=Get-QaWebRecord $dashboard ([string](Get-QaWebValue $Request id ''));$organization=Get-QaWebOrganization $Config;$before=Get-QaWebEntry $organization $record;$content=Get-QaWebContentContext $Config $record
+        if([string](Get-QaWebValue $Request stamp '') -cne (Get-QaWebStamp $record $before $content)){throw 'This report changed after it was displayed. Refresh before deciding.'}
         [void](Assert-QaWebPdf $Config $record);$action=[string]$Request.action;$category=Get-QaWebCategory $record $before;$decision=''
         if($action -eq 'Undo'){
             $history=@($organization.History|Where-Object recordId -ceq $record.Id|Select-Object -Last 1)
             if($history.Count -ne 1 -or [string](Get-QaWebValue $Request reviewId '') -cne [string]$history[0].reviewId -or [string](Get-QaWebValue $before revision '') -cne [string]$history[0].reviewId){throw 'Only the latest decision for this report can be undone.'}
             $restore=$history[0].before;$category=[string](Get-QaWebValue $restore category '');$decision=[string](Get-QaWebValue $restore decision '')
         }else{
-            $classification=Get-QaWebClassification $record $before;$pending=$classification.pending;if(-not $pending){throw 'This report is already organized. Refresh the pending list.'}
+            $classification=Get-QaWebClassification $record $before $content;$category=[string]$classification.category;$pending=$classification.pending;if(-not $pending){throw 'This report is already organized. Refresh the pending list.'}
             if($action -eq 'Approve'){$decision='Approved'}elseif($action -eq 'Disapprove'){$decision='Disapproved';$category='Other'}else{throw 'Unsupported file decision.'}
         }
         $revision=[guid]::NewGuid().ToString('N');$actor=[Environment]::UserName
         $after=[pscustomobject]@{id=[string]$record.Id;hash=[string]$record.Hash;revision=$revision;decision=$decision;category=$category;time=[datetime]::UtcNow.ToString('o');actor=$actor;actorKind='Windows account identifier; not a verified personal QA reviewer'}
         $history=[pscustomobject]@{reviewId=$revision;recordId=[string]$record.Id;hash=[string]$record.Hash;action=$action;time=$after.time;actor=$actor;actorKind=$after.actorKind;before=$before;after=$after;scope='Document classification only; no clinical result or checklist verification'}
         $organization.Records=@($organization.Records|Where-Object id -cne $record.Id)+@($after);$organization.History=@($organization.History)+@($history)
-        if(Test-QaWebCancelled $Progress){return [pscustomobject]@{cancelled=$true;warning='';recordId=[string]$record.Id;reviewId='';stamp=(Get-QaWebStamp $record $before)}}
+        if(Test-QaWebCancelled $Progress){return [pscustomobject]@{cancelled=$true;warning='';recordId=[string]$record.Id;reviewId='';stamp=(Get-QaWebStamp $record $before $content)}}
         Write-QaWebAtomic (Join-Path $meta 'organization.json') $organization
         $warning='';try{[void](Update-QaWebLibrary -Config $Config -OnlyRecords @([string]$record.Id) -Dashboard $dashboard -Organization $organization -Progress $Progress)}catch{$warning='Decision saved. Readable folders need refresh: '+$_.Exception.Message}
-        return [pscustomobject]@{recordId=[string]$record.Id;reviewId=$revision;stamp=(Get-QaWebStamp $record $after);warning=$warning;classificationOnly=$true}
+        return [pscustomobject]@{recordId=[string]$record.Id;reviewId=$revision;stamp=(Get-QaWebStamp $record $after $content);warning=$warning;classificationOnly=$true}
     }finally{if($null -ne $lock){$lock.Dispose()}}
 }
 function New-QaWebArtifactPath($AppRoot,[string]$Folder,[string]$Prefix){$root=Join-Path $AppRoot $Folder;Assert-QaWebDirect $root;[void][IO.Directory]::CreateDirectory($root);return Join-Path $root ($Prefix+'-'+(Get-Date).ToString('yyyyMMdd-HHmmss')+'-'+[guid]::NewGuid().ToString('N').Substring(0,8)+'.zip')}
@@ -246,13 +316,13 @@ function New-QaWebExport {
         $exported=0
         foreach($record in $rows){
             if(Test-QaWebCancelled $Progress){return ''}
-            $entry=Get-QaWebIndexedEntry $exportEntryIndex $record;$classification=Get-QaWebClassification $record $entry;$category=$classification.category;$source=@($Config.Sources|Where-Object Scanner -eq $record.Scanner)[0];$organizationStatus=if($classification.pending){'Pending suggestion'}else{$classification.decision};$typeLabel=$category+' document';if($organizationStatus -eq 'Pending suggestion'){$typeLabel+=' - pending classification'};$name=Get-QaWebRelative $record $category $folderNames[[string]$record.Scanner]
+            $entry=Get-QaWebIndexedEntry $exportEntryIndex $record;$content=Get-QaWebContentContext $Config $record;$effective=Get-QaWebEffectiveRecord $record $content;$classification=Get-QaWebClassification $record $entry $content;$category=$classification.category;$source=@($Config.Sources|Where-Object Scanner -eq $record.Scanner)[0];$organizationStatus=if($classification.pending){'Pending suggestion'}else{$classification.decision};$typeLabel=$category+' document';if($organizationStatus -eq 'Pending suggestion'){$typeLabel+=' - pending classification'};$name=Get-QaWebRelative $effective $category $folderNames[[string]$record.Scanner]
             $baseName=$name;$suffix=1;while($usedPaths.ContainsKey($name)){$suffix++;$name=$baseName.Substring(0,$baseName.Length-4)+'-Report-'+$suffix+'.pdf'};$usedPaths[$name]=$true
             $pdf=Assert-QaWebPdf $Config $record;[void][IO.Compression.ZipFileExtensions]::CreateEntryFromFile($zip,$pdf,$name,[IO.Compression.CompressionLevel]::Optimal);$exported++;Set-QaWebProgress $Progress 'Exporting' $exported $rows.Count
             $nameSafe=ConvertTo-QaWebCsv ([string]$record.OriginalFileName)
-            [void]$manifest.Add([pscustomobject]@{Scanner=(ConvertTo-QaWebCsv $source.Name);ReportId=$record.Id;ReportDate=$record.ReportDate;ReportTime=$record.ReportTime;OriginalFilename=$nameSafe;DocumentType=$category;OrganizationDecision=$organizationStatus;OriginalArchiveCategory=[string]$record.Category;ExportPath=$name;SHA256=$record.Hash;ClinicalReviewer=(ConvertTo-QaWebCsv ([string](Get-QaWebValue $record ConfirmedBy '')));ClinicalReviewTime=[string](Get-QaWebValue $record ConfirmedAt '');VerifiedChecklistItems=(@(Get-QaWebValue $record ConfirmedComponents @()) -join '; ');PrintedResultStatus=[string](Get-QaWebValue (Get-QaSavedAnalysis $Config $record) Status 'Not analyzed');ClinicalQAResult='Not inferred from classification'})
+            [void]$manifest.Add([pscustomobject]@{Scanner=(ConvertTo-QaWebCsv $source.Name);ReportId=$record.Id;ReportDate=$effective.ReportDate;ReportTime=$effective.ReportTime;OriginalFilename=$nameSafe;DocumentType=$category;OrganizationDecision=$organizationStatus;OriginalArchiveCategory=[string]$record.Category;ExportPath=$name;SHA256=$record.Hash;ClinicalReviewer=(ConvertTo-QaWebCsv ([string](Get-QaWebValue $record ConfirmedBy '')));ClinicalReviewTime=[string](Get-QaWebValue $record ConfirmedAt '');VerifiedChecklistItems=(@(Get-QaWebValue $record ConfirmedComponents @()) -join '; ');PrintedResultStatus=[string](Get-QaWebValue (Get-QaSavedAnalysis $Config $record) Status 'Not analyzed');ClinicalQAResult='Not inferred from classification'})
             $link=($name.Split('/')|ForEach-Object{[Uri]::EscapeDataString($_)}) -join '/'
-            [void]$summary.Append('<tr><td>'+[Net.WebUtility]::HtmlEncode($source.Name)+'</td><td>'+[Net.WebUtility]::HtmlEncode([string]$record.ReportDate)+'</td><td>'+[Net.WebUtility]::HtmlEncode($typeLabel)+'</td><td><a href="'+$link+'">'+[Net.WebUtility]::HtmlEncode([string]$record.OriginalFileName)+'</a></td></tr>')
+            [void]$summary.Append('<tr><td>'+[Net.WebUtility]::HtmlEncode($source.Name)+'</td><td>'+[Net.WebUtility]::HtmlEncode([string]$effective.ReportDate)+'</td><td>'+[Net.WebUtility]::HtmlEncode($typeLabel)+'</td><td><a href="'+$link+'">'+[Net.WebUtility]::HtmlEncode([string]$record.OriginalFileName)+'</a></td></tr>')
         }
         [void]$summary.Append('</table><p>Every exported PDF was checked against its saved SHA-256 fingerprint.</p></html>')
         foreach($item in @(@{Name='Report Summary.html';Text=$summary.ToString()},@{Name='Report list.csv';Text=(@($manifest.ToArray())|ConvertTo-Csv -NoTypeInformation|Out-String)})){$e=$zip.CreateEntry($item.Name);$writer=New-Object IO.StreamWriter($e.Open(),(New-Object Text.UTF8Encoding $true));try{$writer.Write($item.Text)}finally{$writer.Dispose()}}
@@ -316,6 +386,7 @@ function Invoke-QaWebRequest {
             foreach($pair in @(@('name','Name'),@('path','Path'),@('drive','DriveLetter'),@('username','Username'),@('dailySchedule','DailySchedule'),@('activeFrom','ActiveFrom'),@('expectedMonthly','ExpectedMonthly'),@('monthlyDueDay','MonthlyDueDay'),@('checklist','MonthlyChecklist'),@('excludedDates','ExcludedDates'),@('checklistEffectiveMonth','ChecklistEffectiveMonth'))){
                 $incoming=Get-QaWebValue $Request $pair[0];if($null -ne $incoming){if($pair[0] -eq 'expectedMonthly' -and $incoming -isnot [bool]){throw 'Monthly scheduling must be on or off.'};$source|Add-Member -NotePropertyName $pair[1] -NotePropertyValue $incoming -Force}
             }
+            if(($Request -is [Collections.IDictionary] -and $Request.Contains('contentProfiles')) -or ($Request -isnot [Collections.IDictionary] -and $null -ne $Request.PSObject.Properties['contentProfiles'])){$source|Add-Member -NotePropertyName ContentProfiles -NotePropertyValue ([object[]]@(ConvertTo-QaWebContentProfiles $Request.contentProfiles)) -Force}
             [void](Save-QaConfig $AppRoot $config);$message='Scanner settings saved. Existing archive records and prior checklist versions were preserved.'
         }
         'ApplyProfile'{
@@ -325,7 +396,12 @@ function Invoke-QaWebRequest {
             try{[IO.File]::WriteAllText($temp,($profile|ConvertTo-Json -Depth 15),(New-Object Text.UTF8Encoding $true));$applied=Set-QaConnectionProfile -AppRoot $AppRoot -ProfilePath $temp -ReplaceExisting;$message=$applied.Message}finally{if([IO.File]::Exists($temp)){[IO.File]::Delete($temp)}};$config=Read-QaConfig $AppRoot
         }
         'Export'{$path=New-QaWebExport $config ([string[]]@(Get-QaWebValue $Request ids @())) $Progress;$cancelled=(-not $path -and (Test-QaWebCancelled $Progress));$message='Report package is ready to download.'}
-        'Analyze'{Set-QaWebProgress $Progress 'Analyzing' 0 0;$analysis=Invoke-QaAnalysis $config -Limit 20 -Progress $Progress;$cancelled=[bool]$analysis.Summary.Cancelled;$message=([string]$analysis.Analyzed+' PDFs analyzed; '+[string]$analysis.Cached+' cached; '+[string]$analysis.Failed+' need attention.');$value=$analysis}
+        'Analyze'{
+            $ids=@();$selected=[string](Get-QaWebValue $Request id '');if($selected){[void](Get-QaWebRecord (Get-QaDashboard $config) $selected);$ids=@($selected)}
+            if($null -ne (Get-QaWebValue $Request force) -and (Get-QaWebValue $Request force) -isnot [bool]){throw 'Retry must be on or off.'};$force=[bool](Get-QaWebValue $Request force $false);if($force -and -not $selected){throw 'Choose one PDF before retrying a read.'};Set-QaWebProgress $Progress 'Analyzing' 0 0;if($selected){$analysis=Invoke-QaAnalysis $config -Limit 1 -RecordIds $ids -Force:$force -Progress $Progress}else{$analysis=Invoke-QaAnalysis $config -Limit 20 -Progress $Progress};$cancelled=[bool]$analysis.Summary.Cancelled
+            $message=([string]$analysis.Analyzed+' PDFs analyzed; '+[string]$analysis.Cached+' cached; '+[string]$analysis.Failed+' need attention.');$value=$analysis
+            if(-not $cancelled){$changed=@(Get-QaWebValue $analysis AnalyzedIds @());if($selected){$changed=@($selected)};if($changed.Count){try{[void](Update-QaWebLibrary -Config $config -OnlyRecords $changed -Progress $Progress)}catch{$warning='Contents were read. Readable folders need refresh: '+$_.Exception.Message}}}
+        }
         'Backup'{
             $path=New-QaWebArtifactPath $AppRoot 'Backups' 'CTQA-Full-Backup';$archivePrefix=[IO.Path]::GetFullPath($config.ArchiveRoot).TrimEnd('\','/')+[IO.Path]::DirectorySeparatorChar;$external=$false
             if($path.StartsWith($archivePrefix,[StringComparison]::OrdinalIgnoreCase)){

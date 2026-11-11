@@ -63,6 +63,25 @@ Scenario 'Selected-record lookup still rejects an unsafe unrelated archive recor
  $guard=[IO.File]::Open((Join-Path $fx.Config.ArchiveRoot '.ctqa/archive.lock'),[IO.FileMode]::Open,[IO.FileAccess]::ReadWrite,[IO.FileShare]::None);$guard.Dispose()
  Check $true 'Archive lock is released after metadata-validation failure'
 }
+Scenario 'PDF provenance describes the exact verified bytes and metadata captured before reading' {
+ $fx=Fixture 'Provenance';$info=Get-Item -LiteralPath $fx.Record.DestinationPath;$hash=(Get-FileHash $info.FullName).Hash;$length=$info.Length;$ticks=$info.LastWriteTimeUtc.Ticks
+ $result=Read-QaReportText -Config $fx.Config -RecordId $fx.Record.Id
+ Check ($result.VerifiedHash -ceq $hash -and $result.VerifiedLength -eq $length -and $result.VerifiedWriteTicks -eq $ticks) 'Read result carries the actual parsed-buffer fingerprint and original file metadata'
+ Check ($result.ReadPages -eq 3 -and -not $result.Truncated) 'Provenance accompanies the complete synthetic PDF read'
+}
+Scenario 'A destination changed after hashing cannot acquire successful cached-read provenance' {
+ $fx=Fixture 'ChangedDuringParse';$statePath=Join-Path $fx.Config.ArchiveRoot '.ctqa/state.json';$before=(Get-FileHash $statePath).Hash;$readerModule=Get-Module PdfReader
+ & $readerModule {
+  param($Path)
+  $script:ProvenanceMutationPath=$Path;$script:OriginalReaderInitialize=(Get-Command Initialize-QaPdfReader).ScriptBlock
+  function script:Initialize-QaPdfReader {& $script:OriginalReaderInitialize;[IO.File]::SetLastWriteTimeUtc($script:ProvenanceMutationPath,[datetime]::UtcNow.AddMinutes(1))}
+ } $fx.Record.DestinationPath
+ try{$rejected=$false;try{Read-QaReportText -Config $fx.Config -RecordId $fx.Record.Id|Out-Null}catch{$rejected=$_.Exception.Message -match 'changed while it was being read'};Check $rejected 'Post-hash modification prevents a successful text result'}
+ finally{& $readerModule {Set-Item Function:Initialize-QaPdfReader $script:OriginalReaderInitialize;Remove-Variable OriginalReaderInitialize,ProvenanceMutationPath -Scope Script}}
+ Check ((Get-FileHash $statePath).Hash -eq $before) 'Stale read leaves archive metadata untouched'
+ $guard=[IO.File]::Open((Join-Path $fx.Config.ArchiveRoot '.ctqa/archive.lock'),[IO.FileMode]::Open,[IO.FileAccess]::ReadWrite,[IO.FileShare]::None);$guard.Dispose()
+ Check $true 'Stale-read failure releases the archive lock'
+}
 Scenario 'Image-only PDF reports no readable text and does not invent a report type' {
  $fx=Fixture 'ImageOnly' 'Image-Only.pdf';$r=Read-QaReportText -Config $fx.Config -RecordId $fx.Record.Id
  Check $r.NeedsOCR 'No selectable text detected'
