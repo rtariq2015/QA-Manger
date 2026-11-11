@@ -1,13 +1,40 @@
 {
   "passed": true,
   "syntheticOnly": true,
-  "scope": "Real host scheduler with a deterministic PowerShell adapter; no real PDF reader speed claim.",
+  "scope": "Real host scheduling with a deterministic PowerShell adapter, copied production-reader pause/export/cancel checks, and an actual 90-second helper deadline. Generated PDFs only; no reader speed claim.",
   "syntheticAdapterJobMetrics": {
     "planBuilds": 2,
     "fullSnapshots": 3,
     "librarySyncs": 3,
     "processedReports": 25,
-    "cacheSkips": 0
+    "cacheSkips": 0,
+    "workerStarts": 30,
+    "inlinePdfReads": 25,
+    "helperMilliseconds": 19776,
+    "readWorkerMilliseconds": 16816,
+    "planningMilliseconds": 1184,
+    "snapshotMilliseconds": 1777
+  },
+  "realReaderChecks": {
+    "syntheticOnly": true,
+    "checks": [
+      "The real reader yields after one verified PDF so a queued foreground Export completes while reading is paused",
+      "Cancelling an in-flight real reader preserves the first cache, all pending reports, original PDF bytes and clinical state",
+      "Request JSON cannot enable the command-line-only direct-reader optimization"
+    ],
+    "warmCacheDoesNotCountAsParsing": true,
+    "foregroundSnapshotIncludesCompletedReading": true,
+    "exactExportedPDFBytesPreserved": true,
+    "successfulReadsBeforeCancellation": 1,
+    "failedReadsBeforeCancellation": 0,
+    "originalsUnchanged": true
+  },
+  "unresponsiveReaderDeadline": {
+    "limitSeconds": 90,
+    "observedAfterChildStartedSeconds": 89.468,
+    "helperTreeStopped": true,
+    "interruptedReportStillPending": true,
+    "automaticRestartSuppressed": true
   },
   "checks": [
     "Duplicate background reads are rejected without blocking foreground controls",
@@ -23,7 +50,11 @@
     "AutoAnalyze false keeps an eligible archive manual",
     "Stop intent persists across Refresh independently of cooldown",
     "App reopen automatically reads eligible backlog after initial Refresh",
-    "Shutdown cancels background reading at a safe checkpoint and leaves no running helper"
+    "Shutdown cancels background reading at a safe checkpoint and leaves no running helper",
+    "The real reader yields after one verified PDF so a queued foreground Export completes while reading is paused",
+    "Cancelling an in-flight real reader preserves the first cache, all pending reports, original PDF bytes and clinical state",
+    "Request JSON cannot enable the command-line-only direct-reader optimization",
+    "An unresponsive one-PDF helper is stopped at its 90-second deadline with its child tree, pending count and Stop intent preserved"
   ],
-  "checkCount": 14
+  "checkCount": 18
 }

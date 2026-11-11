@@ -1,115 +1,122 @@
 {
   "Product": "CT QA Manager Pro",
-  "Version": "5.4.0",
-  "SourceCommit": "bb611aa93947bf01b0576616a34a5b44cbeda1a3",
-  "Runtime": "PowerShell 7.4.13 on Linux; eight development reports, not a final-source Linux rerun",
-  "ValidationStatus": "Passed: final pinned native Windows workflow completed successfully; Linux development evidence is separately labeled.",
-  "Tests": 187,
-  "Assertions": 1644,
+  "Version": "5.5.0",
+  "SourceCommit": "0199b05bf0e52cc12ca03d576a2583ebe736cb9a",
+  "ValidationStatus": "Passed: final completed successful native workflow; development evidence separately labeled.",
+  "Tests": 168,
+  "Assertions": 1469,
   "Failed": 0,
   "Suites": [
     {
-      "Name": "Run-Tests",
-      "Tests": 27,
-      "Assertions": 242,
-      "Failed": 0,
-      "ExecutionScope": "v5.4.0 development execution; raw report does not pin the final commit"
-    },
-    {
-      "Name": "Run-ContentTests",
-      "Tests": 25,
-      "Assertions": 342,
-      "Failed": 0,
-      "ExecutionScope": "v5.4.0 development execution; raw report does not pin the final commit"
-    },
-    {
       "Name": "Run-AnalysisTests",
-      "Tests": 18,
-      "Assertions": 101,
+      "Tests": 21,
+      "Assertions": 152,
       "Failed": 0,
-      "ExecutionScope": "v5.4.0 development execution; raw report does not pin the final commit"
-    },
-    {
-      "Name": "Run-ContentIntegrationTests",
-      "Tests": 15,
-      "Assertions": 408,
-      "Failed": 0,
-      "ExecutionScope": "v5.4.0 development execution; raw report does not pin the final commit"
-    },
-    {
-      "Name": "Run-WebServiceTests",
-      "Tests": 40,
-      "Assertions": 244,
-      "Failed": 0,
-      "ExecutionScope": "v5.4.0 development execution; raw report does not pin the final commit"
-    },
-    {
-      "Name": "Run-SupportTests",
-      "Tests": 23,
-      "Assertions": 184,
-      "Failed": 0,
-      "ExecutionScope": "v5.4.0 development execution; raw report does not pin the final commit"
+      "ExecutionScope": "v5.5.0 Linux development execution; raw report does not pin final source"
     },
     {
       "Name": "Run-MeasurementTests",
-      "Tests": 20,
-      "Assertions": 70,
+      "Tests": 31,
+      "Assertions": 121,
       "Failed": 0,
-      "ExecutionScope": "v5.4.0 development execution; raw report does not pin the final commit"
+      "ExecutionScope": "v5.5.0 Linux development execution; raw report does not pin final source"
     },
     {
       "Name": "Run-TrendTests",
-      "Tests": 19,
-      "Assertions": 53,
+      "Tests": 23,
+      "Assertions": 80,
       "Failed": 0,
-      "ExecutionScope": "v5.4.0 development execution; raw report does not pin the final commit"
+      "ExecutionScope": "v5.5.0 Linux development execution; raw report does not pin final source"
+    },
+    {
+      "Name": "Run-ContentIntegrationTests",
+      "Tests": 16,
+      "Assertions": 452,
+      "Failed": 0,
+      "ExecutionScope": "v5.5.0 Linux development execution; raw report does not pin final source"
+    },
+    {
+      "Name": "Run-WebServiceTests",
+      "Tests": 51,
+      "Assertions": 425,
+      "Failed": 0,
+      "ExecutionScope": "v5.5.0 Linux development execution; raw report does not pin final source"
+    },
+    {
+      "Name": "Run-SupportTests",
+      "Tests": 26,
+      "Assertions": 239,
+      "Failed": 0,
+      "ExecutionScope": "v5.5.0 Linux development execution; raw report does not pin final source"
     }
   ],
   "LinuxExecutionGroups": {
-    "CurrentDevelopment": {
-      "Reports": 8,
-      "Tests": 187,
-      "Assertions": 1644
+    "FreshChangedDevelopmentSuites": {
+      "Reports": 6,
+      "Tests": 168,
+      "Assertions": 1469
     }
+  },
+  "BackgroundSchedulerLinux": {
+    "Evidence": "Background-Scheduler-Linux.json",
+    "Passed": true,
+    "CheckCount": 18,
+    "SyntheticOnly": true,
+    "ExecutionPlatform": "Linux development execution",
+    "PowerShellAssertionsReported": false,
+    "Scope": "Full real-host scheduler regression: synthetic-adapter orchestration, actual production-reader control/trust-boundary checks and an unresponsive-helper/child-cleanup timeout. Separate check outcomes; no hospital throughput claim."
+  },
+  "RealReaderFinalControlsLinux": {
+    "Evidence": "Real-Reader-Final-Controls-Linux.json",
+    "SyntheticOnly": true,
+    "FinalSourcePinned": false,
+    "PowerShellAssertionsReported": false,
+    "RepeatedControlCases": 3,
+    "warmCacheDoesNotCountAsParsing": true,
+    "foregroundSnapshotIncludesCompletedReading": true,
+    "exactExportedPDFBytesPreserved": true,
+    "originalsUnchanged": true,
+    "Scope": "Separate development proof repeating the three production-reader controls and checking warm-cache counter semantics, visible completed-reading snapshots and exact exported bytes. These outcomes are not extra PowerShell assertions or distinct scheduler cases."
+  },
+  "CalendarDevelopment": {
+    "Evidence": [
+      "Calendar-Linux-Default.json",
+      "Calendar-Linux-New-York.json",
+      "Calendar-Linux-Tokyo.json"
+    ],
+    "Passed": true,
+    "UniqueRuleChecks": 7,
+    "RepeatedRuns": 3,
+    "Timezones": [
+      "process default",
+      "America/New_York",
+      "Asia/Tokyo"
+    ],
+    "SyntheticOnly": true,
+    "ExecutionPlatform": "Linux development execution",
+    "PowerShellAssertionsReported": false,
+    "Scope": "The same seven pure cached-metadata calendar rules repeated by timezone. These are not 21 distinct rules and do not read PDFs or certify clinical QA completion."
   },
   "LinuxWorkerProtocol": {
     "Evidence": "Python-Worker-Linux.json",
     "Tests": 11,
     "Failed": 0,
-    "Runtime": "Linux Python 3.12.14",
-    "ProductionWindowsActuallyRun": false,
     "AssertionsReported": false,
-    "ExecutionScope": "Retained earlier unchanged-protocol scope; not a fresh v5.4.0 execution"
-  },
-  "BackgroundSchedulerLinux": {
-    "Evidence": "Background-Scheduler-Linux.json",
-    "Passed": true,
-    "CheckCount": 14,
-    "SyntheticOnly": true,
-    "ExecutionPlatform": "Linux development execution",
-    "PowerShellAssertionsReported": false,
-    "Scope": "Actual host scheduler with a deterministic synthetic PowerShell adapter; separate check outcomes, no real PDF-reader speed claim."
-  },
-  "FocusedCancellationLinux": {
-    "Evidence": "Background-Scheduler-Focused-Linux.json",
-    "Passed": true,
-    "CheckCount": 7,
-    "SyntheticOnly": true,
-    "ExecutionPlatform": "Linux focused development execution",
-    "PowerShellAssertionsReported": false,
-    "Scope": "Actual host scheduler with a deterministic synthetic PowerShell adapter; separate check outcomes, no real PDF-reader speed claim."
+    "ProductionWindowsActuallyRun": false,
+    "Scope": "Retained earlier unchanged-protocol evidence; not a fresh v5.5 run."
   },
   "WindowsPowerShell51ActuallyRun": false,
-  "NativeWPFActuallyRun": false,
-  "WindowsDPAPIActuallyRun": false,
   "WindowsValidation": {
-    "SourceCommit": "bb611aa93947bf01b0576616a34a5b44cbeda1a3",
-    "WorkflowRun": "https://github.com/rtariq2015/QA-Manger/actions/runs/43092551021",
-    "Tests": 343,
-    "Assertions": 3201,
+    "Status": "Passed",
+    "SourceCommit": "0199b05bf0e52cc12ca03d576a2583ebe736cb9a",
+    "WorkflowRun": "https://github.com/rtariq2015/QA-Manger/actions/runs/43117160248",
+    "WorkflowStatus": "completed",
+    "WorkflowConclusion": "success",
+    "Tests": 376,
+    "Assertions": 3654,
     "Failed": 0,
     "ReaderBenchmark": {
-      "Evidence": "../Reader-Benchmark-Windows.json",
+      "Evidence": "Reader-Benchmark-Windows.json",
       "Tests": 3,
       "Assertions": 80,
       "Failed": 0,
@@ -119,69 +126,76 @@
         "Extended:6pages"
       ],
       "WholeIsolatedReadMediansMilliseconds": {
-        "Standard": 1370.557,
-        "Python": 2036.892
+        "Standard": 1792.477,
+        "Python": 2534.18
       },
       "FasterReaderForThisFixture": "Standard",
-      "StandardMedianDividedByPythonMedian": 0.673,
+      "StandardMedianDividedByPythonMedian": 0.707,
       "CachedAnalysis": {
         "ColdAnalyzed": 2,
-        "ColdMilliseconds": 2348.882,
+        "ColdMilliseconds": 4208.741,
         "WarmAnalyzed": 0,
         "WarmCached": 2,
-        "WarmMilliseconds": 78.368,
+        "WarmMilliseconds": 139.442,
         "WarmCacheWrites": 0
       },
       "MemoryMeasured": false,
       "HospitalNetworkSpeedMeasured": false
     },
     "BackgroundScheduler": {
-      "Evidence": "../Background-Scheduler-Windows.json",
+      "Evidence": "Background-Scheduler-Windows.json",
       "Passed": true,
-      "CheckCount": 14,
+      "CheckCount": 18,
       "SyntheticOnly": true,
       "ExecutionPlatform": "Native Windows workflow execution",
       "PowerShellAssertionsReported": false,
-      "Scope": "Actual host scheduler with a deterministic synthetic PowerShell adapter; separate check outcomes, no real PDF-reader speed claim."
+      "Scope": "Full real-host scheduler regression: synthetic-adapter orchestration, actual production-reader control/trust-boundary checks and an unresponsive-helper/child-cleanup timeout. Separate check outcomes; no hospital throughput claim."
+    },
+    "CalendarRules": {
+      "Evidence": "Calendar-Windows.json",
+      "Passed": true,
+      "UniqueRuleChecks": 7,
+      "RepeatedRuns": 1,
+      "Timezones": [
+        "process default"
+      ],
+      "SyntheticOnly": true,
+      "ExecutionPlatform": "Native Windows workflow execution",
+      "PowerShellAssertionsReported": false,
+      "Scope": "The same seven pure cached-metadata calendar rules repeated by timezone. These are not 21 distinct rules and do not read PDFs or certify clinical QA completion."
     },
     "Browser": {
-      "Evidence": "../Browser-Web-Windows.json",
-      "Tests": 15,
-      "Assertions": 562,
+      "Evidence": "Browser-Web-Windows.json",
+      "Tests": 17,
+      "Assertions": 681,
       "Failed": 0
     },
     "LargeLibrary": {
-      "Evidence": "../Large-Library-Windows.json",
+      "Evidence": "Large-Library-Windows.json",
       "Tests": 4,
       "Assertions": 5463,
       "Failed": 0
     },
     "LargeBrowser": {
-      "Evidence": "../Browser-Large-Windows.json",
-      "Tests": 5,
-      "Assertions": 27347,
+      "Evidence": "Browser-Large-Windows.json",
+      "Tests": 6,
+      "Assertions": 27376,
       "Failed": 0
     },
     "ContentBrowser": {
-      "Evidence": "../Browser-Content-Windows.json",
-      "Tests": 7,
-      "Assertions": 214,
+      "Evidence": "Browser-Content-Windows.json",
+      "Tests": 8,
+      "Assertions": 246,
       "Failed": 0
     },
     "PythonBrowser": {
-      "Evidence": "../Browser-Python-Windows.json",
-      "Tests": 6,
-      "Assertions": 208,
+      "Evidence": "Browser-Python-Windows.json",
+      "Tests": 7,
+      "Assertions": 265,
       "Failed": 0
-    },
-    "Status": "Passed",
-    "WorkflowStatus": "completed",
-    "WorkflowConclusion": "success",
-    "WorkflowCompleted": true,
-    "WorkflowPassed": true
+    }
   },
-  "HistoricalEvidence": "The complete forty-file prior Current evidence is preserved unchanged in Tests/Historical/v5.3.1. Earlier versions retain their own history.",
-  "Scope": "Top-level totals sum only eight Linux PowerShell development reports. Their raw JSON does not pin commits, so these totals do not claim a final-source Linux rerun. Native final-source execution is independently pinned to its successful workflow artifact. Fourteen host-scheduler outcomes, seven focused cancellation outcomes and eleven retained worker-protocol scenarios have no PowerShell assertion counters and remain separate. Public evidence uses generated reports only; user PDFs, private audits/aggregates, extracted private text and workplace photographs are excluded.",
+  "Scope": "Top-level totals sum only six changed Linux development suites; unchanged v5.4 Core/Content are historical, not fresh. Raw Linux files do not pin final source. Native final execution is independently pinned. Scheduler/calendar/retained-worker outcomes are separate from PowerShell assertions. Calendar is seven unique rules repeated in three timezones, not 21 unique rules. Private PDFs, extracted text, corpus audit aggregates and workplace photos are excluded.",
   "DevelopmentHostReadingComparison": {
     "Evidence": "Background-Reading-Comparison-Linux.json",
     "State": "VerifiedSuccessfulPDFReadComparison",
@@ -192,17 +206,27 @@
     "DistinctSyntheticPDFHashes": 6,
     "RepetitionsPerVersion": 1,
     "AllSuccessGatesPassed": true,
+    "QuietPaired": true,
+    "IdenticalInputs": true,
+    "InputManifestSHA256": "f089d86cc065927d9a174aea4e872be40c0f1c6bdb70f4d5075ce8f04f476397",
+    "BaselineSource": "9303e335c2a3c3d08c7cd0ff38d547d71edab6be",
+    "MeasuredQueueSeconds": [
+      148.836,
+      123.557
+    ],
     "Scope": "Separate development comparison on a shared local Linux machine. Both versions 25 analyzed / 0 failed with 25 matching verified hashes and complete reads. Single sequential runs; no Windows, hospital SMB or 1,367-record throughput claim. Excluded from PowerShell suite/assertion totals."
   },
   "PackageValidation": {
     "Evidence": "Package-Validation.json",
-    "Version": "5.4.0",
+    "Version": "5.5.0",
     "Passed": true,
     "Failed": 0,
-    "CheckCount": 880,
+    "CheckCount": 1729,
     "Packages": 5,
-    "InAppUpdateFrom": "5.3.1",
-    "InAppUpdateTo": "5.4.0",
+    "SourceCommit": "0199b05bf0e52cc12ca03d576a2583ebe736cb9a",
+    "RunId": 43117160248,
+    "InAppUpdateFrom": "5.4.0",
+    "InAppUpdateTo": "5.5.0",
     "InAppPreservedSentinelFiles": 7,
     "Scope": "Actual ZIP and PowerShell installation/staging checks on Linux. Packaged Windows executables were not launched in these local checks; native execution is recorded separately. Excluded from PowerShell scenario/assertion totals."
   }

@@ -1,9 +1,9 @@
 {
-  "Version": "5.3.1",
+  "Version": "5.4.0",
   "Runtime": "7.4.13",
   "WindowsPowerShell51ActuallyRun": false,
-  "Tests": 23,
-  "Assertions": 184,
+  "Tests": 26,
+  "Assertions": 239,
   "Failed": 0,
   "Results": [
     {
@@ -118,6 +118,21 @@
     },
     {
       "Name": "Filing basis and reading state remain separate scrubbed facts across machine and print diagnostics",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "Batch decisions and Undo export bounded counts and timings without selections or private history",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "Pending review groups export only controlled reasons and exclude opaque local grouping keys",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "Performance telemetry retains only bounded numeric stage counters in print and machine exports",
       "Result": "PASS",
       "Details": ""
     }

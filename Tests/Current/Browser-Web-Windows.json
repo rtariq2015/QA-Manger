@@ -1,11 +1,11 @@
 {
-  "version": "5.4.0",
+  "version": "5.5.0",
   "syntheticOnly": true,
   "browser": "Chromium via Playwright",
   "browserChannel": "msedge",
   "nativePdfPreviewActuallyRun": true,
-  "tests": 15,
-  "assertions": 562,
+  "tests": 17,
+  "assertions": 681,
   "failed": 0,
   "externalAssetRequests": 0,
   "javascriptErrors": [],
@@ -15,11 +15,19 @@
       "result": "PASS"
     },
     {
-      "name": "The six-tab interface loads locally without external assets",
+      "name": "The seven-tab interface loads locally without external assets",
       "result": "PASS"
     },
     {
-      "name": "Light and Dark appearance apply consistently across all six tabs and persist in saved settings",
+      "name": "Light and Dark appearance apply consistently across all seven tabs and persist in saved settings",
+      "result": "PASS"
+    },
+    {
+      "name": "The expandable calendar shows scanner receipt and preserves an exact-day export scope",
+      "result": "PASS"
+    },
+    {
+      "name": "Folders exports the entire saved library independently of report and package filters",
       "result": "PASS"
     },
     {

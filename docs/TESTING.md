@@ -1,98 +1,87 @@
-# Validation — CT QA Manager Pro 5.4.0
+# Validation — CT QA Manager Pro 5.5.0
 
-Final native source: `bb611aa93947bf01b0576616a34a5b44cbeda1a3`. Raw native test evidence: [https://github.com/rtariq2015/QA-Manger/actions/runs/43092551021](https://github.com/rtariq2015/QA-Manger/actions/runs/43092551021). Overall workflow status at staging: **completed**; conclusion: **success**. Passing raw test results do not assert that the overall workflow completed.
+Final source: `0199b05bf0e52cc12ca03d576a2583ebe736cb9a`. Completed successful native workflow: [https://github.com/rtariq2015/QA-Manger/actions/runs/43117160248](https://github.com/rtariq2015/QA-Manger/actions/runs/43117160248).
 
-Public reports, scanner folders, credentials and screenshots use generated synthetic fixtures. User PDFs, extracted private text, private archive audits or aggregate findings, and workplace photographs are excluded from evidence, release previews and documentation.
+All public evidence uses generated PDFs, local synthetic scanner folders and synthetic identities. Private reports, extracted private text, private corpus audit aggregates, workplace profiles and workstation photographs are excluded. Raw evidence is copied without relabeling or changing its bytes.
 
 | Execution | Scenarios or checks | Assertions | Failed | Evidence |
 | --- | ---: | ---: | ---: | --- |
-| Windows PowerShell 5.1: eighteen native suites | 343 | 3,201 | 0 | [Native summary](../Tests/Current/Windows/Summary.json) and unchanged raw reports |
+| Windows PowerShell 5.1: eighteen fresh native suites | 376 | 3,654 | 0 | [Native summary](../Tests/Current/Windows/Summary.json) |
 | Native reader comparison and cache reuse | 3 | 80 | 0 | [Reader benchmark](../Tests/Current/Reader-Benchmark-Windows.json) |
-| Windows Edge: application and support workflow | 15 | 562 | 0 | [Main browser report](../Tests/Current/Browser-Web-Windows.json) |
+| Windows Edge: application, calendar and support | 17 | 681 | 0 | [Main browser report](../Tests/Current/Browser-Web-Windows.json) |
 | Windows PowerShell: generated 1,367-report library | 4 | 5,463 | 0 | [Library report](../Tests/Current/Large-Library-Windows.json) |
-| Windows Edge: large-library interaction and cancellation | 5 | 27,347 | 0 | [Large browser report](../Tests/Current/Browser-Large-Windows.json) |
-| Windows Edge: document contents and automatic filing | 7 | 214 | 0 | [Content browser report](../Tests/Current/Browser-Content-Windows.json) |
-| Windows Edge: portable Python and measurement trends | 6 | 208 | 0 | [Python browser report](../Tests/Current/Browser-Python-Windows.json) |
-| Windows actual host with deterministic synthetic PowerShell adapter | 14 checks | Not reported | 0 | [Scheduler report](../Tests/Current/Background-Scheduler-Windows.json) |
-| Linux PowerShell 7.4.13: eight development reports | 187 | 1644 | 0 | [Local summary](../Tests/Current/Summary.json) and unchanged raw reports |
-| Linux actual host with deterministic synthetic adapter | 14 checks | Not reported | 0 | [Scheduler development report](../Tests/Current/Background-Scheduler-Linux.json) |
-| Linux focused in-flight cancellation regression | 7 checks | Not reported | 0 | [Focused cancellation report](../Tests/Current/Background-Scheduler-Focused-Linux.json) |
+| Windows Edge: large-library filtering and grouped review | 6 | 27,376 | 0 | [Large browser report](../Tests/Current/Browser-Large-Windows.json) |
+| Windows Edge: contents, targets and automatic filing | 8 | 246 | 0 | [Content browser report](../Tests/Current/Browser-Content-Windows.json) |
+| Windows Edge: portable Python and measurement trends | 7 | 265 | 0 | [Python browser report](../Tests/Current/Browser-Python-Windows.json) |
+| Native cached-metadata calendar rules | 7 | Not reported | 0 | [Calendar report](../Tests/Current/Calendar-Windows.json) |
+| Native host scheduler, live-reader controls and timeout cleanup | 18 checks | Not reported | 0 | [Scheduler report](../Tests/Current/Background-Scheduler-Windows.json) |
+| Linux PowerShell 7.4.13: six changed development suites | 168 | 1469 | 0 | [Local summary](../Tests/Current/Summary.json) |
+| Linux host scheduler, live-reader controls and timeout cleanup | 18 checks | Not reported | 0 | [Scheduler report](../Tests/Current/Background-Scheduler-Linux.json) |
+| Linux calendar: the same seven rules repeated in three timezones | 7 unique rules; three runs | Not reported | 0 | [Default](../Tests/Current/Calendar-Linux-Default.json), [New York](../Tests/Current/Calendar-Linux-New-York.json), [Tokyo](../Tests/Current/Calendar-Linux-Tokyo.json) |
+| Separate final Linux production-reader controls | Three repeated control cases plus final invariants | Not reported | 0 | [Final controls](../Tests/Current/Real-Reader-Final-Controls-Linux.json) |
 | Retained earlier Linux Python worker protocol | 11 | Not reported | 0 | [Unchanged worker report](../Tests/Current/Python-Worker-Linux.json) |
 
-The eight Linux PowerShell reports sum to **187 scenarios and 1644 assertions**. They were executed during development and do not embed a final commit hash. They therefore do not establish a Linux rerun of the final source. The native artifact independently pins all eighteen suites, all four Edge browser workloads, the scheduler and reader comparison to the final source. Native and Linux totals remain separate. Scheduler and worker outcomes without PowerShell assertion counters are excluded from suite/assertion sums.
+Only Analysis, Measurements, Trends, Content Integration, WebService and Support contribute to the fresh Linux PowerShell total of **168 scenarios / 1469 assertions**. Unchanged earlier local Core/Content reports remain historical and are not summed as new executions. Development raw reports do not embed final commit hashes, so they do not establish a Linux rerun of the final source. The completed native workflow independently pins all eighteen suites and all four Edge workloads to its source/run and tested artifact digests.
 
-Native Core runs 26 scenarios with 258 assertions. Linux Core runs 27 scenarios with 242 assertions, including a case-sensitive path-alias regression. Platform-specific branches produce different assertion totals; each summary retains its actual raw counts. The Linux focused seven-check cancellation run remains separate from the full fourteen-check scheduler run; the native fourteen-check scheduler also includes the corrected in-flight cancellation behavior. The eleven-case worker report retains its earlier unchanged-protocol scope and is not presented as a fresh execution.
+Calendar and scheduler checks have no PowerShell assertion counters and remain separate. The full 18-group Linux scheduler passed on the 15-second cadence before a counter-only correction; the separate final controls confirm that warm-cache skips count zero inline parsing, completed readings appear in foreground snapshots and exported PDFs preserve exact bytes. Fresh native execution establishes the complete scheduler behavior on final source. The same seven calendar rules run in the default timezone, America/New_York and Asia/Tokyo; this is not 21 unique rules. The retained eleven-case worker protocol report keeps its original unchanged-protocol scope. Previous complete evidence is preserved unchanged under [Tests/Historical/v5.4.0](../Tests/Historical/v5.4.0), including its 41 files. Some raw Version fields identify an earlier feature introduction and are preserved.
 
-The previous complete forty-file evidence collection is preserved unchanged in [Tests/Historical/v5.3.1](../Tests/Historical/v5.3.1). Older releases retain their own historical folders. Some raw Version fields describe a feature's introduction and remain unchanged. The native summary records exact source/run identifiers, host executable SHA-256, Python runtime artifact SHA-256, Python integrity manifest SHA-256 and validation artifact SHA-256.
+## Grouped file decisions and durable Undo
 
-## Automatic filing and the review queue
+Review separates files waiting for reading, files needing a decision and files already filed. Pending decisions can be grouped by controlled reasons: manual policy, read errors, reference evidence, conflicting evidence, unsupported formats, Undo restoration or other review. Opaque local grouping keys never enter shareable support data.
 
-**Auto** is the default report-format policy. Compatible complete Basic and Extended manufacturer body formats can infer Daily and Monthly filing respectively. Explicit document labels, saved scanner overrides and supported archive grouping retain their own filing basis. Inferred filing is recorded as inferred; it does not create clinical approval or certify that a scanner passed. **Ask** explicitly leaves that format for individual review. Daily/Monthly/Other rules remain available as scanner-specific overrides.
+Selections are capped at 50 and bind each exact report identity to its current stamp. Before saving a group, the backend validates current state/history and holds exact verified PDF handles. A stale selection, changed PDF, unsafe path or invalid filing target rejects the batch before its filing decisions are committed. Clear Daily/Monthly/Other targets remain available; an ambiguous report type requires an explicit choice rather than silently choosing a different category.
 
-The application separates **Waiting for reading**, **Needs review** and **Filed**. Unread documents belong to background reading rather than the Approve/Disapprove decision list. Manual decisions, previous formal reviews and Undo retain priority. Date/time/type conflicts, incomplete bodies, unsupported evidence and explicit Ask remain visible for a person. Approving one report does not silently teach a global rule.
+Saved file decisions and whole-batch Undo persist across restart. Undo retains the original PDFs and respects intervening changes. Readable-copy refresh is limited to selected records. Copy warnings are recorded separately from the counts of decisions actually saved. Approve/Disapprove still sorts documents without requesting a reviewer name for that file-organization task. It does not approve clinical QA, complete a Monthly checklist or teach a new global scanner rule.
 
-Synthetic content tests cover exact compatible Edge, Flash and Drive headers; supported Basic, Extended and additional numbered IEC bodies; explicit Quality Daily sections; and bounded standalone test layouts. File size, page count, model name or a table of contents alone cannot establish a complete supported report. Footers must supply consistent dates/times where content-based filing requires them. Mixed, unknown, incomplete and contradictory evidence remains unresolved.
+Tests cover the 50-item bound, single-selection array handling, mixed explicit targets, stale stamps, state/history/byte changes, held file handles, exact selected-only refresh, post-save copy warnings and durable Undo. Windows exercises its actual share-denial behavior. Linux evidence accepts either enforced sharing or pre-commit metadata rejection without a write; it is not described as native Windows lock validation.
 
-Auto files validated manufacturer reference documents as Other; saved manual decisions retain priority. References never count as current QA receipts or measurement trends. Anchored reference-section evidence also excludes current values when the overall template is still unknown; that weaker evidence does not turn an unresolved document into an automatically filed reference. Legacy cached numbers and old filing labels cannot override these exclusions. Synthetic regressions include reference headings outside tables of contents, mixed section families, unknown labels and old cached measurements.
+## Daily receipt calendar
 
-## Background work and responsiveness
+The calendar uses existing snapshot metadata only: it does not read PDFs or contact scanners. It applies configured AllDays/Weekdays/Off schedules, active dates and exclusions. Valid filed Daily reports supply saved receipt; pending, Monthly, reference and suspected-reference documents do not. Scanner connection state remains distinct from already-saved evidence.
 
-Ordinary **Read next 20 saved PDFs** retains its twenty-attempt limit. Explicit all-saved or pending-file queues can continue beyond twenty eligible files. They build a trusted eligibility plan, process one selected record at a time, and publish full overview/library checkpoints periodically. They rebuild the plan when foreground changes invalidate its generation. Compact per-PDF results avoid rebuilding and transmitting the entire archive overview after every read.
+Future dates are neutral and do not increase received/missing totals. Off-schedule saved reports remain available without inventing an expected test. UTC date construction handles leap years and month boundaries without local-timezone shifts. Tests also cover scanner isolation, malformed dates, duplicate identities and snapshot preservation. Calendar status describes the archive and schedule, not whether clinical tests were performed or passed. Monthly reviewed evidence remains separate.
 
-Fresh archive membership, selected identity, direct paths, file length/timestamp and parsed-byte SHA-256 remain checked. Supplied-record analysis avoids reconstructing coverage and attention data inside a PDF step. Directory validation can reuse existing safe ancestor directories only within one state read; every leaf is checked afresh, missing directories are never cached and reuse ends with that call. Regressions introduce linked leaves, parent changes between calls, missing-directory links, root-boundary cases and case-sensitive aliases.
+The helper is bundled into the existing application JavaScript resource. This avoids introducing a new shipped resource that an earlier portable updater would reject. The Folders tab browses managed saved reports without exposing arbitrary filesystem paths. The calendar can lead to date-filtered Reports or Exports without changing stored data.
 
-Pause takes effect at a safe boundary; Resume continues the job. Stop retains completed results and does not count an interrupted PDF as completed or failed. Foreground review, search and export can run between background steps. Automatic reading starts only when work is eligible, and explicit Stop prevents automatic restart until the relevant user action clears that intent. Lower process priority and cooperative yielding reduce interference; they do not eliminate CPU or disk work.
+## Printed measurements and trends
 
-The real-host scheduler tests use a deterministic synthetic adapter to isolate queue planning, duplicate rejection, sanitized internal flags, factual cumulative progress, foreground handoff, pause/resume, cancellation, cleanup, shutdown, automatic startup and stop intent. A 25-item queue exceeds the ordinary cap and completes readable-folder synchronization. Controlled counters record plan passes, full snapshots, library passes, completed records and cache skips. These adapter tests make no real PDF-reader speed claim.
+Measurement schema remains 1; capability revision 3 adds four alignment families in mm: Lightmarker, External lightmarker, Sagittal/Coronal lightmarker and Topogram position. Sagittal and coronal values retain separate axis context. Existing Water CT values, Image noise and Slice thickness remain available. The browser menu has seven metric families, with distinct series for their supported contexts.
 
-## Selective cache upgrades and measurements
+Only validated printed result forms supply values and associated limits. Headers, page/section context and full read/date evidence must agree. Scan parameters, historical/reference values, ambiguous columns and unsupported layouts are excluded. Reference evidence blocks current readings even when an overall document template remains uncertain or older caches contain numeric values. No numerical clinical PASS or vendor tolerance is invented.
 
-Measurement schema version remains **1**. Measurement capability revision **2** records the newer Daily and slice-thickness support separately. Older Daily or slice-containing evidence can receive one bounded upgrade attempt. Complete older Basic HU evidence remains reusable and graphable. Unsupported extraction still records the attempted revision, preventing repeated background retries. Existing read errors remain cached until an appropriate explicit retry or changed file; references are excluded from measurement-upgrade queues.
+Capability upgrades use introduction thresholds: older Daily/Slice evidence can receive the revision 2 capability once; revision 3 targets only its four alignment sections. Existing revision 2 Daily/Slice and complete Basic HU caches remain warm. Unsupported attempts record their current capability revision and do not loop automatically. Manual filing decisions and formal clinical evidence remain untouched.
 
-Supported printed tables can supply Water CT values and Image noise in HU, plus Slice thickness in mm. Daily sections support their validated table forms, and contexts keep mode, system, slice and source page separate. Associated printed limits remain distinct from measured values. Historical/reference values, scan parameters, ambiguous columns, incomplete input and unknown units are not substituted as current readings.
+Trends separates scanner, mode, system, slice and axis contexts, shows printed limits where reliable and links values to exact source pages. Outliers and printed failures remain documentary warnings. Conflicting aliases/timestamps are withheld rather than averaged. Merely opening a graph starts no hidden PDF reading.
 
-Trends uses complete, date-consistent verified readings and links to source pages. Uncertain limits stay absent. Printed failures and outliers remain visible with documentary warnings; no clinical PASS or calibrated drift diagnosis is invented. Conflicting aliases/timestamps are withheld rather than averaged. Coverage distinguishes unread, unsupported selected measurements and reference exclusions. Looking at a graph starts no hidden PDF reading.
+## Background reading and timing scope
 
-Cache provenance remains bound to exact PDF hash, record identity, length and write time. Equal-content destinations retain independent provenance and upgrade revisions. Failed or interrupted work cannot replace prior verified evidence. Filing, derived dates and readable folders do not rewrite protected clinical archive fields.
+The host retains one-PDF checkpoints, a trusted eligibility plan and foreground handoff. Internal inline-reader controls remain restricted to validated one-record background steps. Archive membership, exact bytes/hash, direct paths and metadata are still verified under the reader lock. Classic or explicit paths retain their own isolation behavior; the optimization does not authorize arbitrary caller paths or bypass the local API boundary.
+
+The full scheduler regression combines synthetic-adapter orchestration with actual production-reader control/trust-boundary checks and an actual unresponsive-helper/child cleanup timeout. It checks pause/resume, Stop intent, interrupted pending totals, cleanup and completion beyond the ordinary twenty-item bound. These checks establish control behavior rather than hospital PDF throughput.
+
+Scrubbed counters distinguish outer helper time, read-worker time, engine time, parsing/cache work, worker starts and cache writes. They are nonnegative bounded integers. Their intervals can overlap; they must not be added as independent stages or interpreted as a hardware guarantee.
+
+A separate [quiet paired development comparison](../Tests/Current/Background-Reading-Comparison-Linux.json) requires 25 analyzed / 0 failed / 0 read errors, 25 matching verified hashes and 25 complete reads in both versions, plus the same synthetic input manifest. It is separate from suite/assertion totals and makes no hospital or general Windows throughput claim.
+
+The separate native reader comparison uses identical generated Basic nine-page and Extended six-page PDFs, fresh isolated workers and alternating reader order. Every qualifying sample requires complete pages, expected profiles/dates and exact fingerprints. Across 12 reads, whole-read medians were **1792.477 ms for Standard** and **2534.18 ms for Python**; **Standard** was faster for that fixture. Whole-read time includes startup, transport, verification and parsing. Warm reuse performs zero new parses and zero cache writes. No memory, hardware-threshold or hospital SMB claim is made.
 
 ## Shareable diagnostics and printing
 
-Settings provides independent diagnostic-ZIP and printable-report links. The printable page opens separately and supports Ctrl+P without external assets or scripts. Both links remain available after later actions and snapshots. The ZIP contains exactly seven entries:
+The support ZIP still has seven entries: printable HTML, structured summary, complete report CSV/JSONL, complete retained structured-activity CSV/JSONL, and sharing instructions. Independent ZIP and printable links remain available after later operations. The printable page supports Ctrl+P with no scripts or external assets.
 
-- `SupportReport.html` and `Support-Summary.json`.
-- `Report-Diagnostics.csv` and `Report-Diagnostics.jsonl` with every diagnostic row in the snapshot.
-- `Scrubbed-Activity.csv` and `Scrubbed-Activity.jsonl` with all retained supported structured events.
-- `READ ME.txt` describing scope, sharing and retention.
+New controlled fields retain pending-review reason groups, selected/approved/disapproved/undone/rejected/copy-failed counts, total duration and agreed numeric performance counters. New metric diagnostics retain counts, statuses and capability revisions rather than raw measurement values. Saved decisions and copy warnings remain separate outcomes.
 
-Controlled fields separate filing basis, filing state and inferred grouping from text-cache status, measurement capability, reader status and reference exclusion. Numeric metadata includes page coverage, measurement counts, timing and support revisions. Independent waiting/review/filed/inferred counts make queue status interpretable. Operation events retain allowlisted stages, outcomes, reasons and numeric counters.
+Private strings, PDF text/files, paths, filenames, names, credentials, network addresses, hashes, record IDs, stamps, batch IDs and opaque grouping keys are excluded. All fields are reconstructed through allowlists. Synthetic regressions inject these values into batch history, grouping fields, counter values and arbitrary timing objects. Formulas, negative/fractional/overflow values and unknown keys cannot pass through to any ZIP entry or print view.
 
-Every shareable field is rebuilt through allowlists. PDFs, extracted text, filenames, paths, report IDs/hashes, usernames, passwords, network addresses, workstation names, raw exceptions and unstructured logs are excluded. References such as Report0001 are regenerated per export and cannot serve as stable identities or a tamper-proof audit trail. Printable detail and recent activity are each capped at 500 with disclosed limits; full machine exports retain all available supported rows/events. Normal structured-log retention is bounded to 90 days and its storage budget.
+Report aliases are regenerated per export. Printable detail and recent activity are each capped at 500 with disclosed limits; full machine exports preserve all supported retained rows/events. Normal logs retain up to 90 days within their storage budget. This is retained structured history, not a promise that every past action was recorded or a signed audit trail.
 
-Synthetic tests inject private sentinels into all new filing fields, configuration, caches, reviews and arbitrary events. They inspect every ZIP entry and printable output, verify atomic new exports and protected source files, and check safe fallback with malformed/unreadable state. Reference evidence forces zero current measurement counts even for an unresolved template with legacy numeric cache rows. Classic diagnostics perform that filtering while the PDF is exclusively locked, proving the export reads metadata/cache rather than reopening PDF contents.
+## Native execution, preservation and captures
 
-## Browser workflows and continuous PDF rendering
+The native workflow builds the self-contained Windows host and pinned portable Python runtime, executes all eighteen suites, runs four actual Edge workloads, the reader comparison and scheduler, and captures WPF compatibility views. Production Python is tested under an actual standard Windows user with live cancellation and cleanup. CI-only test-account provisioning does not mean the application changes work-computer accounts or policy.
 
-Today, Reports, Review, Exports, Trends and Settings remain separate. Today distinguishes saved report receipt from clinical evidence and scanner access. Review offers Approve/Disapprove and Undo without requiring a name for file sorting. Exports has independent scanner/type/date/multi-year filters and preserves every matching PDF. Light/Dark settings persist with the portable workspace.
+The 1,367-record synthetic workload retains folder ownership, exact export, warm-cache reuse, changed-byte detection, cancellation/resume, grouped review and stale-selection behavior. Original PDFs, clinical archive fields, settings and prior history remain protected. New support privacy tests retain the existing seven-entry package, 500-row print caps, bounded log retention and metadata-only fallback while a PDF is exclusively locked.
 
-Actual Edge tests compare decoded native page pixels with the authenticated selected-page response, including report fingerprint, page and dimensions. Continuous rendering must reach the final page of a multi-page PDF without repeated Previous/Next controls. Lazy loading, bounded concurrent requests and bounded image caching keep the PDF navigable. Both review actions remain visible at 1024×768.
-
-The four browser workloads also exercise authentication/origin rejection, offline-only assets, ordinary typing after mouse release, unsaved form preservation, password clearing, stale-decision rejection, exact filtered ZIP hashes, persistent Undo/theme state, diagnostic printing, automatic filing and foreground work during background reading. Their application APIs are not mocked.
-
-## Portable readers and measured scope
-
-The completed package includes its Windows x64 Python interpreter, standard library and pure-Python reader beside Standard/PdfPig. Work use requires neither Python installation nor pip. Versions and hashes appear in [Python build metadata](../Tests/Current/Python-Build-Windows.json). Python uses isolated imports, no site/bytecode writes and an application socket guard; that guard neither tests nor bypasses workplace firewall policy.
-
-Both engines consume a bounded verified PDF buffer. Archive membership, indexed SHA-256, length and write timestamp are checked around the read. PDF paths/content are not exposed in Python command-line arguments or temporary PDF files. Native tests exercise the production bridge under a real standard Windows user, live cancellation/cleanup, input limits, image-only/encrypted files, changed bytes, damaged dependencies, explicit failures, automatic fallback and cache preservation. CI test-account setup does not mean the application creates Windows users or changes policy.
-
-The native comparison uses identical generated Basic nine-page and Extended six-page PDFs, fresh isolated workers and alternating reader order. Qualification requires complete pages, supported body profiles, matching footer timestamps, observations and exact fingerprints. Across 12 cold reads, whole-read medians were **1370.557 ms for Standard** and **2036.892 ms for Python**. The faster reader in this fixture was **Standard**; the Standard/Python ratio was 0.673. Whole-read timing includes startup, transport, verification and parsing. Warm analysis proves zero new parses and zero cache writes. No hardware threshold, memory measurement or hospital SMB speed is claimed.
-
-A separate [Linux development comparison](../Tests/Current/Background-Reading-Comparison-Linux.json) required 25 successful reads, zero failures,25 matching verified hashes and 25 complete PDF reads in both versions before recording results. Its 25 saved records use six distinct generated PDF hashes. Both core state and all PDF bytes stayed unchanged. It is one sequential comparison per version on a shared local machine, excludes failed-read attempts, does not pin the final source and does not establish native Windows, hospital SMB or 1,367-record throughput. It is excluded from suite/assertion totals.
-
-## Large library, captures and reproduction
-
-The generated large workload contains 1,367 saved reports. It tests exact folder ownership, cold copy/hash work, unchanged warm reuse, changed bytes with restored metadata, filtered export, browsing/reload while busy, duplicate refresh coalescing, cancellation and resumed completion. A synchronization barrier is inserted only into a disposable fixture's copied progress hook. Detailed support export remains independent of a held update. Original PDFs and protected archive state stay unchanged.
-
-All **33 captures** are copied unchanged from the pinned native artifact. They include the six-tab Light/Dark views, compact-window and native-PDF views, large-library progress, support/printing, automatic filing and measurement trends. New views show [Daily readings](images/daily-readings-web-demo.png) and [Slice thickness trends](images/slice-thickness-trends-web-demo.png). They are actual application screenshots with synthetic data; the release preview selects 22 of these captures.
+All **39 screenshots** are copied unchanged from final native captures. Existing Light/Dark seven-tab, compact PDF, support and trend views are joined by [calendar receipt](images/daily-calendar-web-demo.png), [grouped review](images/grouped-review-web-demo.png) and [Monthly alignment trends](images/monthly-alignment-trends-web-demo.png). They use generated data, not workstation photographs or design mockups. The release preview selects 27 embedded views: 14 theme views and 13 detail views.
 
 | Tab | Light | Dark |
 | --- | --- | --- |
@@ -100,31 +89,21 @@ All **33 captures** are copied unchanged from the pinned native artifact. They i
 | Reports | [Light](images/reports-light-web-demo.png) | [Dark](images/reports-dark-web-demo.png) |
 | Review | [Light](images/review-light-web-demo.png) | [Dark](images/review-dark-web-demo.png) |
 | Exports | [Light](images/exports-light-web-demo.png) | [Dark](images/exports-dark-web-demo.png) |
+| Folders | [Light](images/folders-light-web-demo.png) | [Dark](images/folders-dark-web-demo.png) |
 | Trends | [Light](images/trends-light-web-demo.png) | [Dark](images/trends-dark-web-demo.png) |
 | Settings | [Light](images/settings-light-web-demo.png) | [Dark](images/settings-dark-web-demo.png) |
 
-Other captures show [support details](images/support-activity-web-demo.png), [printing](images/support-print-web-demo.png), [automatic filing](images/automatic-filing-web-demo.png), [continuous PDF scrolling](images/content-continuous-pdf-web-demo.png), [format settings](images/content-settings-web-demo.png) and [source-linked measurements](images/trends-measurements-web-demo.png).
+Fresh fixture destinations are required. Browser reproduction uses `node Tests/Web/run-all.cjs --windows --output artifacts/web`; [Windows-Smoke.md](../Tests/Windows-Smoke.md) describes remaining workstation checks. Build-time SDK/dependency downloads are development tooling; the user receives the completed offline package.
 
-Build validation uses .NET SDK, dependency downloads and Node/Playwright as development tools. The work computer receives the completed offline package. The native workflow builds the self-contained host and pinned Python runtime, runs all eighteen suites, reader comparison and scheduler, exercises all four Edge workloads and captures WPF compatibility views. The browser command is:
+## Packaged updates and preservation
 
-```text
-node Tests/Web/run-all.cjs --windows --output artifacts/web
-```
-
-Fresh fixture destinations are required. [Windows-Smoke.md](../Tests/Windows-Smoke.md) describes the remaining work-computer checks.
-
-## Release package validation
-
-[Actual package checks](../Tests/Current/Package-Validation.json) passed all **880 checks** across the three generic ZIPs and two private local-only variants. Each packaged host matches the tested native executable, all 103 Python manifest components match, and package manifests exclude development files and live reports. Private variants are not release assets.
-
-The existing version 5.3.1 updater actually staged and installed the normal 5.4.0 Update ZIP in a disposable fixture. Seven configuration, credential-file, data, archive, organization-history and prior-log sentinels remained byte-identical; a previous-program backup exists and staging was cleaned. Generic/private one-time helpers and the standalone diagnostic collector also passed. These are Linux ZIP/PowerShell installation-logic checks; Windows executable execution is established separately by the native run. The package checks do not contribute to suite/assertion totals.
+The actual five completed ZIPs passed **1,729 package checks with zero failures: [Package validation](../Tests/Current/Package-Validation.json). Their executable matches the tested native host, and all 103 Python components match the tested integrity manifest. The existing **5.4.0 updater** staged and installed the **5.5.0 Update ZIP**, preserved all seven synthetic configuration/data/credential/archive/history/log sentinels, retained a previous-program backup and cleaned staging. Generic and private one-time upgrades and the standalone diagnostic collector also passed. Private configured packages remain local and are excluded from Releases. These are Linux/PowerShell ZIP and staging checks; Windows executables were exercised separately in the native workflow.
 
 ## Practical limits
 
-- Hosted Windows validation does not approve endpoint policy or establish scanner-share access. The workstation must permit its completed executable/scripts and local browser connection.
-- Scanner collection needs the internal network. Saved filing/review/export work locally. Missing files or unavailable scanners do not establish clinical QA failure.
-- Automatic inferred document filing does not replace department frequency policy, complete Monthly evidence or clinical QA review. Image-only OCR and universal template/table recognition are not included.
-- One-PDF processing and yielding still consume CPU/storage. Cancellation is cooperative; an active Windows read may return before its safe checkpoint. Memory and real workload speed remain workstation-dependent.
-- Closing the app stops local helpers. Nothing uploads automatically, and no service or scheduled task is installed. Keep a separate approved backup; same-drive readable copies do not protect against disk loss.
-- Moving Windows account/computer may require scanner sign-in again. Updates preserve data/settings; checksums detect inconsistency rather than authenticating an unknown publisher.
-- Keyboard/IME, DPI, folder dialogs, long paths, further report variants and scanner access still need appropriate workstation checks.
+- Hosted validation does not approve workplace endpoint policy or establish real scanner-share access. The workstation must allow the completed scripts/executable and its local browser connection.
+- Scanner collection needs the internal network; saved filing, review and export work locally. Missing reports or unavailable scanners do not establish clinical QA failure.
+- Automatic inferred file grouping and receipt calendars do not replace department frequency policy, Monthly evidence or clinical review. Unsupported formats and image-only OCR can still require a person.
+- Background work still consumes CPU/storage; cancellation is cooperative. Completed results remain saved, and interrupted work is not falsely counted as completed.
+- No service or scheduled task is installed, and nothing uploads automatically. Keep a separate approved backup. Moving Windows account/computer can require scanner sign-in again.
+- Updates preserve data/settings; checksums detect inconsistency rather than authenticating an unknown publisher. Additional report variants, keyboard/IME, DPI, long paths and actual scanner access still need appropriate workstation checks.

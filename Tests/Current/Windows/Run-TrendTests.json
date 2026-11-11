@@ -4,8 +4,8 @@
     "Runtime":  "5.1.26100.33648",
     "WindowsPowerShell51ActuallyRun":  true,
     "SyntheticOnly":  true,
-    "Tests":  19,
-    "Assertions":  57,
+    "Tests":  23,
+    "Assertions":  84,
     "Failed":  0,
     "Results":  [
                     {
@@ -95,6 +95,26 @@
                     },
                     {
                         "Name":  "Plot point limits preserve full-period summary statistics and disclose truncation",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Monthly scalar alignment has fixed millimetre metrics and no fabricated system or slice",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Printed sagittal and coronal axes remain separate series and alias conflicts stay within their own axis",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Alignment requires its exact fixed context and recognized current document rather than legacy numeric labels",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Only eligible older alignment caches wait for one capability upgrade and attempted unsupported layouts stop retrying",
                         "Result":  "PASS",
                         "Details":  ""
                     },

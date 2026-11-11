@@ -1,17 +1,17 @@
 {
-  "ProvenanceFile": "/tmp/ctqa-540-final-artifact-provenance.json",
-  "Version": "5.4.0",
-  "SourceCommit": "bb611aa93947bf01b0576616a34a5b44cbeda1a3",
-  "RunId": 43092551021,
+  "ProvenanceFile": "/tmp/ctqa-550-final-artifact-provenance.json",
+  "Version": "5.5.0",
+  "SourceCommit": "0199b05bf0e52cc12ca03d576a2583ebe736cb9a",
+  "RunId": 43117160248,
   "Runtime": "Linux / PowerShell 7.4.13: ZIP and installation/staging logic only; Windows executables were not launched in these local checks.",
-  "HostSHA256": "3670a5251e916e0c61018774ee9b6952ce3dc118b26137bfcb27a447ec7d1100",
+  "HostSHA256": "c3163cca9e233bd15b020678068f299227795ecdb4ec82bee9d7045af2bce86f",
   "PythonIntegritySHA256": "7bb612a33fa72070b608fc7a67ab93d9de48aebafc6c3ebd1978aff3fd9f27d4",
   "PythonManifestFiles": 103,
   "HospitalNetworkContacted": false,
   "PrivatePackagesLocalOnly": true,
   "Checks": [
     {
-      "Name": "Portable metadata declares5.4.0",
+      "Name": "Portable metadata declares5.5.0",
       "Passed": true
     },
     {
@@ -27,7 +27,15 @@
       "Passed": true
     },
     {
+      "Name": "Portable unique manifest member App/ApplyNetworkUpdate.ps1",
+      "Passed": true
+    },
+    {
       "Name": "Portable manifest member App/ApplyNetworkUpdate.ps1",
+      "Passed": true
+    },
+    {
+      "Name": "Portable unique manifest member App/Archive.psm1",
       "Passed": true
     },
     {
@@ -35,7 +43,15 @@
       "Passed": true
     },
     {
+      "Name": "Portable unique manifest member App/Browse.psm1",
+      "Passed": true
+    },
+    {
       "Name": "Portable manifest member App/Browse.psm1",
+      "Passed": true
+    },
+    {
+      "Name": "Portable unique manifest member App/ContentClassifier.psm1",
       "Passed": true
     },
     {
@@ -43,7 +59,15 @@
       "Passed": true
     },
     {
+      "Name": "Portable unique manifest member App/Credentials.psm1",
+      "Passed": true
+    },
+    {
       "Name": "Portable manifest member App/Credentials.psm1",
+      "Passed": true
+    },
+    {
+      "Name": "Portable unique manifest member App/ExportDiagnostics.ps1",
       "Passed": true
     },
     {
@@ -51,7 +75,15 @@
       "Passed": true
     },
     {
+      "Name": "Portable unique manifest member App/Host/ASPNETCORE-LICENSE.txt",
+      "Passed": true
+    },
+    {
       "Name": "Portable manifest member App/Host/ASPNETCORE-LICENSE.txt",
+      "Passed": true
+    },
+    {
+      "Name": "Portable unique manifest member App/Host/ASPNETCORE-THIRD-PARTY-NOTICES.TXT",
       "Passed": true
     },
     {
@@ -59,7 +91,15 @@
       "Passed": true
     },
     {
+      "Name": "Portable unique manifest member App/Host/CTQa.Host.exe",
+      "Passed": true
+    },
+    {
       "Name": "Portable manifest member App/Host/CTQa.Host.exe",
+      "Passed": true
+    },
+    {
+      "Name": "Portable unique manifest member App/Host/DOTNET-LICENSE.TXT",
       "Passed": true
     },
     {
@@ -67,7 +107,15 @@
       "Passed": true
     },
     {
+      "Name": "Portable unique manifest member App/Host/DOTNET-THIRD-PARTY-NOTICES.TXT",
+      "Passed": true
+    },
+    {
       "Name": "Portable manifest member App/Host/DOTNET-THIRD-PARTY-NOTICES.TXT",
+      "Passed": true
+    },
+    {
+      "Name": "Portable unique manifest member App/Insights.psm1",
       "Passed": true
     },
     {
@@ -75,7 +123,15 @@
       "Passed": true
     },
     {
+      "Name": "Portable unique manifest member App/InstallUpdate.ps1",
+      "Passed": true
+    },
+    {
       "Name": "Portable manifest member App/InstallUpdate.ps1",
+      "Passed": true
+    },
+    {
+      "Name": "Portable unique manifest member App/Lib/PdfPig/Integrity.json",
       "Passed": true
     },
     {
@@ -83,7 +139,15 @@
       "Passed": true
     },
     {
+      "Name": "Portable unique manifest member App/Lib/PdfPig/LICENSE-Microsoft.txt",
+      "Passed": true
+    },
+    {
       "Name": "Portable manifest member App/Lib/PdfPig/LICENSE-Microsoft.txt",
+      "Passed": true
+    },
+    {
+      "Name": "Portable unique manifest member App/Lib/PdfPig/LICENSE-PdfPig.txt",
       "Passed": true
     },
     {
@@ -91,7 +155,15 @@
       "Passed": true
     },
     {
+      "Name": "Portable unique manifest member App/Lib/PdfPig/Microsoft.Bcl.HashCode.dll",
+      "Passed": true
+    },
+    {
       "Name": "Portable manifest member App/Lib/PdfPig/Microsoft.Bcl.HashCode.dll",
+      "Passed": true
+    },
+    {
+      "Name": "Portable unique manifest member App/Lib/PdfPig/NOTICES-PdfPig.txt",
       "Passed": true
     },
     {
@@ -99,7 +171,15 @@
       "Passed": true
     },
     {
+      "Name": "Portable unique manifest member App/Lib/PdfPig/README.txt",
+      "Passed": true
+    },
+    {
       "Name": "Portable manifest member App/Lib/PdfPig/README.txt",
+      "Passed": true
+    },
+    {
+      "Name": "Portable unique manifest member App/Lib/PdfPig/System.Buffers.dll",
       "Passed": true
     },
     {
@@ -107,7 +187,15 @@
       "Passed": true
     },
     {
+      "Name": "Portable unique manifest member App/Lib/PdfPig/System.Memory.dll",
+      "Passed": true
+    },
+    {
       "Name": "Portable manifest member App/Lib/PdfPig/System.Memory.dll",
+      "Passed": true
+    },
+    {
+      "Name": "Portable unique manifest member App/Lib/PdfPig/System.Numerics.Vectors.dll",
       "Passed": true
     },
     {
@@ -115,7 +203,15 @@
       "Passed": true
     },
     {
+      "Name": "Portable unique manifest member App/Lib/PdfPig/System.Runtime.CompilerServices.Unsafe.dll",
+      "Passed": true
+    },
+    {
       "Name": "Portable manifest member App/Lib/PdfPig/System.Runtime.CompilerServices.Unsafe.dll",
+      "Passed": true
+    },
+    {
+      "Name": "Portable unique manifest member App/Lib/PdfPig/UglyToad.PdfPig.Core.dll",
       "Passed": true
     },
     {
@@ -123,7 +219,15 @@
       "Passed": true
     },
     {
+      "Name": "Portable unique manifest member App/Lib/PdfPig/UglyToad.PdfPig.DocumentLayoutAnalysis.dll",
+      "Passed": true
+    },
+    {
       "Name": "Portable manifest member App/Lib/PdfPig/UglyToad.PdfPig.DocumentLayoutAnalysis.dll",
+      "Passed": true
+    },
+    {
+      "Name": "Portable unique manifest member App/Lib/PdfPig/UglyToad.PdfPig.Fonts.dll",
       "Passed": true
     },
     {
@@ -131,7 +235,15 @@
       "Passed": true
     },
     {
+      "Name": "Portable unique manifest member App/Lib/PdfPig/UglyToad.PdfPig.Package.dll",
+      "Passed": true
+    },
+    {
       "Name": "Portable manifest member App/Lib/PdfPig/UglyToad.PdfPig.Package.dll",
+      "Passed": true
+    },
+    {
+      "Name": "Portable unique manifest member App/Lib/PdfPig/UglyToad.PdfPig.Tokenization.dll",
       "Passed": true
     },
     {
@@ -139,7 +251,15 @@
       "Passed": true
     },
     {
+      "Name": "Portable unique manifest member App/Lib/PdfPig/UglyToad.PdfPig.Tokens.dll",
+      "Passed": true
+    },
+    {
       "Name": "Portable manifest member App/Lib/PdfPig/UglyToad.PdfPig.Tokens.dll",
+      "Passed": true
+    },
+    {
+      "Name": "Portable unique manifest member App/Lib/PdfPig/UglyToad.PdfPig.dll",
       "Passed": true
     },
     {
@@ -147,7 +267,15 @@
       "Passed": true
     },
     {
+      "Name": "Portable unique manifest member App/MainWindow.xaml",
+      "Passed": true
+    },
+    {
       "Name": "Portable manifest member App/MainWindow.xaml",
+      "Passed": true
+    },
+    {
+      "Name": "Portable unique manifest member App/Maintenance.psm1",
       "Passed": true
     },
     {
@@ -155,7 +283,15 @@
       "Passed": true
     },
     {
+      "Name": "Portable unique manifest member App/MeasurementParser.psm1",
+      "Passed": true
+    },
+    {
       "Name": "Portable manifest member App/MeasurementParser.psm1",
+      "Passed": true
+    },
+    {
+      "Name": "Portable unique manifest member App/Navigator.psm1",
       "Passed": true
     },
     {
@@ -163,7 +299,15 @@
       "Passed": true
     },
     {
+      "Name": "Portable unique manifest member App/Network.psm1",
+      "Passed": true
+    },
+    {
       "Name": "Portable manifest member App/Network.psm1",
+      "Passed": true
+    },
+    {
+      "Name": "Portable unique manifest member App/PdfPreview.psm1",
       "Passed": true
     },
     {
@@ -171,7 +315,15 @@
       "Passed": true
     },
     {
+      "Name": "Portable unique manifest member App/PdfReader.psm1",
+      "Passed": true
+    },
+    {
       "Name": "Portable manifest member App/PdfReader.psm1",
+      "Passed": true
+    },
+    {
+      "Name": "Portable unique manifest member App/Process.psm1",
       "Passed": true
     },
     {
@@ -179,7 +331,15 @@
       "Passed": true
     },
     {
+      "Name": "Portable unique manifest member App/Python/Integrity.json",
+      "Passed": true
+    },
+    {
       "Name": "Portable manifest member App/Python/Integrity.json",
+      "Passed": true
+    },
+    {
+      "Name": "Portable unique manifest member App/Python/Sources.json",
       "Passed": true
     },
     {
@@ -187,7 +347,15 @@
       "Passed": true
     },
     {
+      "Name": "Portable unique manifest member App/Python/read_pdf.py",
+      "Passed": true
+    },
+    {
       "Name": "Portable manifest member App/Python/read_pdf.py",
+      "Passed": true
+    },
+    {
+      "Name": "Portable unique manifest member App/Python/runtime/LICENSE.txt",
       "Passed": true
     },
     {
@@ -195,7 +363,15 @@
       "Passed": true
     },
     {
+      "Name": "Portable unique manifest member App/Python/runtime/_asyncio.pyd",
+      "Passed": true
+    },
+    {
       "Name": "Portable manifest member App/Python/runtime/_asyncio.pyd",
+      "Passed": true
+    },
+    {
+      "Name": "Portable unique manifest member App/Python/runtime/_bz2.pyd",
       "Passed": true
     },
     {
@@ -203,7 +379,15 @@
       "Passed": true
     },
     {
+      "Name": "Portable unique manifest member App/Python/runtime/_ctypes.pyd",
+      "Passed": true
+    },
+    {
       "Name": "Portable manifest member App/Python/runtime/_ctypes.pyd",
+      "Passed": true
+    },
+    {
+      "Name": "Portable unique manifest member App/Python/runtime/_decimal.pyd",
       "Passed": true
     },
     {
@@ -211,7 +395,15 @@
       "Passed": true
     },
     {
+      "Name": "Portable unique manifest member App/Python/runtime/_elementtree.pyd",
+      "Passed": true
+    },
+    {
       "Name": "Portable manifest member App/Python/runtime/_elementtree.pyd",
+      "Passed": true
+    },
+    {
+      "Name": "Portable unique manifest member App/Python/runtime/_hashlib.pyd",
       "Passed": true
     },
     {
@@ -219,7 +411,15 @@
       "Passed": true
     },
     {
+      "Name": "Portable unique manifest member App/Python/runtime/_lzma.pyd",
+      "Passed": true
+    },
+    {
       "Name": "Portable manifest member App/Python/runtime/_lzma.pyd",
+      "Passed": true
+    },
+    {
+      "Name": "Portable unique manifest member App/Python/runtime/_multiprocessing.pyd",
       "Passed": true
     },
     {
@@ -227,7 +427,15 @@
       "Passed": true
     },
     {
+      "Name": "Portable unique manifest member App/Python/runtime/_overlapped.pyd",
+      "Passed": true
+    },
+    {
       "Name": "Portable manifest member App/Python/runtime/_overlapped.pyd",
+      "Passed": true
+    },
+    {
+      "Name": "Portable unique manifest member App/Python/runtime/_queue.pyd",
       "Passed": true
     },
     {
@@ -235,7 +443,15 @@
       "Passed": true
     },
     {
+      "Name": "Portable unique manifest member App/Python/runtime/_remote_debugging.pyd",
+      "Passed": true
+    },
+    {
       "Name": "Portable manifest member App/Python/runtime/_remote_debugging.pyd",
+      "Passed": true
+    },
+    {
+      "Name": "Portable unique manifest member App/Python/runtime/_socket.pyd",
       "Passed": true
     },
     {
@@ -243,7 +459,15 @@
       "Passed": true
     },
     {
+      "Name": "Portable unique manifest member App/Python/runtime/_sqlite3.pyd",
+      "Passed": true
+    },
+    {
       "Name": "Portable manifest member App/Python/runtime/_sqlite3.pyd",
+      "Passed": true
+    },
+    {
+      "Name": "Portable unique manifest member App/Python/runtime/_ssl.pyd",
       "Passed": true
     },
     {
@@ -251,7 +475,15 @@
       "Passed": true
     },
     {
+      "Name": "Portable unique manifest member App/Python/runtime/_uuid.pyd",
+      "Passed": true
+    },
+    {
       "Name": "Portable manifest member App/Python/runtime/_uuid.pyd",
+      "Passed": true
+    },
+    {
+      "Name": "Portable unique manifest member App/Python/runtime/_wmi.pyd",
       "Passed": true
     },
     {
@@ -259,7 +491,15 @@
       "Passed": true
     },
     {
+      "Name": "Portable unique manifest member App/Python/runtime/_zoneinfo.pyd",
+      "Passed": true
+    },
+    {
       "Name": "Portable manifest member App/Python/runtime/_zoneinfo.pyd",
+      "Passed": true
+    },
+    {
+      "Name": "Portable unique manifest member App/Python/runtime/_zstd.pyd",
       "Passed": true
     },
     {
@@ -267,7 +507,15 @@
       "Passed": true
     },
     {
+      "Name": "Portable unique manifest member App/Python/runtime/libcrypto-3.dll",
+      "Passed": true
+    },
+    {
       "Name": "Portable manifest member App/Python/runtime/libcrypto-3.dll",
+      "Passed": true
+    },
+    {
+      "Name": "Portable unique manifest member App/Python/runtime/libffi-8.dll",
       "Passed": true
     },
     {
@@ -275,7 +523,15 @@
       "Passed": true
     },
     {
+      "Name": "Portable unique manifest member App/Python/runtime/libssl-3.dll",
+      "Passed": true
+    },
+    {
       "Name": "Portable manifest member App/Python/runtime/libssl-3.dll",
+      "Passed": true
+    },
+    {
+      "Name": "Portable unique manifest member App/Python/runtime/libtommath.dll",
       "Passed": true
     },
     {
@@ -283,7 +539,15 @@
       "Passed": true
     },
     {
+      "Name": "Portable unique manifest member App/Python/runtime/pyexpat.pyd",
+      "Passed": true
+    },
+    {
       "Name": "Portable manifest member App/Python/runtime/pyexpat.pyd",
+      "Passed": true
+    },
+    {
+      "Name": "Portable unique manifest member App/Python/runtime/python.cat",
       "Passed": true
     },
     {
@@ -291,7 +555,15 @@
       "Passed": true
     },
     {
+      "Name": "Portable unique manifest member App/Python/runtime/python.exe",
+      "Passed": true
+    },
+    {
       "Name": "Portable manifest member App/Python/runtime/python.exe",
+      "Passed": true
+    },
+    {
+      "Name": "Portable unique manifest member App/Python/runtime/python3.dll",
       "Passed": true
     },
     {
@@ -299,7 +571,15 @@
       "Passed": true
     },
     {
+      "Name": "Portable unique manifest member App/Python/runtime/python314._pth",
+      "Passed": true
+    },
+    {
       "Name": "Portable manifest member App/Python/runtime/python314._pth",
+      "Passed": true
+    },
+    {
+      "Name": "Portable unique manifest member App/Python/runtime/python314.dll",
       "Passed": true
     },
     {
@@ -307,7 +587,15 @@
       "Passed": true
     },
     {
+      "Name": "Portable unique manifest member App/Python/runtime/python314.zip",
+      "Passed": true
+    },
+    {
       "Name": "Portable manifest member App/Python/runtime/python314.zip",
+      "Passed": true
+    },
+    {
+      "Name": "Portable unique manifest member App/Python/runtime/pythonw.exe",
       "Passed": true
     },
     {
@@ -315,7 +603,15 @@
       "Passed": true
     },
     {
+      "Name": "Portable unique manifest member App/Python/runtime/select.pyd",
+      "Passed": true
+    },
+    {
       "Name": "Portable manifest member App/Python/runtime/select.pyd",
+      "Passed": true
+    },
+    {
+      "Name": "Portable unique manifest member App/Python/runtime/sqlite3.dll",
       "Passed": true
     },
     {
@@ -323,7 +619,15 @@
       "Passed": true
     },
     {
+      "Name": "Portable unique manifest member App/Python/runtime/unicodedata.pyd",
+      "Passed": true
+    },
+    {
       "Name": "Portable manifest member App/Python/runtime/unicodedata.pyd",
+      "Passed": true
+    },
+    {
+      "Name": "Portable unique manifest member App/Python/runtime/vcruntime140.dll",
       "Passed": true
     },
     {
@@ -331,7 +635,15 @@
       "Passed": true
     },
     {
+      "Name": "Portable unique manifest member App/Python/runtime/vcruntime140_1.dll",
+      "Passed": true
+    },
+    {
       "Name": "Portable manifest member App/Python/runtime/vcruntime140_1.dll",
+      "Passed": true
+    },
+    {
+      "Name": "Portable unique manifest member App/Python/runtime/winsound.pyd",
       "Passed": true
     },
     {
@@ -339,7 +651,15 @@
       "Passed": true
     },
     {
+      "Name": "Portable unique manifest member App/Python/vendor/pypdf-7.0.1.dist-info/METADATA",
+      "Passed": true
+    },
+    {
       "Name": "Portable manifest member App/Python/vendor/pypdf-7.0.1.dist-info/METADATA",
+      "Passed": true
+    },
+    {
+      "Name": "Portable unique manifest member App/Python/vendor/pypdf-7.0.1.dist-info/RECORD",
       "Passed": true
     },
     {
@@ -347,7 +667,15 @@
       "Passed": true
     },
     {
+      "Name": "Portable unique manifest member App/Python/vendor/pypdf-7.0.1.dist-info/WHEEL",
+      "Passed": true
+    },
+    {
       "Name": "Portable manifest member App/Python/vendor/pypdf-7.0.1.dist-info/WHEEL",
+      "Passed": true
+    },
+    {
+      "Name": "Portable unique manifest member App/Python/vendor/pypdf-7.0.1.dist-info/licenses/LICENSE",
       "Passed": true
     },
     {
@@ -355,7 +683,15 @@
       "Passed": true
     },
     {
+      "Name": "Portable unique manifest member App/Python/vendor/pypdf/__init__.py",
+      "Passed": true
+    },
+    {
       "Name": "Portable manifest member App/Python/vendor/pypdf/__init__.py",
+      "Passed": true
+    },
+    {
+      "Name": "Portable unique manifest member App/Python/vendor/pypdf/_cmap.py",
       "Passed": true
     },
     {
@@ -363,7 +699,15 @@
       "Passed": true
     },
     {
+      "Name": "Portable unique manifest member App/Python/vendor/pypdf/_codecs/__init__.py",
+      "Passed": true
+    },
+    {
       "Name": "Portable manifest member App/Python/vendor/pypdf/_codecs/__init__.py",
+      "Passed": true
+    },
+    {
+      "Name": "Portable unique manifest member App/Python/vendor/pypdf/_codecs/_codecs.py",
       "Passed": true
     },
     {
@@ -371,7 +715,15 @@
       "Passed": true
     },
     {
+      "Name": "Portable unique manifest member App/Python/vendor/pypdf/_codecs/adobe_glyphs.py",
+      "Passed": true
+    },
+    {
       "Name": "Portable manifest member App/Python/vendor/pypdf/_codecs/adobe_glyphs.py",
+      "Passed": true
+    },
+    {
+      "Name": "Portable unique manifest member App/Python/vendor/pypdf/_codecs/core_font_metrics.py",
       "Passed": true
     },
     {
@@ -379,7 +731,15 @@
       "Passed": true
     },
     {
+      "Name": "Portable unique manifest member App/Python/vendor/pypdf/_codecs/pdfdoc.py",
+      "Passed": true
+    },
+    {
       "Name": "Portable manifest member App/Python/vendor/pypdf/_codecs/pdfdoc.py",
+      "Passed": true
+    },
+    {
+      "Name": "Portable unique manifest member App/Python/vendor/pypdf/_codecs/std.py",
       "Passed": true
     },
     {
@@ -387,7 +747,15 @@
       "Passed": true
     },
     {
+      "Name": "Portable unique manifest member App/Python/vendor/pypdf/_codecs/symbol.py",
+      "Passed": true
+    },
+    {
       "Name": "Portable manifest member App/Python/vendor/pypdf/_codecs/symbol.py",
+      "Passed": true
+    },
+    {
+      "Name": "Portable unique manifest member App/Python/vendor/pypdf/_codecs/zapfding.py",
       "Passed": true
     },
     {
@@ -395,7 +763,15 @@
       "Passed": true
     },
     {
+      "Name": "Portable unique manifest member App/Python/vendor/pypdf/_configuration.py",
+      "Passed": true
+    },
+    {
       "Name": "Portable manifest member App/Python/vendor/pypdf/_configuration.py",
+      "Passed": true
+    },
+    {
+      "Name": "Portable unique manifest member App/Python/vendor/pypdf/_crypt_providers/__init__.py",
       "Passed": true
     },
     {
@@ -403,7 +779,15 @@
       "Passed": true
     },
     {
+      "Name": "Portable unique manifest member App/Python/vendor/pypdf/_crypt_providers/_base.py",
+      "Passed": true
+    },
+    {
       "Name": "Portable manifest member App/Python/vendor/pypdf/_crypt_providers/_base.py",
+      "Passed": true
+    },
+    {
+      "Name": "Portable unique manifest member App/Python/vendor/pypdf/_crypt_providers/_cryptography.py",
       "Passed": true
     },
     {
@@ -411,7 +795,15 @@
       "Passed": true
     },
     {
+      "Name": "Portable unique manifest member App/Python/vendor/pypdf/_crypt_providers/_fallback.py",
+      "Passed": true
+    },
+    {
       "Name": "Portable manifest member App/Python/vendor/pypdf/_crypt_providers/_fallback.py",
+      "Passed": true
+    },
+    {
+      "Name": "Portable unique manifest member App/Python/vendor/pypdf/_crypt_providers/_pycryptodome.py",
       "Passed": true
     },
     {
@@ -419,7 +811,15 @@
       "Passed": true
     },
     {
+      "Name": "Portable unique manifest member App/Python/vendor/pypdf/_doc_common.py",
+      "Passed": true
+    },
+    {
       "Name": "Portable manifest member App/Python/vendor/pypdf/_doc_common.py",
+      "Passed": true
+    },
+    {
+      "Name": "Portable unique manifest member App/Python/vendor/pypdf/_encryption.py",
       "Passed": true
     },
     {
@@ -427,7 +827,15 @@
       "Passed": true
     },
     {
+      "Name": "Portable unique manifest member App/Python/vendor/pypdf/_page.py",
+      "Passed": true
+    },
+    {
       "Name": "Portable manifest member App/Python/vendor/pypdf/_page.py",
+      "Passed": true
+    },
+    {
+      "Name": "Portable unique manifest member App/Python/vendor/pypdf/_page_labels.py",
       "Passed": true
     },
     {
@@ -435,7 +843,15 @@
       "Passed": true
     },
     {
+      "Name": "Portable unique manifest member App/Python/vendor/pypdf/_protocols.py",
+      "Passed": true
+    },
+    {
       "Name": "Portable manifest member App/Python/vendor/pypdf/_protocols.py",
+      "Passed": true
+    },
+    {
+      "Name": "Portable unique manifest member App/Python/vendor/pypdf/_reader.py",
       "Passed": true
     },
     {
@@ -443,7 +859,15 @@
       "Passed": true
     },
     {
+      "Name": "Portable unique manifest member App/Python/vendor/pypdf/_text_extraction/__init__.py",
+      "Passed": true
+    },
+    {
       "Name": "Portable manifest member App/Python/vendor/pypdf/_text_extraction/__init__.py",
+      "Passed": true
+    },
+    {
+      "Name": "Portable unique manifest member App/Python/vendor/pypdf/_text_extraction/_layout_mode/__init__.py",
       "Passed": true
     },
     {
@@ -451,7 +875,15 @@
       "Passed": true
     },
     {
+      "Name": "Portable unique manifest member App/Python/vendor/pypdf/_text_extraction/_layout_mode/_fixed_width_page.py",
+      "Passed": true
+    },
+    {
       "Name": "Portable manifest member App/Python/vendor/pypdf/_text_extraction/_layout_mode/_fixed_width_page.py",
+      "Passed": true
+    },
+    {
+      "Name": "Portable unique manifest member App/Python/vendor/pypdf/_text_extraction/_layout_mode/_text_state_manager.py",
       "Passed": true
     },
     {
@@ -459,7 +891,15 @@
       "Passed": true
     },
     {
+      "Name": "Portable unique manifest member App/Python/vendor/pypdf/_text_extraction/_layout_mode/_text_state_params.py",
+      "Passed": true
+    },
+    {
       "Name": "Portable manifest member App/Python/vendor/pypdf/_text_extraction/_layout_mode/_text_state_params.py",
+      "Passed": true
+    },
+    {
+      "Name": "Portable unique manifest member App/Python/vendor/pypdf/_text_extraction/_text_extractor.py",
       "Passed": true
     },
     {
@@ -467,7 +907,15 @@
       "Passed": true
     },
     {
+      "Name": "Portable unique manifest member App/Python/vendor/pypdf/_utils.py",
+      "Passed": true
+    },
+    {
       "Name": "Portable manifest member App/Python/vendor/pypdf/_utils.py",
+      "Passed": true
+    },
+    {
+      "Name": "Portable unique manifest member App/Python/vendor/pypdf/_version.py",
       "Passed": true
     },
     {
@@ -475,7 +923,15 @@
       "Passed": true
     },
     {
+      "Name": "Portable unique manifest member App/Python/vendor/pypdf/_writer.py",
+      "Passed": true
+    },
+    {
       "Name": "Portable manifest member App/Python/vendor/pypdf/_writer.py",
+      "Passed": true
+    },
+    {
+      "Name": "Portable unique manifest member App/Python/vendor/pypdf/actions/__init__.py",
       "Passed": true
     },
     {
@@ -483,7 +939,15 @@
       "Passed": true
     },
     {
+      "Name": "Portable unique manifest member App/Python/vendor/pypdf/actions/_actions.py",
+      "Passed": true
+    },
+    {
       "Name": "Portable manifest member App/Python/vendor/pypdf/actions/_actions.py",
+      "Passed": true
+    },
+    {
+      "Name": "Portable unique manifest member App/Python/vendor/pypdf/annotations/__init__.py",
       "Passed": true
     },
     {
@@ -491,7 +955,15 @@
       "Passed": true
     },
     {
+      "Name": "Portable unique manifest member App/Python/vendor/pypdf/annotations/_base.py",
+      "Passed": true
+    },
+    {
       "Name": "Portable manifest member App/Python/vendor/pypdf/annotations/_base.py",
+      "Passed": true
+    },
+    {
+      "Name": "Portable unique manifest member App/Python/vendor/pypdf/annotations/_markup_annotations.py",
       "Passed": true
     },
     {
@@ -499,7 +971,15 @@
       "Passed": true
     },
     {
+      "Name": "Portable unique manifest member App/Python/vendor/pypdf/annotations/_non_markup_annotations.py",
+      "Passed": true
+    },
+    {
       "Name": "Portable manifest member App/Python/vendor/pypdf/annotations/_non_markup_annotations.py",
+      "Passed": true
+    },
+    {
+      "Name": "Portable unique manifest member App/Python/vendor/pypdf/constants.py",
       "Passed": true
     },
     {
@@ -507,7 +987,15 @@
       "Passed": true
     },
     {
+      "Name": "Portable unique manifest member App/Python/vendor/pypdf/errors.py",
+      "Passed": true
+    },
+    {
       "Name": "Portable manifest member App/Python/vendor/pypdf/errors.py",
+      "Passed": true
+    },
+    {
+      "Name": "Portable unique manifest member App/Python/vendor/pypdf/filters.py",
       "Passed": true
     },
     {
@@ -515,7 +1003,15 @@
       "Passed": true
     },
     {
+      "Name": "Portable unique manifest member App/Python/vendor/pypdf/generic/__init__.py",
+      "Passed": true
+    },
+    {
       "Name": "Portable manifest member App/Python/vendor/pypdf/generic/__init__.py",
+      "Passed": true
+    },
+    {
+      "Name": "Portable unique manifest member App/Python/vendor/pypdf/generic/_appearance_stream.py",
       "Passed": true
     },
     {
@@ -523,7 +1019,15 @@
       "Passed": true
     },
     {
+      "Name": "Portable unique manifest member App/Python/vendor/pypdf/generic/_base.py",
+      "Passed": true
+    },
+    {
       "Name": "Portable manifest member App/Python/vendor/pypdf/generic/_base.py",
+      "Passed": true
+    },
+    {
+      "Name": "Portable unique manifest member App/Python/vendor/pypdf/generic/_color.py",
       "Passed": true
     },
     {
@@ -531,7 +1035,15 @@
       "Passed": true
     },
     {
+      "Name": "Portable unique manifest member App/Python/vendor/pypdf/generic/_data_structures.py",
+      "Passed": true
+    },
+    {
       "Name": "Portable manifest member App/Python/vendor/pypdf/generic/_data_structures.py",
+      "Passed": true
+    },
+    {
+      "Name": "Portable unique manifest member App/Python/vendor/pypdf/generic/_files.py",
       "Passed": true
     },
     {
@@ -539,7 +1051,15 @@
       "Passed": true
     },
     {
+      "Name": "Portable unique manifest member App/Python/vendor/pypdf/generic/_fit.py",
+      "Passed": true
+    },
+    {
       "Name": "Portable manifest member App/Python/vendor/pypdf/generic/_fit.py",
+      "Passed": true
+    },
+    {
+      "Name": "Portable unique manifest member App/Python/vendor/pypdf/generic/_font.py",
       "Passed": true
     },
     {
@@ -547,7 +1067,15 @@
       "Passed": true
     },
     {
+      "Name": "Portable unique manifest member App/Python/vendor/pypdf/generic/_image_inline.py",
+      "Passed": true
+    },
+    {
       "Name": "Portable manifest member App/Python/vendor/pypdf/generic/_image_inline.py",
+      "Passed": true
+    },
+    {
+      "Name": "Portable unique manifest member App/Python/vendor/pypdf/generic/_image_xobject.py",
       "Passed": true
     },
     {
@@ -555,7 +1083,15 @@
       "Passed": true
     },
     {
+      "Name": "Portable unique manifest member App/Python/vendor/pypdf/generic/_link.py",
+      "Passed": true
+    },
+    {
       "Name": "Portable manifest member App/Python/vendor/pypdf/generic/_link.py",
+      "Passed": true
+    },
+    {
+      "Name": "Portable unique manifest member App/Python/vendor/pypdf/generic/_outline.py",
       "Passed": true
     },
     {
@@ -563,7 +1099,15 @@
       "Passed": true
     },
     {
+      "Name": "Portable unique manifest member App/Python/vendor/pypdf/generic/_rectangle.py",
+      "Passed": true
+    },
+    {
       "Name": "Portable manifest member App/Python/vendor/pypdf/generic/_rectangle.py",
+      "Passed": true
+    },
+    {
+      "Name": "Portable unique manifest member App/Python/vendor/pypdf/generic/_utils.py",
       "Passed": true
     },
     {
@@ -571,7 +1115,15 @@
       "Passed": true
     },
     {
+      "Name": "Portable unique manifest member App/Python/vendor/pypdf/generic/_viewerpref.py",
+      "Passed": true
+    },
+    {
       "Name": "Portable manifest member App/Python/vendor/pypdf/generic/_viewerpref.py",
+      "Passed": true
+    },
+    {
+      "Name": "Portable unique manifest member App/Python/vendor/pypdf/pagerange.py",
       "Passed": true
     },
     {
@@ -579,7 +1131,15 @@
       "Passed": true
     },
     {
+      "Name": "Portable unique manifest member App/Python/vendor/pypdf/papersizes.py",
+      "Passed": true
+    },
+    {
       "Name": "Portable manifest member App/Python/vendor/pypdf/papersizes.py",
+      "Passed": true
+    },
+    {
+      "Name": "Portable unique manifest member App/Python/vendor/pypdf/py.typed",
       "Passed": true
     },
     {
@@ -587,7 +1147,15 @@
       "Passed": true
     },
     {
+      "Name": "Portable unique manifest member App/Python/vendor/pypdf/types.py",
+      "Passed": true
+    },
+    {
       "Name": "Portable manifest member App/Python/vendor/pypdf/types.py",
+      "Passed": true
+    },
+    {
+      "Name": "Portable unique manifest member App/Python/vendor/pypdf/xmp.py",
       "Passed": true
     },
     {
@@ -595,7 +1163,15 @@
       "Passed": true
     },
     {
+      "Name": "Portable unique manifest member App/Reference/Siemens_QA_Guide.html",
+      "Passed": true
+    },
+    {
       "Name": "Portable manifest member App/Reference/Siemens_QA_Guide.html",
+      "Passed": true
+    },
+    {
+      "Name": "Portable unique manifest member App/Reports.psm1",
       "Passed": true
     },
     {
@@ -603,7 +1179,15 @@
       "Passed": true
     },
     {
+      "Name": "Portable unique manifest member App/Review.psm1",
+      "Passed": true
+    },
+    {
       "Name": "Portable manifest member App/Review.psm1",
+      "Passed": true
+    },
+    {
+      "Name": "Portable unique manifest member App/ReviewQueueUi.ps1",
       "Passed": true
     },
     {
@@ -611,7 +1195,15 @@
       "Passed": true
     },
     {
+      "Name": "Portable unique manifest member App/ReviewQueueWindow.xaml",
+      "Passed": true
+    },
+    {
       "Name": "Portable manifest member App/ReviewQueueWindow.xaml",
+      "Passed": true
+    },
+    {
+      "Name": "Portable unique manifest member App/Search.psm1",
       "Passed": true
     },
     {
@@ -619,7 +1211,15 @@
       "Passed": true
     },
     {
+      "Name": "Portable unique manifest member App/Start-Web.ps1",
+      "Passed": true
+    },
+    {
       "Name": "Portable manifest member App/Start-Web.ps1",
+      "Passed": true
+    },
+    {
+      "Name": "Portable unique manifest member App/Start.ps1",
       "Passed": true
     },
     {
@@ -627,7 +1227,15 @@
       "Passed": true
     },
     {
+      "Name": "Portable unique manifest member App/Support.psm1",
+      "Passed": true
+    },
+    {
       "Name": "Portable manifest member App/Support.psm1",
+      "Passed": true
+    },
+    {
+      "Name": "Portable unique manifest member App/SupportDiagnostics.psm1",
       "Passed": true
     },
     {
@@ -635,7 +1243,15 @@
       "Passed": true
     },
     {
+      "Name": "Portable unique manifest member App/TaskWorker.ps1",
+      "Passed": true
+    },
+    {
       "Name": "Portable manifest member App/TaskWorker.ps1",
+      "Passed": true
+    },
+    {
+      "Name": "Portable unique manifest member App/Trends.psm1",
       "Passed": true
     },
     {
@@ -643,7 +1259,15 @@
       "Passed": true
     },
     {
+      "Name": "Portable unique manifest member App/Updates.psm1",
+      "Passed": true
+    },
+    {
       "Name": "Portable manifest member App/Updates.psm1",
+      "Passed": true
+    },
+    {
+      "Name": "Portable unique manifest member App/Upgrade.ps1",
       "Passed": true
     },
     {
@@ -651,7 +1275,15 @@
       "Passed": true
     },
     {
+      "Name": "Portable unique manifest member App/Web/app.css",
+      "Passed": true
+    },
+    {
       "Name": "Portable manifest member App/Web/app.css",
+      "Passed": true
+    },
+    {
+      "Name": "Portable unique manifest member App/Web/app.js",
       "Passed": true
     },
     {
@@ -659,7 +1291,15 @@
       "Passed": true
     },
     {
+      "Name": "Portable unique manifest member App/Web/index.html",
+      "Passed": true
+    },
+    {
       "Name": "Portable manifest member App/Web/index.html",
+      "Passed": true
+    },
+    {
+      "Name": "Portable unique manifest member App/Web/trends.js",
       "Passed": true
     },
     {
@@ -667,7 +1307,15 @@
       "Passed": true
     },
     {
+      "Name": "Portable unique manifest member App/WebService.psm1",
+      "Passed": true
+    },
+    {
       "Name": "Portable manifest member App/WebService.psm1",
+      "Passed": true
+    },
+    {
+      "Name": "Portable unique manifest member App/WebWorker.ps1",
       "Passed": true
     },
     {
@@ -675,7 +1323,15 @@
       "Passed": true
     },
     {
+      "Name": "Portable unique manifest member App/Workspace.psm1",
+      "Passed": true
+    },
+    {
       "Name": "Portable manifest member App/Workspace.psm1",
+      "Passed": true
+    },
+    {
+      "Name": "Portable unique manifest member Config/Settings.json",
       "Passed": true
     },
     {
@@ -683,7 +1339,15 @@
       "Passed": true
     },
     {
+      "Name": "Portable unique manifest member Package.json",
+      "Passed": true
+    },
+    {
       "Name": "Portable manifest member Package.json",
+      "Passed": true
+    },
+    {
+      "Name": "Portable unique manifest member Start CT QA Manager.cmd",
       "Passed": true
     },
     {
@@ -691,7 +1355,19 @@
       "Passed": true
     },
     {
+      "Name": "Portable unique manifest member User Guide.html",
+      "Passed": true
+    },
+    {
       "Name": "Portable manifest member User Guide.html",
+      "Passed": true
+    },
+    {
+      "Name": "Portable manifest covers every program payload member exactly once",
+      "Passed": true
+    },
+    {
+      "Name": "Portable calendar uses only JavaScript paths accepted by the old updater",
       "Passed": true
     },
     {
@@ -707,7 +1383,7 @@
       "Passed": true
     },
     {
-      "Name": "Update metadata declares5.4.0",
+      "Name": "Update metadata declares5.5.0",
       "Passed": true
     },
     {
@@ -723,7 +1399,15 @@
       "Passed": true
     },
     {
+      "Name": "Update unique manifest member App/ApplyNetworkUpdate.ps1",
+      "Passed": true
+    },
+    {
       "Name": "Update manifest member App/ApplyNetworkUpdate.ps1",
+      "Passed": true
+    },
+    {
+      "Name": "Update unique manifest member App/Archive.psm1",
       "Passed": true
     },
     {
@@ -731,7 +1415,15 @@
       "Passed": true
     },
     {
+      "Name": "Update unique manifest member App/Browse.psm1",
+      "Passed": true
+    },
+    {
       "Name": "Update manifest member App/Browse.psm1",
+      "Passed": true
+    },
+    {
+      "Name": "Update unique manifest member App/ContentClassifier.psm1",
       "Passed": true
     },
     {
@@ -739,7 +1431,15 @@
       "Passed": true
     },
     {
+      "Name": "Update unique manifest member App/Credentials.psm1",
+      "Passed": true
+    },
+    {
       "Name": "Update manifest member App/Credentials.psm1",
+      "Passed": true
+    },
+    {
+      "Name": "Update unique manifest member App/ExportDiagnostics.ps1",
       "Passed": true
     },
     {
@@ -747,7 +1447,15 @@
       "Passed": true
     },
     {
+      "Name": "Update unique manifest member App/Host/ASPNETCORE-LICENSE.txt",
+      "Passed": true
+    },
+    {
       "Name": "Update manifest member App/Host/ASPNETCORE-LICENSE.txt",
+      "Passed": true
+    },
+    {
+      "Name": "Update unique manifest member App/Host/ASPNETCORE-THIRD-PARTY-NOTICES.TXT",
       "Passed": true
     },
     {
@@ -755,7 +1463,15 @@
       "Passed": true
     },
     {
+      "Name": "Update unique manifest member App/Host/CTQa.Host.exe",
+      "Passed": true
+    },
+    {
       "Name": "Update manifest member App/Host/CTQa.Host.exe",
+      "Passed": true
+    },
+    {
+      "Name": "Update unique manifest member App/Host/DOTNET-LICENSE.TXT",
       "Passed": true
     },
     {
@@ -763,7 +1479,15 @@
       "Passed": true
     },
     {
+      "Name": "Update unique manifest member App/Host/DOTNET-THIRD-PARTY-NOTICES.TXT",
+      "Passed": true
+    },
+    {
       "Name": "Update manifest member App/Host/DOTNET-THIRD-PARTY-NOTICES.TXT",
+      "Passed": true
+    },
+    {
+      "Name": "Update unique manifest member App/Insights.psm1",
       "Passed": true
     },
     {
@@ -771,7 +1495,15 @@
       "Passed": true
     },
     {
+      "Name": "Update unique manifest member App/InstallUpdate.ps1",
+      "Passed": true
+    },
+    {
       "Name": "Update manifest member App/InstallUpdate.ps1",
+      "Passed": true
+    },
+    {
+      "Name": "Update unique manifest member App/Lib/PdfPig/Integrity.json",
       "Passed": true
     },
     {
@@ -779,7 +1511,15 @@
       "Passed": true
     },
     {
+      "Name": "Update unique manifest member App/Lib/PdfPig/LICENSE-Microsoft.txt",
+      "Passed": true
+    },
+    {
       "Name": "Update manifest member App/Lib/PdfPig/LICENSE-Microsoft.txt",
+      "Passed": true
+    },
+    {
+      "Name": "Update unique manifest member App/Lib/PdfPig/LICENSE-PdfPig.txt",
       "Passed": true
     },
     {
@@ -787,7 +1527,15 @@
       "Passed": true
     },
     {
+      "Name": "Update unique manifest member App/Lib/PdfPig/Microsoft.Bcl.HashCode.dll",
+      "Passed": true
+    },
+    {
       "Name": "Update manifest member App/Lib/PdfPig/Microsoft.Bcl.HashCode.dll",
+      "Passed": true
+    },
+    {
+      "Name": "Update unique manifest member App/Lib/PdfPig/NOTICES-PdfPig.txt",
       "Passed": true
     },
     {
@@ -795,7 +1543,15 @@
       "Passed": true
     },
     {
+      "Name": "Update unique manifest member App/Lib/PdfPig/README.txt",
+      "Passed": true
+    },
+    {
       "Name": "Update manifest member App/Lib/PdfPig/README.txt",
+      "Passed": true
+    },
+    {
+      "Name": "Update unique manifest member App/Lib/PdfPig/System.Buffers.dll",
       "Passed": true
     },
     {
@@ -803,7 +1559,15 @@
       "Passed": true
     },
     {
+      "Name": "Update unique manifest member App/Lib/PdfPig/System.Memory.dll",
+      "Passed": true
+    },
+    {
       "Name": "Update manifest member App/Lib/PdfPig/System.Memory.dll",
+      "Passed": true
+    },
+    {
+      "Name": "Update unique manifest member App/Lib/PdfPig/System.Numerics.Vectors.dll",
       "Passed": true
     },
     {
@@ -811,7 +1575,15 @@
       "Passed": true
     },
     {
+      "Name": "Update unique manifest member App/Lib/PdfPig/System.Runtime.CompilerServices.Unsafe.dll",
+      "Passed": true
+    },
+    {
       "Name": "Update manifest member App/Lib/PdfPig/System.Runtime.CompilerServices.Unsafe.dll",
+      "Passed": true
+    },
+    {
+      "Name": "Update unique manifest member App/Lib/PdfPig/UglyToad.PdfPig.Core.dll",
       "Passed": true
     },
     {
@@ -819,7 +1591,15 @@
       "Passed": true
     },
     {
+      "Name": "Update unique manifest member App/Lib/PdfPig/UglyToad.PdfPig.DocumentLayoutAnalysis.dll",
+      "Passed": true
+    },
+    {
       "Name": "Update manifest member App/Lib/PdfPig/UglyToad.PdfPig.DocumentLayoutAnalysis.dll",
+      "Passed": true
+    },
+    {
+      "Name": "Update unique manifest member App/Lib/PdfPig/UglyToad.PdfPig.Fonts.dll",
       "Passed": true
     },
     {
@@ -827,7 +1607,15 @@
       "Passed": true
     },
     {
+      "Name": "Update unique manifest member App/Lib/PdfPig/UglyToad.PdfPig.Package.dll",
+      "Passed": true
+    },
+    {
       "Name": "Update manifest member App/Lib/PdfPig/UglyToad.PdfPig.Package.dll",
+      "Passed": true
+    },
+    {
+      "Name": "Update unique manifest member App/Lib/PdfPig/UglyToad.PdfPig.Tokenization.dll",
       "Passed": true
     },
     {
@@ -835,7 +1623,15 @@
       "Passed": true
     },
     {
+      "Name": "Update unique manifest member App/Lib/PdfPig/UglyToad.PdfPig.Tokens.dll",
+      "Passed": true
+    },
+    {
       "Name": "Update manifest member App/Lib/PdfPig/UglyToad.PdfPig.Tokens.dll",
+      "Passed": true
+    },
+    {
+      "Name": "Update unique manifest member App/Lib/PdfPig/UglyToad.PdfPig.dll",
       "Passed": true
     },
     {
@@ -843,7 +1639,15 @@
       "Passed": true
     },
     {
+      "Name": "Update unique manifest member App/MainWindow.xaml",
+      "Passed": true
+    },
+    {
       "Name": "Update manifest member App/MainWindow.xaml",
+      "Passed": true
+    },
+    {
+      "Name": "Update unique manifest member App/Maintenance.psm1",
       "Passed": true
     },
     {
@@ -851,7 +1655,15 @@
       "Passed": true
     },
     {
+      "Name": "Update unique manifest member App/MeasurementParser.psm1",
+      "Passed": true
+    },
+    {
       "Name": "Update manifest member App/MeasurementParser.psm1",
+      "Passed": true
+    },
+    {
+      "Name": "Update unique manifest member App/Navigator.psm1",
       "Passed": true
     },
     {
@@ -859,7 +1671,15 @@
       "Passed": true
     },
     {
+      "Name": "Update unique manifest member App/Network.psm1",
+      "Passed": true
+    },
+    {
       "Name": "Update manifest member App/Network.psm1",
+      "Passed": true
+    },
+    {
+      "Name": "Update unique manifest member App/PdfPreview.psm1",
       "Passed": true
     },
     {
@@ -867,7 +1687,15 @@
       "Passed": true
     },
     {
+      "Name": "Update unique manifest member App/PdfReader.psm1",
+      "Passed": true
+    },
+    {
       "Name": "Update manifest member App/PdfReader.psm1",
+      "Passed": true
+    },
+    {
+      "Name": "Update unique manifest member App/Process.psm1",
       "Passed": true
     },
     {
@@ -875,7 +1703,15 @@
       "Passed": true
     },
     {
+      "Name": "Update unique manifest member App/Python/Integrity.json",
+      "Passed": true
+    },
+    {
       "Name": "Update manifest member App/Python/Integrity.json",
+      "Passed": true
+    },
+    {
+      "Name": "Update unique manifest member App/Python/Sources.json",
       "Passed": true
     },
     {
@@ -883,7 +1719,15 @@
       "Passed": true
     },
     {
+      "Name": "Update unique manifest member App/Python/read_pdf.py",
+      "Passed": true
+    },
+    {
       "Name": "Update manifest member App/Python/read_pdf.py",
+      "Passed": true
+    },
+    {
+      "Name": "Update unique manifest member App/Python/runtime/LICENSE.txt",
       "Passed": true
     },
     {
@@ -891,7 +1735,15 @@
       "Passed": true
     },
     {
+      "Name": "Update unique manifest member App/Python/runtime/_asyncio.pyd",
+      "Passed": true
+    },
+    {
       "Name": "Update manifest member App/Python/runtime/_asyncio.pyd",
+      "Passed": true
+    },
+    {
+      "Name": "Update unique manifest member App/Python/runtime/_bz2.pyd",
       "Passed": true
     },
     {
@@ -899,7 +1751,15 @@
       "Passed": true
     },
     {
+      "Name": "Update unique manifest member App/Python/runtime/_ctypes.pyd",
+      "Passed": true
+    },
+    {
       "Name": "Update manifest member App/Python/runtime/_ctypes.pyd",
+      "Passed": true
+    },
+    {
+      "Name": "Update unique manifest member App/Python/runtime/_decimal.pyd",
       "Passed": true
     },
     {
@@ -907,7 +1767,15 @@
       "Passed": true
     },
     {
+      "Name": "Update unique manifest member App/Python/runtime/_elementtree.pyd",
+      "Passed": true
+    },
+    {
       "Name": "Update manifest member App/Python/runtime/_elementtree.pyd",
+      "Passed": true
+    },
+    {
+      "Name": "Update unique manifest member App/Python/runtime/_hashlib.pyd",
       "Passed": true
     },
     {
@@ -915,7 +1783,15 @@
       "Passed": true
     },
     {
+      "Name": "Update unique manifest member App/Python/runtime/_lzma.pyd",
+      "Passed": true
+    },
+    {
       "Name": "Update manifest member App/Python/runtime/_lzma.pyd",
+      "Passed": true
+    },
+    {
+      "Name": "Update unique manifest member App/Python/runtime/_multiprocessing.pyd",
       "Passed": true
     },
     {
@@ -923,7 +1799,15 @@
       "Passed": true
     },
     {
+      "Name": "Update unique manifest member App/Python/runtime/_overlapped.pyd",
+      "Passed": true
+    },
+    {
       "Name": "Update manifest member App/Python/runtime/_overlapped.pyd",
+      "Passed": true
+    },
+    {
+      "Name": "Update unique manifest member App/Python/runtime/_queue.pyd",
       "Passed": true
     },
     {
@@ -931,7 +1815,15 @@
       "Passed": true
     },
     {
+      "Name": "Update unique manifest member App/Python/runtime/_remote_debugging.pyd",
+      "Passed": true
+    },
+    {
       "Name": "Update manifest member App/Python/runtime/_remote_debugging.pyd",
+      "Passed": true
+    },
+    {
+      "Name": "Update unique manifest member App/Python/runtime/_socket.pyd",
       "Passed": true
     },
     {
@@ -939,7 +1831,15 @@
       "Passed": true
     },
     {
+      "Name": "Update unique manifest member App/Python/runtime/_sqlite3.pyd",
+      "Passed": true
+    },
+    {
       "Name": "Update manifest member App/Python/runtime/_sqlite3.pyd",
+      "Passed": true
+    },
+    {
+      "Name": "Update unique manifest member App/Python/runtime/_ssl.pyd",
       "Passed": true
     },
     {
@@ -947,7 +1847,15 @@
       "Passed": true
     },
     {
+      "Name": "Update unique manifest member App/Python/runtime/_uuid.pyd",
+      "Passed": true
+    },
+    {
       "Name": "Update manifest member App/Python/runtime/_uuid.pyd",
+      "Passed": true
+    },
+    {
+      "Name": "Update unique manifest member App/Python/runtime/_wmi.pyd",
       "Passed": true
     },
     {
@@ -955,7 +1863,15 @@
       "Passed": true
     },
     {
+      "Name": "Update unique manifest member App/Python/runtime/_zoneinfo.pyd",
+      "Passed": true
+    },
+    {
       "Name": "Update manifest member App/Python/runtime/_zoneinfo.pyd",
+      "Passed": true
+    },
+    {
+      "Name": "Update unique manifest member App/Python/runtime/_zstd.pyd",
       "Passed": true
     },
     {
@@ -963,7 +1879,15 @@
       "Passed": true
     },
     {
+      "Name": "Update unique manifest member App/Python/runtime/libcrypto-3.dll",
+      "Passed": true
+    },
+    {
       "Name": "Update manifest member App/Python/runtime/libcrypto-3.dll",
+      "Passed": true
+    },
+    {
+      "Name": "Update unique manifest member App/Python/runtime/libffi-8.dll",
       "Passed": true
     },
     {
@@ -971,7 +1895,15 @@
       "Passed": true
     },
     {
+      "Name": "Update unique manifest member App/Python/runtime/libssl-3.dll",
+      "Passed": true
+    },
+    {
       "Name": "Update manifest member App/Python/runtime/libssl-3.dll",
+      "Passed": true
+    },
+    {
+      "Name": "Update unique manifest member App/Python/runtime/libtommath.dll",
       "Passed": true
     },
     {
@@ -979,7 +1911,15 @@
       "Passed": true
     },
     {
+      "Name": "Update unique manifest member App/Python/runtime/pyexpat.pyd",
+      "Passed": true
+    },
+    {
       "Name": "Update manifest member App/Python/runtime/pyexpat.pyd",
+      "Passed": true
+    },
+    {
+      "Name": "Update unique manifest member App/Python/runtime/python.cat",
       "Passed": true
     },
     {
@@ -987,7 +1927,15 @@
       "Passed": true
     },
     {
+      "Name": "Update unique manifest member App/Python/runtime/python.exe",
+      "Passed": true
+    },
+    {
       "Name": "Update manifest member App/Python/runtime/python.exe",
+      "Passed": true
+    },
+    {
+      "Name": "Update unique manifest member App/Python/runtime/python3.dll",
       "Passed": true
     },
     {
@@ -995,7 +1943,15 @@
       "Passed": true
     },
     {
+      "Name": "Update unique manifest member App/Python/runtime/python314._pth",
+      "Passed": true
+    },
+    {
       "Name": "Update manifest member App/Python/runtime/python314._pth",
+      "Passed": true
+    },
+    {
+      "Name": "Update unique manifest member App/Python/runtime/python314.dll",
       "Passed": true
     },
     {
@@ -1003,7 +1959,15 @@
       "Passed": true
     },
     {
+      "Name": "Update unique manifest member App/Python/runtime/python314.zip",
+      "Passed": true
+    },
+    {
       "Name": "Update manifest member App/Python/runtime/python314.zip",
+      "Passed": true
+    },
+    {
+      "Name": "Update unique manifest member App/Python/runtime/pythonw.exe",
       "Passed": true
     },
     {
@@ -1011,7 +1975,15 @@
       "Passed": true
     },
     {
+      "Name": "Update unique manifest member App/Python/runtime/select.pyd",
+      "Passed": true
+    },
+    {
       "Name": "Update manifest member App/Python/runtime/select.pyd",
+      "Passed": true
+    },
+    {
+      "Name": "Update unique manifest member App/Python/runtime/sqlite3.dll",
       "Passed": true
     },
     {
@@ -1019,7 +1991,15 @@
       "Passed": true
     },
     {
+      "Name": "Update unique manifest member App/Python/runtime/unicodedata.pyd",
+      "Passed": true
+    },
+    {
       "Name": "Update manifest member App/Python/runtime/unicodedata.pyd",
+      "Passed": true
+    },
+    {
+      "Name": "Update unique manifest member App/Python/runtime/vcruntime140.dll",
       "Passed": true
     },
     {
@@ -1027,7 +2007,15 @@
       "Passed": true
     },
     {
+      "Name": "Update unique manifest member App/Python/runtime/vcruntime140_1.dll",
+      "Passed": true
+    },
+    {
       "Name": "Update manifest member App/Python/runtime/vcruntime140_1.dll",
+      "Passed": true
+    },
+    {
+      "Name": "Update unique manifest member App/Python/runtime/winsound.pyd",
       "Passed": true
     },
     {
@@ -1035,7 +2023,15 @@
       "Passed": true
     },
     {
+      "Name": "Update unique manifest member App/Python/vendor/pypdf-7.0.1.dist-info/METADATA",
+      "Passed": true
+    },
+    {
       "Name": "Update manifest member App/Python/vendor/pypdf-7.0.1.dist-info/METADATA",
+      "Passed": true
+    },
+    {
+      "Name": "Update unique manifest member App/Python/vendor/pypdf-7.0.1.dist-info/RECORD",
       "Passed": true
     },
     {
@@ -1043,7 +2039,15 @@
       "Passed": true
     },
     {
+      "Name": "Update unique manifest member App/Python/vendor/pypdf-7.0.1.dist-info/WHEEL",
+      "Passed": true
+    },
+    {
       "Name": "Update manifest member App/Python/vendor/pypdf-7.0.1.dist-info/WHEEL",
+      "Passed": true
+    },
+    {
+      "Name": "Update unique manifest member App/Python/vendor/pypdf-7.0.1.dist-info/licenses/LICENSE",
       "Passed": true
     },
     {
@@ -1051,7 +2055,15 @@
       "Passed": true
     },
     {
+      "Name": "Update unique manifest member App/Python/vendor/pypdf/__init__.py",
+      "Passed": true
+    },
+    {
       "Name": "Update manifest member App/Python/vendor/pypdf/__init__.py",
+      "Passed": true
+    },
+    {
+      "Name": "Update unique manifest member App/Python/vendor/pypdf/_cmap.py",
       "Passed": true
     },
     {
@@ -1059,7 +2071,15 @@
       "Passed": true
     },
     {
+      "Name": "Update unique manifest member App/Python/vendor/pypdf/_codecs/__init__.py",
+      "Passed": true
+    },
+    {
       "Name": "Update manifest member App/Python/vendor/pypdf/_codecs/__init__.py",
+      "Passed": true
+    },
+    {
+      "Name": "Update unique manifest member App/Python/vendor/pypdf/_codecs/_codecs.py",
       "Passed": true
     },
     {
@@ -1067,7 +2087,15 @@
       "Passed": true
     },
     {
+      "Name": "Update unique manifest member App/Python/vendor/pypdf/_codecs/adobe_glyphs.py",
+      "Passed": true
+    },
+    {
       "Name": "Update manifest member App/Python/vendor/pypdf/_codecs/adobe_glyphs.py",
+      "Passed": true
+    },
+    {
+      "Name": "Update unique manifest member App/Python/vendor/pypdf/_codecs/core_font_metrics.py",
       "Passed": true
     },
     {
@@ -1075,7 +2103,15 @@
       "Passed": true
     },
     {
+      "Name": "Update unique manifest member App/Python/vendor/pypdf/_codecs/pdfdoc.py",
+      "Passed": true
+    },
+    {
       "Name": "Update manifest member App/Python/vendor/pypdf/_codecs/pdfdoc.py",
+      "Passed": true
+    },
+    {
+      "Name": "Update unique manifest member App/Python/vendor/pypdf/_codecs/std.py",
       "Passed": true
     },
     {
@@ -1083,7 +2119,15 @@
       "Passed": true
     },
     {
+      "Name": "Update unique manifest member App/Python/vendor/pypdf/_codecs/symbol.py",
+      "Passed": true
+    },
+    {
       "Name": "Update manifest member App/Python/vendor/pypdf/_codecs/symbol.py",
+      "Passed": true
+    },
+    {
+      "Name": "Update unique manifest member App/Python/vendor/pypdf/_codecs/zapfding.py",
       "Passed": true
     },
     {
@@ -1091,7 +2135,15 @@
       "Passed": true
     },
     {
+      "Name": "Update unique manifest member App/Python/vendor/pypdf/_configuration.py",
+      "Passed": true
+    },
+    {
       "Name": "Update manifest member App/Python/vendor/pypdf/_configuration.py",
+      "Passed": true
+    },
+    {
+      "Name": "Update unique manifest member App/Python/vendor/pypdf/_crypt_providers/__init__.py",
       "Passed": true
     },
     {
@@ -1099,7 +2151,15 @@
       "Passed": true
     },
     {
+      "Name": "Update unique manifest member App/Python/vendor/pypdf/_crypt_providers/_base.py",
+      "Passed": true
+    },
+    {
       "Name": "Update manifest member App/Python/vendor/pypdf/_crypt_providers/_base.py",
+      "Passed": true
+    },
+    {
+      "Name": "Update unique manifest member App/Python/vendor/pypdf/_crypt_providers/_cryptography.py",
       "Passed": true
     },
     {
@@ -1107,7 +2167,15 @@
       "Passed": true
     },
     {
+      "Name": "Update unique manifest member App/Python/vendor/pypdf/_crypt_providers/_fallback.py",
+      "Passed": true
+    },
+    {
       "Name": "Update manifest member App/Python/vendor/pypdf/_crypt_providers/_fallback.py",
+      "Passed": true
+    },
+    {
+      "Name": "Update unique manifest member App/Python/vendor/pypdf/_crypt_providers/_pycryptodome.py",
       "Passed": true
     },
     {
@@ -1115,7 +2183,15 @@
       "Passed": true
     },
     {
+      "Name": "Update unique manifest member App/Python/vendor/pypdf/_doc_common.py",
+      "Passed": true
+    },
+    {
       "Name": "Update manifest member App/Python/vendor/pypdf/_doc_common.py",
+      "Passed": true
+    },
+    {
+      "Name": "Update unique manifest member App/Python/vendor/pypdf/_encryption.py",
       "Passed": true
     },
     {
@@ -1123,7 +2199,15 @@
       "Passed": true
     },
     {
+      "Name": "Update unique manifest member App/Python/vendor/pypdf/_page.py",
+      "Passed": true
+    },
+    {
       "Name": "Update manifest member App/Python/vendor/pypdf/_page.py",
+      "Passed": true
+    },
+    {
+      "Name": "Update unique manifest member App/Python/vendor/pypdf/_page_labels.py",
       "Passed": true
     },
     {
@@ -1131,7 +2215,15 @@
       "Passed": true
     },
     {
+      "Name": "Update unique manifest member App/Python/vendor/pypdf/_protocols.py",
+      "Passed": true
+    },
+    {
       "Name": "Update manifest member App/Python/vendor/pypdf/_protocols.py",
+      "Passed": true
+    },
+    {
+      "Name": "Update unique manifest member App/Python/vendor/pypdf/_reader.py",
       "Passed": true
     },
     {
@@ -1139,7 +2231,15 @@
       "Passed": true
     },
     {
+      "Name": "Update unique manifest member App/Python/vendor/pypdf/_text_extraction/__init__.py",
+      "Passed": true
+    },
+    {
       "Name": "Update manifest member App/Python/vendor/pypdf/_text_extraction/__init__.py",
+      "Passed": true
+    },
+    {
+      "Name": "Update unique manifest member App/Python/vendor/pypdf/_text_extraction/_layout_mode/__init__.py",
       "Passed": true
     },
     {
@@ -1147,7 +2247,15 @@
       "Passed": true
     },
     {
+      "Name": "Update unique manifest member App/Python/vendor/pypdf/_text_extraction/_layout_mode/_fixed_width_page.py",
+      "Passed": true
+    },
+    {
       "Name": "Update manifest member App/Python/vendor/pypdf/_text_extraction/_layout_mode/_fixed_width_page.py",
+      "Passed": true
+    },
+    {
+      "Name": "Update unique manifest member App/Python/vendor/pypdf/_text_extraction/_layout_mode/_text_state_manager.py",
       "Passed": true
     },
     {
@@ -1155,7 +2263,15 @@
       "Passed": true
     },
     {
+      "Name": "Update unique manifest member App/Python/vendor/pypdf/_text_extraction/_layout_mode/_text_state_params.py",
+      "Passed": true
+    },
+    {
       "Name": "Update manifest member App/Python/vendor/pypdf/_text_extraction/_layout_mode/_text_state_params.py",
+      "Passed": true
+    },
+    {
+      "Name": "Update unique manifest member App/Python/vendor/pypdf/_text_extraction/_text_extractor.py",
       "Passed": true
     },
     {
@@ -1163,7 +2279,15 @@
       "Passed": true
     },
     {
+      "Name": "Update unique manifest member App/Python/vendor/pypdf/_utils.py",
+      "Passed": true
+    },
+    {
       "Name": "Update manifest member App/Python/vendor/pypdf/_utils.py",
+      "Passed": true
+    },
+    {
+      "Name": "Update unique manifest member App/Python/vendor/pypdf/_version.py",
       "Passed": true
     },
     {
@@ -1171,7 +2295,15 @@
       "Passed": true
     },
     {
+      "Name": "Update unique manifest member App/Python/vendor/pypdf/_writer.py",
+      "Passed": true
+    },
+    {
       "Name": "Update manifest member App/Python/vendor/pypdf/_writer.py",
+      "Passed": true
+    },
+    {
+      "Name": "Update unique manifest member App/Python/vendor/pypdf/actions/__init__.py",
       "Passed": true
     },
     {
@@ -1179,7 +2311,15 @@
       "Passed": true
     },
     {
+      "Name": "Update unique manifest member App/Python/vendor/pypdf/actions/_actions.py",
+      "Passed": true
+    },
+    {
       "Name": "Update manifest member App/Python/vendor/pypdf/actions/_actions.py",
+      "Passed": true
+    },
+    {
+      "Name": "Update unique manifest member App/Python/vendor/pypdf/annotations/__init__.py",
       "Passed": true
     },
     {
@@ -1187,7 +2327,15 @@
       "Passed": true
     },
     {
+      "Name": "Update unique manifest member App/Python/vendor/pypdf/annotations/_base.py",
+      "Passed": true
+    },
+    {
       "Name": "Update manifest member App/Python/vendor/pypdf/annotations/_base.py",
+      "Passed": true
+    },
+    {
+      "Name": "Update unique manifest member App/Python/vendor/pypdf/annotations/_markup_annotations.py",
       "Passed": true
     },
     {
@@ -1195,7 +2343,15 @@
       "Passed": true
     },
     {
+      "Name": "Update unique manifest member App/Python/vendor/pypdf/annotations/_non_markup_annotations.py",
+      "Passed": true
+    },
+    {
       "Name": "Update manifest member App/Python/vendor/pypdf/annotations/_non_markup_annotations.py",
+      "Passed": true
+    },
+    {
+      "Name": "Update unique manifest member App/Python/vendor/pypdf/constants.py",
       "Passed": true
     },
     {
@@ -1203,7 +2359,15 @@
       "Passed": true
     },
     {
+      "Name": "Update unique manifest member App/Python/vendor/pypdf/errors.py",
+      "Passed": true
+    },
+    {
       "Name": "Update manifest member App/Python/vendor/pypdf/errors.py",
+      "Passed": true
+    },
+    {
+      "Name": "Update unique manifest member App/Python/vendor/pypdf/filters.py",
       "Passed": true
     },
     {
@@ -1211,7 +2375,15 @@
       "Passed": true
     },
     {
+      "Name": "Update unique manifest member App/Python/vendor/pypdf/generic/__init__.py",
+      "Passed": true
+    },
+    {
       "Name": "Update manifest member App/Python/vendor/pypdf/generic/__init__.py",
+      "Passed": true
+    },
+    {
+      "Name": "Update unique manifest member App/Python/vendor/pypdf/generic/_appearance_stream.py",
       "Passed": true
     },
     {
@@ -1219,7 +2391,15 @@
       "Passed": true
     },
     {
+      "Name": "Update unique manifest member App/Python/vendor/pypdf/generic/_base.py",
+      "Passed": true
+    },
+    {
       "Name": "Update manifest member App/Python/vendor/pypdf/generic/_base.py",
+      "Passed": true
+    },
+    {
+      "Name": "Update unique manifest member App/Python/vendor/pypdf/generic/_color.py",
       "Passed": true
     },
     {
@@ -1227,7 +2407,15 @@
       "Passed": true
     },
     {
+      "Name": "Update unique manifest member App/Python/vendor/pypdf/generic/_data_structures.py",
+      "Passed": true
+    },
+    {
       "Name": "Update manifest member App/Python/vendor/pypdf/generic/_data_structures.py",
+      "Passed": true
+    },
+    {
+      "Name": "Update unique manifest member App/Python/vendor/pypdf/generic/_files.py",
       "Passed": true
     },
     {
@@ -1235,7 +2423,15 @@
       "Passed": true
     },
     {
+      "Name": "Update unique manifest member App/Python/vendor/pypdf/generic/_fit.py",
+      "Passed": true
+    },
+    {
       "Name": "Update manifest member App/Python/vendor/pypdf/generic/_fit.py",
+      "Passed": true
+    },
+    {
+      "Name": "Update unique manifest member App/Python/vendor/pypdf/generic/_font.py",
       "Passed": true
     },
     {
@@ -1243,7 +2439,15 @@
       "Passed": true
     },
     {
+      "Name": "Update unique manifest member App/Python/vendor/pypdf/generic/_image_inline.py",
+      "Passed": true
+    },
+    {
       "Name": "Update manifest member App/Python/vendor/pypdf/generic/_image_inline.py",
+      "Passed": true
+    },
+    {
+      "Name": "Update unique manifest member App/Python/vendor/pypdf/generic/_image_xobject.py",
       "Passed": true
     },
     {
@@ -1251,7 +2455,15 @@
       "Passed": true
     },
     {
+      "Name": "Update unique manifest member App/Python/vendor/pypdf/generic/_link.py",
+      "Passed": true
+    },
+    {
       "Name": "Update manifest member App/Python/vendor/pypdf/generic/_link.py",
+      "Passed": true
+    },
+    {
+      "Name": "Update unique manifest member App/Python/vendor/pypdf/generic/_outline.py",
       "Passed": true
     },
     {
@@ -1259,7 +2471,15 @@
       "Passed": true
     },
     {
+      "Name": "Update unique manifest member App/Python/vendor/pypdf/generic/_rectangle.py",
+      "Passed": true
+    },
+    {
       "Name": "Update manifest member App/Python/vendor/pypdf/generic/_rectangle.py",
+      "Passed": true
+    },
+    {
+      "Name": "Update unique manifest member App/Python/vendor/pypdf/generic/_utils.py",
       "Passed": true
     },
     {
@@ -1267,7 +2487,15 @@
       "Passed": true
     },
     {
+      "Name": "Update unique manifest member App/Python/vendor/pypdf/generic/_viewerpref.py",
+      "Passed": true
+    },
+    {
       "Name": "Update manifest member App/Python/vendor/pypdf/generic/_viewerpref.py",
+      "Passed": true
+    },
+    {
+      "Name": "Update unique manifest member App/Python/vendor/pypdf/pagerange.py",
       "Passed": true
     },
     {
@@ -1275,7 +2503,15 @@
       "Passed": true
     },
     {
+      "Name": "Update unique manifest member App/Python/vendor/pypdf/papersizes.py",
+      "Passed": true
+    },
+    {
       "Name": "Update manifest member App/Python/vendor/pypdf/papersizes.py",
+      "Passed": true
+    },
+    {
+      "Name": "Update unique manifest member App/Python/vendor/pypdf/py.typed",
       "Passed": true
     },
     {
@@ -1283,7 +2519,15 @@
       "Passed": true
     },
     {
+      "Name": "Update unique manifest member App/Python/vendor/pypdf/types.py",
+      "Passed": true
+    },
+    {
       "Name": "Update manifest member App/Python/vendor/pypdf/types.py",
+      "Passed": true
+    },
+    {
+      "Name": "Update unique manifest member App/Python/vendor/pypdf/xmp.py",
       "Passed": true
     },
     {
@@ -1291,7 +2535,15 @@
       "Passed": true
     },
     {
+      "Name": "Update unique manifest member App/Reference/Siemens_QA_Guide.html",
+      "Passed": true
+    },
+    {
       "Name": "Update manifest member App/Reference/Siemens_QA_Guide.html",
+      "Passed": true
+    },
+    {
+      "Name": "Update unique manifest member App/Reports.psm1",
       "Passed": true
     },
     {
@@ -1299,7 +2551,15 @@
       "Passed": true
     },
     {
+      "Name": "Update unique manifest member App/Review.psm1",
+      "Passed": true
+    },
+    {
       "Name": "Update manifest member App/Review.psm1",
+      "Passed": true
+    },
+    {
+      "Name": "Update unique manifest member App/ReviewQueueUi.ps1",
       "Passed": true
     },
     {
@@ -1307,7 +2567,15 @@
       "Passed": true
     },
     {
+      "Name": "Update unique manifest member App/ReviewQueueWindow.xaml",
+      "Passed": true
+    },
+    {
       "Name": "Update manifest member App/ReviewQueueWindow.xaml",
+      "Passed": true
+    },
+    {
+      "Name": "Update unique manifest member App/Search.psm1",
       "Passed": true
     },
     {
@@ -1315,7 +2583,15 @@
       "Passed": true
     },
     {
+      "Name": "Update unique manifest member App/Start-Web.ps1",
+      "Passed": true
+    },
+    {
       "Name": "Update manifest member App/Start-Web.ps1",
+      "Passed": true
+    },
+    {
+      "Name": "Update unique manifest member App/Start.ps1",
       "Passed": true
     },
     {
@@ -1323,7 +2599,15 @@
       "Passed": true
     },
     {
+      "Name": "Update unique manifest member App/Support.psm1",
+      "Passed": true
+    },
+    {
       "Name": "Update manifest member App/Support.psm1",
+      "Passed": true
+    },
+    {
+      "Name": "Update unique manifest member App/SupportDiagnostics.psm1",
       "Passed": true
     },
     {
@@ -1331,7 +2615,15 @@
       "Passed": true
     },
     {
+      "Name": "Update unique manifest member App/TaskWorker.ps1",
+      "Passed": true
+    },
+    {
       "Name": "Update manifest member App/TaskWorker.ps1",
+      "Passed": true
+    },
+    {
+      "Name": "Update unique manifest member App/Trends.psm1",
       "Passed": true
     },
     {
@@ -1339,7 +2631,15 @@
       "Passed": true
     },
     {
+      "Name": "Update unique manifest member App/Updates.psm1",
+      "Passed": true
+    },
+    {
       "Name": "Update manifest member App/Updates.psm1",
+      "Passed": true
+    },
+    {
+      "Name": "Update unique manifest member App/Upgrade.ps1",
       "Passed": true
     },
     {
@@ -1347,7 +2647,15 @@
       "Passed": true
     },
     {
+      "Name": "Update unique manifest member App/Web/app.css",
+      "Passed": true
+    },
+    {
       "Name": "Update manifest member App/Web/app.css",
+      "Passed": true
+    },
+    {
+      "Name": "Update unique manifest member App/Web/app.js",
       "Passed": true
     },
     {
@@ -1355,7 +2663,15 @@
       "Passed": true
     },
     {
+      "Name": "Update unique manifest member App/Web/index.html",
+      "Passed": true
+    },
+    {
       "Name": "Update manifest member App/Web/index.html",
+      "Passed": true
+    },
+    {
+      "Name": "Update unique manifest member App/Web/trends.js",
       "Passed": true
     },
     {
@@ -1363,7 +2679,15 @@
       "Passed": true
     },
     {
+      "Name": "Update unique manifest member App/WebService.psm1",
+      "Passed": true
+    },
+    {
       "Name": "Update manifest member App/WebService.psm1",
+      "Passed": true
+    },
+    {
+      "Name": "Update unique manifest member App/WebWorker.ps1",
       "Passed": true
     },
     {
@@ -1371,7 +2695,15 @@
       "Passed": true
     },
     {
+      "Name": "Update unique manifest member App/Workspace.psm1",
+      "Passed": true
+    },
+    {
       "Name": "Update manifest member App/Workspace.psm1",
+      "Passed": true
+    },
+    {
+      "Name": "Update unique manifest member Config/Settings.json",
       "Passed": true
     },
     {
@@ -1379,7 +2711,15 @@
       "Passed": true
     },
     {
+      "Name": "Update unique manifest member Package.json",
+      "Passed": true
+    },
+    {
       "Name": "Update manifest member Package.json",
+      "Passed": true
+    },
+    {
+      "Name": "Update unique manifest member Start CT QA Manager.cmd",
       "Passed": true
     },
     {
@@ -1387,7 +2727,19 @@
       "Passed": true
     },
     {
+      "Name": "Update unique manifest member User Guide.html",
+      "Passed": true
+    },
+    {
       "Name": "Update manifest member User Guide.html",
+      "Passed": true
+    },
+    {
+      "Name": "Update manifest covers every program payload member exactly once",
+      "Passed": true
+    },
+    {
+      "Name": "Update calendar uses only JavaScript paths accepted by the old updater",
       "Passed": true
     },
     {
@@ -1403,7 +2755,7 @@
       "Passed": true
     },
     {
-      "Name": "Upgrade metadata declares5.4.0",
+      "Name": "Upgrade metadata declares5.5.0",
       "Passed": true
     },
     {
@@ -1419,7 +2771,15 @@
       "Passed": true
     },
     {
+      "Name": "Upgrade unique manifest member App/ApplyNetworkUpdate.ps1",
+      "Passed": true
+    },
+    {
       "Name": "Upgrade manifest member App/ApplyNetworkUpdate.ps1",
+      "Passed": true
+    },
+    {
+      "Name": "Upgrade unique manifest member App/Archive.psm1",
       "Passed": true
     },
     {
@@ -1427,7 +2787,15 @@
       "Passed": true
     },
     {
+      "Name": "Upgrade unique manifest member App/Browse.psm1",
+      "Passed": true
+    },
+    {
       "Name": "Upgrade manifest member App/Browse.psm1",
+      "Passed": true
+    },
+    {
+      "Name": "Upgrade unique manifest member App/ContentClassifier.psm1",
       "Passed": true
     },
     {
@@ -1435,7 +2803,15 @@
       "Passed": true
     },
     {
+      "Name": "Upgrade unique manifest member App/Credentials.psm1",
+      "Passed": true
+    },
+    {
       "Name": "Upgrade manifest member App/Credentials.psm1",
+      "Passed": true
+    },
+    {
+      "Name": "Upgrade unique manifest member App/ExportDiagnostics.ps1",
       "Passed": true
     },
     {
@@ -1443,7 +2819,15 @@
       "Passed": true
     },
     {
+      "Name": "Upgrade unique manifest member App/Host/ASPNETCORE-LICENSE.txt",
+      "Passed": true
+    },
+    {
       "Name": "Upgrade manifest member App/Host/ASPNETCORE-LICENSE.txt",
+      "Passed": true
+    },
+    {
+      "Name": "Upgrade unique manifest member App/Host/ASPNETCORE-THIRD-PARTY-NOTICES.TXT",
       "Passed": true
     },
     {
@@ -1451,7 +2835,15 @@
       "Passed": true
     },
     {
+      "Name": "Upgrade unique manifest member App/Host/CTQa.Host.exe",
+      "Passed": true
+    },
+    {
       "Name": "Upgrade manifest member App/Host/CTQa.Host.exe",
+      "Passed": true
+    },
+    {
+      "Name": "Upgrade unique manifest member App/Host/DOTNET-LICENSE.TXT",
       "Passed": true
     },
     {
@@ -1459,7 +2851,15 @@
       "Passed": true
     },
     {
+      "Name": "Upgrade unique manifest member App/Host/DOTNET-THIRD-PARTY-NOTICES.TXT",
+      "Passed": true
+    },
+    {
       "Name": "Upgrade manifest member App/Host/DOTNET-THIRD-PARTY-NOTICES.TXT",
+      "Passed": true
+    },
+    {
+      "Name": "Upgrade unique manifest member App/Insights.psm1",
       "Passed": true
     },
     {
@@ -1467,7 +2867,15 @@
       "Passed": true
     },
     {
+      "Name": "Upgrade unique manifest member App/InstallUpdate.ps1",
+      "Passed": true
+    },
+    {
       "Name": "Upgrade manifest member App/InstallUpdate.ps1",
+      "Passed": true
+    },
+    {
+      "Name": "Upgrade unique manifest member App/Lib/PdfPig/Integrity.json",
       "Passed": true
     },
     {
@@ -1475,7 +2883,15 @@
       "Passed": true
     },
     {
+      "Name": "Upgrade unique manifest member App/Lib/PdfPig/LICENSE-Microsoft.txt",
+      "Passed": true
+    },
+    {
       "Name": "Upgrade manifest member App/Lib/PdfPig/LICENSE-Microsoft.txt",
+      "Passed": true
+    },
+    {
+      "Name": "Upgrade unique manifest member App/Lib/PdfPig/LICENSE-PdfPig.txt",
       "Passed": true
     },
     {
@@ -1483,7 +2899,15 @@
       "Passed": true
     },
     {
+      "Name": "Upgrade unique manifest member App/Lib/PdfPig/Microsoft.Bcl.HashCode.dll",
+      "Passed": true
+    },
+    {
       "Name": "Upgrade manifest member App/Lib/PdfPig/Microsoft.Bcl.HashCode.dll",
+      "Passed": true
+    },
+    {
+      "Name": "Upgrade unique manifest member App/Lib/PdfPig/NOTICES-PdfPig.txt",
       "Passed": true
     },
     {
@@ -1491,7 +2915,15 @@
       "Passed": true
     },
     {
+      "Name": "Upgrade unique manifest member App/Lib/PdfPig/README.txt",
+      "Passed": true
+    },
+    {
       "Name": "Upgrade manifest member App/Lib/PdfPig/README.txt",
+      "Passed": true
+    },
+    {
+      "Name": "Upgrade unique manifest member App/Lib/PdfPig/System.Buffers.dll",
       "Passed": true
     },
     {
@@ -1499,7 +2931,15 @@
       "Passed": true
     },
     {
+      "Name": "Upgrade unique manifest member App/Lib/PdfPig/System.Memory.dll",
+      "Passed": true
+    },
+    {
       "Name": "Upgrade manifest member App/Lib/PdfPig/System.Memory.dll",
+      "Passed": true
+    },
+    {
+      "Name": "Upgrade unique manifest member App/Lib/PdfPig/System.Numerics.Vectors.dll",
       "Passed": true
     },
     {
@@ -1507,7 +2947,15 @@
       "Passed": true
     },
     {
+      "Name": "Upgrade unique manifest member App/Lib/PdfPig/System.Runtime.CompilerServices.Unsafe.dll",
+      "Passed": true
+    },
+    {
       "Name": "Upgrade manifest member App/Lib/PdfPig/System.Runtime.CompilerServices.Unsafe.dll",
+      "Passed": true
+    },
+    {
+      "Name": "Upgrade unique manifest member App/Lib/PdfPig/UglyToad.PdfPig.Core.dll",
       "Passed": true
     },
     {
@@ -1515,7 +2963,15 @@
       "Passed": true
     },
     {
+      "Name": "Upgrade unique manifest member App/Lib/PdfPig/UglyToad.PdfPig.DocumentLayoutAnalysis.dll",
+      "Passed": true
+    },
+    {
       "Name": "Upgrade manifest member App/Lib/PdfPig/UglyToad.PdfPig.DocumentLayoutAnalysis.dll",
+      "Passed": true
+    },
+    {
+      "Name": "Upgrade unique manifest member App/Lib/PdfPig/UglyToad.PdfPig.Fonts.dll",
       "Passed": true
     },
     {
@@ -1523,7 +2979,15 @@
       "Passed": true
     },
     {
+      "Name": "Upgrade unique manifest member App/Lib/PdfPig/UglyToad.PdfPig.Package.dll",
+      "Passed": true
+    },
+    {
       "Name": "Upgrade manifest member App/Lib/PdfPig/UglyToad.PdfPig.Package.dll",
+      "Passed": true
+    },
+    {
+      "Name": "Upgrade unique manifest member App/Lib/PdfPig/UglyToad.PdfPig.Tokenization.dll",
       "Passed": true
     },
     {
@@ -1531,7 +2995,15 @@
       "Passed": true
     },
     {
+      "Name": "Upgrade unique manifest member App/Lib/PdfPig/UglyToad.PdfPig.Tokens.dll",
+      "Passed": true
+    },
+    {
       "Name": "Upgrade manifest member App/Lib/PdfPig/UglyToad.PdfPig.Tokens.dll",
+      "Passed": true
+    },
+    {
+      "Name": "Upgrade unique manifest member App/Lib/PdfPig/UglyToad.PdfPig.dll",
       "Passed": true
     },
     {
@@ -1539,7 +3011,15 @@
       "Passed": true
     },
     {
+      "Name": "Upgrade unique manifest member App/MainWindow.xaml",
+      "Passed": true
+    },
+    {
       "Name": "Upgrade manifest member App/MainWindow.xaml",
+      "Passed": true
+    },
+    {
+      "Name": "Upgrade unique manifest member App/Maintenance.psm1",
       "Passed": true
     },
     {
@@ -1547,7 +3027,15 @@
       "Passed": true
     },
     {
+      "Name": "Upgrade unique manifest member App/MeasurementParser.psm1",
+      "Passed": true
+    },
+    {
       "Name": "Upgrade manifest member App/MeasurementParser.psm1",
+      "Passed": true
+    },
+    {
+      "Name": "Upgrade unique manifest member App/Navigator.psm1",
       "Passed": true
     },
     {
@@ -1555,7 +3043,15 @@
       "Passed": true
     },
     {
+      "Name": "Upgrade unique manifest member App/Network.psm1",
+      "Passed": true
+    },
+    {
       "Name": "Upgrade manifest member App/Network.psm1",
+      "Passed": true
+    },
+    {
+      "Name": "Upgrade unique manifest member App/PdfPreview.psm1",
       "Passed": true
     },
     {
@@ -1563,7 +3059,15 @@
       "Passed": true
     },
     {
+      "Name": "Upgrade unique manifest member App/PdfReader.psm1",
+      "Passed": true
+    },
+    {
       "Name": "Upgrade manifest member App/PdfReader.psm1",
+      "Passed": true
+    },
+    {
+      "Name": "Upgrade unique manifest member App/Process.psm1",
       "Passed": true
     },
     {
@@ -1571,7 +3075,15 @@
       "Passed": true
     },
     {
+      "Name": "Upgrade unique manifest member App/Python/Integrity.json",
+      "Passed": true
+    },
+    {
       "Name": "Upgrade manifest member App/Python/Integrity.json",
+      "Passed": true
+    },
+    {
+      "Name": "Upgrade unique manifest member App/Python/Sources.json",
       "Passed": true
     },
     {
@@ -1579,7 +3091,15 @@
       "Passed": true
     },
     {
+      "Name": "Upgrade unique manifest member App/Python/read_pdf.py",
+      "Passed": true
+    },
+    {
       "Name": "Upgrade manifest member App/Python/read_pdf.py",
+      "Passed": true
+    },
+    {
+      "Name": "Upgrade unique manifest member App/Python/runtime/LICENSE.txt",
       "Passed": true
     },
     {
@@ -1587,7 +3107,15 @@
       "Passed": true
     },
     {
+      "Name": "Upgrade unique manifest member App/Python/runtime/_asyncio.pyd",
+      "Passed": true
+    },
+    {
       "Name": "Upgrade manifest member App/Python/runtime/_asyncio.pyd",
+      "Passed": true
+    },
+    {
+      "Name": "Upgrade unique manifest member App/Python/runtime/_bz2.pyd",
       "Passed": true
     },
     {
@@ -1595,7 +3123,15 @@
       "Passed": true
     },
     {
+      "Name": "Upgrade unique manifest member App/Python/runtime/_ctypes.pyd",
+      "Passed": true
+    },
+    {
       "Name": "Upgrade manifest member App/Python/runtime/_ctypes.pyd",
+      "Passed": true
+    },
+    {
+      "Name": "Upgrade unique manifest member App/Python/runtime/_decimal.pyd",
       "Passed": true
     },
     {
@@ -1603,7 +3139,15 @@
       "Passed": true
     },
     {
+      "Name": "Upgrade unique manifest member App/Python/runtime/_elementtree.pyd",
+      "Passed": true
+    },
+    {
       "Name": "Upgrade manifest member App/Python/runtime/_elementtree.pyd",
+      "Passed": true
+    },
+    {
+      "Name": "Upgrade unique manifest member App/Python/runtime/_hashlib.pyd",
       "Passed": true
     },
     {
@@ -1611,7 +3155,15 @@
       "Passed": true
     },
     {
+      "Name": "Upgrade unique manifest member App/Python/runtime/_lzma.pyd",
+      "Passed": true
+    },
+    {
       "Name": "Upgrade manifest member App/Python/runtime/_lzma.pyd",
+      "Passed": true
+    },
+    {
+      "Name": "Upgrade unique manifest member App/Python/runtime/_multiprocessing.pyd",
       "Passed": true
     },
     {
@@ -1619,7 +3171,15 @@
       "Passed": true
     },
     {
+      "Name": "Upgrade unique manifest member App/Python/runtime/_overlapped.pyd",
+      "Passed": true
+    },
+    {
       "Name": "Upgrade manifest member App/Python/runtime/_overlapped.pyd",
+      "Passed": true
+    },
+    {
+      "Name": "Upgrade unique manifest member App/Python/runtime/_queue.pyd",
       "Passed": true
     },
     {
@@ -1627,7 +3187,15 @@
       "Passed": true
     },
     {
+      "Name": "Upgrade unique manifest member App/Python/runtime/_remote_debugging.pyd",
+      "Passed": true
+    },
+    {
       "Name": "Upgrade manifest member App/Python/runtime/_remote_debugging.pyd",
+      "Passed": true
+    },
+    {
+      "Name": "Upgrade unique manifest member App/Python/runtime/_socket.pyd",
       "Passed": true
     },
     {
@@ -1635,7 +3203,15 @@
       "Passed": true
     },
     {
+      "Name": "Upgrade unique manifest member App/Python/runtime/_sqlite3.pyd",
+      "Passed": true
+    },
+    {
       "Name": "Upgrade manifest member App/Python/runtime/_sqlite3.pyd",
+      "Passed": true
+    },
+    {
+      "Name": "Upgrade unique manifest member App/Python/runtime/_ssl.pyd",
       "Passed": true
     },
     {
@@ -1643,7 +3219,15 @@
       "Passed": true
     },
     {
+      "Name": "Upgrade unique manifest member App/Python/runtime/_uuid.pyd",
+      "Passed": true
+    },
+    {
       "Name": "Upgrade manifest member App/Python/runtime/_uuid.pyd",
+      "Passed": true
+    },
+    {
+      "Name": "Upgrade unique manifest member App/Python/runtime/_wmi.pyd",
       "Passed": true
     },
     {
@@ -1651,7 +3235,15 @@
       "Passed": true
     },
     {
+      "Name": "Upgrade unique manifest member App/Python/runtime/_zoneinfo.pyd",
+      "Passed": true
+    },
+    {
       "Name": "Upgrade manifest member App/Python/runtime/_zoneinfo.pyd",
+      "Passed": true
+    },
+    {
+      "Name": "Upgrade unique manifest member App/Python/runtime/_zstd.pyd",
       "Passed": true
     },
     {
@@ -1659,7 +3251,15 @@
       "Passed": true
     },
     {
+      "Name": "Upgrade unique manifest member App/Python/runtime/libcrypto-3.dll",
+      "Passed": true
+    },
+    {
       "Name": "Upgrade manifest member App/Python/runtime/libcrypto-3.dll",
+      "Passed": true
+    },
+    {
+      "Name": "Upgrade unique manifest member App/Python/runtime/libffi-8.dll",
       "Passed": true
     },
     {
@@ -1667,7 +3267,15 @@
       "Passed": true
     },
     {
+      "Name": "Upgrade unique manifest member App/Python/runtime/libssl-3.dll",
+      "Passed": true
+    },
+    {
       "Name": "Upgrade manifest member App/Python/runtime/libssl-3.dll",
+      "Passed": true
+    },
+    {
+      "Name": "Upgrade unique manifest member App/Python/runtime/libtommath.dll",
       "Passed": true
     },
     {
@@ -1675,7 +3283,15 @@
       "Passed": true
     },
     {
+      "Name": "Upgrade unique manifest member App/Python/runtime/pyexpat.pyd",
+      "Passed": true
+    },
+    {
       "Name": "Upgrade manifest member App/Python/runtime/pyexpat.pyd",
+      "Passed": true
+    },
+    {
+      "Name": "Upgrade unique manifest member App/Python/runtime/python.cat",
       "Passed": true
     },
     {
@@ -1683,7 +3299,15 @@
       "Passed": true
     },
     {
+      "Name": "Upgrade unique manifest member App/Python/runtime/python.exe",
+      "Passed": true
+    },
+    {
       "Name": "Upgrade manifest member App/Python/runtime/python.exe",
+      "Passed": true
+    },
+    {
+      "Name": "Upgrade unique manifest member App/Python/runtime/python3.dll",
       "Passed": true
     },
     {
@@ -1691,7 +3315,15 @@
       "Passed": true
     },
     {
+      "Name": "Upgrade unique manifest member App/Python/runtime/python314._pth",
+      "Passed": true
+    },
+    {
       "Name": "Upgrade manifest member App/Python/runtime/python314._pth",
+      "Passed": true
+    },
+    {
+      "Name": "Upgrade unique manifest member App/Python/runtime/python314.dll",
       "Passed": true
     },
     {
@@ -1699,7 +3331,15 @@
       "Passed": true
     },
     {
+      "Name": "Upgrade unique manifest member App/Python/runtime/python314.zip",
+      "Passed": true
+    },
+    {
       "Name": "Upgrade manifest member App/Python/runtime/python314.zip",
+      "Passed": true
+    },
+    {
+      "Name": "Upgrade unique manifest member App/Python/runtime/pythonw.exe",
       "Passed": true
     },
     {
@@ -1707,7 +3347,15 @@
       "Passed": true
     },
     {
+      "Name": "Upgrade unique manifest member App/Python/runtime/select.pyd",
+      "Passed": true
+    },
+    {
       "Name": "Upgrade manifest member App/Python/runtime/select.pyd",
+      "Passed": true
+    },
+    {
+      "Name": "Upgrade unique manifest member App/Python/runtime/sqlite3.dll",
       "Passed": true
     },
     {
@@ -1715,7 +3363,15 @@
       "Passed": true
     },
     {
+      "Name": "Upgrade unique manifest member App/Python/runtime/unicodedata.pyd",
+      "Passed": true
+    },
+    {
       "Name": "Upgrade manifest member App/Python/runtime/unicodedata.pyd",
+      "Passed": true
+    },
+    {
+      "Name": "Upgrade unique manifest member App/Python/runtime/vcruntime140.dll",
       "Passed": true
     },
     {
@@ -1723,7 +3379,15 @@
       "Passed": true
     },
     {
+      "Name": "Upgrade unique manifest member App/Python/runtime/vcruntime140_1.dll",
+      "Passed": true
+    },
+    {
       "Name": "Upgrade manifest member App/Python/runtime/vcruntime140_1.dll",
+      "Passed": true
+    },
+    {
+      "Name": "Upgrade unique manifest member App/Python/runtime/winsound.pyd",
       "Passed": true
     },
     {
@@ -1731,7 +3395,15 @@
       "Passed": true
     },
     {
+      "Name": "Upgrade unique manifest member App/Python/vendor/pypdf-7.0.1.dist-info/METADATA",
+      "Passed": true
+    },
+    {
       "Name": "Upgrade manifest member App/Python/vendor/pypdf-7.0.1.dist-info/METADATA",
+      "Passed": true
+    },
+    {
+      "Name": "Upgrade unique manifest member App/Python/vendor/pypdf-7.0.1.dist-info/RECORD",
       "Passed": true
     },
     {
@@ -1739,7 +3411,15 @@
       "Passed": true
     },
     {
+      "Name": "Upgrade unique manifest member App/Python/vendor/pypdf-7.0.1.dist-info/WHEEL",
+      "Passed": true
+    },
+    {
       "Name": "Upgrade manifest member App/Python/vendor/pypdf-7.0.1.dist-info/WHEEL",
+      "Passed": true
+    },
+    {
+      "Name": "Upgrade unique manifest member App/Python/vendor/pypdf-7.0.1.dist-info/licenses/LICENSE",
       "Passed": true
     },
     {
@@ -1747,7 +3427,15 @@
       "Passed": true
     },
     {
+      "Name": "Upgrade unique manifest member App/Python/vendor/pypdf/__init__.py",
+      "Passed": true
+    },
+    {
       "Name": "Upgrade manifest member App/Python/vendor/pypdf/__init__.py",
+      "Passed": true
+    },
+    {
+      "Name": "Upgrade unique manifest member App/Python/vendor/pypdf/_cmap.py",
       "Passed": true
     },
     {
@@ -1755,7 +3443,15 @@
       "Passed": true
     },
     {
+      "Name": "Upgrade unique manifest member App/Python/vendor/pypdf/_codecs/__init__.py",
+      "Passed": true
+    },
+    {
       "Name": "Upgrade manifest member App/Python/vendor/pypdf/_codecs/__init__.py",
+      "Passed": true
+    },
+    {
+      "Name": "Upgrade unique manifest member App/Python/vendor/pypdf/_codecs/_codecs.py",
       "Passed": true
     },
     {
@@ -1763,7 +3459,15 @@
       "Passed": true
     },
     {
+      "Name": "Upgrade unique manifest member App/Python/vendor/pypdf/_codecs/adobe_glyphs.py",
+      "Passed": true
+    },
+    {
       "Name": "Upgrade manifest member App/Python/vendor/pypdf/_codecs/adobe_glyphs.py",
+      "Passed": true
+    },
+    {
+      "Name": "Upgrade unique manifest member App/Python/vendor/pypdf/_codecs/core_font_metrics.py",
       "Passed": true
     },
     {
@@ -1771,7 +3475,15 @@
       "Passed": true
     },
     {
+      "Name": "Upgrade unique manifest member App/Python/vendor/pypdf/_codecs/pdfdoc.py",
+      "Passed": true
+    },
+    {
       "Name": "Upgrade manifest member App/Python/vendor/pypdf/_codecs/pdfdoc.py",
+      "Passed": true
+    },
+    {
+      "Name": "Upgrade unique manifest member App/Python/vendor/pypdf/_codecs/std.py",
       "Passed": true
     },
     {
@@ -1779,7 +3491,15 @@
       "Passed": true
     },
     {
+      "Name": "Upgrade unique manifest member App/Python/vendor/pypdf/_codecs/symbol.py",
+      "Passed": true
+    },
+    {
       "Name": "Upgrade manifest member App/Python/vendor/pypdf/_codecs/symbol.py",
+      "Passed": true
+    },
+    {
+      "Name": "Upgrade unique manifest member App/Python/vendor/pypdf/_codecs/zapfding.py",
       "Passed": true
     },
     {
@@ -1787,7 +3507,15 @@
       "Passed": true
     },
     {
+      "Name": "Upgrade unique manifest member App/Python/vendor/pypdf/_configuration.py",
+      "Passed": true
+    },
+    {
       "Name": "Upgrade manifest member App/Python/vendor/pypdf/_configuration.py",
+      "Passed": true
+    },
+    {
+      "Name": "Upgrade unique manifest member App/Python/vendor/pypdf/_crypt_providers/__init__.py",
       "Passed": true
     },
     {
@@ -1795,7 +3523,15 @@
       "Passed": true
     },
     {
+      "Name": "Upgrade unique manifest member App/Python/vendor/pypdf/_crypt_providers/_base.py",
+      "Passed": true
+    },
+    {
       "Name": "Upgrade manifest member App/Python/vendor/pypdf/_crypt_providers/_base.py",
+      "Passed": true
+    },
+    {
+      "Name": "Upgrade unique manifest member App/Python/vendor/pypdf/_crypt_providers/_cryptography.py",
       "Passed": true
     },
     {
@@ -1803,7 +3539,15 @@
       "Passed": true
     },
     {
+      "Name": "Upgrade unique manifest member App/Python/vendor/pypdf/_crypt_providers/_fallback.py",
+      "Passed": true
+    },
+    {
       "Name": "Upgrade manifest member App/Python/vendor/pypdf/_crypt_providers/_fallback.py",
+      "Passed": true
+    },
+    {
+      "Name": "Upgrade unique manifest member App/Python/vendor/pypdf/_crypt_providers/_pycryptodome.py",
       "Passed": true
     },
     {
@@ -1811,7 +3555,15 @@
       "Passed": true
     },
     {
+      "Name": "Upgrade unique manifest member App/Python/vendor/pypdf/_doc_common.py",
+      "Passed": true
+    },
+    {
       "Name": "Upgrade manifest member App/Python/vendor/pypdf/_doc_common.py",
+      "Passed": true
+    },
+    {
+      "Name": "Upgrade unique manifest member App/Python/vendor/pypdf/_encryption.py",
       "Passed": true
     },
     {
@@ -1819,7 +3571,15 @@
       "Passed": true
     },
     {
+      "Name": "Upgrade unique manifest member App/Python/vendor/pypdf/_page.py",
+      "Passed": true
+    },
+    {
       "Name": "Upgrade manifest member App/Python/vendor/pypdf/_page.py",
+      "Passed": true
+    },
+    {
+      "Name": "Upgrade unique manifest member App/Python/vendor/pypdf/_page_labels.py",
       "Passed": true
     },
     {
@@ -1827,7 +3587,15 @@
       "Passed": true
     },
     {
+      "Name": "Upgrade unique manifest member App/Python/vendor/pypdf/_protocols.py",
+      "Passed": true
+    },
+    {
       "Name": "Upgrade manifest member App/Python/vendor/pypdf/_protocols.py",
+      "Passed": true
+    },
+    {
+      "Name": "Upgrade unique manifest member App/Python/vendor/pypdf/_reader.py",
       "Passed": true
     },
     {
@@ -1835,7 +3603,15 @@
       "Passed": true
     },
     {
+      "Name": "Upgrade unique manifest member App/Python/vendor/pypdf/_text_extraction/__init__.py",
+      "Passed": true
+    },
+    {
       "Name": "Upgrade manifest member App/Python/vendor/pypdf/_text_extraction/__init__.py",
+      "Passed": true
+    },
+    {
+      "Name": "Upgrade unique manifest member App/Python/vendor/pypdf/_text_extraction/_layout_mode/__init__.py",
       "Passed": true
     },
     {
@@ -1843,7 +3619,15 @@
       "Passed": true
     },
     {
+      "Name": "Upgrade unique manifest member App/Python/vendor/pypdf/_text_extraction/_layout_mode/_fixed_width_page.py",
+      "Passed": true
+    },
+    {
       "Name": "Upgrade manifest member App/Python/vendor/pypdf/_text_extraction/_layout_mode/_fixed_width_page.py",
+      "Passed": true
+    },
+    {
+      "Name": "Upgrade unique manifest member App/Python/vendor/pypdf/_text_extraction/_layout_mode/_text_state_manager.py",
       "Passed": true
     },
     {
@@ -1851,7 +3635,15 @@
       "Passed": true
     },
     {
+      "Name": "Upgrade unique manifest member App/Python/vendor/pypdf/_text_extraction/_layout_mode/_text_state_params.py",
+      "Passed": true
+    },
+    {
       "Name": "Upgrade manifest member App/Python/vendor/pypdf/_text_extraction/_layout_mode/_text_state_params.py",
+      "Passed": true
+    },
+    {
+      "Name": "Upgrade unique manifest member App/Python/vendor/pypdf/_text_extraction/_text_extractor.py",
       "Passed": true
     },
     {
@@ -1859,7 +3651,15 @@
       "Passed": true
     },
     {
+      "Name": "Upgrade unique manifest member App/Python/vendor/pypdf/_utils.py",
+      "Passed": true
+    },
+    {
       "Name": "Upgrade manifest member App/Python/vendor/pypdf/_utils.py",
+      "Passed": true
+    },
+    {
+      "Name": "Upgrade unique manifest member App/Python/vendor/pypdf/_version.py",
       "Passed": true
     },
     {
@@ -1867,7 +3667,15 @@
       "Passed": true
     },
     {
+      "Name": "Upgrade unique manifest member App/Python/vendor/pypdf/_writer.py",
+      "Passed": true
+    },
+    {
       "Name": "Upgrade manifest member App/Python/vendor/pypdf/_writer.py",
+      "Passed": true
+    },
+    {
+      "Name": "Upgrade unique manifest member App/Python/vendor/pypdf/actions/__init__.py",
       "Passed": true
     },
     {
@@ -1875,7 +3683,15 @@
       "Passed": true
     },
     {
+      "Name": "Upgrade unique manifest member App/Python/vendor/pypdf/actions/_actions.py",
+      "Passed": true
+    },
+    {
       "Name": "Upgrade manifest member App/Python/vendor/pypdf/actions/_actions.py",
+      "Passed": true
+    },
+    {
+      "Name": "Upgrade unique manifest member App/Python/vendor/pypdf/annotations/__init__.py",
       "Passed": true
     },
     {
@@ -1883,7 +3699,15 @@
       "Passed": true
     },
     {
+      "Name": "Upgrade unique manifest member App/Python/vendor/pypdf/annotations/_base.py",
+      "Passed": true
+    },
+    {
       "Name": "Upgrade manifest member App/Python/vendor/pypdf/annotations/_base.py",
+      "Passed": true
+    },
+    {
+      "Name": "Upgrade unique manifest member App/Python/vendor/pypdf/annotations/_markup_annotations.py",
       "Passed": true
     },
     {
@@ -1891,7 +3715,15 @@
       "Passed": true
     },
     {
+      "Name": "Upgrade unique manifest member App/Python/vendor/pypdf/annotations/_non_markup_annotations.py",
+      "Passed": true
+    },
+    {
       "Name": "Upgrade manifest member App/Python/vendor/pypdf/annotations/_non_markup_annotations.py",
+      "Passed": true
+    },
+    {
+      "Name": "Upgrade unique manifest member App/Python/vendor/pypdf/constants.py",
       "Passed": true
     },
     {
@@ -1899,7 +3731,15 @@
       "Passed": true
     },
     {
+      "Name": "Upgrade unique manifest member App/Python/vendor/pypdf/errors.py",
+      "Passed": true
+    },
+    {
       "Name": "Upgrade manifest member App/Python/vendor/pypdf/errors.py",
+      "Passed": true
+    },
+    {
+      "Name": "Upgrade unique manifest member App/Python/vendor/pypdf/filters.py",
       "Passed": true
     },
     {
@@ -1907,7 +3747,15 @@
       "Passed": true
     },
     {
+      "Name": "Upgrade unique manifest member App/Python/vendor/pypdf/generic/__init__.py",
+      "Passed": true
+    },
+    {
       "Name": "Upgrade manifest member App/Python/vendor/pypdf/generic/__init__.py",
+      "Passed": true
+    },
+    {
+      "Name": "Upgrade unique manifest member App/Python/vendor/pypdf/generic/_appearance_stream.py",
       "Passed": true
     },
     {
@@ -1915,7 +3763,15 @@
       "Passed": true
     },
     {
+      "Name": "Upgrade unique manifest member App/Python/vendor/pypdf/generic/_base.py",
+      "Passed": true
+    },
+    {
       "Name": "Upgrade manifest member App/Python/vendor/pypdf/generic/_base.py",
+      "Passed": true
+    },
+    {
+      "Name": "Upgrade unique manifest member App/Python/vendor/pypdf/generic/_color.py",
       "Passed": true
     },
     {
@@ -1923,7 +3779,15 @@
       "Passed": true
     },
     {
+      "Name": "Upgrade unique manifest member App/Python/vendor/pypdf/generic/_data_structures.py",
+      "Passed": true
+    },
+    {
       "Name": "Upgrade manifest member App/Python/vendor/pypdf/generic/_data_structures.py",
+      "Passed": true
+    },
+    {
+      "Name": "Upgrade unique manifest member App/Python/vendor/pypdf/generic/_files.py",
       "Passed": true
     },
     {
@@ -1931,7 +3795,15 @@
       "Passed": true
     },
     {
+      "Name": "Upgrade unique manifest member App/Python/vendor/pypdf/generic/_fit.py",
+      "Passed": true
+    },
+    {
       "Name": "Upgrade manifest member App/Python/vendor/pypdf/generic/_fit.py",
+      "Passed": true
+    },
+    {
+      "Name": "Upgrade unique manifest member App/Python/vendor/pypdf/generic/_font.py",
       "Passed": true
     },
     {
@@ -1939,7 +3811,15 @@
       "Passed": true
     },
     {
+      "Name": "Upgrade unique manifest member App/Python/vendor/pypdf/generic/_image_inline.py",
+      "Passed": true
+    },
+    {
       "Name": "Upgrade manifest member App/Python/vendor/pypdf/generic/_image_inline.py",
+      "Passed": true
+    },
+    {
+      "Name": "Upgrade unique manifest member App/Python/vendor/pypdf/generic/_image_xobject.py",
       "Passed": true
     },
     {
@@ -1947,7 +3827,15 @@
       "Passed": true
     },
     {
+      "Name": "Upgrade unique manifest member App/Python/vendor/pypdf/generic/_link.py",
+      "Passed": true
+    },
+    {
       "Name": "Upgrade manifest member App/Python/vendor/pypdf/generic/_link.py",
+      "Passed": true
+    },
+    {
+      "Name": "Upgrade unique manifest member App/Python/vendor/pypdf/generic/_outline.py",
       "Passed": true
     },
     {
@@ -1955,7 +3843,15 @@
       "Passed": true
     },
     {
+      "Name": "Upgrade unique manifest member App/Python/vendor/pypdf/generic/_rectangle.py",
+      "Passed": true
+    },
+    {
       "Name": "Upgrade manifest member App/Python/vendor/pypdf/generic/_rectangle.py",
+      "Passed": true
+    },
+    {
+      "Name": "Upgrade unique manifest member App/Python/vendor/pypdf/generic/_utils.py",
       "Passed": true
     },
     {
@@ -1963,7 +3859,15 @@
       "Passed": true
     },
     {
+      "Name": "Upgrade unique manifest member App/Python/vendor/pypdf/generic/_viewerpref.py",
+      "Passed": true
+    },
+    {
       "Name": "Upgrade manifest member App/Python/vendor/pypdf/generic/_viewerpref.py",
+      "Passed": true
+    },
+    {
+      "Name": "Upgrade unique manifest member App/Python/vendor/pypdf/pagerange.py",
       "Passed": true
     },
     {
@@ -1971,7 +3875,15 @@
       "Passed": true
     },
     {
+      "Name": "Upgrade unique manifest member App/Python/vendor/pypdf/papersizes.py",
+      "Passed": true
+    },
+    {
       "Name": "Upgrade manifest member App/Python/vendor/pypdf/papersizes.py",
+      "Passed": true
+    },
+    {
+      "Name": "Upgrade unique manifest member App/Python/vendor/pypdf/py.typed",
       "Passed": true
     },
     {
@@ -1979,7 +3891,15 @@
       "Passed": true
     },
     {
+      "Name": "Upgrade unique manifest member App/Python/vendor/pypdf/types.py",
+      "Passed": true
+    },
+    {
       "Name": "Upgrade manifest member App/Python/vendor/pypdf/types.py",
+      "Passed": true
+    },
+    {
+      "Name": "Upgrade unique manifest member App/Python/vendor/pypdf/xmp.py",
       "Passed": true
     },
     {
@@ -1987,7 +3907,15 @@
       "Passed": true
     },
     {
+      "Name": "Upgrade unique manifest member App/Reference/Siemens_QA_Guide.html",
+      "Passed": true
+    },
+    {
       "Name": "Upgrade manifest member App/Reference/Siemens_QA_Guide.html",
+      "Passed": true
+    },
+    {
+      "Name": "Upgrade unique manifest member App/Reports.psm1",
       "Passed": true
     },
     {
@@ -1995,7 +3923,15 @@
       "Passed": true
     },
     {
+      "Name": "Upgrade unique manifest member App/Review.psm1",
+      "Passed": true
+    },
+    {
       "Name": "Upgrade manifest member App/Review.psm1",
+      "Passed": true
+    },
+    {
+      "Name": "Upgrade unique manifest member App/ReviewQueueUi.ps1",
       "Passed": true
     },
     {
@@ -2003,7 +3939,15 @@
       "Passed": true
     },
     {
+      "Name": "Upgrade unique manifest member App/ReviewQueueWindow.xaml",
+      "Passed": true
+    },
+    {
       "Name": "Upgrade manifest member App/ReviewQueueWindow.xaml",
+      "Passed": true
+    },
+    {
+      "Name": "Upgrade unique manifest member App/Search.psm1",
       "Passed": true
     },
     {
@@ -2011,7 +3955,15 @@
       "Passed": true
     },
     {
+      "Name": "Upgrade unique manifest member App/Start-Web.ps1",
+      "Passed": true
+    },
+    {
       "Name": "Upgrade manifest member App/Start-Web.ps1",
+      "Passed": true
+    },
+    {
+      "Name": "Upgrade unique manifest member App/Start.ps1",
       "Passed": true
     },
     {
@@ -2019,7 +3971,15 @@
       "Passed": true
     },
     {
+      "Name": "Upgrade unique manifest member App/Support.psm1",
+      "Passed": true
+    },
+    {
       "Name": "Upgrade manifest member App/Support.psm1",
+      "Passed": true
+    },
+    {
+      "Name": "Upgrade unique manifest member App/SupportDiagnostics.psm1",
       "Passed": true
     },
     {
@@ -2027,7 +3987,15 @@
       "Passed": true
     },
     {
+      "Name": "Upgrade unique manifest member App/TaskWorker.ps1",
+      "Passed": true
+    },
+    {
       "Name": "Upgrade manifest member App/TaskWorker.ps1",
+      "Passed": true
+    },
+    {
+      "Name": "Upgrade unique manifest member App/Trends.psm1",
       "Passed": true
     },
     {
@@ -2035,7 +4003,15 @@
       "Passed": true
     },
     {
+      "Name": "Upgrade unique manifest member App/Updates.psm1",
+      "Passed": true
+    },
+    {
       "Name": "Upgrade manifest member App/Updates.psm1",
+      "Passed": true
+    },
+    {
+      "Name": "Upgrade unique manifest member App/Upgrade.ps1",
       "Passed": true
     },
     {
@@ -2043,7 +4019,15 @@
       "Passed": true
     },
     {
+      "Name": "Upgrade unique manifest member App/Web/app.css",
+      "Passed": true
+    },
+    {
       "Name": "Upgrade manifest member App/Web/app.css",
+      "Passed": true
+    },
+    {
+      "Name": "Upgrade unique manifest member App/Web/app.js",
       "Passed": true
     },
     {
@@ -2051,7 +4035,15 @@
       "Passed": true
     },
     {
+      "Name": "Upgrade unique manifest member App/Web/index.html",
+      "Passed": true
+    },
+    {
       "Name": "Upgrade manifest member App/Web/index.html",
+      "Passed": true
+    },
+    {
+      "Name": "Upgrade unique manifest member App/Web/trends.js",
       "Passed": true
     },
     {
@@ -2059,7 +4051,15 @@
       "Passed": true
     },
     {
+      "Name": "Upgrade unique manifest member App/WebService.psm1",
+      "Passed": true
+    },
+    {
       "Name": "Upgrade manifest member App/WebService.psm1",
+      "Passed": true
+    },
+    {
+      "Name": "Upgrade unique manifest member App/WebWorker.ps1",
       "Passed": true
     },
     {
@@ -2067,7 +4067,15 @@
       "Passed": true
     },
     {
+      "Name": "Upgrade unique manifest member App/Workspace.psm1",
+      "Passed": true
+    },
+    {
       "Name": "Upgrade manifest member App/Workspace.psm1",
+      "Passed": true
+    },
+    {
+      "Name": "Upgrade unique manifest member Config/Settings.json",
       "Passed": true
     },
     {
@@ -2075,7 +4083,15 @@
       "Passed": true
     },
     {
+      "Name": "Upgrade unique manifest member Package.json",
+      "Passed": true
+    },
+    {
       "Name": "Upgrade manifest member Package.json",
+      "Passed": true
+    },
+    {
+      "Name": "Upgrade unique manifest member Start CT QA Manager.cmd",
       "Passed": true
     },
     {
@@ -2083,7 +4099,19 @@
       "Passed": true
     },
     {
+      "Name": "Upgrade unique manifest member User Guide.html",
+      "Passed": true
+    },
+    {
       "Name": "Upgrade manifest member User Guide.html",
+      "Passed": true
+    },
+    {
+      "Name": "Upgrade manifest covers every program payload member exactly once",
+      "Passed": true
+    },
+    {
+      "Name": "Upgrade calendar uses only JavaScript paths accepted by the old updater",
       "Passed": true
     },
     {
@@ -2099,7 +4127,7 @@
       "Passed": true
     },
     {
-      "Name": "Work_Portable metadata declares5.4.0",
+      "Name": "Work_Portable metadata declares5.5.0",
       "Passed": true
     },
     {
@@ -2115,7 +4143,15 @@
       "Passed": true
     },
     {
+      "Name": "Work_Portable unique manifest member App/ApplyNetworkUpdate.ps1",
+      "Passed": true
+    },
+    {
       "Name": "Work_Portable manifest member App/ApplyNetworkUpdate.ps1",
+      "Passed": true
+    },
+    {
+      "Name": "Work_Portable unique manifest member App/Archive.psm1",
       "Passed": true
     },
     {
@@ -2123,7 +4159,15 @@
       "Passed": true
     },
     {
+      "Name": "Work_Portable unique manifest member App/Browse.psm1",
+      "Passed": true
+    },
+    {
       "Name": "Work_Portable manifest member App/Browse.psm1",
+      "Passed": true
+    },
+    {
+      "Name": "Work_Portable unique manifest member App/ContentClassifier.psm1",
       "Passed": true
     },
     {
@@ -2131,7 +4175,15 @@
       "Passed": true
     },
     {
+      "Name": "Work_Portable unique manifest member App/Credentials.psm1",
+      "Passed": true
+    },
+    {
       "Name": "Work_Portable manifest member App/Credentials.psm1",
+      "Passed": true
+    },
+    {
+      "Name": "Work_Portable unique manifest member App/ExportDiagnostics.ps1",
       "Passed": true
     },
     {
@@ -2139,7 +4191,15 @@
       "Passed": true
     },
     {
+      "Name": "Work_Portable unique manifest member App/Host/ASPNETCORE-LICENSE.txt",
+      "Passed": true
+    },
+    {
       "Name": "Work_Portable manifest member App/Host/ASPNETCORE-LICENSE.txt",
+      "Passed": true
+    },
+    {
+      "Name": "Work_Portable unique manifest member App/Host/ASPNETCORE-THIRD-PARTY-NOTICES.TXT",
       "Passed": true
     },
     {
@@ -2147,7 +4207,15 @@
       "Passed": true
     },
     {
+      "Name": "Work_Portable unique manifest member App/Host/CTQa.Host.exe",
+      "Passed": true
+    },
+    {
       "Name": "Work_Portable manifest member App/Host/CTQa.Host.exe",
+      "Passed": true
+    },
+    {
+      "Name": "Work_Portable unique manifest member App/Host/DOTNET-LICENSE.TXT",
       "Passed": true
     },
     {
@@ -2155,7 +4223,15 @@
       "Passed": true
     },
     {
+      "Name": "Work_Portable unique manifest member App/Host/DOTNET-THIRD-PARTY-NOTICES.TXT",
+      "Passed": true
+    },
+    {
       "Name": "Work_Portable manifest member App/Host/DOTNET-THIRD-PARTY-NOTICES.TXT",
+      "Passed": true
+    },
+    {
+      "Name": "Work_Portable unique manifest member App/Insights.psm1",
       "Passed": true
     },
     {
@@ -2163,7 +4239,15 @@
       "Passed": true
     },
     {
+      "Name": "Work_Portable unique manifest member App/InstallUpdate.ps1",
+      "Passed": true
+    },
+    {
       "Name": "Work_Portable manifest member App/InstallUpdate.ps1",
+      "Passed": true
+    },
+    {
+      "Name": "Work_Portable unique manifest member App/Lib/PdfPig/Integrity.json",
       "Passed": true
     },
     {
@@ -2171,7 +4255,15 @@
       "Passed": true
     },
     {
+      "Name": "Work_Portable unique manifest member App/Lib/PdfPig/LICENSE-Microsoft.txt",
+      "Passed": true
+    },
+    {
       "Name": "Work_Portable manifest member App/Lib/PdfPig/LICENSE-Microsoft.txt",
+      "Passed": true
+    },
+    {
+      "Name": "Work_Portable unique manifest member App/Lib/PdfPig/LICENSE-PdfPig.txt",
       "Passed": true
     },
     {
@@ -2179,7 +4271,15 @@
       "Passed": true
     },
     {
+      "Name": "Work_Portable unique manifest member App/Lib/PdfPig/Microsoft.Bcl.HashCode.dll",
+      "Passed": true
+    },
+    {
       "Name": "Work_Portable manifest member App/Lib/PdfPig/Microsoft.Bcl.HashCode.dll",
+      "Passed": true
+    },
+    {
+      "Name": "Work_Portable unique manifest member App/Lib/PdfPig/NOTICES-PdfPig.txt",
       "Passed": true
     },
     {
@@ -2187,7 +4287,15 @@
       "Passed": true
     },
     {
+      "Name": "Work_Portable unique manifest member App/Lib/PdfPig/README.txt",
+      "Passed": true
+    },
+    {
       "Name": "Work_Portable manifest member App/Lib/PdfPig/README.txt",
+      "Passed": true
+    },
+    {
+      "Name": "Work_Portable unique manifest member App/Lib/PdfPig/System.Buffers.dll",
       "Passed": true
     },
     {
@@ -2195,7 +4303,15 @@
       "Passed": true
     },
     {
+      "Name": "Work_Portable unique manifest member App/Lib/PdfPig/System.Memory.dll",
+      "Passed": true
+    },
+    {
       "Name": "Work_Portable manifest member App/Lib/PdfPig/System.Memory.dll",
+      "Passed": true
+    },
+    {
+      "Name": "Work_Portable unique manifest member App/Lib/PdfPig/System.Numerics.Vectors.dll",
       "Passed": true
     },
     {
@@ -2203,7 +4319,15 @@
       "Passed": true
     },
     {
+      "Name": "Work_Portable unique manifest member App/Lib/PdfPig/System.Runtime.CompilerServices.Unsafe.dll",
+      "Passed": true
+    },
+    {
       "Name": "Work_Portable manifest member App/Lib/PdfPig/System.Runtime.CompilerServices.Unsafe.dll",
+      "Passed": true
+    },
+    {
+      "Name": "Work_Portable unique manifest member App/Lib/PdfPig/UglyToad.PdfPig.Core.dll",
       "Passed": true
     },
     {
@@ -2211,7 +4335,15 @@
       "Passed": true
     },
     {
+      "Name": "Work_Portable unique manifest member App/Lib/PdfPig/UglyToad.PdfPig.DocumentLayoutAnalysis.dll",
+      "Passed": true
+    },
+    {
       "Name": "Work_Portable manifest member App/Lib/PdfPig/UglyToad.PdfPig.DocumentLayoutAnalysis.dll",
+      "Passed": true
+    },
+    {
+      "Name": "Work_Portable unique manifest member App/Lib/PdfPig/UglyToad.PdfPig.Fonts.dll",
       "Passed": true
     },
     {
@@ -2219,7 +4351,15 @@
       "Passed": true
     },
     {
+      "Name": "Work_Portable unique manifest member App/Lib/PdfPig/UglyToad.PdfPig.Package.dll",
+      "Passed": true
+    },
+    {
       "Name": "Work_Portable manifest member App/Lib/PdfPig/UglyToad.PdfPig.Package.dll",
+      "Passed": true
+    },
+    {
+      "Name": "Work_Portable unique manifest member App/Lib/PdfPig/UglyToad.PdfPig.Tokenization.dll",
       "Passed": true
     },
     {
@@ -2227,7 +4367,15 @@
       "Passed": true
     },
     {
+      "Name": "Work_Portable unique manifest member App/Lib/PdfPig/UglyToad.PdfPig.Tokens.dll",
+      "Passed": true
+    },
+    {
       "Name": "Work_Portable manifest member App/Lib/PdfPig/UglyToad.PdfPig.Tokens.dll",
+      "Passed": true
+    },
+    {
+      "Name": "Work_Portable unique manifest member App/Lib/PdfPig/UglyToad.PdfPig.dll",
       "Passed": true
     },
     {
@@ -2235,7 +4383,15 @@
       "Passed": true
     },
     {
+      "Name": "Work_Portable unique manifest member App/MainWindow.xaml",
+      "Passed": true
+    },
+    {
       "Name": "Work_Portable manifest member App/MainWindow.xaml",
+      "Passed": true
+    },
+    {
+      "Name": "Work_Portable unique manifest member App/Maintenance.psm1",
       "Passed": true
     },
     {
@@ -2243,7 +4399,15 @@
       "Passed": true
     },
     {
+      "Name": "Work_Portable unique manifest member App/MeasurementParser.psm1",
+      "Passed": true
+    },
+    {
       "Name": "Work_Portable manifest member App/MeasurementParser.psm1",
+      "Passed": true
+    },
+    {
+      "Name": "Work_Portable unique manifest member App/Navigator.psm1",
       "Passed": true
     },
     {
@@ -2251,7 +4415,15 @@
       "Passed": true
     },
     {
+      "Name": "Work_Portable unique manifest member App/Network.psm1",
+      "Passed": true
+    },
+    {
       "Name": "Work_Portable manifest member App/Network.psm1",
+      "Passed": true
+    },
+    {
+      "Name": "Work_Portable unique manifest member App/PdfPreview.psm1",
       "Passed": true
     },
     {
@@ -2259,7 +4431,15 @@
       "Passed": true
     },
     {
+      "Name": "Work_Portable unique manifest member App/PdfReader.psm1",
+      "Passed": true
+    },
+    {
       "Name": "Work_Portable manifest member App/PdfReader.psm1",
+      "Passed": true
+    },
+    {
+      "Name": "Work_Portable unique manifest member App/Process.psm1",
       "Passed": true
     },
     {
@@ -2267,7 +4447,15 @@
       "Passed": true
     },
     {
+      "Name": "Work_Portable unique manifest member App/Python/Integrity.json",
+      "Passed": true
+    },
+    {
       "Name": "Work_Portable manifest member App/Python/Integrity.json",
+      "Passed": true
+    },
+    {
+      "Name": "Work_Portable unique manifest member App/Python/Sources.json",
       "Passed": true
     },
     {
@@ -2275,7 +4463,15 @@
       "Passed": true
     },
     {
+      "Name": "Work_Portable unique manifest member App/Python/read_pdf.py",
+      "Passed": true
+    },
+    {
       "Name": "Work_Portable manifest member App/Python/read_pdf.py",
+      "Passed": true
+    },
+    {
+      "Name": "Work_Portable unique manifest member App/Python/runtime/LICENSE.txt",
       "Passed": true
     },
     {
@@ -2283,7 +4479,15 @@
       "Passed": true
     },
     {
+      "Name": "Work_Portable unique manifest member App/Python/runtime/_asyncio.pyd",
+      "Passed": true
+    },
+    {
       "Name": "Work_Portable manifest member App/Python/runtime/_asyncio.pyd",
+      "Passed": true
+    },
+    {
+      "Name": "Work_Portable unique manifest member App/Python/runtime/_bz2.pyd",
       "Passed": true
     },
     {
@@ -2291,7 +4495,15 @@
       "Passed": true
     },
     {
+      "Name": "Work_Portable unique manifest member App/Python/runtime/_ctypes.pyd",
+      "Passed": true
+    },
+    {
       "Name": "Work_Portable manifest member App/Python/runtime/_ctypes.pyd",
+      "Passed": true
+    },
+    {
+      "Name": "Work_Portable unique manifest member App/Python/runtime/_decimal.pyd",
       "Passed": true
     },
     {
@@ -2299,7 +4511,15 @@
       "Passed": true
     },
     {
+      "Name": "Work_Portable unique manifest member App/Python/runtime/_elementtree.pyd",
+      "Passed": true
+    },
+    {
       "Name": "Work_Portable manifest member App/Python/runtime/_elementtree.pyd",
+      "Passed": true
+    },
+    {
+      "Name": "Work_Portable unique manifest member App/Python/runtime/_hashlib.pyd",
       "Passed": true
     },
     {
@@ -2307,7 +4527,15 @@
       "Passed": true
     },
     {
+      "Name": "Work_Portable unique manifest member App/Python/runtime/_lzma.pyd",
+      "Passed": true
+    },
+    {
       "Name": "Work_Portable manifest member App/Python/runtime/_lzma.pyd",
+      "Passed": true
+    },
+    {
+      "Name": "Work_Portable unique manifest member App/Python/runtime/_multiprocessing.pyd",
       "Passed": true
     },
     {
@@ -2315,7 +4543,15 @@
       "Passed": true
     },
     {
+      "Name": "Work_Portable unique manifest member App/Python/runtime/_overlapped.pyd",
+      "Passed": true
+    },
+    {
       "Name": "Work_Portable manifest member App/Python/runtime/_overlapped.pyd",
+      "Passed": true
+    },
+    {
+      "Name": "Work_Portable unique manifest member App/Python/runtime/_queue.pyd",
       "Passed": true
     },
     {
@@ -2323,7 +4559,15 @@
       "Passed": true
     },
     {
+      "Name": "Work_Portable unique manifest member App/Python/runtime/_remote_debugging.pyd",
+      "Passed": true
+    },
+    {
       "Name": "Work_Portable manifest member App/Python/runtime/_remote_debugging.pyd",
+      "Passed": true
+    },
+    {
+      "Name": "Work_Portable unique manifest member App/Python/runtime/_socket.pyd",
       "Passed": true
     },
     {
@@ -2331,7 +4575,15 @@
       "Passed": true
     },
     {
+      "Name": "Work_Portable unique manifest member App/Python/runtime/_sqlite3.pyd",
+      "Passed": true
+    },
+    {
       "Name": "Work_Portable manifest member App/Python/runtime/_sqlite3.pyd",
+      "Passed": true
+    },
+    {
+      "Name": "Work_Portable unique manifest member App/Python/runtime/_ssl.pyd",
       "Passed": true
     },
     {
@@ -2339,7 +4591,15 @@
       "Passed": true
     },
     {
+      "Name": "Work_Portable unique manifest member App/Python/runtime/_uuid.pyd",
+      "Passed": true
+    },
+    {
       "Name": "Work_Portable manifest member App/Python/runtime/_uuid.pyd",
+      "Passed": true
+    },
+    {
+      "Name": "Work_Portable unique manifest member App/Python/runtime/_wmi.pyd",
       "Passed": true
     },
     {
@@ -2347,7 +4607,15 @@
       "Passed": true
     },
     {
+      "Name": "Work_Portable unique manifest member App/Python/runtime/_zoneinfo.pyd",
+      "Passed": true
+    },
+    {
       "Name": "Work_Portable manifest member App/Python/runtime/_zoneinfo.pyd",
+      "Passed": true
+    },
+    {
+      "Name": "Work_Portable unique manifest member App/Python/runtime/_zstd.pyd",
       "Passed": true
     },
     {
@@ -2355,7 +4623,15 @@
       "Passed": true
     },
     {
+      "Name": "Work_Portable unique manifest member App/Python/runtime/libcrypto-3.dll",
+      "Passed": true
+    },
+    {
       "Name": "Work_Portable manifest member App/Python/runtime/libcrypto-3.dll",
+      "Passed": true
+    },
+    {
+      "Name": "Work_Portable unique manifest member App/Python/runtime/libffi-8.dll",
       "Passed": true
     },
     {
@@ -2363,7 +4639,15 @@
       "Passed": true
     },
     {
+      "Name": "Work_Portable unique manifest member App/Python/runtime/libssl-3.dll",
+      "Passed": true
+    },
+    {
       "Name": "Work_Portable manifest member App/Python/runtime/libssl-3.dll",
+      "Passed": true
+    },
+    {
+      "Name": "Work_Portable unique manifest member App/Python/runtime/libtommath.dll",
       "Passed": true
     },
     {
@@ -2371,7 +4655,15 @@
       "Passed": true
     },
     {
+      "Name": "Work_Portable unique manifest member App/Python/runtime/pyexpat.pyd",
+      "Passed": true
+    },
+    {
       "Name": "Work_Portable manifest member App/Python/runtime/pyexpat.pyd",
+      "Passed": true
+    },
+    {
+      "Name": "Work_Portable unique manifest member App/Python/runtime/python.cat",
       "Passed": true
     },
     {
@@ -2379,7 +4671,15 @@
       "Passed": true
     },
     {
+      "Name": "Work_Portable unique manifest member App/Python/runtime/python.exe",
+      "Passed": true
+    },
+    {
       "Name": "Work_Portable manifest member App/Python/runtime/python.exe",
+      "Passed": true
+    },
+    {
+      "Name": "Work_Portable unique manifest member App/Python/runtime/python3.dll",
       "Passed": true
     },
     {
@@ -2387,7 +4687,15 @@
       "Passed": true
     },
     {
+      "Name": "Work_Portable unique manifest member App/Python/runtime/python314._pth",
+      "Passed": true
+    },
+    {
       "Name": "Work_Portable manifest member App/Python/runtime/python314._pth",
+      "Passed": true
+    },
+    {
+      "Name": "Work_Portable unique manifest member App/Python/runtime/python314.dll",
       "Passed": true
     },
     {
@@ -2395,7 +4703,15 @@
       "Passed": true
     },
     {
+      "Name": "Work_Portable unique manifest member App/Python/runtime/python314.zip",
+      "Passed": true
+    },
+    {
       "Name": "Work_Portable manifest member App/Python/runtime/python314.zip",
+      "Passed": true
+    },
+    {
+      "Name": "Work_Portable unique manifest member App/Python/runtime/pythonw.exe",
       "Passed": true
     },
     {
@@ -2403,7 +4719,15 @@
       "Passed": true
     },
     {
+      "Name": "Work_Portable unique manifest member App/Python/runtime/select.pyd",
+      "Passed": true
+    },
+    {
       "Name": "Work_Portable manifest member App/Python/runtime/select.pyd",
+      "Passed": true
+    },
+    {
+      "Name": "Work_Portable unique manifest member App/Python/runtime/sqlite3.dll",
       "Passed": true
     },
     {
@@ -2411,7 +4735,15 @@
       "Passed": true
     },
     {
+      "Name": "Work_Portable unique manifest member App/Python/runtime/unicodedata.pyd",
+      "Passed": true
+    },
+    {
       "Name": "Work_Portable manifest member App/Python/runtime/unicodedata.pyd",
+      "Passed": true
+    },
+    {
+      "Name": "Work_Portable unique manifest member App/Python/runtime/vcruntime140.dll",
       "Passed": true
     },
     {
@@ -2419,7 +4751,15 @@
       "Passed": true
     },
     {
+      "Name": "Work_Portable unique manifest member App/Python/runtime/vcruntime140_1.dll",
+      "Passed": true
+    },
+    {
       "Name": "Work_Portable manifest member App/Python/runtime/vcruntime140_1.dll",
+      "Passed": true
+    },
+    {
+      "Name": "Work_Portable unique manifest member App/Python/runtime/winsound.pyd",
       "Passed": true
     },
     {
@@ -2427,7 +4767,15 @@
       "Passed": true
     },
     {
+      "Name": "Work_Portable unique manifest member App/Python/vendor/pypdf-7.0.1.dist-info/METADATA",
+      "Passed": true
+    },
+    {
       "Name": "Work_Portable manifest member App/Python/vendor/pypdf-7.0.1.dist-info/METADATA",
+      "Passed": true
+    },
+    {
+      "Name": "Work_Portable unique manifest member App/Python/vendor/pypdf-7.0.1.dist-info/RECORD",
       "Passed": true
     },
     {
@@ -2435,7 +4783,15 @@
       "Passed": true
     },
     {
+      "Name": "Work_Portable unique manifest member App/Python/vendor/pypdf-7.0.1.dist-info/WHEEL",
+      "Passed": true
+    },
+    {
       "Name": "Work_Portable manifest member App/Python/vendor/pypdf-7.0.1.dist-info/WHEEL",
+      "Passed": true
+    },
+    {
+      "Name": "Work_Portable unique manifest member App/Python/vendor/pypdf-7.0.1.dist-info/licenses/LICENSE",
       "Passed": true
     },
     {
@@ -2443,7 +4799,15 @@
       "Passed": true
     },
     {
+      "Name": "Work_Portable unique manifest member App/Python/vendor/pypdf/__init__.py",
+      "Passed": true
+    },
+    {
       "Name": "Work_Portable manifest member App/Python/vendor/pypdf/__init__.py",
+      "Passed": true
+    },
+    {
+      "Name": "Work_Portable unique manifest member App/Python/vendor/pypdf/_cmap.py",
       "Passed": true
     },
     {
@@ -2451,7 +4815,15 @@
       "Passed": true
     },
     {
+      "Name": "Work_Portable unique manifest member App/Python/vendor/pypdf/_codecs/__init__.py",
+      "Passed": true
+    },
+    {
       "Name": "Work_Portable manifest member App/Python/vendor/pypdf/_codecs/__init__.py",
+      "Passed": true
+    },
+    {
+      "Name": "Work_Portable unique manifest member App/Python/vendor/pypdf/_codecs/_codecs.py",
       "Passed": true
     },
     {
@@ -2459,7 +4831,15 @@
       "Passed": true
     },
     {
+      "Name": "Work_Portable unique manifest member App/Python/vendor/pypdf/_codecs/adobe_glyphs.py",
+      "Passed": true
+    },
+    {
       "Name": "Work_Portable manifest member App/Python/vendor/pypdf/_codecs/adobe_glyphs.py",
+      "Passed": true
+    },
+    {
+      "Name": "Work_Portable unique manifest member App/Python/vendor/pypdf/_codecs/core_font_metrics.py",
       "Passed": true
     },
     {
@@ -2467,7 +4847,15 @@
       "Passed": true
     },
     {
+      "Name": "Work_Portable unique manifest member App/Python/vendor/pypdf/_codecs/pdfdoc.py",
+      "Passed": true
+    },
+    {
       "Name": "Work_Portable manifest member App/Python/vendor/pypdf/_codecs/pdfdoc.py",
+      "Passed": true
+    },
+    {
+      "Name": "Work_Portable unique manifest member App/Python/vendor/pypdf/_codecs/std.py",
       "Passed": true
     },
     {
@@ -2475,7 +4863,15 @@
       "Passed": true
     },
     {
+      "Name": "Work_Portable unique manifest member App/Python/vendor/pypdf/_codecs/symbol.py",
+      "Passed": true
+    },
+    {
       "Name": "Work_Portable manifest member App/Python/vendor/pypdf/_codecs/symbol.py",
+      "Passed": true
+    },
+    {
+      "Name": "Work_Portable unique manifest member App/Python/vendor/pypdf/_codecs/zapfding.py",
       "Passed": true
     },
     {
@@ -2483,7 +4879,15 @@
       "Passed": true
     },
     {
+      "Name": "Work_Portable unique manifest member App/Python/vendor/pypdf/_configuration.py",
+      "Passed": true
+    },
+    {
       "Name": "Work_Portable manifest member App/Python/vendor/pypdf/_configuration.py",
+      "Passed": true
+    },
+    {
+      "Name": "Work_Portable unique manifest member App/Python/vendor/pypdf/_crypt_providers/__init__.py",
       "Passed": true
     },
     {
@@ -2491,7 +4895,15 @@
       "Passed": true
     },
     {
+      "Name": "Work_Portable unique manifest member App/Python/vendor/pypdf/_crypt_providers/_base.py",
+      "Passed": true
+    },
+    {
       "Name": "Work_Portable manifest member App/Python/vendor/pypdf/_crypt_providers/_base.py",
+      "Passed": true
+    },
+    {
+      "Name": "Work_Portable unique manifest member App/Python/vendor/pypdf/_crypt_providers/_cryptography.py",
       "Passed": true
     },
     {
@@ -2499,7 +4911,15 @@
       "Passed": true
     },
     {
+      "Name": "Work_Portable unique manifest member App/Python/vendor/pypdf/_crypt_providers/_fallback.py",
+      "Passed": true
+    },
+    {
       "Name": "Work_Portable manifest member App/Python/vendor/pypdf/_crypt_providers/_fallback.py",
+      "Passed": true
+    },
+    {
+      "Name": "Work_Portable unique manifest member App/Python/vendor/pypdf/_crypt_providers/_pycryptodome.py",
       "Passed": true
     },
     {
@@ -2507,7 +4927,15 @@
       "Passed": true
     },
     {
+      "Name": "Work_Portable unique manifest member App/Python/vendor/pypdf/_doc_common.py",
+      "Passed": true
+    },
+    {
       "Name": "Work_Portable manifest member App/Python/vendor/pypdf/_doc_common.py",
+      "Passed": true
+    },
+    {
+      "Name": "Work_Portable unique manifest member App/Python/vendor/pypdf/_encryption.py",
       "Passed": true
     },
     {
@@ -2515,7 +4943,15 @@
       "Passed": true
     },
     {
+      "Name": "Work_Portable unique manifest member App/Python/vendor/pypdf/_page.py",
+      "Passed": true
+    },
+    {
       "Name": "Work_Portable manifest member App/Python/vendor/pypdf/_page.py",
+      "Passed": true
+    },
+    {
+      "Name": "Work_Portable unique manifest member App/Python/vendor/pypdf/_page_labels.py",
       "Passed": true
     },
     {
@@ -2523,7 +4959,15 @@
       "Passed": true
     },
     {
+      "Name": "Work_Portable unique manifest member App/Python/vendor/pypdf/_protocols.py",
+      "Passed": true
+    },
+    {
       "Name": "Work_Portable manifest member App/Python/vendor/pypdf/_protocols.py",
+      "Passed": true
+    },
+    {
+      "Name": "Work_Portable unique manifest member App/Python/vendor/pypdf/_reader.py",
       "Passed": true
     },
     {
@@ -2531,7 +4975,15 @@
       "Passed": true
     },
     {
+      "Name": "Work_Portable unique manifest member App/Python/vendor/pypdf/_text_extraction/__init__.py",
+      "Passed": true
+    },
+    {
       "Name": "Work_Portable manifest member App/Python/vendor/pypdf/_text_extraction/__init__.py",
+      "Passed": true
+    },
+    {
+      "Name": "Work_Portable unique manifest member App/Python/vendor/pypdf/_text_extraction/_layout_mode/__init__.py",
       "Passed": true
     },
     {
@@ -2539,7 +4991,15 @@
       "Passed": true
     },
     {
+      "Name": "Work_Portable unique manifest member App/Python/vendor/pypdf/_text_extraction/_layout_mode/_fixed_width_page.py",
+      "Passed": true
+    },
+    {
       "Name": "Work_Portable manifest member App/Python/vendor/pypdf/_text_extraction/_layout_mode/_fixed_width_page.py",
+      "Passed": true
+    },
+    {
+      "Name": "Work_Portable unique manifest member App/Python/vendor/pypdf/_text_extraction/_layout_mode/_text_state_manager.py",
       "Passed": true
     },
     {
@@ -2547,7 +5007,15 @@
       "Passed": true
     },
     {
+      "Name": "Work_Portable unique manifest member App/Python/vendor/pypdf/_text_extraction/_layout_mode/_text_state_params.py",
+      "Passed": true
+    },
+    {
       "Name": "Work_Portable manifest member App/Python/vendor/pypdf/_text_extraction/_layout_mode/_text_state_params.py",
+      "Passed": true
+    },
+    {
+      "Name": "Work_Portable unique manifest member App/Python/vendor/pypdf/_text_extraction/_text_extractor.py",
       "Passed": true
     },
     {
@@ -2555,7 +5023,15 @@
       "Passed": true
     },
     {
+      "Name": "Work_Portable unique manifest member App/Python/vendor/pypdf/_utils.py",
+      "Passed": true
+    },
+    {
       "Name": "Work_Portable manifest member App/Python/vendor/pypdf/_utils.py",
+      "Passed": true
+    },
+    {
+      "Name": "Work_Portable unique manifest member App/Python/vendor/pypdf/_version.py",
       "Passed": true
     },
     {
@@ -2563,7 +5039,15 @@
       "Passed": true
     },
     {
+      "Name": "Work_Portable unique manifest member App/Python/vendor/pypdf/_writer.py",
+      "Passed": true
+    },
+    {
       "Name": "Work_Portable manifest member App/Python/vendor/pypdf/_writer.py",
+      "Passed": true
+    },
+    {
+      "Name": "Work_Portable unique manifest member App/Python/vendor/pypdf/actions/__init__.py",
       "Passed": true
     },
     {
@@ -2571,7 +5055,15 @@
       "Passed": true
     },
     {
+      "Name": "Work_Portable unique manifest member App/Python/vendor/pypdf/actions/_actions.py",
+      "Passed": true
+    },
+    {
       "Name": "Work_Portable manifest member App/Python/vendor/pypdf/actions/_actions.py",
+      "Passed": true
+    },
+    {
+      "Name": "Work_Portable unique manifest member App/Python/vendor/pypdf/annotations/__init__.py",
       "Passed": true
     },
     {
@@ -2579,7 +5071,15 @@
       "Passed": true
     },
     {
+      "Name": "Work_Portable unique manifest member App/Python/vendor/pypdf/annotations/_base.py",
+      "Passed": true
+    },
+    {
       "Name": "Work_Portable manifest member App/Python/vendor/pypdf/annotations/_base.py",
+      "Passed": true
+    },
+    {
+      "Name": "Work_Portable unique manifest member App/Python/vendor/pypdf/annotations/_markup_annotations.py",
       "Passed": true
     },
     {
@@ -2587,7 +5087,15 @@
       "Passed": true
     },
     {
+      "Name": "Work_Portable unique manifest member App/Python/vendor/pypdf/annotations/_non_markup_annotations.py",
+      "Passed": true
+    },
+    {
       "Name": "Work_Portable manifest member App/Python/vendor/pypdf/annotations/_non_markup_annotations.py",
+      "Passed": true
+    },
+    {
+      "Name": "Work_Portable unique manifest member App/Python/vendor/pypdf/constants.py",
       "Passed": true
     },
     {
@@ -2595,7 +5103,15 @@
       "Passed": true
     },
     {
+      "Name": "Work_Portable unique manifest member App/Python/vendor/pypdf/errors.py",
+      "Passed": true
+    },
+    {
       "Name": "Work_Portable manifest member App/Python/vendor/pypdf/errors.py",
+      "Passed": true
+    },
+    {
+      "Name": "Work_Portable unique manifest member App/Python/vendor/pypdf/filters.py",
       "Passed": true
     },
     {
@@ -2603,7 +5119,15 @@
       "Passed": true
     },
     {
+      "Name": "Work_Portable unique manifest member App/Python/vendor/pypdf/generic/__init__.py",
+      "Passed": true
+    },
+    {
       "Name": "Work_Portable manifest member App/Python/vendor/pypdf/generic/__init__.py",
+      "Passed": true
+    },
+    {
+      "Name": "Work_Portable unique manifest member App/Python/vendor/pypdf/generic/_appearance_stream.py",
       "Passed": true
     },
     {
@@ -2611,7 +5135,15 @@
       "Passed": true
     },
     {
+      "Name": "Work_Portable unique manifest member App/Python/vendor/pypdf/generic/_base.py",
+      "Passed": true
+    },
+    {
       "Name": "Work_Portable manifest member App/Python/vendor/pypdf/generic/_base.py",
+      "Passed": true
+    },
+    {
+      "Name": "Work_Portable unique manifest member App/Python/vendor/pypdf/generic/_color.py",
       "Passed": true
     },
     {
@@ -2619,7 +5151,15 @@
       "Passed": true
     },
     {
+      "Name": "Work_Portable unique manifest member App/Python/vendor/pypdf/generic/_data_structures.py",
+      "Passed": true
+    },
+    {
       "Name": "Work_Portable manifest member App/Python/vendor/pypdf/generic/_data_structures.py",
+      "Passed": true
+    },
+    {
+      "Name": "Work_Portable unique manifest member App/Python/vendor/pypdf/generic/_files.py",
       "Passed": true
     },
     {
@@ -2627,7 +5167,15 @@
       "Passed": true
     },
     {
+      "Name": "Work_Portable unique manifest member App/Python/vendor/pypdf/generic/_fit.py",
+      "Passed": true
+    },
+    {
       "Name": "Work_Portable manifest member App/Python/vendor/pypdf/generic/_fit.py",
+      "Passed": true
+    },
+    {
+      "Name": "Work_Portable unique manifest member App/Python/vendor/pypdf/generic/_font.py",
       "Passed": true
     },
     {
@@ -2635,7 +5183,15 @@
       "Passed": true
     },
     {
+      "Name": "Work_Portable unique manifest member App/Python/vendor/pypdf/generic/_image_inline.py",
+      "Passed": true
+    },
+    {
       "Name": "Work_Portable manifest member App/Python/vendor/pypdf/generic/_image_inline.py",
+      "Passed": true
+    },
+    {
+      "Name": "Work_Portable unique manifest member App/Python/vendor/pypdf/generic/_image_xobject.py",
       "Passed": true
     },
     {
@@ -2643,7 +5199,15 @@
       "Passed": true
     },
     {
+      "Name": "Work_Portable unique manifest member App/Python/vendor/pypdf/generic/_link.py",
+      "Passed": true
+    },
+    {
       "Name": "Work_Portable manifest member App/Python/vendor/pypdf/generic/_link.py",
+      "Passed": true
+    },
+    {
+      "Name": "Work_Portable unique manifest member App/Python/vendor/pypdf/generic/_outline.py",
       "Passed": true
     },
     {
@@ -2651,7 +5215,15 @@
       "Passed": true
     },
     {
+      "Name": "Work_Portable unique manifest member App/Python/vendor/pypdf/generic/_rectangle.py",
+      "Passed": true
+    },
+    {
       "Name": "Work_Portable manifest member App/Python/vendor/pypdf/generic/_rectangle.py",
+      "Passed": true
+    },
+    {
+      "Name": "Work_Portable unique manifest member App/Python/vendor/pypdf/generic/_utils.py",
       "Passed": true
     },
     {
@@ -2659,7 +5231,15 @@
       "Passed": true
     },
     {
+      "Name": "Work_Portable unique manifest member App/Python/vendor/pypdf/generic/_viewerpref.py",
+      "Passed": true
+    },
+    {
       "Name": "Work_Portable manifest member App/Python/vendor/pypdf/generic/_viewerpref.py",
+      "Passed": true
+    },
+    {
+      "Name": "Work_Portable unique manifest member App/Python/vendor/pypdf/pagerange.py",
       "Passed": true
     },
     {
@@ -2667,7 +5247,15 @@
       "Passed": true
     },
     {
+      "Name": "Work_Portable unique manifest member App/Python/vendor/pypdf/papersizes.py",
+      "Passed": true
+    },
+    {
       "Name": "Work_Portable manifest member App/Python/vendor/pypdf/papersizes.py",
+      "Passed": true
+    },
+    {
+      "Name": "Work_Portable unique manifest member App/Python/vendor/pypdf/py.typed",
       "Passed": true
     },
     {
@@ -2675,7 +5263,15 @@
       "Passed": true
     },
     {
+      "Name": "Work_Portable unique manifest member App/Python/vendor/pypdf/types.py",
+      "Passed": true
+    },
+    {
       "Name": "Work_Portable manifest member App/Python/vendor/pypdf/types.py",
+      "Passed": true
+    },
+    {
+      "Name": "Work_Portable unique manifest member App/Python/vendor/pypdf/xmp.py",
       "Passed": true
     },
     {
@@ -2683,7 +5279,15 @@
       "Passed": true
     },
     {
+      "Name": "Work_Portable unique manifest member App/Reference/Siemens_QA_Guide.html",
+      "Passed": true
+    },
+    {
       "Name": "Work_Portable manifest member App/Reference/Siemens_QA_Guide.html",
+      "Passed": true
+    },
+    {
+      "Name": "Work_Portable unique manifest member App/Reports.psm1",
       "Passed": true
     },
     {
@@ -2691,7 +5295,15 @@
       "Passed": true
     },
     {
+      "Name": "Work_Portable unique manifest member App/Review.psm1",
+      "Passed": true
+    },
+    {
       "Name": "Work_Portable manifest member App/Review.psm1",
+      "Passed": true
+    },
+    {
+      "Name": "Work_Portable unique manifest member App/ReviewQueueUi.ps1",
       "Passed": true
     },
     {
@@ -2699,7 +5311,15 @@
       "Passed": true
     },
     {
+      "Name": "Work_Portable unique manifest member App/ReviewQueueWindow.xaml",
+      "Passed": true
+    },
+    {
       "Name": "Work_Portable manifest member App/ReviewQueueWindow.xaml",
+      "Passed": true
+    },
+    {
+      "Name": "Work_Portable unique manifest member App/Search.psm1",
       "Passed": true
     },
     {
@@ -2707,7 +5327,15 @@
       "Passed": true
     },
     {
+      "Name": "Work_Portable unique manifest member App/Start-Web.ps1",
+      "Passed": true
+    },
+    {
       "Name": "Work_Portable manifest member App/Start-Web.ps1",
+      "Passed": true
+    },
+    {
+      "Name": "Work_Portable unique manifest member App/Start.ps1",
       "Passed": true
     },
     {
@@ -2715,7 +5343,15 @@
       "Passed": true
     },
     {
+      "Name": "Work_Portable unique manifest member App/Support.psm1",
+      "Passed": true
+    },
+    {
       "Name": "Work_Portable manifest member App/Support.psm1",
+      "Passed": true
+    },
+    {
+      "Name": "Work_Portable unique manifest member App/SupportDiagnostics.psm1",
       "Passed": true
     },
     {
@@ -2723,7 +5359,15 @@
       "Passed": true
     },
     {
+      "Name": "Work_Portable unique manifest member App/TaskWorker.ps1",
+      "Passed": true
+    },
+    {
       "Name": "Work_Portable manifest member App/TaskWorker.ps1",
+      "Passed": true
+    },
+    {
+      "Name": "Work_Portable unique manifest member App/Trends.psm1",
       "Passed": true
     },
     {
@@ -2731,7 +5375,15 @@
       "Passed": true
     },
     {
+      "Name": "Work_Portable unique manifest member App/Updates.psm1",
+      "Passed": true
+    },
+    {
       "Name": "Work_Portable manifest member App/Updates.psm1",
+      "Passed": true
+    },
+    {
+      "Name": "Work_Portable unique manifest member App/Upgrade.ps1",
       "Passed": true
     },
     {
@@ -2739,7 +5391,15 @@
       "Passed": true
     },
     {
+      "Name": "Work_Portable unique manifest member App/Web/app.css",
+      "Passed": true
+    },
+    {
       "Name": "Work_Portable manifest member App/Web/app.css",
+      "Passed": true
+    },
+    {
+      "Name": "Work_Portable unique manifest member App/Web/app.js",
       "Passed": true
     },
     {
@@ -2747,7 +5407,15 @@
       "Passed": true
     },
     {
+      "Name": "Work_Portable unique manifest member App/Web/index.html",
+      "Passed": true
+    },
+    {
       "Name": "Work_Portable manifest member App/Web/index.html",
+      "Passed": true
+    },
+    {
+      "Name": "Work_Portable unique manifest member App/Web/trends.js",
       "Passed": true
     },
     {
@@ -2755,7 +5423,15 @@
       "Passed": true
     },
     {
+      "Name": "Work_Portable unique manifest member App/WebService.psm1",
+      "Passed": true
+    },
+    {
       "Name": "Work_Portable manifest member App/WebService.psm1",
+      "Passed": true
+    },
+    {
+      "Name": "Work_Portable unique manifest member App/WebWorker.ps1",
       "Passed": true
     },
     {
@@ -2763,7 +5439,15 @@
       "Passed": true
     },
     {
+      "Name": "Work_Portable unique manifest member App/Workspace.psm1",
+      "Passed": true
+    },
+    {
       "Name": "Work_Portable manifest member App/Workspace.psm1",
+      "Passed": true
+    },
+    {
+      "Name": "Work_Portable unique manifest member Config/NetworkProfile.local.json",
       "Passed": true
     },
     {
@@ -2771,7 +5455,15 @@
       "Passed": true
     },
     {
+      "Name": "Work_Portable unique manifest member Config/Settings.json",
+      "Passed": true
+    },
+    {
       "Name": "Work_Portable manifest member Config/Settings.json",
+      "Passed": true
+    },
+    {
+      "Name": "Work_Portable unique manifest member Package.json",
       "Passed": true
     },
     {
@@ -2779,11 +5471,27 @@
       "Passed": true
     },
     {
+      "Name": "Work_Portable unique manifest member Start CT QA Manager.cmd",
+      "Passed": true
+    },
+    {
       "Name": "Work_Portable manifest member Start CT QA Manager.cmd",
       "Passed": true
     },
     {
+      "Name": "Work_Portable unique manifest member User Guide.html",
+      "Passed": true
+    },
+    {
       "Name": "Work_Portable manifest member User Guide.html",
+      "Passed": true
+    },
+    {
+      "Name": "Work_Portable manifest covers every program payload member exactly once",
+      "Passed": true
+    },
+    {
+      "Name": "Work_Portable calendar uses only JavaScript paths accepted by the old updater",
       "Passed": true
     },
     {
@@ -2799,7 +5507,7 @@
       "Passed": true
     },
     {
-      "Name": "Work_Upgrade metadata declares5.4.0",
+      "Name": "Work_Upgrade metadata declares5.5.0",
       "Passed": true
     },
     {
@@ -2815,7 +5523,15 @@
       "Passed": true
     },
     {
+      "Name": "Work_Upgrade unique manifest member App/ApplyNetworkUpdate.ps1",
+      "Passed": true
+    },
+    {
       "Name": "Work_Upgrade manifest member App/ApplyNetworkUpdate.ps1",
+      "Passed": true
+    },
+    {
+      "Name": "Work_Upgrade unique manifest member App/Archive.psm1",
       "Passed": true
     },
     {
@@ -2823,7 +5539,15 @@
       "Passed": true
     },
     {
+      "Name": "Work_Upgrade unique manifest member App/Browse.psm1",
+      "Passed": true
+    },
+    {
       "Name": "Work_Upgrade manifest member App/Browse.psm1",
+      "Passed": true
+    },
+    {
+      "Name": "Work_Upgrade unique manifest member App/ContentClassifier.psm1",
       "Passed": true
     },
     {
@@ -2831,7 +5555,15 @@
       "Passed": true
     },
     {
+      "Name": "Work_Upgrade unique manifest member App/Credentials.psm1",
+      "Passed": true
+    },
+    {
       "Name": "Work_Upgrade manifest member App/Credentials.psm1",
+      "Passed": true
+    },
+    {
+      "Name": "Work_Upgrade unique manifest member App/ExportDiagnostics.ps1",
       "Passed": true
     },
     {
@@ -2839,7 +5571,15 @@
       "Passed": true
     },
     {
+      "Name": "Work_Upgrade unique manifest member App/Host/ASPNETCORE-LICENSE.txt",
+      "Passed": true
+    },
+    {
       "Name": "Work_Upgrade manifest member App/Host/ASPNETCORE-LICENSE.txt",
+      "Passed": true
+    },
+    {
+      "Name": "Work_Upgrade unique manifest member App/Host/ASPNETCORE-THIRD-PARTY-NOTICES.TXT",
       "Passed": true
     },
     {
@@ -2847,7 +5587,15 @@
       "Passed": true
     },
     {
+      "Name": "Work_Upgrade unique manifest member App/Host/CTQa.Host.exe",
+      "Passed": true
+    },
+    {
       "Name": "Work_Upgrade manifest member App/Host/CTQa.Host.exe",
+      "Passed": true
+    },
+    {
+      "Name": "Work_Upgrade unique manifest member App/Host/DOTNET-LICENSE.TXT",
       "Passed": true
     },
     {
@@ -2855,7 +5603,15 @@
       "Passed": true
     },
     {
+      "Name": "Work_Upgrade unique manifest member App/Host/DOTNET-THIRD-PARTY-NOTICES.TXT",
+      "Passed": true
+    },
+    {
       "Name": "Work_Upgrade manifest member App/Host/DOTNET-THIRD-PARTY-NOTICES.TXT",
+      "Passed": true
+    },
+    {
+      "Name": "Work_Upgrade unique manifest member App/Insights.psm1",
       "Passed": true
     },
     {
@@ -2863,7 +5619,15 @@
       "Passed": true
     },
     {
+      "Name": "Work_Upgrade unique manifest member App/InstallUpdate.ps1",
+      "Passed": true
+    },
+    {
       "Name": "Work_Upgrade manifest member App/InstallUpdate.ps1",
+      "Passed": true
+    },
+    {
+      "Name": "Work_Upgrade unique manifest member App/Lib/PdfPig/Integrity.json",
       "Passed": true
     },
     {
@@ -2871,7 +5635,15 @@
       "Passed": true
     },
     {
+      "Name": "Work_Upgrade unique manifest member App/Lib/PdfPig/LICENSE-Microsoft.txt",
+      "Passed": true
+    },
+    {
       "Name": "Work_Upgrade manifest member App/Lib/PdfPig/LICENSE-Microsoft.txt",
+      "Passed": true
+    },
+    {
+      "Name": "Work_Upgrade unique manifest member App/Lib/PdfPig/LICENSE-PdfPig.txt",
       "Passed": true
     },
     {
@@ -2879,7 +5651,15 @@
       "Passed": true
     },
     {
+      "Name": "Work_Upgrade unique manifest member App/Lib/PdfPig/Microsoft.Bcl.HashCode.dll",
+      "Passed": true
+    },
+    {
       "Name": "Work_Upgrade manifest member App/Lib/PdfPig/Microsoft.Bcl.HashCode.dll",
+      "Passed": true
+    },
+    {
+      "Name": "Work_Upgrade unique manifest member App/Lib/PdfPig/NOTICES-PdfPig.txt",
       "Passed": true
     },
     {
@@ -2887,7 +5667,15 @@
       "Passed": true
     },
     {
+      "Name": "Work_Upgrade unique manifest member App/Lib/PdfPig/README.txt",
+      "Passed": true
+    },
+    {
       "Name": "Work_Upgrade manifest member App/Lib/PdfPig/README.txt",
+      "Passed": true
+    },
+    {
+      "Name": "Work_Upgrade unique manifest member App/Lib/PdfPig/System.Buffers.dll",
       "Passed": true
     },
     {
@@ -2895,7 +5683,15 @@
       "Passed": true
     },
     {
+      "Name": "Work_Upgrade unique manifest member App/Lib/PdfPig/System.Memory.dll",
+      "Passed": true
+    },
+    {
       "Name": "Work_Upgrade manifest member App/Lib/PdfPig/System.Memory.dll",
+      "Passed": true
+    },
+    {
+      "Name": "Work_Upgrade unique manifest member App/Lib/PdfPig/System.Numerics.Vectors.dll",
       "Passed": true
     },
     {
@@ -2903,7 +5699,15 @@
       "Passed": true
     },
     {
+      "Name": "Work_Upgrade unique manifest member App/Lib/PdfPig/System.Runtime.CompilerServices.Unsafe.dll",
+      "Passed": true
+    },
+    {
       "Name": "Work_Upgrade manifest member App/Lib/PdfPig/System.Runtime.CompilerServices.Unsafe.dll",
+      "Passed": true
+    },
+    {
+      "Name": "Work_Upgrade unique manifest member App/Lib/PdfPig/UglyToad.PdfPig.Core.dll",
       "Passed": true
     },
     {
@@ -2911,7 +5715,15 @@
       "Passed": true
     },
     {
+      "Name": "Work_Upgrade unique manifest member App/Lib/PdfPig/UglyToad.PdfPig.DocumentLayoutAnalysis.dll",
+      "Passed": true
+    },
+    {
       "Name": "Work_Upgrade manifest member App/Lib/PdfPig/UglyToad.PdfPig.DocumentLayoutAnalysis.dll",
+      "Passed": true
+    },
+    {
+      "Name": "Work_Upgrade unique manifest member App/Lib/PdfPig/UglyToad.PdfPig.Fonts.dll",
       "Passed": true
     },
     {
@@ -2919,7 +5731,15 @@
       "Passed": true
     },
     {
+      "Name": "Work_Upgrade unique manifest member App/Lib/PdfPig/UglyToad.PdfPig.Package.dll",
+      "Passed": true
+    },
+    {
       "Name": "Work_Upgrade manifest member App/Lib/PdfPig/UglyToad.PdfPig.Package.dll",
+      "Passed": true
+    },
+    {
+      "Name": "Work_Upgrade unique manifest member App/Lib/PdfPig/UglyToad.PdfPig.Tokenization.dll",
       "Passed": true
     },
     {
@@ -2927,7 +5747,15 @@
       "Passed": true
     },
     {
+      "Name": "Work_Upgrade unique manifest member App/Lib/PdfPig/UglyToad.PdfPig.Tokens.dll",
+      "Passed": true
+    },
+    {
       "Name": "Work_Upgrade manifest member App/Lib/PdfPig/UglyToad.PdfPig.Tokens.dll",
+      "Passed": true
+    },
+    {
+      "Name": "Work_Upgrade unique manifest member App/Lib/PdfPig/UglyToad.PdfPig.dll",
       "Passed": true
     },
     {
@@ -2935,7 +5763,15 @@
       "Passed": true
     },
     {
+      "Name": "Work_Upgrade unique manifest member App/MainWindow.xaml",
+      "Passed": true
+    },
+    {
       "Name": "Work_Upgrade manifest member App/MainWindow.xaml",
+      "Passed": true
+    },
+    {
+      "Name": "Work_Upgrade unique manifest member App/Maintenance.psm1",
       "Passed": true
     },
     {
@@ -2943,7 +5779,15 @@
       "Passed": true
     },
     {
+      "Name": "Work_Upgrade unique manifest member App/MeasurementParser.psm1",
+      "Passed": true
+    },
+    {
       "Name": "Work_Upgrade manifest member App/MeasurementParser.psm1",
+      "Passed": true
+    },
+    {
+      "Name": "Work_Upgrade unique manifest member App/Navigator.psm1",
       "Passed": true
     },
     {
@@ -2951,7 +5795,15 @@
       "Passed": true
     },
     {
+      "Name": "Work_Upgrade unique manifest member App/Network.psm1",
+      "Passed": true
+    },
+    {
       "Name": "Work_Upgrade manifest member App/Network.psm1",
+      "Passed": true
+    },
+    {
+      "Name": "Work_Upgrade unique manifest member App/PdfPreview.psm1",
       "Passed": true
     },
     {
@@ -2959,7 +5811,15 @@
       "Passed": true
     },
     {
+      "Name": "Work_Upgrade unique manifest member App/PdfReader.psm1",
+      "Passed": true
+    },
+    {
       "Name": "Work_Upgrade manifest member App/PdfReader.psm1",
+      "Passed": true
+    },
+    {
+      "Name": "Work_Upgrade unique manifest member App/Process.psm1",
       "Passed": true
     },
     {
@@ -2967,7 +5827,15 @@
       "Passed": true
     },
     {
+      "Name": "Work_Upgrade unique manifest member App/Python/Integrity.json",
+      "Passed": true
+    },
+    {
       "Name": "Work_Upgrade manifest member App/Python/Integrity.json",
+      "Passed": true
+    },
+    {
+      "Name": "Work_Upgrade unique manifest member App/Python/Sources.json",
       "Passed": true
     },
     {
@@ -2975,7 +5843,15 @@
       "Passed": true
     },
     {
+      "Name": "Work_Upgrade unique manifest member App/Python/read_pdf.py",
+      "Passed": true
+    },
+    {
       "Name": "Work_Upgrade manifest member App/Python/read_pdf.py",
+      "Passed": true
+    },
+    {
+      "Name": "Work_Upgrade unique manifest member App/Python/runtime/LICENSE.txt",
       "Passed": true
     },
     {
@@ -2983,7 +5859,15 @@
       "Passed": true
     },
     {
+      "Name": "Work_Upgrade unique manifest member App/Python/runtime/_asyncio.pyd",
+      "Passed": true
+    },
+    {
       "Name": "Work_Upgrade manifest member App/Python/runtime/_asyncio.pyd",
+      "Passed": true
+    },
+    {
+      "Name": "Work_Upgrade unique manifest member App/Python/runtime/_bz2.pyd",
       "Passed": true
     },
     {
@@ -2991,7 +5875,15 @@
       "Passed": true
     },
     {
+      "Name": "Work_Upgrade unique manifest member App/Python/runtime/_ctypes.pyd",
+      "Passed": true
+    },
+    {
       "Name": "Work_Upgrade manifest member App/Python/runtime/_ctypes.pyd",
+      "Passed": true
+    },
+    {
+      "Name": "Work_Upgrade unique manifest member App/Python/runtime/_decimal.pyd",
       "Passed": true
     },
     {
@@ -2999,7 +5891,15 @@
       "Passed": true
     },
     {
+      "Name": "Work_Upgrade unique manifest member App/Python/runtime/_elementtree.pyd",
+      "Passed": true
+    },
+    {
       "Name": "Work_Upgrade manifest member App/Python/runtime/_elementtree.pyd",
+      "Passed": true
+    },
+    {
+      "Name": "Work_Upgrade unique manifest member App/Python/runtime/_hashlib.pyd",
       "Passed": true
     },
     {
@@ -3007,7 +5907,15 @@
       "Passed": true
     },
     {
+      "Name": "Work_Upgrade unique manifest member App/Python/runtime/_lzma.pyd",
+      "Passed": true
+    },
+    {
       "Name": "Work_Upgrade manifest member App/Python/runtime/_lzma.pyd",
+      "Passed": true
+    },
+    {
+      "Name": "Work_Upgrade unique manifest member App/Python/runtime/_multiprocessing.pyd",
       "Passed": true
     },
     {
@@ -3015,7 +5923,15 @@
       "Passed": true
     },
     {
+      "Name": "Work_Upgrade unique manifest member App/Python/runtime/_overlapped.pyd",
+      "Passed": true
+    },
+    {
       "Name": "Work_Upgrade manifest member App/Python/runtime/_overlapped.pyd",
+      "Passed": true
+    },
+    {
+      "Name": "Work_Upgrade unique manifest member App/Python/runtime/_queue.pyd",
       "Passed": true
     },
     {
@@ -3023,7 +5939,15 @@
       "Passed": true
     },
     {
+      "Name": "Work_Upgrade unique manifest member App/Python/runtime/_remote_debugging.pyd",
+      "Passed": true
+    },
+    {
       "Name": "Work_Upgrade manifest member App/Python/runtime/_remote_debugging.pyd",
+      "Passed": true
+    },
+    {
+      "Name": "Work_Upgrade unique manifest member App/Python/runtime/_socket.pyd",
       "Passed": true
     },
     {
@@ -3031,7 +5955,15 @@
       "Passed": true
     },
     {
+      "Name": "Work_Upgrade unique manifest member App/Python/runtime/_sqlite3.pyd",
+      "Passed": true
+    },
+    {
       "Name": "Work_Upgrade manifest member App/Python/runtime/_sqlite3.pyd",
+      "Passed": true
+    },
+    {
+      "Name": "Work_Upgrade unique manifest member App/Python/runtime/_ssl.pyd",
       "Passed": true
     },
     {
@@ -3039,7 +5971,15 @@
       "Passed": true
     },
     {
+      "Name": "Work_Upgrade unique manifest member App/Python/runtime/_uuid.pyd",
+      "Passed": true
+    },
+    {
       "Name": "Work_Upgrade manifest member App/Python/runtime/_uuid.pyd",
+      "Passed": true
+    },
+    {
+      "Name": "Work_Upgrade unique manifest member App/Python/runtime/_wmi.pyd",
       "Passed": true
     },
     {
@@ -3047,7 +5987,15 @@
       "Passed": true
     },
     {
+      "Name": "Work_Upgrade unique manifest member App/Python/runtime/_zoneinfo.pyd",
+      "Passed": true
+    },
+    {
       "Name": "Work_Upgrade manifest member App/Python/runtime/_zoneinfo.pyd",
+      "Passed": true
+    },
+    {
+      "Name": "Work_Upgrade unique manifest member App/Python/runtime/_zstd.pyd",
       "Passed": true
     },
     {
@@ -3055,7 +6003,15 @@
       "Passed": true
     },
     {
+      "Name": "Work_Upgrade unique manifest member App/Python/runtime/libcrypto-3.dll",
+      "Passed": true
+    },
+    {
       "Name": "Work_Upgrade manifest member App/Python/runtime/libcrypto-3.dll",
+      "Passed": true
+    },
+    {
+      "Name": "Work_Upgrade unique manifest member App/Python/runtime/libffi-8.dll",
       "Passed": true
     },
     {
@@ -3063,7 +6019,15 @@
       "Passed": true
     },
     {
+      "Name": "Work_Upgrade unique manifest member App/Python/runtime/libssl-3.dll",
+      "Passed": true
+    },
+    {
       "Name": "Work_Upgrade manifest member App/Python/runtime/libssl-3.dll",
+      "Passed": true
+    },
+    {
+      "Name": "Work_Upgrade unique manifest member App/Python/runtime/libtommath.dll",
       "Passed": true
     },
     {
@@ -3071,7 +6035,15 @@
       "Passed": true
     },
     {
+      "Name": "Work_Upgrade unique manifest member App/Python/runtime/pyexpat.pyd",
+      "Passed": true
+    },
+    {
       "Name": "Work_Upgrade manifest member App/Python/runtime/pyexpat.pyd",
+      "Passed": true
+    },
+    {
+      "Name": "Work_Upgrade unique manifest member App/Python/runtime/python.cat",
       "Passed": true
     },
     {
@@ -3079,7 +6051,15 @@
       "Passed": true
     },
     {
+      "Name": "Work_Upgrade unique manifest member App/Python/runtime/python.exe",
+      "Passed": true
+    },
+    {
       "Name": "Work_Upgrade manifest member App/Python/runtime/python.exe",
+      "Passed": true
+    },
+    {
+      "Name": "Work_Upgrade unique manifest member App/Python/runtime/python3.dll",
       "Passed": true
     },
     {
@@ -3087,7 +6067,15 @@
       "Passed": true
     },
     {
+      "Name": "Work_Upgrade unique manifest member App/Python/runtime/python314._pth",
+      "Passed": true
+    },
+    {
       "Name": "Work_Upgrade manifest member App/Python/runtime/python314._pth",
+      "Passed": true
+    },
+    {
+      "Name": "Work_Upgrade unique manifest member App/Python/runtime/python314.dll",
       "Passed": true
     },
     {
@@ -3095,7 +6083,15 @@
       "Passed": true
     },
     {
+      "Name": "Work_Upgrade unique manifest member App/Python/runtime/python314.zip",
+      "Passed": true
+    },
+    {
       "Name": "Work_Upgrade manifest member App/Python/runtime/python314.zip",
+      "Passed": true
+    },
+    {
+      "Name": "Work_Upgrade unique manifest member App/Python/runtime/pythonw.exe",
       "Passed": true
     },
     {
@@ -3103,7 +6099,15 @@
       "Passed": true
     },
     {
+      "Name": "Work_Upgrade unique manifest member App/Python/runtime/select.pyd",
+      "Passed": true
+    },
+    {
       "Name": "Work_Upgrade manifest member App/Python/runtime/select.pyd",
+      "Passed": true
+    },
+    {
+      "Name": "Work_Upgrade unique manifest member App/Python/runtime/sqlite3.dll",
       "Passed": true
     },
     {
@@ -3111,7 +6115,15 @@
       "Passed": true
     },
     {
+      "Name": "Work_Upgrade unique manifest member App/Python/runtime/unicodedata.pyd",
+      "Passed": true
+    },
+    {
       "Name": "Work_Upgrade manifest member App/Python/runtime/unicodedata.pyd",
+      "Passed": true
+    },
+    {
+      "Name": "Work_Upgrade unique manifest member App/Python/runtime/vcruntime140.dll",
       "Passed": true
     },
     {
@@ -3119,7 +6131,15 @@
       "Passed": true
     },
     {
+      "Name": "Work_Upgrade unique manifest member App/Python/runtime/vcruntime140_1.dll",
+      "Passed": true
+    },
+    {
       "Name": "Work_Upgrade manifest member App/Python/runtime/vcruntime140_1.dll",
+      "Passed": true
+    },
+    {
+      "Name": "Work_Upgrade unique manifest member App/Python/runtime/winsound.pyd",
       "Passed": true
     },
     {
@@ -3127,7 +6147,15 @@
       "Passed": true
     },
     {
+      "Name": "Work_Upgrade unique manifest member App/Python/vendor/pypdf-7.0.1.dist-info/METADATA",
+      "Passed": true
+    },
+    {
       "Name": "Work_Upgrade manifest member App/Python/vendor/pypdf-7.0.1.dist-info/METADATA",
+      "Passed": true
+    },
+    {
+      "Name": "Work_Upgrade unique manifest member App/Python/vendor/pypdf-7.0.1.dist-info/RECORD",
       "Passed": true
     },
     {
@@ -3135,7 +6163,15 @@
       "Passed": true
     },
     {
+      "Name": "Work_Upgrade unique manifest member App/Python/vendor/pypdf-7.0.1.dist-info/WHEEL",
+      "Passed": true
+    },
+    {
       "Name": "Work_Upgrade manifest member App/Python/vendor/pypdf-7.0.1.dist-info/WHEEL",
+      "Passed": true
+    },
+    {
+      "Name": "Work_Upgrade unique manifest member App/Python/vendor/pypdf-7.0.1.dist-info/licenses/LICENSE",
       "Passed": true
     },
     {
@@ -3143,7 +6179,15 @@
       "Passed": true
     },
     {
+      "Name": "Work_Upgrade unique manifest member App/Python/vendor/pypdf/__init__.py",
+      "Passed": true
+    },
+    {
       "Name": "Work_Upgrade manifest member App/Python/vendor/pypdf/__init__.py",
+      "Passed": true
+    },
+    {
+      "Name": "Work_Upgrade unique manifest member App/Python/vendor/pypdf/_cmap.py",
       "Passed": true
     },
     {
@@ -3151,7 +6195,15 @@
       "Passed": true
     },
     {
+      "Name": "Work_Upgrade unique manifest member App/Python/vendor/pypdf/_codecs/__init__.py",
+      "Passed": true
+    },
+    {
       "Name": "Work_Upgrade manifest member App/Python/vendor/pypdf/_codecs/__init__.py",
+      "Passed": true
+    },
+    {
+      "Name": "Work_Upgrade unique manifest member App/Python/vendor/pypdf/_codecs/_codecs.py",
       "Passed": true
     },
     {
@@ -3159,7 +6211,15 @@
       "Passed": true
     },
     {
+      "Name": "Work_Upgrade unique manifest member App/Python/vendor/pypdf/_codecs/adobe_glyphs.py",
+      "Passed": true
+    },
+    {
       "Name": "Work_Upgrade manifest member App/Python/vendor/pypdf/_codecs/adobe_glyphs.py",
+      "Passed": true
+    },
+    {
+      "Name": "Work_Upgrade unique manifest member App/Python/vendor/pypdf/_codecs/core_font_metrics.py",
       "Passed": true
     },
     {
@@ -3167,7 +6227,15 @@
       "Passed": true
     },
     {
+      "Name": "Work_Upgrade unique manifest member App/Python/vendor/pypdf/_codecs/pdfdoc.py",
+      "Passed": true
+    },
+    {
       "Name": "Work_Upgrade manifest member App/Python/vendor/pypdf/_codecs/pdfdoc.py",
+      "Passed": true
+    },
+    {
+      "Name": "Work_Upgrade unique manifest member App/Python/vendor/pypdf/_codecs/std.py",
       "Passed": true
     },
     {
@@ -3175,7 +6243,15 @@
       "Passed": true
     },
     {
+      "Name": "Work_Upgrade unique manifest member App/Python/vendor/pypdf/_codecs/symbol.py",
+      "Passed": true
+    },
+    {
       "Name": "Work_Upgrade manifest member App/Python/vendor/pypdf/_codecs/symbol.py",
+      "Passed": true
+    },
+    {
+      "Name": "Work_Upgrade unique manifest member App/Python/vendor/pypdf/_codecs/zapfding.py",
       "Passed": true
     },
     {
@@ -3183,7 +6259,15 @@
       "Passed": true
     },
     {
+      "Name": "Work_Upgrade unique manifest member App/Python/vendor/pypdf/_configuration.py",
+      "Passed": true
+    },
+    {
       "Name": "Work_Upgrade manifest member App/Python/vendor/pypdf/_configuration.py",
+      "Passed": true
+    },
+    {
+      "Name": "Work_Upgrade unique manifest member App/Python/vendor/pypdf/_crypt_providers/__init__.py",
       "Passed": true
     },
     {
@@ -3191,7 +6275,15 @@
       "Passed": true
     },
     {
+      "Name": "Work_Upgrade unique manifest member App/Python/vendor/pypdf/_crypt_providers/_base.py",
+      "Passed": true
+    },
+    {
       "Name": "Work_Upgrade manifest member App/Python/vendor/pypdf/_crypt_providers/_base.py",
+      "Passed": true
+    },
+    {
+      "Name": "Work_Upgrade unique manifest member App/Python/vendor/pypdf/_crypt_providers/_cryptography.py",
       "Passed": true
     },
     {
@@ -3199,7 +6291,15 @@
       "Passed": true
     },
     {
+      "Name": "Work_Upgrade unique manifest member App/Python/vendor/pypdf/_crypt_providers/_fallback.py",
+      "Passed": true
+    },
+    {
       "Name": "Work_Upgrade manifest member App/Python/vendor/pypdf/_crypt_providers/_fallback.py",
+      "Passed": true
+    },
+    {
+      "Name": "Work_Upgrade unique manifest member App/Python/vendor/pypdf/_crypt_providers/_pycryptodome.py",
       "Passed": true
     },
     {
@@ -3207,7 +6307,15 @@
       "Passed": true
     },
     {
+      "Name": "Work_Upgrade unique manifest member App/Python/vendor/pypdf/_doc_common.py",
+      "Passed": true
+    },
+    {
       "Name": "Work_Upgrade manifest member App/Python/vendor/pypdf/_doc_common.py",
+      "Passed": true
+    },
+    {
+      "Name": "Work_Upgrade unique manifest member App/Python/vendor/pypdf/_encryption.py",
       "Passed": true
     },
     {
@@ -3215,7 +6323,15 @@
       "Passed": true
     },
     {
+      "Name": "Work_Upgrade unique manifest member App/Python/vendor/pypdf/_page.py",
+      "Passed": true
+    },
+    {
       "Name": "Work_Upgrade manifest member App/Python/vendor/pypdf/_page.py",
+      "Passed": true
+    },
+    {
+      "Name": "Work_Upgrade unique manifest member App/Python/vendor/pypdf/_page_labels.py",
       "Passed": true
     },
     {
@@ -3223,7 +6339,15 @@
       "Passed": true
     },
     {
+      "Name": "Work_Upgrade unique manifest member App/Python/vendor/pypdf/_protocols.py",
+      "Passed": true
+    },
+    {
       "Name": "Work_Upgrade manifest member App/Python/vendor/pypdf/_protocols.py",
+      "Passed": true
+    },
+    {
+      "Name": "Work_Upgrade unique manifest member App/Python/vendor/pypdf/_reader.py",
       "Passed": true
     },
     {
@@ -3231,7 +6355,15 @@
       "Passed": true
     },
     {
+      "Name": "Work_Upgrade unique manifest member App/Python/vendor/pypdf/_text_extraction/__init__.py",
+      "Passed": true
+    },
+    {
       "Name": "Work_Upgrade manifest member App/Python/vendor/pypdf/_text_extraction/__init__.py",
+      "Passed": true
+    },
+    {
+      "Name": "Work_Upgrade unique manifest member App/Python/vendor/pypdf/_text_extraction/_layout_mode/__init__.py",
       "Passed": true
     },
     {
@@ -3239,7 +6371,15 @@
       "Passed": true
     },
     {
+      "Name": "Work_Upgrade unique manifest member App/Python/vendor/pypdf/_text_extraction/_layout_mode/_fixed_width_page.py",
+      "Passed": true
+    },
+    {
       "Name": "Work_Upgrade manifest member App/Python/vendor/pypdf/_text_extraction/_layout_mode/_fixed_width_page.py",
+      "Passed": true
+    },
+    {
+      "Name": "Work_Upgrade unique manifest member App/Python/vendor/pypdf/_text_extraction/_layout_mode/_text_state_manager.py",
       "Passed": true
     },
     {
@@ -3247,7 +6387,15 @@
       "Passed": true
     },
     {
+      "Name": "Work_Upgrade unique manifest member App/Python/vendor/pypdf/_text_extraction/_layout_mode/_text_state_params.py",
+      "Passed": true
+    },
+    {
       "Name": "Work_Upgrade manifest member App/Python/vendor/pypdf/_text_extraction/_layout_mode/_text_state_params.py",
+      "Passed": true
+    },
+    {
+      "Name": "Work_Upgrade unique manifest member App/Python/vendor/pypdf/_text_extraction/_text_extractor.py",
       "Passed": true
     },
     {
@@ -3255,7 +6403,15 @@
       "Passed": true
     },
     {
+      "Name": "Work_Upgrade unique manifest member App/Python/vendor/pypdf/_utils.py",
+      "Passed": true
+    },
+    {
       "Name": "Work_Upgrade manifest member App/Python/vendor/pypdf/_utils.py",
+      "Passed": true
+    },
+    {
+      "Name": "Work_Upgrade unique manifest member App/Python/vendor/pypdf/_version.py",
       "Passed": true
     },
     {
@@ -3263,7 +6419,15 @@
       "Passed": true
     },
     {
+      "Name": "Work_Upgrade unique manifest member App/Python/vendor/pypdf/_writer.py",
+      "Passed": true
+    },
+    {
       "Name": "Work_Upgrade manifest member App/Python/vendor/pypdf/_writer.py",
+      "Passed": true
+    },
+    {
+      "Name": "Work_Upgrade unique manifest member App/Python/vendor/pypdf/actions/__init__.py",
       "Passed": true
     },
     {
@@ -3271,7 +6435,15 @@
       "Passed": true
     },
     {
+      "Name": "Work_Upgrade unique manifest member App/Python/vendor/pypdf/actions/_actions.py",
+      "Passed": true
+    },
+    {
       "Name": "Work_Upgrade manifest member App/Python/vendor/pypdf/actions/_actions.py",
+      "Passed": true
+    },
+    {
+      "Name": "Work_Upgrade unique manifest member App/Python/vendor/pypdf/annotations/__init__.py",
       "Passed": true
     },
     {
@@ -3279,7 +6451,15 @@
       "Passed": true
     },
     {
+      "Name": "Work_Upgrade unique manifest member App/Python/vendor/pypdf/annotations/_base.py",
+      "Passed": true
+    },
+    {
       "Name": "Work_Upgrade manifest member App/Python/vendor/pypdf/annotations/_base.py",
+      "Passed": true
+    },
+    {
+      "Name": "Work_Upgrade unique manifest member App/Python/vendor/pypdf/annotations/_markup_annotations.py",
       "Passed": true
     },
     {
@@ -3287,7 +6467,15 @@
       "Passed": true
     },
     {
+      "Name": "Work_Upgrade unique manifest member App/Python/vendor/pypdf/annotations/_non_markup_annotations.py",
+      "Passed": true
+    },
+    {
       "Name": "Work_Upgrade manifest member App/Python/vendor/pypdf/annotations/_non_markup_annotations.py",
+      "Passed": true
+    },
+    {
+      "Name": "Work_Upgrade unique manifest member App/Python/vendor/pypdf/constants.py",
       "Passed": true
     },
     {
@@ -3295,7 +6483,15 @@
       "Passed": true
     },
     {
+      "Name": "Work_Upgrade unique manifest member App/Python/vendor/pypdf/errors.py",
+      "Passed": true
+    },
+    {
       "Name": "Work_Upgrade manifest member App/Python/vendor/pypdf/errors.py",
+      "Passed": true
+    },
+    {
+      "Name": "Work_Upgrade unique manifest member App/Python/vendor/pypdf/filters.py",
       "Passed": true
     },
     {
@@ -3303,7 +6499,15 @@
       "Passed": true
     },
     {
+      "Name": "Work_Upgrade unique manifest member App/Python/vendor/pypdf/generic/__init__.py",
+      "Passed": true
+    },
+    {
       "Name": "Work_Upgrade manifest member App/Python/vendor/pypdf/generic/__init__.py",
+      "Passed": true
+    },
+    {
+      "Name": "Work_Upgrade unique manifest member App/Python/vendor/pypdf/generic/_appearance_stream.py",
       "Passed": true
     },
     {
@@ -3311,7 +6515,15 @@
       "Passed": true
     },
     {
+      "Name": "Work_Upgrade unique manifest member App/Python/vendor/pypdf/generic/_base.py",
+      "Passed": true
+    },
+    {
       "Name": "Work_Upgrade manifest member App/Python/vendor/pypdf/generic/_base.py",
+      "Passed": true
+    },
+    {
+      "Name": "Work_Upgrade unique manifest member App/Python/vendor/pypdf/generic/_color.py",
       "Passed": true
     },
     {
@@ -3319,7 +6531,15 @@
       "Passed": true
     },
     {
+      "Name": "Work_Upgrade unique manifest member App/Python/vendor/pypdf/generic/_data_structures.py",
+      "Passed": true
+    },
+    {
       "Name": "Work_Upgrade manifest member App/Python/vendor/pypdf/generic/_data_structures.py",
+      "Passed": true
+    },
+    {
+      "Name": "Work_Upgrade unique manifest member App/Python/vendor/pypdf/generic/_files.py",
       "Passed": true
     },
     {
@@ -3327,7 +6547,15 @@
       "Passed": true
     },
     {
+      "Name": "Work_Upgrade unique manifest member App/Python/vendor/pypdf/generic/_fit.py",
+      "Passed": true
+    },
+    {
       "Name": "Work_Upgrade manifest member App/Python/vendor/pypdf/generic/_fit.py",
+      "Passed": true
+    },
+    {
+      "Name": "Work_Upgrade unique manifest member App/Python/vendor/pypdf/generic/_font.py",
       "Passed": true
     },
     {
@@ -3335,7 +6563,15 @@
       "Passed": true
     },
     {
+      "Name": "Work_Upgrade unique manifest member App/Python/vendor/pypdf/generic/_image_inline.py",
+      "Passed": true
+    },
+    {
       "Name": "Work_Upgrade manifest member App/Python/vendor/pypdf/generic/_image_inline.py",
+      "Passed": true
+    },
+    {
+      "Name": "Work_Upgrade unique manifest member App/Python/vendor/pypdf/generic/_image_xobject.py",
       "Passed": true
     },
     {
@@ -3343,7 +6579,15 @@
       "Passed": true
     },
     {
+      "Name": "Work_Upgrade unique manifest member App/Python/vendor/pypdf/generic/_link.py",
+      "Passed": true
+    },
+    {
       "Name": "Work_Upgrade manifest member App/Python/vendor/pypdf/generic/_link.py",
+      "Passed": true
+    },
+    {
+      "Name": "Work_Upgrade unique manifest member App/Python/vendor/pypdf/generic/_outline.py",
       "Passed": true
     },
     {
@@ -3351,7 +6595,15 @@
       "Passed": true
     },
     {
+      "Name": "Work_Upgrade unique manifest member App/Python/vendor/pypdf/generic/_rectangle.py",
+      "Passed": true
+    },
+    {
       "Name": "Work_Upgrade manifest member App/Python/vendor/pypdf/generic/_rectangle.py",
+      "Passed": true
+    },
+    {
+      "Name": "Work_Upgrade unique manifest member App/Python/vendor/pypdf/generic/_utils.py",
       "Passed": true
     },
     {
@@ -3359,7 +6611,15 @@
       "Passed": true
     },
     {
+      "Name": "Work_Upgrade unique manifest member App/Python/vendor/pypdf/generic/_viewerpref.py",
+      "Passed": true
+    },
+    {
       "Name": "Work_Upgrade manifest member App/Python/vendor/pypdf/generic/_viewerpref.py",
+      "Passed": true
+    },
+    {
+      "Name": "Work_Upgrade unique manifest member App/Python/vendor/pypdf/pagerange.py",
       "Passed": true
     },
     {
@@ -3367,7 +6627,15 @@
       "Passed": true
     },
     {
+      "Name": "Work_Upgrade unique manifest member App/Python/vendor/pypdf/papersizes.py",
+      "Passed": true
+    },
+    {
       "Name": "Work_Upgrade manifest member App/Python/vendor/pypdf/papersizes.py",
+      "Passed": true
+    },
+    {
+      "Name": "Work_Upgrade unique manifest member App/Python/vendor/pypdf/py.typed",
       "Passed": true
     },
     {
@@ -3375,7 +6643,15 @@
       "Passed": true
     },
     {
+      "Name": "Work_Upgrade unique manifest member App/Python/vendor/pypdf/types.py",
+      "Passed": true
+    },
+    {
       "Name": "Work_Upgrade manifest member App/Python/vendor/pypdf/types.py",
+      "Passed": true
+    },
+    {
+      "Name": "Work_Upgrade unique manifest member App/Python/vendor/pypdf/xmp.py",
       "Passed": true
     },
     {
@@ -3383,7 +6659,15 @@
       "Passed": true
     },
     {
+      "Name": "Work_Upgrade unique manifest member App/Reference/Siemens_QA_Guide.html",
+      "Passed": true
+    },
+    {
       "Name": "Work_Upgrade manifest member App/Reference/Siemens_QA_Guide.html",
+      "Passed": true
+    },
+    {
+      "Name": "Work_Upgrade unique manifest member App/Reports.psm1",
       "Passed": true
     },
     {
@@ -3391,7 +6675,15 @@
       "Passed": true
     },
     {
+      "Name": "Work_Upgrade unique manifest member App/Review.psm1",
+      "Passed": true
+    },
+    {
       "Name": "Work_Upgrade manifest member App/Review.psm1",
+      "Passed": true
+    },
+    {
+      "Name": "Work_Upgrade unique manifest member App/ReviewQueueUi.ps1",
       "Passed": true
     },
     {
@@ -3399,7 +6691,15 @@
       "Passed": true
     },
     {
+      "Name": "Work_Upgrade unique manifest member App/ReviewQueueWindow.xaml",
+      "Passed": true
+    },
+    {
       "Name": "Work_Upgrade manifest member App/ReviewQueueWindow.xaml",
+      "Passed": true
+    },
+    {
+      "Name": "Work_Upgrade unique manifest member App/Search.psm1",
       "Passed": true
     },
     {
@@ -3407,7 +6707,15 @@
       "Passed": true
     },
     {
+      "Name": "Work_Upgrade unique manifest member App/Start-Web.ps1",
+      "Passed": true
+    },
+    {
       "Name": "Work_Upgrade manifest member App/Start-Web.ps1",
+      "Passed": true
+    },
+    {
+      "Name": "Work_Upgrade unique manifest member App/Start.ps1",
       "Passed": true
     },
     {
@@ -3415,7 +6723,15 @@
       "Passed": true
     },
     {
+      "Name": "Work_Upgrade unique manifest member App/Support.psm1",
+      "Passed": true
+    },
+    {
       "Name": "Work_Upgrade manifest member App/Support.psm1",
+      "Passed": true
+    },
+    {
+      "Name": "Work_Upgrade unique manifest member App/SupportDiagnostics.psm1",
       "Passed": true
     },
     {
@@ -3423,7 +6739,15 @@
       "Passed": true
     },
     {
+      "Name": "Work_Upgrade unique manifest member App/TaskWorker.ps1",
+      "Passed": true
+    },
+    {
       "Name": "Work_Upgrade manifest member App/TaskWorker.ps1",
+      "Passed": true
+    },
+    {
+      "Name": "Work_Upgrade unique manifest member App/Trends.psm1",
       "Passed": true
     },
     {
@@ -3431,7 +6755,15 @@
       "Passed": true
     },
     {
+      "Name": "Work_Upgrade unique manifest member App/Updates.psm1",
+      "Passed": true
+    },
+    {
       "Name": "Work_Upgrade manifest member App/Updates.psm1",
+      "Passed": true
+    },
+    {
+      "Name": "Work_Upgrade unique manifest member App/Upgrade.ps1",
       "Passed": true
     },
     {
@@ -3439,7 +6771,15 @@
       "Passed": true
     },
     {
+      "Name": "Work_Upgrade unique manifest member App/Web/app.css",
+      "Passed": true
+    },
+    {
       "Name": "Work_Upgrade manifest member App/Web/app.css",
+      "Passed": true
+    },
+    {
+      "Name": "Work_Upgrade unique manifest member App/Web/app.js",
       "Passed": true
     },
     {
@@ -3447,7 +6787,15 @@
       "Passed": true
     },
     {
+      "Name": "Work_Upgrade unique manifest member App/Web/index.html",
+      "Passed": true
+    },
+    {
       "Name": "Work_Upgrade manifest member App/Web/index.html",
+      "Passed": true
+    },
+    {
+      "Name": "Work_Upgrade unique manifest member App/Web/trends.js",
       "Passed": true
     },
     {
@@ -3455,7 +6803,15 @@
       "Passed": true
     },
     {
+      "Name": "Work_Upgrade unique manifest member App/WebService.psm1",
+      "Passed": true
+    },
+    {
       "Name": "Work_Upgrade manifest member App/WebService.psm1",
+      "Passed": true
+    },
+    {
+      "Name": "Work_Upgrade unique manifest member App/WebWorker.ps1",
       "Passed": true
     },
     {
@@ -3463,7 +6819,15 @@
       "Passed": true
     },
     {
+      "Name": "Work_Upgrade unique manifest member App/Workspace.psm1",
+      "Passed": true
+    },
+    {
       "Name": "Work_Upgrade manifest member App/Workspace.psm1",
+      "Passed": true
+    },
+    {
+      "Name": "Work_Upgrade unique manifest member Config/NetworkProfile.local.json",
       "Passed": true
     },
     {
@@ -3471,7 +6835,15 @@
       "Passed": true
     },
     {
+      "Name": "Work_Upgrade unique manifest member Config/Settings.json",
+      "Passed": true
+    },
+    {
       "Name": "Work_Upgrade manifest member Config/Settings.json",
+      "Passed": true
+    },
+    {
+      "Name": "Work_Upgrade unique manifest member Package.json",
       "Passed": true
     },
     {
@@ -3479,11 +6851,27 @@
       "Passed": true
     },
     {
+      "Name": "Work_Upgrade unique manifest member Start CT QA Manager.cmd",
+      "Passed": true
+    },
+    {
       "Name": "Work_Upgrade manifest member Start CT QA Manager.cmd",
       "Passed": true
     },
     {
+      "Name": "Work_Upgrade unique manifest member User Guide.html",
+      "Passed": true
+    },
+    {
       "Name": "Work_Upgrade manifest member User Guide.html",
+      "Passed": true
+    },
+    {
+      "Name": "Work_Upgrade manifest covers every program payload member exactly once",
+      "Passed": true
+    },
+    {
+      "Name": "Work_Upgrade calendar uses only JavaScript paths accepted by the old updater",
       "Passed": true
     },
     {
@@ -3507,11 +6895,15 @@
       "Passed": true
     },
     {
-      "Name": "Previous install is the real5.3.1 package",
+      "Name": "Previous install is the real5.4.0 package",
       "Passed": true
     },
     {
-      "Name": "Existing5.3.1 updater stages and installs actual5.4.0 Update ZIP",
+      "Name": "All seven in-app synthetic preservation sentinels are present",
+      "Passed": true
+    },
+    {
+      "Name": "Existing5.4.0 updater stages and installs actual5.5.0 Update ZIP",
       "Passed": true
     },
     {
@@ -3520,6 +6912,10 @@
     },
     {
       "Name": "In-app update creates a previous-program backup",
+      "Passed": true
+    },
+    {
+      "Name": "Previous updater bytes are retained in the real program backup",
       "Passed": true
     },
     {
@@ -3534,49 +6930,49 @@
   "Packages": [
     {
       "Kind": "Portable",
-      "Name": "CT_QA_Manager_Pro_v5.4.0_Portable.zip",
-      "Bytes": 59560050,
-      "SHA256": "94147820365b6e9ac4b2631555b362ce392263471b521f3d78fe2d3a3383a685",
+      "Name": "CT_QA_Manager_Pro_v5.5.0_Portable.zip",
+      "Bytes": 59585028,
+      "SHA256": "dfb98962645579486aeb8797d6561a2e44fc0c49ce91f8da20ed31e4859cb7f9",
       "ManifestMembers": 167
     },
     {
       "Kind": "Update",
-      "Name": "CT_QA_Manager_Pro_v5.4.0_Update.zip",
-      "Bytes": 59560050,
-      "SHA256": "31d43da9277e31c5dda5e3c616fe575913339d60aee02371f0682cfd1e8f09b9",
+      "Name": "CT_QA_Manager_Pro_v5.5.0_Update.zip",
+      "Bytes": 59585028,
+      "SHA256": "c3c0d20ec5e57494c8c0f8d0a448849d7969f2d73d1dd83834b672537b1e0ef9",
       "ManifestMembers": 167
     },
     {
       "Kind": "Upgrade",
-      "Name": "CT_QA_Manager_Pro_v5.4.0_Upgrade.zip",
-      "Bytes": 59561404,
-      "SHA256": "94fc11ba3ffa01b762352f8042d748ea2423e5c946fa27357605573390a53d3a",
+      "Name": "CT_QA_Manager_Pro_v5.5.0_Upgrade.zip",
+      "Bytes": 59586382,
+      "SHA256": "7a97d2c44b2408f07f4a423ab62c9523c1e0df9e2197d94899a63d489c9676b7",
       "ManifestMembers": 167
     },
     {
       "Kind": "Work_Portable",
-      "Name": "CT_QA_Manager_Pro_v5.4.0_Work_Portable.zip",
-      "Bytes": 59560459,
-      "SHA256": "40cc2df47d91e6fde28dba19e402267b2201c4e9496b45583d34e4806945ec12",
+      "Name": "CT_QA_Manager_Pro_v5.5.0_Work_Portable.zip",
+      "Bytes": 59585436,
+      "SHA256": "ede569ecb8e51a4cf9b9c307617eabb7c72259675d24d453eaaaffb5c5639d9d",
       "ManifestMembers": 168
     },
     {
       "Kind": "Work_Upgrade",
-      "Name": "CT_QA_Manager_Pro_v5.4.0_Work_Upgrade.zip",
-      "Bytes": 59561614,
-      "SHA256": "5b2e6e3e9dcaf6b1b2a871145570c9259691e4f6b2d9d1b5d18a465122fdb44a",
+      "Name": "CT_QA_Manager_Pro_v5.5.0_Work_Upgrade.zip",
+      "Bytes": 59586591,
+      "SHA256": "72e6a7629d74ce2147a01b445a728e8626520700e891ecf34c68b66a211d5622",
       "ManifestMembers": 168
     }
   ],
   "Failed": 0,
-  "GenericUpgradeOutput": "All five release ZIPs: clean contents, manifests verified, no passwords bundled.\nActual packaged one-time upgrade from v5.3.1 passed: all data/config/credential/archive/history/prior-log sentinel hashes preserved; new program installed and prior program backed up.\nStandalone packaged diagnostic collector passed against the updated installation.",
+  "GenericUpgradeOutput": "All five release ZIPs: clean contents, manifests verified, no passwords bundled.\nActual packaged one-time upgrade from v5.4.0 passed: all data/config/credential/archive/history/prior-log sentinel hashes preserved; new program installed and prior program backed up.\nStandalone packaged diagnostic collector passed against the updated installation.",
   "PrivateUpgradeOutput": "Actual private one-time upgrade passed: three scanner paths/usernames applied; archive location, department settings, credential-file sentinel, organization history, prior logs and all data hashes preserved. No network connection attempted.",
-  "InAppUpdateFrom": "5.3.1",
-  "InAppUpdateTo": "5.4.0",
+  "InAppUpdateFrom": "5.4.0",
+  "InAppUpdateTo": "5.5.0",
   "InAppPreservedSentinelFiles": 7,
-  "InAppSourceValidatorVersion": "5.3.1",
+  "InAppSourceValidatorVersion": "5.4.0",
   "InAppSourceValidatorSHA256": "262f96322d673bb4a84457b61ea61f402f31c29fe380185b48c4c7204c6a887c",
   "InAppStageCleaned": true,
   "Passed": true,
-  "CheckCount": 880
+  "CheckCount": 1729
 }

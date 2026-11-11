@@ -2,12 +2,12 @@
   "Product": "CT QA Manager Pro",
   "Feature": "Printed measurement extraction",
   "MeasurementVersion": 1,
-  "MeasurementSupportRevision": 2,
+  "MeasurementSupportRevision": 3,
   "Runtime": "7.4.13",
   "WindowsPowerShell51ActuallyRun": false,
   "SyntheticOnly": true,
-  "Tests": 20,
-  "Assertions": 70,
+  "Tests": 31,
+  "Assertions": 121,
   "Failed": 0,
   "Results": [
     {
@@ -89,7 +89,51 @@
     {
       "Name": "Historical reference documents cannot supply current measurements even when they contain readable-looking values",
       "Result": "PASS"
+    },
+    {
+      "Name": "Monthly scalar alignment tables retain printed units and avoid invented acquisition identities",
+      "Result": "PASS"
+    },
+    {
+      "Name": "Standalone page-two component titles and wrapped numbered titles use classified body evidence",
+      "Result": "PASS"
+    },
+    {
+      "Name": "Generic page headers do not consume the following real numbered alignment heading",
+      "Result": "PASS"
+    },
+    {
+      "Name": "Separate monthly sections stay distinct and nearby historical comparisons are not current values",
+      "Result": "PASS"
+    },
+    {
+      "Name": "Scalar alignment rejects malformed, detached, ambiguous and mismatched-unit tables",
+      "Result": "PASS"
+    },
+    {
+      "Name": "Scalar alignment tables cannot borrow across page boundaries or override incomplete date evidence",
+      "Result": "PASS"
+    },
+    {
+      "Name": "Alignment requires actual body evidence rather than a plausible table of contents or empty Extended section",
+      "Result": "PASS"
+    },
+    {
+      "Name": "Alignment normalization retains current values but uncertain bounds remain explicit",
+      "Result": "PASS"
+    },
+    {
+      "Name": "Historical and suspected reference alignment bodies never supply current measurements",
+      "Result": "PASS"
+    },
+    {
+      "Name": "Explicit sagittal and coronal header columns retain their separate printed axis values",
+      "Result": "PASS"
+    },
+    {
+      "Name": "Axis alignment rejects reordered headers, missing pairs and extra numeric columns",
+      "Result": "PASS"
     }
   ],
-  "Scope": "Synthetic IEC water/noise/slice-thickness tables and manufacturer Daily inline single-system HU tables only. Explicit current HU values and printed bounds are kept separate from parenthesized references, scan parameters, other tables and clinical approval. Unknown, incomplete, conflicting, ambiguous and clipped evidence remains marked for review."
+  "Scope": "Synthetic IEC water/noise/slice-thickness tables, manufacturer Daily inline single-system HU tables and bounded Monthly alignment tables. Explicit current HU values and printed bounds are kept separate from parenthesized references, scan parameters, other tables and clinical approval. Unknown, incomplete, conflicting, ambiguous and clipped evidence remains marked for review."
 }

@@ -1,10 +1,10 @@
 {
-  "version": "5.4.0",
+  "version": "5.5.0",
   "syntheticOnly": true,
   "browserChannel": "msedge",
   "records": 1367,
-  "tests": 5,
-  "assertions": 27347,
+  "tests": 6,
+  "assertions": 27376,
   "failed": 0,
   "externalAssetRequests": 0,
   "javascriptErrors": [],
@@ -27,6 +27,10 @@
     },
     {
       "name": "Reading one unsupported synthetic PDF creates one genuine review exception",
+      "result": "PASS"
+    },
+    {
+      "name": "Reason groups support atomic selected decisions, stale protection and durable batch Undo",
       "result": "PASS"
     }
   ],

@@ -1,8 +1,8 @@
 ﻿{
     "Version":  "5.4.0",
     "Runtime":  "5.1.26100.33648",
-    "Tests":  42,
-    "Assertions":  254,
+    "Tests":  53,
+    "Assertions":  435,
     "Failed":  0,
     "Results":  [
                     {
@@ -212,6 +212,61 @@
                     },
                     {
                         "Name":  "Durable file decisions reuse one validated dashboard and organization while refreshing only their selected readable PDF",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Selected grouped approvals persist one durable batch and restore together after a fresh snapshot",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Grouped Disapprove retains all selected PDFs under Other and explicit batch categories are validated",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Grouped selection preflight rejects stale duplicate unknown waiting and oversized selections atomically",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Exact selected-byte checks prevent partial grouped decisions and partial grouped Undo",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Batch processing keeps one dashboard pass one selected-library update and durable copy-failure warnings",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Approval targets are explicit while legacy single requests remain compatible",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Batch read handles prevent an early selected PDF changing before later validation and commit",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Batch Undo rejects changed displayed state and corrupt grouped history without rewriting them",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "The fifty-file boundary remains selected-only and grouped Undo survives unrelated single history",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Omitted batch overrides preserve each selected Daily or Monthly proposal independently",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Alignment inspector rows share current graph capability body and explicit-context eligibility",
                         "Result":  "PASS",
                         "Details":  ""
                     }
