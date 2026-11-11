@@ -52,4 +52,6 @@ The [Python compatibility test](https://github.com/rtariq2015/QA-Manger/releases
 
 The dedicated Windows workflow checks the bundled interpreter under a temporary standard user, with installed Python excluded from PATH and Python environment variables deliberately pointing elsewhere. The reader blocks its own network operations. This application-level guard does not reproduce workplace endpoint controls; run the same ZIP on the work computer later to confirm those. The compatibility test leaves the main program and its data unchanged. Python has not been added as a requirement for CT QA Manager.
 
+The [native Windows test](https://github.com/rtariq2015/QA-Manger/actions/runs/42939047241) passed all **9 scenarios / 378 assertions**, including an actual standard-user launch, relocation, PDF reading, import isolation, private-output checks and input preservation. The [recorded evidence](Tests/PythonProbe/Summary.json) pins the tested source and download checksum. Workplace policy remains a separate check on the actual work computer.
+
 [Research and design rationale](docs/Redesign-Research.html) · [User guide](User%20Guide.html) · [Historical validation](Tests/Historical)

@@ -1,0 +1,70 @@
+﻿{
+    "Product":  "CT QA portable Python compatibility test",
+    "ProbeVersion":  "1.0.0",
+    "Runtime":  "5.1.26100.33648",
+    "NativeWindowsActuallyRun":  true,
+    "BundledPythonActuallyRun":  true,
+    "NonAdministratorActuallyRun":  true,
+    "StandardAccountCreatedByTestInfrastructure":  true,
+    "StandardAccountCleanupSucceeded":  true,
+    "SystemPythonExcludedFromPath":  true,
+    "PythonEnvironmentPoisoned":  true,
+    "ApplicationNetworkGuardActuallyRun":  true,
+    "OperatingSystemNetworkBlockedActuallyTested":  false,
+    "WorkstationPolicyActuallyTested":  false,
+    "HospitalNetworkContacted":  false,
+    "SyntheticOnly":  true,
+    "Tests":  9,
+    "Assertions":  378,
+    "Failed":  0,
+    "Results":  [
+                    {
+                        "Name":  "The package contains a complete interpreter and verified local dependencies",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "The real CMD launcher works without system Python or inherited Python configuration",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Both generated QA layouts are fully read with their report dates and printed observations",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Moving the whole folder preserves operation at a Unicode path containing spaces",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "A selected local PDF is read without recording its identity or extracted private text",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "An unreadable selected PDF returns a separate scrubbed result without breaking the runtime test",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "An altered packaged PDF dependency is rejected before PDF analysis",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "The bundled Python and reader also run under an actual non-administrator token",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "The probe preserves all inputs and the main application files",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    }
+                ],
+    "Scope":  "Fresh generated Windows fixtures and the actual bundled interpreter launched through CMD. PATH excludes installed Python; PYTHONHOME/PYTHONPATH and shadow modules are poisoned. A separate ephemeral standard account is created only by elevated CI infrastructure, with no UAC or execution-policy change, and the child reports its actual unelevated token. Network denial is an application audit hook, not a claim of OS firewall isolation. Optional PDF canaries are checked against persisted output; no real reports, passwords or hospital access are used. Hosted execution does not establish a work computer application policy.",
+    "ActualPythonVersion":  "3.14.10",
+    "ActualPypdfVersion":  "7.0.1"
+}

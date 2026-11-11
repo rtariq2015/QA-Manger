@@ -1,0 +1,21 @@
+{
+  "Product": "CT QA portable Python compatibility test",
+  "ProbeVersion": "1.0.0",
+  "SourceCommit": "990a5e07a0443a0501075c665732d1c18a1a01c4",
+  "WorkflowRun": "https://github.com/rtariq2015/QA-Manger/actions/runs/42939047241",
+  "Release": "https://github.com/rtariq2015/QA-Manger/releases/tag/python-test-v1.0.0",
+  "Tests": 9,
+  "Assertions": 378,
+  "Failed": 0,
+  "ActualNonAdministratorWindowsUser": true,
+  "SystemPythonExcludedFromPath": true,
+  "HostilePythonEnvironmentIgnored": true,
+  "ApplicationNetworkGuardActuallyRun": true,
+  "OperatingSystemNetworkBlockActuallyTested": false,
+  "WorkstationPolicyActuallyTested": false,
+  "MainApplicationModified": false,
+  "DownloadSHA256": "9f3eb021641d9793f8def3f067d6ed5b72952de19985b06bc6e6c31b6952b840",
+  "ValidationArtifactZipSHA256": "b8ba95b58a4d40b6950ae29495c0a157fcaacf2b2b48956ae30a809d1b48c877",
+  "RawValidationSHA256": "f5dcf4a18cee000888a14e2719fc3c09ae15683d13e877decf02d6bb6b6ef38a",
+  "Scope": "Separate portable Python test only. Raw validation and build metadata are copied unchanged from the successful pinned Windows workflow. Synthetic test PDFs and privacy canaries only; no hospital network, work-computer policy, original reports or credentials were used in the public test. The main program remains version5.2.0 and does not require Python."
+}
