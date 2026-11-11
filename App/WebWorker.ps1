@@ -1,5 +1,5 @@
 ﻿# JSON adapter called by the local application host. No arbitrary command execution.
-[CmdletBinding()]param([Parameter(Mandatory=$true)][string]$AppRoot,[Parameter(Mandatory=$true)][string]$InputPath,[Parameter(Mandatory=$true)][string]$OutputPath,[string]$ProgressPath="",[string]$CancelPath="")
+[CmdletBinding()]param([Parameter(Mandatory=$true)][string]$AppRoot,[Parameter(Mandatory=$true)][string]$InputPath,[Parameter(Mandatory=$true)][string]$OutputPath,[string]$ProgressPath="",[string]$CancelPath="",[switch]$IsolatedPdfRead)
 Set-StrictMode -Version 2.0
 $ErrorActionPreference='Stop';$WarningPreference='SilentlyContinue';$ProgressPreference='SilentlyContinue';$InformationPreference='SilentlyContinue'
 $operation='';$clock=[Diagnostics.Stopwatch]::StartNew()
@@ -14,7 +14,7 @@ function Start-QaWebProgressMonitor {
         while($ancestor){if(([IO.File]::Exists($ancestor) -or [IO.Directory]::Exists($ancestor)) -and (([IO.File]::GetAttributes($ancestor) -band [IO.FileAttributes]::ReparsePoint) -ne 0)){throw 'Use direct files for local progress.'};$ancestor=[IO.Path]::GetDirectoryName($ancestor)}
     }
     if([IO.Path]::GetDirectoryName([IO.Path]::GetFullPath($Destination)) -cne [IO.Path]::GetDirectoryName([IO.Path]::GetFullPath($Cancellation))){throw 'The local progress channel is invalid.'}
-    return [hashtable]::Synchronized(@{Stage='Preparing';Completed=0;Total=0;Percent=-1;Copied=0;Unchanged=0;Failed=0;Cancel=[IO.File]::Exists($Cancellation);Done=$false;Message='';BackgroundRead=$false})
+    return [hashtable]::Synchronized(@{Stage='Preparing';Completed=0;Total=0;Percent=-1;Copied=0;Unchanged=0;Failed=0;Cancel=[IO.File]::Exists($Cancellation);Done=$false;Message='';BackgroundRead=$false;ReaderProcessIsolated=$false})
 }
 
 try{
@@ -32,6 +32,14 @@ try{
     $shared=Start-QaWebProgressMonitor -Root $AppRoot -Destination $ProgressPath -Cancellation $CancelPath
     if($null -ne $shared){
         $selected=if($null -ne $request.PSObject.Properties['id']){[string]$request.id}else{''}
+        # Only the Host command line can enable this optimization. Request JSON
+        # cannot grant it; the current helper is already isolated to one PDF.
+        if($IsolatedPdfRead){
+            $single=($selected -cmatch '^[0-9A-Fa-f]{64}$')
+            if(-not $single -and $null -ne $request.PSObject.Properties['ids'] -and $null -ne $request.PSObject.Properties['analysisStep'] -and $request.analysisStep -is [bool] -and $request.analysisStep){$ids=@($request.ids);$single=($ids.Count -eq 1 -and $ids[0] -is [string] -and [string]$ids[0] -cmatch '^[0-9A-Fa-f]{64}$')}
+            if([string]$request.action -cne 'Analyze' -or -not $single){throw 'The isolated PDF helper must select exactly one saved report.'}
+            $shared.ReaderProcessIsolated=$true
+        }
         $shared.BackgroundRead=($null -ne $request.PSObject.Properties['action'] -and [string]$request.action -ceq 'Analyze' -and -not $selected)
         if($shared.BackgroundRead){try{[Diagnostics.Process]::GetCurrentProcess().PriorityClass=[Diagnostics.ProcessPriorityClass]::BelowNormal}catch{}}
         $watchCode=@'

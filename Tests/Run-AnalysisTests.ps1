@@ -56,6 +56,45 @@ Scenario 'A real verified PDF is classified once and reused without changing rev
     Check ($again.Analyzed -eq 0 -and $again.Cached -eq 1 -and (Get-FileHash $cache).Hash -eq $cacheHash) 'Background repeat does not reread or rewrite unknown content'
     Check ((Get-FileHash $state).Hash -eq $before) 'Analysis leaves clinical reviews and archive state byte-for-byte unchanged'
 }
+Scenario 'A disposable one-PDF worker reads directly without a nested process while retaining verified cache and controlled timings' {
+    $fx=Fixture 'DisposableReader' 2;$record=$fx.Records[0];$state=Join-Path $fx.Config.ArchiveRoot '.ctqa/state.json';$stateHash=(Get-FileHash $state).Hash
+    $progress=@{ReaderProcessIsolated=$true;Cancel=$false;Stage='Preparing';Completed=0;Total=0}
+    & (Get-Module Insights) {function script:Invoke-QaIsolatedTask {throw 'The already-isolated PDF reader launched a redundant process.'}}
+    $first=Invoke-QaAnalysis -Config $fx.Config -Records $fx.Records -RecordIds @($record.Id) -Limit 1 -Progress $progress
+    Check ($first.Analyzed -eq 1 -and $first.Failed -eq 0 -and $first.Performance.InlinePdfReads -eq 1 -and $first.Performance.NestedReaderStarts -eq 0) 'The real PDF is read inside its disposable caller rather than another PowerShell process'
+    $saved=Get-QaSavedAnalysis $fx.Config $record
+    Check ($saved.VerifiedHash -ceq $record.Hash -and $saved.VerifiedLength -eq $record.Length -and $saved.VerifiedWriteTicks -eq (Get-Item $record.DestinationPath).LastWriteTimeUtc.Ticks) 'Direct reading retains the exact verified bytes and current destination metadata'
+    foreach($name in @('ReaderMilliseconds','ReadWorkerMilliseconds','ParseMilliseconds','CacheMilliseconds')){Check ($first.Performance.$name -ge 0 -and $first.Performance.$name -le 3600000) 'Reported timing is a bounded numeric millisecond value'}
+    Check ($first.Performance.CacheWrites -eq 1) 'Exactly one successful atomic cache write is measured'
+    $cacheHash=(Get-FileHash (CachePath $fx $record)).Hash;$warm=Invoke-QaAnalysis -Config $fx.Config -Records $fx.Records -RecordIds @($record.Id) -Progress $progress
+    Check ($warm.Analyzed -eq 0 -and $warm.Cached -eq 1 -and $warm.Performance.InlinePdfReads -eq 0 -and $warm.Performance.CacheWrites -eq 0 -and (Get-FileHash (CachePath $fx $record)).Hash -ceq $cacheHash) 'A warm direct-reader request neither starts a reader nor rewrites evidence'
+    Check ((Get-FileHash $state).Hash -ceq $stateHash -and (Get-FileHash $record.DestinationPath).Hash -ceq $record.Hash) 'The optimization never changes archive state or PDF bytes'
+    $events=@(Get-ChildItem (Join-Path $fx.Config.AppRoot 'Logs/Scrubbed') -Filter '*.jsonl'|ForEach-Object{Get-Content $_.FullName|ForEach-Object{$_|ConvertFrom-Json}})
+    $completed=@($events|Where-Object{$_.Operation -ceq 'PdfRead' -and $_.Outcome -ceq 'Completed'})
+    Check ($completed.Count -eq 1 -and $completed[0].Counts.InlinePdfReads -eq 1 -and $completed[0].Counts.NestedReaderStarts -eq 0 -and $completed[0].Counts.CacheWrites -eq 1) 'Scrubbed activity records controlled execution and cache counters once, without logging cached skips as new reads'
+}
+Scenario 'Direct worker reads independently reload archive membership and verify bytes even when supplied records and old metadata look valid' {
+    $fx=Fixture 'DisposableProvenance' 2;$record=$fx.Records[0];$state=Join-Path $fx.Config.ArchiveRoot '.ctqa/state.json';$originalState=[IO.File]::ReadAllText($state);$stateHash=(Get-FileHash $state).Hash
+    $progress=@{ReaderProcessIsolated=$true;Cancel=$false;Stage='Preparing';Completed=0;Total=0}
+    & (Get-Module Insights) {function script:Invoke-QaIsolatedTask {throw 'The already-isolated PDF reader launched a redundant process.'}}
+    [void](Invoke-QaAnalysis -Config $fx.Config -Records $fx.Records -RecordIds @($record.Id) -Progress $progress)
+    $bytes=[IO.File]::ReadAllBytes($record.DestinationPath);$changed=$bytes.Clone();$changed[$changed.Length-12]=$changed[$changed.Length-12] -bxor 1;$ticks=(Get-Item $record.DestinationPath).LastWriteTimeUtc.Ticks
+    try{
+        [IO.File]::WriteAllBytes($record.DestinationPath,$changed);[IO.File]::SetLastWriteTimeUtc($record.DestinationPath,(New-Object datetime($ticks,[DateTimeKind]::Utc)))
+        $result=Invoke-QaAnalysis -Config $fx.Config -Records $fx.Records -RecordIds @($record.Id) -Force -Progress $progress
+        $saved=Get-QaSavedAnalysis $fx.Config $record
+        Check ($result.Analyzed -eq 0 -and $result.Failed -eq 1 -and $saved.Status -ceq 'ReadError' -and $null -eq $saved.PSObject.Properties['DocumentClassification']) 'Equal length and restored mtime cannot bypass hashing the exact parsed bytes'
+    }finally{[IO.File]::WriteAllBytes($record.DestinationPath,$bytes);[IO.File]::SetLastWriteTimeUtc($record.DestinationPath,(New-Object datetime($ticks,[DateTimeKind]::Utc)))}
+    $orphan=$fx.Records[1]
+    try{
+        $doc=$originalState|ConvertFrom-Json;$doc.Records=@($doc.Records|Where-Object Id -cne $orphan.Id);[IO.File]::WriteAllText($state,($doc|ConvertTo-Json -Depth 20),(New-Object Text.UTF8Encoding($true)))
+        $result=Invoke-QaAnalysis -Config $fx.Config -Records $fx.Records -RecordIds @($orphan.Id) -Progress $progress
+        $saved=Get-QaSavedAnalysis $fx.Config $orphan
+        Check ($result.Analyzed -eq 0 -and $result.Failed -eq 1 -and $saved.Status -ceq 'ReadError') 'An old supplied work-plan identity cannot read a report removed from the current archive state'
+    }finally{[IO.File]::WriteAllText($state,$originalState,(New-Object Text.UTF8Encoding($true)))}
+    Check ((Get-FileHash $state).Hash -ceq $stateHash -and (Get-FileHash $orphan.DestinationPath).Hash -ceq $orphan.Hash) 'The failed membership check leaves report bytes intact'
+}
+
 Scenario 'Legacy successful cache receives one bounded classifier upgrade' {
     $fx=Fixture 'Legacy';$record=$fx.Records[0];$control=Install-ReadMock $fx
     $path=CachePath $fx $record;[void][IO.Directory]::CreateDirectory((Split-Path -Parent $path))
@@ -260,11 +299,50 @@ Scenario 'New measurement capabilities selectively refresh Daily and slice evide
     $second=Invoke-QaAnalysis $fx.Config -UpgradeMeasurements -RefreshUnsupported
     $warm=Invoke-QaAnalysis $fx.Config -UpgradeMeasurements -RefreshUnsupported
     Check ($second.Analyzed -eq 1 -and $warm.Analyzed -eq 0 -and $warm.Cached -eq 6 -and $control.Requests.Count -eq 8) 'Even an unsupported table saves the current attempt revision and never loops'
-    foreach($n in @(1,2)){$saved=Get-QaSavedAnalysis $fx.Config $fx.Records[$n];Check ($saved.MeasurementsDocument.MeasurementVersion -eq 1 -and $saved.MeasurementsDocument.MeasurementSupportRevision -eq 2) 'A capability upgrade preserves measurement schema1 and records supportrevision2';Check ($saved.DocumentClassification.ProfileId -ceq 'siemens-quality-daily-v1' -and $saved.MeasurementsDocument.ReasonCode -ceq 'NoSupportedTables') 'A recognized Daily body without usable tables stays cached after its current bounded attempt'}
+    foreach($n in @(1,2)){$saved=Get-QaSavedAnalysis $fx.Config $fx.Records[$n];Check ($saved.MeasurementsDocument.MeasurementVersion -eq 1 -and $saved.MeasurementsDocument.MeasurementSupportRevision -eq (& (Get-Module Insights) {Get-QaMeasurementSupportRevision})) 'A capability upgrade preserves measurement schema1 and records the current support revision';Check ($saved.DocumentClassification.ProfileId -ceq 'siemens-quality-daily-v1' -and $saved.MeasurementsDocument.ReasonCode -ceq 'NoSupportedTables') 'A recognized Daily body without usable tables stays cached after its current bounded attempt'}
     foreach($n in @(0,3,4,5)){Check ((Get-FileHash (CachePath $fx $fx.Records[$n])).Hash -ceq $protected[$n]) 'Unselected warm/protected cache bytes are unchanged'}
     Check ((Get-FileHash $state).Hash -ceq $stateHash) 'Measurement capability updates leave archive review state byte-for-byte unchanged'
     foreach($record in $fx.Records){Check ((Get-FileHash $record.DestinationPath).Hash -ceq $record.Hash) 'All selected and untouched source PDF bytes remain unchanged'}
 }
+Scenario 'Monthly revision3 upgrades only newly supported alignment tables and keeps current Daily slice HU and reference evidence warm' {
+    $fx=Fixture 'MonthlyCapabilityRevision' 13;$control=Install-ReadMock $fx;[void](Invoke-QaAnalysis $fx.Config)
+    foreach($n in 0..12){
+        $record=$fx.Records[$n];$row=Get-QaSavedAnalysis $fx.Config $record
+        $row.DocumentClassification.Status='Recognized';$row.DocumentClassification.ReasonCode='SupportedProfile';$row.DocumentClassification.ProfileId='siemens-iec-basic-v1';$row.DocumentClassification.Sections=@()
+        $row.MeasurementsDocument|Add-Member MeasurementSupportRevision 2 -Force
+        switch($n){
+            1 {$row.DocumentClassification.ProfileId='siemens-iec-extended-v1';$row.DocumentClassification.Sections=@([pscustomobject]@{Code='Lightmarker';Page=1})}
+            2 {$row.DocumentClassification.ProfileId='siemens-iec-additional-v1';$row.DocumentClassification.Sections=@([pscustomobject]@{Code='ExternalLightmarker';Page=1});$row.MeasurementsDocument.MeasurementSupportRevision=1}
+            3 {$row.DocumentClassification.ProfileId='siemens-iec-extended-v1';$row.DocumentClassification.Sections=@([pscustomobject]@{Code='TopogramPosition';Page=1});$row.MeasurementsDocument.MeasurementSupportRevision=0}
+            4 {$row.DocumentClassification.ProfileId='siemens-iec-additional-v1';$row.DocumentClassification.Sections=@([pscustomobject]@{Code='SagittalCoronalLightmarker';Page=1})}
+            5 {$row.DocumentClassification.ProfileId='siemens-quality-daily-v1'}
+            6 {$row.DocumentClassification.ProfileId='siemens-iec-extended-v1';$row.DocumentClassification.Sections=@([pscustomobject]@{Code='Slice';Page=1})}
+            7 {$row.DocumentClassification.ProfileId='siemens-iec-reference-v1';$row.DocumentClassification.Sections=@([pscustomobject]@{Code='Lightmarker';Page=1});$row.PSObject.Properties.Remove('MeasurementsDocument')}
+            8 {$row.Status='ReadError';$row.DocumentClassification.Sections=@([pscustomobject]@{Code='TopogramPosition';Page=1})}
+            9 {$row.DocumentClassification.ProfileId='siemens-iec-extended-v1';$row.DocumentClassification.Sections=@([pscustomobject]@{Code='UnimplementedTable';Page=1})}
+            10 {$row.DocumentClassification.ProfileId='siemens-iec-extended-v1';$row.DocumentClassification.Sections=@([pscustomobject]@{Code='Lightmarker';Page=1});$row.MeasurementsDocument.MeasurementSupportRevision=3}
+            11 {$row.DocumentClassification.ProfileId='siemens-quality-daily-v1';$row.MeasurementsDocument.MeasurementSupportRevision=1}
+            12 {$row.DocumentClassification.ProfileId='siemens-iec-extended-v1';$row.DocumentClassification.Sections=@([pscustomobject]@{Code='Slice';Page=1});$row.MeasurementsDocument.MeasurementSupportRevision=1}
+        }
+        Write-TestAnalysisCache $fx $record $row
+    }
+    $eligible=@(1,2,3,4,11,12);$protected=@{};foreach($n in @(0,5,6,7,8,9,10)){$protected[$n]=(Get-FileHash (CachePath $fx $fx.Records[$n])).Hash}
+    $state=Join-Path $fx.Config.ArchiveRoot '.ctqa/state.json';$stateHash=(Get-FileHash $state).Hash
+    $plan=Get-QaAnalysisWorkPlan -Config $fx.Config -Records $fx.Records -UpgradeMeasurements -RefreshUnsupported
+    Check ($plan.MeasurementUpgradePending -eq 6 -and $plan.Pending -eq 6 -and $plan.Errors -eq 1) 'Only four new alignment tables and two older Daily/slice capability readings need refresh'
+    foreach($n in $eligible){Check ($plan.RecordIds -contains $fx.Records[$n].Id) 'Every newly eligible destination is in the precise upgrade plan'}
+    foreach($n in @(0,5,6,7,8,9,10)){Check ($plan.RecordIds -notcontains $fx.Records[$n].Id) 'Current Daily/slice/HU, references, read errors and unrelated or current Monthly tables are reused'}
+    Check (-not (Test-QaAnalysisSelectedRefresh $fx.Config $fx.Records[5]) -and -not (Test-QaAnalysisSelectedRefresh $fx.Config $fx.Records[6])) 'A global revision3 release does not offer another read of already-current revision2 Daily or slice tables'
+    $first=Invoke-QaAnalysis $fx.Config -Limit 1 -UpgradeMeasurements -RefreshUnsupported
+    $remaining=Get-QaAnalysisWorkPlan -Config $fx.Config -Records $fx.Records -UpgradeMeasurements -RefreshUnsupported
+    Check ($first.Analyzed -eq 1 -and $remaining.Pending -eq 5) 'One bounded attempt advances only one independent destination'
+    $rest=Invoke-QaAnalysis $fx.Config -UpgradeMeasurements -RefreshUnsupported;$warm=Invoke-QaAnalysis $fx.Config -UpgradeMeasurements -RefreshUnsupported
+    Check ($rest.Analyzed -eq 5 -and $rest.Failed -eq 0 -and $warm.Analyzed -eq 0 -and $warm.Cached -eq 13 -and $control.Requests.Count -eq 19) 'Every eligible report gets one attempt and then remains cached without rereading the rest'
+    foreach($n in @(0,5,6,7,8,9,10)){Check ((Get-FileHash (CachePath $fx $fx.Records[$n])).Hash -ceq $protected[$n]) 'Protected cached evidence remains byte-for-byte intact'}
+    Check ((Get-FileHash $state).Hash -ceq $stateHash) 'Selective capability refresh preserves clinical review state'
+    foreach($record in $fx.Records){Check ((Get-FileHash $record.DestinationPath).Hash -ceq $record.Hash) 'All source PDF bytes remain unchanged'}
+}
+
 Scenario 'Equal-content destinations retain independent one-time measurement capability revisions' {
     $fx=Fixture 'MeasurementCapabilityAliases' 3 -SameBytes;$control=Install-ReadMock $fx;[void](Invoke-QaAnalysis $fx.Config)
     $combined=[IO.File]::ReadAllText((CachePath $fx $fx.Records[0]))|ConvertFrom-Json

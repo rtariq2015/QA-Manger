@@ -55,14 +55,21 @@ $dailyName='Synthetic_Daily_Measurements.pdf';$dailyPages=@(@('SOMATOM Definitio
 New-PythonFixturePdf -Path (Join-Path $cfg.Sources[0].Path $dailyName) -Lines $dailyPages -Time '08:30:00' -LineStep 10
 $sliceName='Synthetic_Slice_Measurements.pdf';$slicePages=@(@('SOMATOM Definition Edge','Quality IEC Constancy','SYNTHETIC TEST DOCUMENT - NO CLINICAL EVIDENCE'),@('SOMATOM Definition Edge','Quality IEC Constancy','Synthetic table of contents'),@('SOMATOM Definition Edge','Quality IEC Constancy','1. Quality IEC Constancy Slice','Test: Typical body mode','Slice thickness parameter 999 mm','Result','System A','Slice 1','Tolerance','6.25 mm (6.10)','5.50 ... 7.50 mm','Test Results OK'))
 New-PythonFixturePdf -Path (Join-Path $cfg.Sources[0].Path $sliceName) -Lines $slicePages -Time '09:00:00'
+$alignmentName='Synthetic_Alignment_Measurements.pdf'
+$alignmentBody=@('SOMATOM Definition Edge','Quality IEC Constancy',
+    '1. Quality IEC Constancy Lightmarker','Result [mm]','0.23','Tolerance','-1.80 ... 1.80','Test Results OK',
+    '2. Quality IEC Constancy External Lightm.','Result [mm]','-0.41','Tolerance','-1.60 ... 1.60','Test Results OK',
+    '3. Quality IEC Constancy Topogram Pos.','Result [mm]','0.62','Tolerance','-2.20 ... 2.20','Test Results OK')
+$alignmentPages=@(@('SOMATOM Definition Edge','Quality IEC Constancy','SYNTHETIC TEST DOCUMENT - NO CLINICAL EVIDENCE'),@('SOMATOM Definition Edge','Quality IEC Constancy','Synthetic table of contents'),$alignmentBody)
+New-PythonFixturePdf -Path (Join-Path $cfg.Sources[0].Path $alignmentName) -Lines $alignmentPages -Time '09:30:00'
 [IO.File]::WriteAllText((Join-Path $FixtureRoot 'Config/Settings.local.json'),($cfg|ConvertTo-Json -Depth 18),(New-Object Text.UTF8Encoding $true))
 [void](Invoke-QaOperation $cfg -Mode Update);$dashboard=Get-QaDashboard $cfg;$selected=@($dashboard.Records|Where-Object OriginalFileName -eq $name)[0]
 $preserved=@($dashboard.Records|ForEach-Object{[pscustomobject]@{source=$_.SourcePath;destination=$_.DestinationPath;hash=$_.Hash}})
 $additional=New-Object 'Collections.Generic.List[object]'
-foreach($spec in @(@{Key='daily';Name=$dailyName;Count=20;Time='08:30:00'},@{Key='slice';Name=$sliceName;Count=1;Time='09:00:00'})){
+foreach($spec in @(@{Key='daily';Name=$dailyName;Count=20;Time='08:30:00'},@{Key='slice';Name=$sliceName;Count=1;Time='09:00:00'},@{Key='alignment';Name=$alignmentName;Count=3;Time='09:30:00'})){
     $record=@($dashboard.Records|Where-Object OriginalFileName -ceq $spec.Name)[0]
     [void]$additional.Add([pscustomobject]@{key=$spec.Key;id=$record.Id;hash=$record.Hash;scanner=$record.Scanner;source=$record.SourcePath;destination=$record.DestinationPath;expectedMeasurements=$spec.Count;date='2025-02-03';time=$spec.Time;pages=3})
 }
 $metadata=[pscustomobject]@{Synthetic=$true;RecordCount=@($dashboard.Records).Count;ArchiveRoot=$cfg.ArchiveRoot;StateSHA256=(Get-FileHash (Join-Path $cfg.ArchiveRoot '.ctqa/state.json')).Hash;RecordId=$selected.Id;Source=$selected.SourcePath;Destination=$selected.DestinationPath;SourceHash=$selected.Hash;ExpectedMeasurements=2;AdditionalMeasurements=@($additional.ToArray());Preserved=$preserved}
 [IO.File]::WriteAllText((Join-Path $FixtureRoot 'python-fixture-baseline.json'),($metadata|ConvertTo-Json -Depth 18),(New-Object Text.UTF8Encoding $true))
-Write-Output 'Created synthetic three-page Basic, manufacturer Daily and Slice measurement PDFs; no uploaded reports are included.'
+Write-Output 'Created synthetic three-page Basic, Daily, Slice and alignment measurement PDFs; no uploaded reports are included.'

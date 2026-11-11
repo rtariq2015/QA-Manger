@@ -587,6 +587,206 @@ Scenario 'Durable file decisions reuse one validated dashboard and organization 
     }
 }
 
+function New-WebBatchFixture([string]$Name,[int]$Count=3){
+    $f=New-WebFixture $Name;$day=(Get-Date).ToString('yyyy-MM-dd')
+    for($i=1;$i -lt $Count;$i++){[void](Add-Report $f.Config 'CT_Edge' 'Quality_Constancy' $day ((Get-Date).Date.AddHours(8).AddMinutes($i).ToString('HH-mm-ss')) (95000+$i*31))}
+    [void](Invoke-QaOperation $f.Config -Mode Update);Set-WebFilingRule $f 'siemens-iec-basic-v1' 'Ask';$cfg=Read-QaConfig $f.AppRoot;$records=@((Get-QaDashboard $cfg).Records|Sort-Object ReportTime)
+    foreach($record in $records){$item=[pscustomobject]@{Record=$record;AppRoot=$f.AppRoot};[void](Set-WebFilingCache $item)}
+    $f|Add-Member Records $records;$f|Add-Member BeforeCore ((Get-FileHash $f.StatePath).Hash);return $f
+}
+function Batch-Selections($Snapshot,[int]$Count=2){return @($Snapshot.records|Where-Object filingState -ceq 'NeedsReview'|Sort-Object time|Select-Object -First $Count|ForEach-Object{[pscustomobject]@{id=$_.id;stamp=$_.stamp}})}
+function Check-BatchProtected($Fixture){
+    Check ((Get-FileHash $Fixture.StatePath).Hash -ceq $Fixture.BeforeCore) 'Grouped file organization never rewrites the protected clinical archive'
+    foreach($record in $Fixture.Records){Check ((Get-FileHash $record.SourcePath).Hash -ceq $record.Hash -and (Get-FileHash $record.DestinationPath).Hash -ceq $record.Hash) 'Every scanner original and archived PDF retains its exact bytes'}
+}
+Scenario 'Selected grouped approvals persist one durable batch and restore together after a fresh snapshot' {
+    $f=New-WebBatchFixture 'BatchApprove';$initial=Get-Web $f;$selected=@(Batch-Selections $initial);$settings=Join-Path $f.AppRoot 'Config/Settings.local.json';$beforeSettings=(Get-FileHash $settings).Hash
+    Check ($initial.batchReviewLimit -eq 50 -and @($initial.records|Where-Object{$_.groupingKey -cmatch '^[A-Fa-f0-9]{64}$' -and $_.groupingReason -ceq 'ManualReview'}).Count -eq 3) 'Only actual review exceptions expose stable bounded grouping metadata'
+    $result=Invoke-QaWebRequest $f.AppRoot ([pscustomobject]@{action='Approve';selections=$selected;category='Monthly'})
+    Check ($result.decision.count -eq 2 -and $result.decision.action -ceq 'Approve' -and $result.decision.classificationOnly) 'The explicit selected-file action reports a committed batch rather than clinical approval'
+    Check (@($result.snapshot.records|Where-Object{$_.decision -ceq 'Approved' -and $_.category -ceq 'Monthly'}).Count -eq 2 -and $result.snapshot.filingSummary.needsReview -eq 1) 'Only the selected records leave Review and full counters reflect the durable write'
+    Check ($null -eq $result.snapshot.lastDecision -and $result.snapshot.undoBatch.count -eq 2) 'Batch members do not leak into the single-file Undo control'
+    $restart=Get-Web $f;$undo=$restart.undoBatch
+    Check ($undo.batchId -ceq $result.decision.batchId -and $undo.batchStamp -ceq $result.snapshot.undoBatch.batchStamp) 'A fresh process-style reload recovers the same durable group Undo state'
+    $member=@($restart.records|Where-Object decision -ceq 'Approved')[0];$orgPath=Join-Path $f.Config.ArchiveRoot '.ctqa/organization.json';$before=(Get-FileHash $orgPath).Hash;$caught=$false
+    try{Invoke-QaWebRequest $f.AppRoot ([pscustomobject]@{action='Undo';id=$member.id;stamp=$member.stamp;reviewId=$member.reviewId})|Out-Null}catch{$caught=$true}
+    Check ($caught -and (Get-FileHash $orgPath).Hash -ceq $before) 'An individual Undo cannot partially reverse an atomic grouped action'
+    $restored=Invoke-QaWebRequest $f.AppRoot ([pscustomobject]@{action='Undo';batchId=$undo.batchId;batchStamp=$undo.batchStamp})
+    Check ($restored.decision.count -eq 2 -and $restored.decision.undoOfBatchId -ceq $undo.batchId -and $restored.snapshot.filingSummary.needsReview -eq 3 -and $null -eq $restored.snapshot.undoBatch) 'Batch Undo restores every selected previous state together and is not offered again'
+    $org=Get-Content $orgPath -Raw|ConvertFrom-Json
+    Check ($org.Version -eq 1 -and $org.History.Count -eq 4 -and @($org.History|Where-Object action -ceq 'Undo').Count -eq 2 -and @($org.History|Where-Object batchId -ceq $undo.batchId).Count -eq 2) 'Backward-compatible history retains every individual decision and its bounded batch metadata'
+    Check ((Get-FileHash $settings).Hash -ceq $beforeSettings) 'Neither a group nor its Undo teaches a hidden scanner rule'
+    Check-BatchProtected $f
+}
+Scenario 'Grouped Disapprove retains all selected PDFs under Other and explicit batch categories are validated' {
+    $f=New-WebBatchFixture 'BatchDisapprove';$snapshot=Get-Web $f;$selected=@(Batch-Selections $snapshot)
+    foreach($category in @('Daily','Monthly','Other','',$null)){
+        $request=[pscustomobject]@{action='Disapprove';selections=$selected;category=$category};$caught=$false;try{Invoke-QaWebRequest $f.AppRoot $request|Out-Null}catch{$caught=$true}
+        Check ($caught -and -not [IO.File]::Exists((Join-Path $f.Config.ArchiveRoot '.ctqa/organization.json'))) 'Disapprove rejects a category override before saving any member'
+    }
+    foreach($category in @('Monthly_QA','../../Outside')){$caught=$false;try{Invoke-QaWebRequest $f.AppRoot ([pscustomobject]@{action='Approve';selections=$selected;category=$category})|Out-Null}catch{$caught=$true};Check $caught 'Unsupported explicit approval categories cannot become folder paths'}
+    $result=Invoke-QaWebRequest $f.AppRoot ([pscustomobject]@{action='Disapprove';selections=$selected})
+    Check (@($result.snapshot.records|Where-Object{$_.decision -ceq 'Disapproved' -and $_.category -ceq 'Other'}).Count -eq 2 -and $result.snapshot.undoBatch.action -ceq 'Disapprove') 'Disapprove files only the selected documents as Other with durable grouped Undo'
+    Check (@(Get-ChildItem $result.snapshot.libraryRoot -Filter '*.pdf' -Recurse).Count -eq 2) 'Original PDFs remain available as selected readable copies'
+    Check-BatchProtected $f
+}
+Scenario 'Grouped selection preflight rejects stale duplicate unknown waiting and oversized selections atomically' {
+    foreach($kind in @('Stale','Duplicate','Unknown','Waiting','Oversized','Ambiguous')){
+        $f=New-WebBatchFixture ('BatchReject_'+$kind);$snapshot=Get-Web $f;$selected=@(Batch-Selections $snapshot);$request=[pscustomobject]@{action='Approve';selections=$selected}
+        switch($kind){
+            'Stale'{$selected[1].stamp='0'*64}
+            'Duplicate'{$request.selections=@($selected[0],$selected[0])}
+            'Unknown'{$selected[1].id='F'*64}
+            'Waiting'{$target=@($f.Records|Where-Object Id -ceq $selected[1].id)[0];[IO.File]::Delete((Join-Path $f.Config.ArchiveRoot ('.ctqa/analysis/'+$target.Hash+'.json')));$fresh=Get-Web $f;$waiting=@($fresh.records|Where-Object id -ceq $target.Id)[0];Check ($waiting.filingState -ceq 'WaitingRead') 'The negative control is genuinely awaiting a read';$request.selections=@($selected[0],[pscustomobject]@{id=$waiting.id;stamp=$waiting.stamp})}
+            'Oversized'{$request.selections=@(1..51|ForEach-Object{[pscustomobject]@{id=$_.ToString('X64');stamp=('A'*64)}})}
+            'Ambiguous'{$request|Add-Member id $selected[0].id}
+        }
+        $caught=$false;try{Invoke-QaWebRequest $f.AppRoot $request|Out-Null}catch{$caught=$true}
+        Check ($caught -and -not [IO.File]::Exists((Join-Path $f.Config.ArchiveRoot '.ctqa/organization.json'))) 'Any invalid member aborts the entire group before a durable decision write'
+        Check (-not [IO.File]::Exists((Join-Path $f.Config.ArchiveRoot '.ctqa/web-library.json'))) 'Preflight rejection cannot create a partial readable-library decision'
+        Check-BatchProtected $f
+    }
+}
+Scenario 'Exact selected-byte checks prevent partial grouped decisions and partial grouped Undo' {
+    $f=New-WebBatchFixture 'BatchHashGuard';$snapshot=Get-Web $f;$selected=@(Batch-Selections $snapshot);$target=@($f.Records|Where-Object Id -ceq $selected[1].id)[0];$bytes=[IO.File]::ReadAllBytes($target.DestinationPath);$stamp=(Get-Item $target.DestinationPath).LastWriteTimeUtc
+    try{
+        $edited=[byte[]]$bytes.Clone();$edited[$edited.Length-2]=$edited[$edited.Length-2] -bxor 1;[IO.File]::WriteAllBytes($target.DestinationPath,$edited);(Get-Item $target.DestinationPath).LastWriteTimeUtc=$stamp
+        $caught=$false;try{Invoke-QaWebRequest $f.AppRoot ([pscustomobject]@{action='Approve';selections=$selected})|Out-Null}catch{$caught=$true}
+        Check ($caught -and -not [IO.File]::Exists((Join-Path $f.Config.ArchiveRoot '.ctqa/organization.json'))) 'A same-length same-timestamp edit in the final selected PDF prevents every approval'
+    }finally{[IO.File]::WriteAllBytes($target.DestinationPath,$bytes);(Get-Item $target.DestinationPath).LastWriteTimeUtc=$stamp}
+    $approved=Invoke-QaWebRequest $f.AppRoot ([pscustomobject]@{action='Approve';selections=$selected});$undo=$approved.snapshot.undoBatch;$orgPath=Join-Path $f.Config.ArchiveRoot '.ctqa/organization.json';$before=(Get-FileHash $orgPath).Hash
+    try{
+        [IO.File]::WriteAllBytes($target.DestinationPath,$edited);(Get-Item $target.DestinationPath).LastWriteTimeUtc=$stamp
+        $caught=$false;try{Invoke-QaWebRequest $f.AppRoot ([pscustomobject]@{action='Undo';batchId=$undo.batchId;batchStamp=$undo.batchStamp})|Out-Null}catch{$caught=$true}
+        Check ($caught -and (Get-FileHash $orgPath).Hash -ceq $before) 'One changed member prevents all grouped Undo writes'
+    }finally{[IO.File]::WriteAllBytes($target.DestinationPath,$bytes);(Get-Item $target.DestinationPath).LastWriteTimeUtc=$stamp}
+    $org=Get-Content $orgPath -Raw|ConvertFrom-Json;$org.Records[0].revision=[guid]::NewGuid().ToString('N');[IO.File]::WriteAllText($orgPath,($org|ConvertTo-Json -Depth 32),(New-Object Text.UTF8Encoding $true));$before=(Get-FileHash $orgPath).Hash
+    $caught=$false;try{Invoke-QaWebRequest $f.AppRoot ([pscustomobject]@{action='Undo';batchId=$undo.batchId;batchStamp=$undo.batchStamp})|Out-Null}catch{$caught=$true}
+    Check ($caught -and (Get-FileHash $orgPath).Hash -ceq $before -and $null -eq (Get-Web $f).undoBatch) 'A changed individual after-state invalidates the whole durable group rather than restoring a partial selection'
+    Check-BatchProtected $f
+}
+Scenario 'Batch processing keeps one dashboard pass one selected-library update and durable copy-failure warnings' {
+    $f=New-WebBatchFixture 'BatchOnePass';$selected=@(Batch-Selections (Get-Web $f));$module=Get-Module WebService
+    $originals=&$module {[pscustomobject]@{Dashboard=(Get-Command Get-QaDashboard).ScriptBlock;Organization=(Get-Command Get-QaWebOrganization).ScriptBlock;Library=(Get-Command Update-QaWebLibrary).ScriptBlock;Copy=(Get-Command Copy-QaWebLibraryPdf).ScriptBlock}}
+    $probe=[pscustomobject]@{Dashboards=0;Organizations=0;Libraries=0;Selected=0}
+    try{
+        &$module {param($Probe,$Originals);$script:BatchProbe=$Probe;$script:BatchOriginals=$Originals
+            function script:Get-QaDashboard {param($Config);$script:BatchProbe.Dashboards++;return &$script:BatchOriginals.Dashboard $Config}
+            function script:Get-QaWebOrganization {param($Config);$script:BatchProbe.Organizations++;return &$script:BatchOriginals.Organization $Config}
+            function script:Update-QaWebLibrary {param($Config,[string[]]$OnlyRecords=@(),$Dashboard=$null,$Organization=$null,$Progress=$null,[switch]$Verify);$script:BatchProbe.Libraries++;$script:BatchProbe.Selected=$OnlyRecords.Count;return &$script:BatchOriginals.Library @PSBoundParameters}
+            function script:Copy-QaWebLibraryPdf {param($Source,$Target,$Hash,$Progress,$Metrics);throw 'Synthetic grouped readable-copy failure'}
+        } $probe $originals
+        $result=Invoke-QaWebRequest $f.AppRoot ([pscustomobject]@{action='Approve';selections=$selected;category='Daily'})
+        Check ($probe.Dashboards -eq 1 -and $probe.Organizations -eq 1 -and $probe.Libraries -eq 1 -and $probe.Selected -eq 2) 'A batch validates its dashboard and organization once and refreshes one selected-only library operation'
+        Check ($result.decision.count -eq 2 -and $result.warning -match '^Decisions saved\.' -and @($result.snapshot.records|Where-Object decision -ceq 'Approved').Count -eq 2 -and $result.snapshot.undoBatch.count -eq 2) 'A readable-copy failure preserves all committed decisions and their group Undo with an honest warning'
+    }finally{&$module {param($Originals);Set-Item Function:script:Get-QaDashboard $Originals.Dashboard;Set-Item Function:script:Get-QaWebOrganization $Originals.Organization;Set-Item Function:script:Update-QaWebLibrary $Originals.Library;Set-Item Function:script:Copy-QaWebLibraryPdf $Originals.Copy;Remove-Variable BatchProbe,BatchOriginals -Scope Script -ErrorAction SilentlyContinue} $originals}
+    $org=Get-Content (Join-Path $f.Config.ArchiveRoot '.ctqa/organization.json') -Raw|ConvertFrom-Json
+    Check ($org.History.Count -eq 2 -and @($org.Records|Where-Object decision -ceq 'Approved').Count -eq 2) 'Only durable individual history determines the visible successful batch'
+    Check-BatchProtected $f
+}
+
+Scenario 'Approval targets are explicit while legacy single requests remain compatible' {
+    $f=New-WebBatchFixture 'SingleTarget' 1;$snapshot=Get-Web $f;$row=$snapshot.records[0]
+    Check ($row.approvalCategory -ceq 'Daily' -and -not $row.approvalNeedsCategory) 'A proposed current file target is supplied separately from the generic action name'
+    $result=Invoke-QaWebRequest $f.AppRoot ([pscustomobject]@{action='Approve';id=$row.id;stamp=$row.stamp;category='Monthly'})
+    Check ($result.snapshot.records[0].category -ceq 'Monthly' -and $result.snapshot.records[0].decision -ceq 'Approved') 'A user explicitly choosing Monthly can override the per-file suggestion without teaching a scanner rule'
+    $f=New-WebBatchFixture 'UnknownTarget' 1;Set-WebFilingRawCategory $f 'Needs_Review';$f.BeforeCore=(Get-FileHash $f.StatePath).Hash;$path=Set-WebFilingCache $f '' '' 'NeedsReview';$cache=Get-Content $path -Raw|ConvertFrom-Json;$cache.DocumentClassification.SuggestedCategory='';[IO.File]::WriteAllText($path,($cache|ConvertTo-Json -Depth 16),(New-Object Text.UTF8Encoding $true));$snapshot=Get-Web $f;$row=$snapshot.records[0]
+    Check ($row.category -ceq 'Other' -and $row.approvalCategory -ceq '' -and $row.approvalNeedsCategory) 'A genuinely unsupported Other grouping is not misrepresented as a meaningful proposed classification'
+    $selected=@([pscustomobject]@{id=$row.id;stamp=$row.stamp});$caught=$false;try{Invoke-QaWebRequest $f.AppRoot ([pscustomobject]@{action='Approve';selections=$selected})|Out-Null}catch{$caught=$true}
+    Check ($caught -and -not [IO.File]::Exists((Join-Path $f.Config.ArchiveRoot '.ctqa/organization.json'))) 'New grouped approval requires an explicit target when no selected file proposal is meaningful'
+    $caught=$false;try{Invoke-QaWebRequest $f.AppRoot ([pscustomobject]@{action='Disapprove';id=$row.id;stamp=$row.stamp;category='Daily'})|Out-Null}catch{$caught=$true};Check $caught 'Single Disapprove also refuses a misleading category override'
+    $result=Invoke-QaWebRequest $f.AppRoot ([pscustomobject]@{action='Approve';selections=$selected;category='Other'})
+    Check ($result.snapshot.records[0].decision -ceq 'Approved' -and $result.snapshot.records[0].category -ceq 'Other') 'An explicitly chosen Other target is accepted and retained'
+    $legacy=New-WebBatchFixture 'LegacyOtherTarget' 1;Set-WebFilingRawCategory $legacy 'Needs_Review';$legacy.BeforeCore=(Get-FileHash $legacy.StatePath).Hash;$path=Set-WebFilingCache $legacy '' '' 'NeedsReview';$row=(Get-Web $legacy).records[0]
+    $result=Invoke-QaWebRequest $legacy.AppRoot ([pscustomobject]@{action='Approve';id=$row.id;stamp=$row.stamp})
+    Check ($result.snapshot.records[0].category -ceq 'Other' -and $result.snapshot.records[0].decision -ceq 'Approved') 'Existing single omitted-category requests retain their prior file-organization behavior'
+    Check-BatchProtected $f;Check-BatchProtected $legacy
+}
+Scenario 'Batch read handles prevent an early selected PDF changing before later validation and commit' {
+    $f=New-WebBatchFixture 'HeldBatchPdfs';$selected=@(Batch-Selections (Get-Web $f));$module=Get-Module WebService;$original=&$module {(Get-Command Assert-QaWebPdf).ScriptBlock};$copy=&$module {(Get-Command Copy-QaWebLibraryPdf).ScriptBlock}
+    $target=@($f.Records|Where-Object Id -ceq $selected[0].id)[0];$bytes=[IO.File]::ReadAllBytes($target.DestinationPath);$time=(Get-Item $target.DestinationPath).LastWriteTimeUtc
+    $probe=[pscustomobject]@{Handles=(New-Object 'Collections.Generic.List[object]');Blocked=$false;Changed=$false;HeldDuringCopy=$false;WriteTime=$time}
+    try{
+        &$module {param($Probe,$Original,$Copy);$script:HeldProbe=$Probe;$script:HeldAssert=$Original;$script:HeldCopy=$Copy
+            function script:Assert-QaWebPdf {
+                param($Config,$Record,[ref]$ReadHandle)
+                $result=&$script:HeldAssert @PSBoundParameters
+                if($null -ne $ReadHandle){[void]$script:HeldProbe.Handles.Add($ReadHandle.Value)
+                    if($script:HeldProbe.Handles.Count -eq 1){$writer=$null;try{$writer=[IO.File]::Open($result,[IO.FileMode]::Open,[IO.FileAccess]::Write,[IO.FileShare]::ReadWrite);$writer.Position=$writer.Length-2;$writer.WriteByte(37);$writer.Dispose();$writer=$null;[IO.File]::SetLastWriteTimeUtc($result,$script:HeldProbe.WriteTime.AddSeconds(5));$script:HeldProbe.Changed=$true}catch [IO.IOException]{$script:HeldProbe.Blocked=$true}finally{if($null -ne $writer){$writer.Dispose()}}}
+                };return $result
+            }
+            function script:Copy-QaWebLibraryPdf {param($Source,$Target,$Hash,$Progress,$Metrics);$script:HeldProbe.HeldDuringCopy=(@($script:HeldProbe.Handles|Where-Object{$_.Stream.CanRead}).Count -eq 2);return &$script:HeldCopy @PSBoundParameters}
+        } $probe $original $copy
+        $caught=$false;try{$result=Invoke-QaWebRequest $f.AppRoot ([pscustomobject]@{action='Approve';selections=$selected})}catch{$caught=$true}
+        if([Environment]::OSVersion.Platform -eq [PlatformID]::Win32NT){Check ($probe.Blocked -and -not $probe.Changed -and -not $caught -and $result.decision.count -eq 2 -and $probe.HeldDuringCopy) 'Windows denies write/delete access after the first exact validation and retains both read handles through commit and readable copies'}else{Check (($probe.Blocked -and -not $caught) -or ($probe.Changed -and $caught -and -not [IO.File]::Exists((Join-Path $f.Config.ArchiveRoot '.ctqa/organization.json')))) 'The development platform either enforces read sharing or rejects the changed pre-commit metadata without any decisions'}
+        Check ($probe.Handles.Count -eq 2 -and @($probe.Handles|Where-Object{$_.Stream.CanRead}).Count -eq 0) 'Every selected verification handle is disposed after success or atomic rejection'
+    }finally{&$module {param($Original,$Copy);Set-Item Function:script:Assert-QaWebPdf $Original;Set-Item Function:script:Copy-QaWebLibraryPdf $Copy;Remove-Variable HeldProbe,HeldAssert,HeldCopy -Scope Script -ErrorAction SilentlyContinue} $original $copy;[IO.File]::WriteAllBytes($target.DestinationPath,$bytes);(Get-Item $target.DestinationPath).LastWriteTimeUtc=$time}
+    Check-BatchProtected $f
+}
+Scenario 'Batch Undo rejects changed displayed state and corrupt grouped history without rewriting them' {
+    $f=New-WebBatchFixture 'BatchUndoStamp';$selected=@(Batch-Selections (Get-Web $f));$result=Invoke-QaWebRequest $f.AppRoot ([pscustomobject]@{action='Approve';selections=$selected});$undo=$result.snapshot.undoBatch;$path=Join-Path $f.Config.ArchiveRoot '.ctqa/organization.json';$before=(Get-FileHash $path).Hash
+    $caught=$false;try{Invoke-QaWebRequest $f.AppRoot ([pscustomobject]@{action='Undo';batchId=$undo.batchId;batchStamp=('0'*64)})|Out-Null}catch{$caught=$true}
+    Check ($caught -and (Get-FileHash $path).Hash -ceq $before) 'A stale displayed group stamp cannot restore any subset'
+    $original=[IO.File]::ReadAllBytes($path);$org=Get-Content $path -Raw|ConvertFrom-Json;$org.History[0].before=$org.History[1].after;[IO.File]::WriteAllText($path,($org|ConvertTo-Json -Depth 32),(New-Object Text.UTF8Encoding $true));$before=(Get-FileHash $path).Hash;$caught=$false;try{Get-Web $f|Out-Null}catch{$caught=$true}
+    Check ($caught -and (Get-FileHash $path).Hash -ceq $before) 'A prior classification belonging to a different member cannot be accepted as a restorable batch state'
+    [IO.File]::WriteAllBytes($path,$original)
+    $org=Get-Content $path -Raw|ConvertFrom-Json;$org.History=@($org.History|Select-Object -First 1);[IO.File]::WriteAllText($path,($org|ConvertTo-Json -Depth 32),(New-Object Text.UTF8Encoding $true));$before=(Get-FileHash $path).Hash;$caught=$false;try{Get-Web $f|Out-Null}catch{$caught=$true}
+    Check ($caught -and (Get-FileHash $path).Hash -ceq $before) 'Missing persisted batch members are reported as corrupt history rather than silently treated as ordinary single decisions'
+    Check-BatchProtected $f
+}
+
+Scenario 'The fifty-file boundary remains selected-only and grouped Undo survives unrelated single history' {
+    $f=New-WebBatchFixture 'BatchLimitBoundary' 51;$initial=Get-Web $f;$selected=@(Batch-Selections $initial 50);$result=Invoke-QaWebRequest $f.AppRoot ([pscustomobject]@{action='Approve';selections=$selected})
+    Check ($result.decision.count -eq 50 -and @($result.snapshot.records|Where-Object decision -ceq 'Approved').Count -eq 50 -and $result.snapshot.filingSummary.needsReview -eq 1 -and $result.snapshot.undoBatch.count -eq 50) 'Exactly fifty selected exceptions can be filed while the fifty-first remains untouched'
+    $last=@($result.snapshot.records|Where-Object filingState -ceq 'NeedsReview')[0];$single=Invoke-QaWebRequest $f.AppRoot ([pscustomobject]@{action='Disapprove';id=$last.id;stamp=$last.stamp})
+    Check ($single.snapshot.lastDecision.recordId -ceq $last.id -and $single.snapshot.undoBatch.batchId -ceq $result.decision.batchId) 'Unrelated single-file history retains both the correct single Undo and the still-valid group Undo'
+    $undo=$single.snapshot.undoBatch;$restored=Invoke-QaWebRequest $f.AppRoot ([pscustomobject]@{action='Undo';batchId=$undo.batchId;batchStamp=$undo.batchStamp})
+    Check ($restored.decision.count -eq 50 -and $restored.snapshot.filingSummary.needsReview -eq 50 -and @($restored.snapshot.records|Where-Object{$_.id -ceq $last.id -and $_.decision -ceq 'Disapproved'}).Count -eq 1) 'Grouped Undo restores all fifty members without reversing the unrelated saved decision'
+    Check-BatchProtected $f
+}
+
+Scenario 'Omitted batch overrides preserve each selected Daily or Monthly proposal independently' {
+    $f=New-WebBatchFixture 'MixedApprovalTargets';$cfg=Read-QaConfig $f.AppRoot;$source=@($cfg.Sources|Where-Object Scanner -ceq 'CT_Edge')[0];$source|Add-Member ContentProfiles @([pscustomobject]@{profileId='siemens-iec-basic-v1';category='Ask'},[pscustomobject]@{profileId='siemens-iec-extended-v1';category='Ask'}) -Force;[void](Save-QaConfig $f.AppRoot $cfg)
+    $other=[pscustomobject]@{Record=$f.Records[1];AppRoot=$f.AppRoot};[void](Set-WebFilingCache $other 'siemens-iec-extended-v1');$snapshot=Get-Web $f;$ids=@($f.Records[0].Id,$f.Records[1].Id);$selected=@($snapshot.records|Where-Object{$ids -contains $_.id}|ForEach-Object{[pscustomobject]@{id=$_.id;stamp=$_.stamp}})
+    Check (@($snapshot.records|Where-Object{$ids -contains $_.id -and $_.approvalCategory -ceq 'Daily'}).Count -eq 1 -and @($snapshot.records|Where-Object{$ids -contains $_.id -and $_.approvalCategory -ceq 'Monthly'}).Count -eq 1) 'The displayed selection contains one distinct Daily and one distinct Monthly proposal'
+    $result=Invoke-QaWebRequest $f.AppRoot ([pscustomobject]@{action='Approve';selections=$selected})
+    Check (@($result.snapshot.records|Where-Object{$_.id -ceq $f.Records[0].Id -and $_.decision -ceq 'Approved' -and $_.category -ceq 'Daily'}).Count -eq 1 -and @($result.snapshot.records|Where-Object{$_.id -ceq $f.Records[1].Id -and $_.decision -ceq 'Approved' -and $_.category -ceq 'Monthly'}).Count -eq 1) 'Without an explicit group override, each selected report is filed under its own visible proposal'
+    Check ($result.snapshot.filingSummary.needsReview -eq 1) 'The unselected third report remains in Review'
+    Check-BatchProtected $f
+}
+
+Scenario 'Alignment inspector rows share current graph capability body and explicit-context eligibility' {
+    $f=New-WebBatchFixture 'InspectorAlignmentGuard' 1;$path=Set-WebFilingCache $f 'siemens-iec-extended-v1';$cache=Get-Content $path -Raw|ConvertFrom-Json
+    $cache.MeasurementsDocument|Add-Member MeasurementSupportRevision 3 -Force;$cache.MeasurementsDocument.Status='Extracted';$cache.DocumentClassification.Sections=@('Lightmarker','ExternalLightmarker','TopogramPosition','SagittalCoronalLightmarker'|ForEach-Object{[pscustomobject]@{Code=$_;BodyEvidence=$true;Page=3;PrintedOutcomes=@('OK')}})
+    $rows=New-Object 'Collections.Generic.List[object]'
+    foreach($code in @('Lightmarker','ExternalLightmarker','TopogramPosition','SagittalCoronalLightmarker')){foreach($context in $(if($code -ceq 'SagittalCoronalLightmarker'){@('Sagittal','Coronal')}else{@('Overall')})){[void]$rows.Add([pscustomobject]@{Code=$code;Value='0.3';Unit='mm';Page=3;Mode='Unspecified';SourceSystem='NotSpecified';Slice='';Context=$context;ContextSection=$code;Source='PrintedAlignmentResult';Status='Printed'})}}
+    [void]$rows.Add([pscustomobject]@{Code='WaterCTNumber';Value='0.2';Unit='HU';Page=3});$cache.MeasurementsDocument.Measurements=@($rows.ToArray());$valid=$cache|ConvertTo-Json -Depth 20;[IO.File]::WriteAllText($path,$valid,(New-Object Text.UTF8Encoding $true));$snapshot=Get-Web $f
+    Check ($snapshot.records[0].content.measurements.Count -eq 6 -and @($snapshot.records[0].content.measurements|Where-Object{$_.context -cin @('Overall','Sagittal','Coronal')}).Count -eq 5) 'The positive control exposes all five validated scalar/axis readings and an unchanged legacy HU row'
+    foreach($kind in @('OldCapability','WrongProfile','DocumentStatus','StringBodyEvidence','WrongSection','WrongSource','InventedSystem','InventedSlice','WrongMode','ArbitraryContext','MissingAxis','IncompleteMeasurement','DateConflict','WrongPage','WrongRowStatus')){
+        $bad=$valid|ConvertFrom-Json
+        switch($kind){
+            'OldCapability'{$bad.MeasurementsDocument.MeasurementSupportRevision=2}
+            'WrongProfile'{$bad.DocumentClassification.ProfileId='siemens-iec-basic-v1'}
+            'DocumentStatus'{$bad.DocumentClassification.Status='NeedsReview'}
+            'StringBodyEvidence'{foreach($section in $bad.DocumentClassification.Sections){$section.BodyEvidence='true'}}
+            'WrongSection'{foreach($row in $bad.MeasurementsDocument.Measurements){if($row.Code -cne 'WaterCTNumber'){$row.ContextSection='Noise'}}}
+            'WrongSource'{foreach($row in $bad.MeasurementsDocument.Measurements){if($row.Code -cne 'WaterCTNumber'){$row.Source='PrintedSingleMetricTable'}}}
+            'InventedSystem'{foreach($row in $bad.MeasurementsDocument.Measurements){if($row.Code -cne 'WaterCTNumber'){$row.SourceSystem='A'}}}
+            'InventedSlice'{foreach($row in $bad.MeasurementsDocument.Measurements){if($row.Code -cne 'WaterCTNumber'){$row.Slice='1'}}}
+            'WrongMode'{foreach($row in $bad.MeasurementsDocument.Measurements){if($row.Code -cne 'WaterCTNumber'){$row.Mode='Head'}}}
+            'ArbitraryContext'{foreach($row in $bad.MeasurementsDocument.Measurements){if($row.Code -cne 'WaterCTNumber'){$row.Context='Unverified'}}}
+            'MissingAxis'{foreach($row in $bad.MeasurementsDocument.Measurements){if($row.Code -ceq 'SagittalCoronalLightmarker'){$row.Context='Overall'}elseif($row.Code -cne 'WaterCTNumber'){$row.Context='Sagittal'}}}
+            'IncompleteMeasurement'{$bad.MeasurementsDocument.CompleteRead=$false}
+            'DateConflict'{$bad.DocumentClassification.ReportTime='01:02:03'}
+            'WrongPage'{foreach($row in $bad.MeasurementsDocument.Measurements){if($row.Code -cne 'WaterCTNumber'){$row.Page=4}}}
+            'WrongRowStatus'{foreach($row in $bad.MeasurementsDocument.Measurements){if($row.Code -cne 'WaterCTNumber'){$row.Status='Invented'}}}
+        }
+        [IO.File]::WriteAllText($path,($bad|ConvertTo-Json -Depth 20),(New-Object Text.UTF8Encoding $true));$projection=(Get-Web $f).records[0].content.measurements
+        Check ($projection.Count -eq 1 -and $projection[0].label -ceq 'Water CT value') 'Rejected new alignment evidence cannot appear in the inspector while the preexisting HU compatibility path remains unchanged'
+    }
+    [IO.File]::WriteAllText($path,$valid,(New-Object Text.UTF8Encoding $true));Check-BatchProtected $f
+}
+
 $failed=@($script:Results|Where-Object Result -eq 'FAIL').Count
 $report=[pscustomobject]@{Version='5.4.0';Runtime=$PSVersionTable.PSVersion.ToString();Tests=$script:Results.Count;Assertions=$script:Assertions;Failed=$failed;Results=@($script:Results.ToArray());Scope='Synthetic PDFs, local scanner folders and controlled cached classifier observations with matching fixture-byte provenance; actual extraction is covered separately. Hands-off filing policy, inferred-label disclosure, waiting/review counters, independent file organization, no fabricated clinical review, stale/changed-file rejection, append-only Undo, readable ownership, exports and stdin/stdout JSON worker.'}
 if($OutputPath){$report|ConvertTo-Json -Depth 12|Set-Content $OutputPath -Encoding UTF8}

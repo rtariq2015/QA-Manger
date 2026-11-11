@@ -7,7 +7,7 @@ from pathlib import Path
 import zipfile
 
 parser=argparse.ArgumentParser()
-parser.add_argument('--version',default='5.4.0')
+parser.add_argument('--version',default='5.5.0')
 parser.add_argument('--output-dir',required=True)
 parser.add_argument('--private-profile')
 args=parser.parse_args()

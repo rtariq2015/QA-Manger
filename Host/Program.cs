@@ -75,7 +75,7 @@ app.MapGet("/favicon.ico", () => Results.NoContent());
 app.MapPost("/api/session", (HttpContext context) => {
     if (!HeaderAuthorized(context.Request)) return Results.Unauthorized();
     context.Response.Cookies.Append("ctqa-session", token, new CookieOptions { HttpOnly = true, SameSite = SameSiteMode.Strict, IsEssential = true, Path = "/api", MaxAge = TimeSpan.FromHours(24) });
-    return Results.Json(new { connected = true, version = "5.4.0" });
+    return Results.Json(new { connected = true, version = "5.5.0" });
 });
 app.MapPost("/api/heartbeat", () => { state.Heartbeat(); return Results.Json(new { alive = true }); });
 app.MapGet("/api/snapshot", () => state.Snapshot is JsonNode snapshot ? Results.Json(snapshot) : Results.Json(new { error = state.StartupError ?? "The saved library is loading. Please wait a moment." }, statusCode: 503));
@@ -178,7 +178,7 @@ state.RecordLifecycle("Startup", "Started");
 app.Lifetime.ApplicationStopped.Register(() => state.RecordLifecycle("Shutdown", "Completed"));
 origin = app.Services.GetRequiredService<IServer>().Features.Get<IServerAddressesFeature>()!.Addresses.Single().TrimEnd('/');
 // Kestrel starts on an OS-selected loopback port. No URL ACL, service or firewall rule is created.
-var ready = JsonSerializer.Serialize(new { url = origin, token, pid = Environment.ProcessId, version = "5.4.0" });
+var ready = JsonSerializer.Serialize(new { url = origin, token, pid = Environment.ProcessId, version = "5.5.0" });
 SafeFiles.WritePrivate(readyPath, ready);
 var browserStartup = Stopwatch.StartNew();
 var startupFailed = 0;
@@ -273,18 +273,22 @@ sealed class HostOptions {
         return options;
     }
 }
-sealed class WorkerException(string message) : Exception(message);
+sealed class WorkerException(string message, bool pdfReadDeadline = false) : Exception(message) { public bool PdfReadDeadline { get; } = pdfReadDeadline; }
 sealed class WorkerBridge(string root, string powerShell) {
-    public async Task<JsonNode?> Run(JsonObject request, int timeoutSeconds, CancellationToken cancellationToken, Job? progressJob = null) {
+    public async Task<JsonNode?> Run(JsonObject request, int timeoutSeconds, CancellationToken cancellationToken, Job? progressJob = null, bool isolatedPdfRead = false) {
+        if (isolatedPdfRead) timeoutSeconds = Math.Min(timeoutSeconds, 90);
+        var helperClock = Stopwatch.StartNew();
         var info = new ProcessStartInfo(powerShell) { UseShellExecute = false, CreateNoWindow = true, RedirectStandardInput = true, RedirectStandardOutput = true, RedirectStandardError = true, StandardInputEncoding = new UTF8Encoding(false), StandardOutputEncoding = new UTF8Encoding(false), StandardErrorEncoding = new UTF8Encoding(false), WorkingDirectory = root };
         foreach (var arg in new[] { "-NoLogo", "-NoProfile" }) info.ArgumentList.Add(arg);
         if (OperatingSystem.IsWindows()) info.ArgumentList.Add("-STA");
         foreach (var arg in new[] { "-File", Path.Combine(root, "App", "WebWorker.ps1"), "-AppRoot", root, "-InputPath", "stdin", "-OutputPath", "stdout" }) info.ArgumentList.Add(arg);
+        if (isolatedPdfRead) info.ArgumentList.Add("-IsolatedPdfRead");
         if (progressJob?.ProgressPath is string progressPath) {
             info.ArgumentList.Add("-ProgressPath"); info.ArgumentList.Add(progressPath);
             info.ArgumentList.Add("-CancelPath"); info.ArgumentList.Add(progressJob.CancelPath!);
         }
         using var process = Process.Start(info) ?? throw new WorkerException("Windows could not start the local file helper. Check workstation policy.");
+        progressJob?.CountWorkerStart();
         if (progressJob?.Background == true) { try { process.PriorityClass = ProcessPriorityClass.BelowNormal; } catch { /* Policy may deny a priority hint; correctness does not depend on it. */ } }
         var outputTask = process.StandardOutput.ReadToEndAsync(cancellationToken);
         var errorTask = process.StandardError.ReadToEndAsync(cancellationToken);
@@ -302,8 +306,15 @@ sealed class WorkerBridge(string root, string powerShell) {
                 var error = envelope?["error"];
                 throw new WorkerException(error is JsonObject ? error["message"]?.GetValue<string>() ?? "The action could not finish." : error?.ToString() ?? "The action could not finish.");
             }
+            if (isolatedPdfRead && envelope["value"] is JsonObject response && response["result"] is JsonObject result && result["Performance"] is JsonObject performance && performance["InlinePdfReads"] is JsonValue observed && observed.TryGetValue<long>(out var inlineReads) && inlineReads is >= 0 and <= 1)
+                progressJob?.CountInlinePdfReads(inlineReads);
             return envelope["value"]?.DeepClone();
         } catch (OperationCanceledException) {
+            if (isolatedPdfRead && !cancellationToken.IsCancellationRequested) {
+                progressJob?.RequestCancel();
+                try { process.Kill(entireProcessTree: true); } catch { }
+                throw new WorkerException("This PDF reached its 90-second reading limit. Its isolated helper was stopped; completed readings remain saved. Automatic reading is paused until you choose to retry.", pdfReadDeadline: true);
+            }
             if (!cancellationToken.IsCancellationRequested && progressJob?.Cancellable == true) {
                 progressJob.RequestCancel();
                 using var grace = new CancellationTokenSource(TimeSpan.FromSeconds(90));
@@ -314,7 +325,7 @@ sealed class WorkerBridge(string root, string powerShell) {
             }
             try { process.Kill(entireProcessTree: true); } catch { }
             throw new WorkerException(cancellationToken.IsCancellationRequested ? "The local session stopped. Completed reports remain saved; interrupted staging is checked on the next update." : "The local action timed out while waiting for Windows. The unresponsive helper was stopped; completed reports remain saved and interrupted staging is checked on the next update.");
-        } finally { if (!process.HasExited) { try { process.Kill(entireProcessTree: true); } catch { } } }
+        } finally { progressJob?.CountWorkerElapsed(helperClock.ElapsedMilliseconds, isolatedPdfRead); if (!process.HasExited) { try { process.Kill(entireProcessTree: true); } catch { } } }
     }
 }
 sealed class Job(string action, bool background = false, bool automatic = false) {
@@ -327,12 +338,13 @@ sealed class Job(string action, bool background = false, bool automatic = false)
     private double percent = -1;
     private long finishedTicks;
     private long planBuilds, fullSnapshots, librarySyncs, processedReports, cacheSkips;
+    private long workerStarts, inlinePdfReads, helperMilliseconds, readWorkerMilliseconds, planningMilliseconds, snapshotMilliseconds;
     public string Id { get; } = Guid.NewGuid().ToString("N");
     public string Action { get; } = action;
     public bool Background { get; } = background;
     public bool Automatic { get; } = automatic;
-    public void CountPlan() => Interlocked.Increment(ref planBuilds);
-    public void CountSnapshot() => Interlocked.Increment(ref fullSnapshots);
+    public void CountPlan(long milliseconds = 0) { Interlocked.Increment(ref planBuilds); Interlocked.Add(ref planningMilliseconds, Math.Max(0, milliseconds)); }
+    public void CountSnapshot(long milliseconds = 0) { Interlocked.Increment(ref fullSnapshots); Interlocked.Add(ref snapshotMilliseconds, Math.Max(0, milliseconds)); }
     public void CountLibrarySync() => Interlocked.Increment(ref librarySyncs);
     public void CountProcessed(long count) => Interlocked.Add(ref processedReports, count);
     public void CountSkipped(long count) => Interlocked.Add(ref cacheSkips, count);
@@ -341,7 +353,16 @@ sealed class Job(string action, bool background = false, bool automatic = false)
     public long LibrarySyncCount => Interlocked.Read(ref librarySyncs);
     public long ProcessedCount => Interlocked.Read(ref processedReports);
     public long CacheSkipCount => Interlocked.Read(ref cacheSkips);
-    public object PerformanceView() => new { planBuilds = Interlocked.Read(ref planBuilds), fullSnapshots = Interlocked.Read(ref fullSnapshots), librarySyncs = Interlocked.Read(ref librarySyncs), processedReports = Interlocked.Read(ref processedReports), cacheSkips = Interlocked.Read(ref cacheSkips) };
+    public void CountWorkerStart() => Interlocked.Increment(ref workerStarts);
+    public void CountInlinePdfReads(long count) { if (count is >= 0 and <= 1) Interlocked.Add(ref inlinePdfReads, count); }
+    public void CountWorkerElapsed(long milliseconds, bool inlinePdfRead) { Interlocked.Add(ref helperMilliseconds, Math.Max(0, milliseconds)); if (inlinePdfRead) Interlocked.Add(ref readWorkerMilliseconds, Math.Max(0, milliseconds)); }
+    public long WorkerStartCount => Interlocked.Read(ref workerStarts);
+    public long InlinePdfReadCount => Interlocked.Read(ref inlinePdfReads);
+    public long HelperMilliseconds => Interlocked.Read(ref helperMilliseconds);
+    public long ReadWorkerMilliseconds => Interlocked.Read(ref readWorkerMilliseconds);
+    public long PlanningMilliseconds => Interlocked.Read(ref planningMilliseconds);
+    public long SnapshotMilliseconds => Interlocked.Read(ref snapshotMilliseconds);
+    public object PerformanceView() => new { planBuilds = Interlocked.Read(ref planBuilds), fullSnapshots = Interlocked.Read(ref fullSnapshots), librarySyncs = Interlocked.Read(ref librarySyncs), processedReports = Interlocked.Read(ref processedReports), cacheSkips = Interlocked.Read(ref cacheSkips), workerStarts = WorkerStartCount, inlinePdfReads = InlinePdfReadCount, helperMilliseconds = HelperMilliseconds, readWorkerMilliseconds = ReadWorkerMilliseconds, planningMilliseconds = PlanningMilliseconds, snapshotMilliseconds = SnapshotMilliseconds };
     public DateTimeOffset StartedUtc { get; } = DateTimeOffset.UtcNow;
     public string Status { get; set; } = "queued";
     public string Message { get; set; } = "Waiting for the current safe step…";
@@ -543,7 +564,8 @@ sealed class HostState(WorkerBridge bridge, string root) {
                     job.PrepareProgress(root);
                     job.Status = "running"; job.Message = MessageFor(action);
                     if (action is "Diagnostics" or "PrintDiagnostics") request["supportWork"] = JsonSerializer.SerializeToNode(Jobs.Values.OrderByDescending(j => j.StartedUtc).Take(32).Select(j => j.SupportView()));
-                    result = await bridge.Run(request, action is "Refresh" or "Backup" or "Restore" or "Analyze" or "Export" or "Diagnostics" or "PrintDiagnostics" ? 1800 : 120, execution.Token, job);
+                    var isolatedPdfRead = action == "Analyze" && request["id"] is JsonValue selectedId && selectedId.TryGetValue<string>(out var selectedText) && SafeFiles.ValidRecordId(selectedText);
+                    result = await bridge.Run(request, action is "Refresh" or "Backup" or "Restore" or "Analyze" or "Export" or "Diagnostics" or "PrintDiagnostics" ? 1800 : 120, execution.Token, job, isolatedPdfRead: isolatedPdfRead);
                     job.ReadProgress();
                     if (action is not ("Diagnostics" or "PrintDiagnostics")) {
                         var previousArchive = Snapshot?["archiveRoot"]?.GetValue<string>();
@@ -578,6 +600,7 @@ sealed class HostState(WorkerBridge bridge, string root) {
                 if (wasCancelled) { LastRefresh = DateTimeOffset.UtcNow; LastAnalysis = DateTimeOffset.UtcNow; }
                 WriteActivity(action, wasCancelled ? "Cancelled" : "Completed", timer.ElapsedMilliseconds, performanceJob: job);
             } catch (Exception ex) {
+                if (ex is WorkerException { PdfReadDeadline: true }) { lock (queueGate) automaticReadingStopped = true; }
                 var stoppedBeforeStarting = ex is OperationCanceledException && job.CancelRequested;
                 job.Status = stoppedBeforeStarting ? "cancelled" : "failed";
                 job.Error = stoppedBeforeStarting ? (job.Background ? "Background reading stopped safely. Completed readings remain saved." : "Cancelled before starting. Saved reports were not changed.") : ex is WorkerException ? ex.Message : ex is OperationCanceledException ? "The local session stopped." : "The action could not finish. Export support logs if this repeats.";
@@ -622,10 +645,10 @@ sealed class HostState(WorkerBridge bridge, string root) {
                 ["measurements"] = job.Action == "AnalyzeBacklog" || request["measurements"]?.GetValue<bool>() == true,
                 ["refreshUnsupported"] = job.Action == "AnalyzeBacklog" || request["refreshUnsupported"]?.GetValue<bool>() == true };
             if (request["ids"] is JsonNode ids) planRequest["ids"] = ids.DeepClone();
-            JsonNode? value;
+            JsonNode? value; var planClock = Stopwatch.StartNew();
             try { value = await bridge.Run(planRequest, 90, executionToken, job); }
             finally { planRequest.Clear(); }
-            job.CountPlan();
+            job.CountPlan(planClock.ElapsedMilliseconds);
             if (value?["cancelled"]?.GetValue<bool>() == true || job.CancelRequested) { cancelled = true; remaining = new Queue<string>(); return; }
             var plan = value?["plan"] as JsonObject ?? throw new WorkerException("The background reader did not return a complete work plan.");
             var next = new Queue<string>(); var unique = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
@@ -643,12 +666,12 @@ sealed class HostState(WorkerBridge bridge, string root) {
         async Task PublishCheckpoint(bool fullSync) {
             var ids = new JsonArray(); foreach (var id in dirty) ids.Add(id);
             var sync = new JsonObject { ["action"] = "SyncLibrary", ["ids"] = ids, ["fullSync"] = fullSync };
-            JsonNode? value;
+            JsonNode? value; var snapshotClock = Stopwatch.StartNew();
             try { value = await bridge.Run(sync, 1800, executionToken, job); }
             finally { sync.Clear(); }
             if (dirty.Count > 0 || fullSync) job.CountLibrarySync();
             if (value?["snapshot"] is not JsonNode nextSnapshot) throw new WorkerException("The updated report overview could not be refreshed. Completed readings remain saved.");
-            Volatile.Write(ref snapshot, nextSnapshot.DeepClone()); job.CountSnapshot(); needsSnapshot = false;
+            Volatile.Write(ref snapshot, nextSnapshot.DeepClone()); job.CountSnapshot(snapshotClock.ElapsedMilliseconds); needsSnapshot = false;
             cancelled |= value?["cancelled"]?.GetValue<bool>() == true || job.CancelRequested;
             if (!cancelled) { dirty.Clear(); syncedLibraryGeneration = Interlocked.Read(ref libraryRevision); }
             checkpoint.Restart(); sinceCheckpoint = 0;
@@ -670,7 +693,8 @@ sealed class HostState(WorkerBridge bridge, string root) {
                             ["measurements"] = job.Action == "AnalyzeBacklog" || request["measurements"]?.GetValue<bool>() == true,
                             ["refreshUnsupported"] = job.Action == "AnalyzeBacklog" || request["refreshUnsupported"]?.GetValue<bool>() == true };
                         JsonNode? value;
-                        try { value = await bridge.Run(chunk, 90, executionToken, job); }
+                        try { value = await bridge.Run(chunk, 90, executionToken, job, isolatedPdfRead: true); }
+                        catch { remaining.Enqueue(id); pending = remaining.Count; job.SetBackgroundProgress(analyzed, failed, pending, cached); throw; }
                         finally { chunk.Clear(); }
                         job.ReadProgress();
                         var result = value?["result"] as JsonObject;
@@ -696,7 +720,7 @@ sealed class HostState(WorkerBridge bridge, string root) {
                         pending = remaining.Count; job.SetBackgroundProgress(analyzed, failed, pending, cached);
                         finish = cancelled || job.Action != "AnalyzeBacklog" && analyzed + failed >= 20;
                     }
-                    if (!cancelled && !ForegroundBusy && (finish || sinceCheckpoint >= 10 || checkpoint.Elapsed >= TimeSpan.FromSeconds(5)) && (needsSnapshot || dirty.Count > 0 || finish && job.Action == "AnalyzeBacklog")) {
+                    if (!cancelled && !ForegroundBusy && (finish || sinceCheckpoint >= 10 || checkpoint.Elapsed >= TimeSpan.FromSeconds(15)) && (needsSnapshot || dirty.Count > 0 || finish && job.Action == "AnalyzeBacklog")) {
                         await PublishCheckpoint(finish && job.Action == "AnalyzeBacklog" || syncedLibraryGeneration != Interlocked.Read(ref libraryRevision));
                         if (finish && !cancelled) finalCheckpointDone = true;
                     }
@@ -709,7 +733,7 @@ sealed class HostState(WorkerBridge bridge, string root) {
         finally {
             // Cancellation/error cleanup refreshes current metadata only. It never forces
             // more PDF copies after Stop, and never overwrites a foreground result out of order.
-            if (!executionToken.IsCancellationRequested && (needsSnapshot || !normalExit || normalExit && !cancelled && !finalCheckpointDone && job.Action == "AnalyzeBacklog")) {
+            if (!executionToken.IsCancellationRequested && (needsSnapshot || !normalExit || cancelled || job.CancelRequested || normalExit && !cancelled && !finalCheckpointDone && job.Action == "AnalyzeBacklog")) {
                 await EnterSlot(executionToken, honorPause: false);
                 try {
                     if (normalExit && !cancelled && !job.CancelRequested) await PublishCheckpoint(job.Action == "AnalyzeBacklog" || syncedLibraryGeneration != Interlocked.Read(ref libraryRevision));
@@ -737,7 +761,7 @@ sealed class HostState(WorkerBridge bridge, string root) {
             var operation = action switch { "Refresh" => "Update", "Analyze" or "AnalyzeBacklog" => "Analysis", "Approve" or "Disapprove" or "Undo" => "Reclassify", "ScannerSettings" or "ApplyProfile" => "Settings", "Browse" => "BrowseRefresh", "InstallPreparedUpdate" or "PrepareUpdate" => "OfflineUpdate", _ => action };
             var path = Path.Combine(root, "Logs", "Web", "activity.jsonl"); Directory.CreateDirectory(Path.GetDirectoryName(path)!); SafeFiles.RequireDirect(path); SafeFiles.RequireDirect(path + ".previous");
             if (File.Exists(path) && new FileInfo(path).Length > 1_048_576) File.Move(path, path + ".previous", true);
-            File.AppendAllText(path, JsonSerializer.Serialize(new { SchemaVersion = 3, TimeUtc = DateTimeOffset.UtcNow, Operation = operation, Outcome = outcome, DurationMs = duration, Stage = stage, Reason = reason.Length > 0 ? reason : outcome == "Failed" ? "WorkerFailed" : outcome == "Started" ? "OperationStarted" : "OperationCompleted", ErrorKind = outcome == "Failed" ? "Unknown" : "None", Counts = new { Completed = completed, Total = total, Failed = failed, Cached = cached, PlanPasses = performanceJob?.PlanBuildCount ?? 0, SnapshotPasses = performanceJob?.FullSnapshotCount ?? 0, LibraryPasses = performanceJob?.LibrarySyncCount ?? 0, QueueCompleted = performanceJob?.ProcessedCount ?? 0, CacheHits = performanceJob?.CacheSkipCount ?? 0 } }) + Environment.NewLine, new UTF8Encoding(false));
+            File.AppendAllText(path, JsonSerializer.Serialize(new { SchemaVersion = 3, TimeUtc = DateTimeOffset.UtcNow, Operation = operation, Outcome = outcome, DurationMs = duration, Stage = stage, Reason = reason.Length > 0 ? reason : outcome == "Failed" ? "WorkerFailed" : outcome == "Started" ? "OperationStarted" : "OperationCompleted", ErrorKind = outcome == "Failed" ? "Unknown" : "None", Counts = new { Completed = completed, Total = total, Failed = failed, Cached = cached, PlanPasses = performanceJob?.PlanBuildCount ?? 0, SnapshotPasses = performanceJob?.FullSnapshotCount ?? 0, LibraryPasses = performanceJob?.LibrarySyncCount ?? 0, QueueCompleted = performanceJob?.ProcessedCount ?? 0, CacheHits = performanceJob?.CacheSkipCount ?? 0, WorkerStarts = performanceJob?.WorkerStartCount ?? 0, InlinePdfReads = performanceJob?.InlinePdfReadCount ?? 0, HelperMilliseconds = performanceJob?.HelperMilliseconds ?? 0, ReadWorkerMilliseconds = performanceJob?.ReadWorkerMilliseconds ?? 0, PlanningMilliseconds = performanceJob?.PlanningMilliseconds ?? 0, SnapshotMilliseconds = performanceJob?.SnapshotMilliseconds ?? 0 } }) + Environment.NewLine, new UTF8Encoding(false));
         }} catch { }
     }
     private static string MessageFor(string action) => action switch { "Refresh" => "Checking scanners and collecting new reports…", "Approve" or "Disapprove" => "Saving the file decision…", "Export" => "Preparing the report package…", "Backup" => "Creating a verified backup…", "Restore" => "Choose a backup ZIP and a new destination in the Windows dialogs…", "Analyze" => "Reading new or changed PDF text…", "Reconnect" => "Testing the selected scanner connection…", "PrepareUpdate" => "Checking the update ZIP…", _ => "Working on your request…" };

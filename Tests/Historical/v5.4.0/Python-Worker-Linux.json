@@ -1,0 +1,52 @@
+{
+  "Runtime": "Linux Python 3.12.14",
+  "ProductionWindowsActuallyRun": false,
+  "Tests": 11,
+  "Failed": 0,
+  "Results": [
+    {
+      "Name": "Basic complete read and exact buffer hash",
+      "Result": "PASS"
+    },
+    {
+      "Name": "Extended complete read and exact buffer hash",
+      "Result": "PASS"
+    },
+    {
+      "Name": "Page cap remains explicit incomplete",
+      "Result": "PASS"
+    },
+    {
+      "Name": "Character cap bounds response",
+      "Result": "PASS"
+    },
+    {
+      "Name": "Malformed private input has safe fixed error",
+      "Result": "PASS"
+    },
+    {
+      "Name": "Boolean limits rejected",
+      "Result": "PASS"
+    },
+    {
+      "Name": "Truncated binary request rejected",
+      "Result": "PASS"
+    },
+    {
+      "Name": "Trailing request bytes rejected",
+      "Result": "PASS"
+    },
+    {
+      "Name": "Oversized header rejected",
+      "Result": "PASS"
+    },
+    {
+      "Name": "Image-only or empty text requires OCR",
+      "Result": "PASS"
+    },
+    {
+      "Name": "Invalid input never exposes traceback",
+      "Result": "PASS"
+    }
+  ]
+}

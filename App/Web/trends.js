@@ -2,7 +2,7 @@
 (() => {
   const NS = 'http://www.w3.org/2000/svg';
   const MAX_POINTS = 1000;
-  const METRICS = {WaterCTNumber:{label:'Water CT number',unit:'HU',axisLabel:'Hounsfield units (HU)'},ImageNoise:{label:'Image noise',unit:'HU',axisLabel:'Hounsfield units (HU)'},SliceThickness:{label:'Slice thickness',unit:'mm',axisLabel:'Millimetres (mm)'}};
+  const METRICS = {WaterCTNumber:{label:'Water CT number',unit:'HU',axisLabel:'Hounsfield units (HU)'},ImageNoise:{label:'Image noise',unit:'HU',axisLabel:'Hounsfield units (HU)'},SliceThickness:{label:'Slice thickness',unit:'mm',axisLabel:'Millimetres (mm)'},Lightmarker:{label:'Light marker alignment',unit:'mm',axisLabel:'Millimetres (mm)'},ExternalLightmarker:{label:'External light marker',unit:'mm',axisLabel:'Millimetres (mm)'},TopogramPosition:{label:'Topogram position',unit:'mm',axisLabel:'Millimetres (mm)'},SagittalCoronalLightmarker:{label:'Sagittal / coronal alignment',unit:'mm',axisLabel:'Millimetres (mm)'}};
   const metricDefinition=()=>METRICS[state.metric]||METRICS.WaterCTNumber;
   const metricLabel=()=>metricDefinition().label;
   const metricUnit=()=>metricDefinition().unit;
@@ -305,6 +305,7 @@
     if(typeof api!=='function')throw new TypeError('QaTrends requires the authenticated local API helper.');
     state.api=api;state.openRecord=openRecord;state.readPending=readPending;state.isBusy=typeof isBusy==='function'?isBusy:()=>false;
     state.isBackgroundReading=typeof isBackgroundReading==='function'?isBackgroundReading:()=>false;
+    options($('trend-metric'),Object.entries(METRICS).map(([value,definition])=>({value,label:definition.label})),state.metric,'No supported measurements');
     state.period=PERIODS.has($('trend-period')?.value)?$('trend-period').value:'90';
     for(const kind of ['scanner','metric','series','period'])$('trend-'+kind)?.addEventListener('change',()=>changed(kind));
     $('trend-read-pending')?.addEventListener('click',readMeasurements);

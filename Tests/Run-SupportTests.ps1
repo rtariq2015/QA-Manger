@@ -277,6 +277,7 @@ Scenario 'Printable diagnostics cap readable sections honestly while machine fil
         Check (@($eventCsv|Where-Object{$_.DurationMs -eq '432'}).Count -eq 507 -and $eventCsv.Count -eq $eventJson.Count) 'CSV retains the same full retained timeline'
         $html=Read-SyntheticSupportEntry $archive 'SupportReport.html'
         Check ($html -match '(?i)@media\s+print') 'The detailed overview has a print stylesheet'
+        Check ($html.Contains('Captured work snapshot') -and $html.Contains('Original archive checks') -and $html.Contains('Separate from file-type decisions; see Needs review for current choices.')) 'Printed work and original archive-check labels do not imply a live job snapshot or pending file decisions'
         Check ($html -notmatch '(?i)<script\b|\bon[a-z]+\s*=|(?:src|href)\s*=\s*["'']\s*(?:https?:|//)') 'Printable HTML needs no scripts, event handlers or external resources'
         Check ($html -match 'Report0500' -and $html -notmatch 'Report0501|Report0502|Report0503') 'The readable pending-details section stops at 500 rows'
         Check ($html -match '503' -and $html -match '500' -and $html -match '(?i)complete|full|remaining|limit|showing') 'The readable report limit is explicitly described'
@@ -409,6 +410,77 @@ Scenario 'Filing basis and reading state remain separate scrubbed facts across m
     $clean=Get-QaSupportReport -AppRoot $workspace -Config $config -Dashboard $dashboard -SupportContext ([pscustomobject]@{reports=@($bad)})
     Check ($clean.ReportDiagnostics[0].FilingBasis -ceq 'Unknown' -and $clean.ReportDiagnostics[0].Inferred -eq $false -and $clean.ReportDiagnostics[0].MeasurementSupportRevision -eq 0) 'Untrusted basis, boolean and revision inputs reduce to safe typed defaults'
     Check (-not (($clean.ReportDiagnostics|ConvertTo-Json -Depth 10).Contains($canary))) 'New diagnostic fields never pass through private freeform strings'
+}
+
+Scenario 'Batch decisions and Undo export bounded counts and timings without selections or private history' {
+    $batchRoot=Join-Path $testRoot 'BatchDiagnosticEvents';[void][IO.Directory]::CreateDirectory($batchRoot)
+    Write-QaSupportEvent -AppRoot $batchRoot -Operation Reclassify -Outcome Completed -DurationMs 120 -Stage Finishing -Reason BatchDecisionSaved -Counts @{Selected=4;Approved=4;Disapproved=0;Undone=0;Rejected=0;CopyFailed=0;batchId=$canary;RecordIds=@($canary)}
+    Write-QaSupportEvent -AppRoot $batchRoot -Operation Reclassify -Outcome Completed -DurationMs 45 -Stage Finishing -Reason BatchUndoSaved -Counts @{Selected=4;Undone=4;Approved=0;RecordIds=@($canary)}
+    Write-QaSupportEvent -AppRoot $batchRoot -Operation Reclassify -Outcome Failed -DurationMs 9 -Stage Verifying -Reason BatchPreflightRejected -Counts @{Selected=3;Rejected=3;Conflicts=1;message=$canary}
+    Write-QaSupportEvent -AppRoot $batchRoot -Operation Reclassify -Outcome Completed -DurationMs 14 -Stage Library -Reason ReadableCopyRefreshFailed -Counts @{Selected=2;Disapproved=2;CopyFailed=1;path=$canary}
+    $raw=[pscustomobject]@{TimeUtc=[datetime]::UtcNow.ToString('o');Operation='Reclassify';Outcome='Completed';DurationMs=121;Reason='BatchDecisionSaved';Stage='Finishing';Counts=[pscustomobject]@{Selected='=HYPERLINK("https://example.invalid","private")';Approved=-1;Disapproved=$canary;Undone=2;Rejected=2147483648;CopyFailed=1;Unknown=$canary};batchId=$canary;selections=@([pscustomobject]@{id=('a'*64);stamp=$canary;filename=$canary});undoBatch=[pscustomobject]@{id=$canary;name=$canary};Message=$canary;Path=$canary}
+    $legacy=Join-Path $batchRoot 'Logs/Support-events.jsonl';[IO.File]::WriteAllText($legacy,($raw|ConvertTo-Json -Depth 10 -Compress))
+    $events=@(& (Get-Module Support) {param($root) Get-QaSupportEvents -AppRoot $root -All} $batchRoot)
+    Check ($events.Count -eq 5) 'Every controlled batch event survives without merging distinct decision and copy outcomes'
+    $saved=@($events|Where-Object DurationMs -eq 120)[0];$undo=@($events|Where-Object DurationMs -eq 45)[0];$rejected=@($events|Where-Object DurationMs -eq 9)[0];$copy=@($events|Where-Object DurationMs -eq 14)[0];$invalid=@($events|Where-Object DurationMs -eq 121)[0]
+    Check ($saved.Reason -ceq 'BatchDecisionSaved' -and $saved.Counts.Selected -eq 4 -and $saved.Counts.Approved -eq 4 -and $saved.Counts.CopyFailed -eq 0) 'Saved approvals retain factual selected and committed counts'
+    Check ($undo.Reason -ceq 'BatchUndoSaved' -and $undo.Counts.Undone -eq 4 -and $undo.DurationMs -eq 45) 'Undo retains its own count and bounded elapsed milliseconds'
+    Check ($rejected.Reason -ceq 'BatchPreflightRejected' -and $rejected.Outcome -ceq 'Failed' -and $rejected.Counts.Rejected -eq 3) 'Preflight rejection remains distinct from a completed decision'
+    Check ($copy.Counts.Disapproved -eq 2 -and $copy.Counts.CopyFailed -eq 1 -and $copy.Outcome -ceq 'Completed') 'A readable-copy warning does not erase the successful decision counts'
+    Check ($invalid.Counts.Selected -eq 0 -and $invalid.Counts.Approved -eq 0 -and $invalid.Counts.Disapproved -eq 0 -and $invalid.Counts.Rejected -eq 0 -and $invalid.Counts.Undone -eq 2) 'Formulas, private strings, negative numbers and overflowing counters reduce to safe numeric defaults'
+    $json=$events|ConvertTo-Json -Depth 12
+    Check (-not $json.Contains($canary) -and -not $json.Contains('HYPERLINK') -and -not $json.Contains('selections') -and -not $json.Contains('undoBatch') -and -not $json.Contains('batchId') -and -not $json.Contains(('a'*64))) 'Batch references, exact selections, stamps and private history never enter shareable events'
+    $batchConfig=$config|ConvertTo-Json -Depth 24|ConvertFrom-Json;$batchConfig.ArchiveRoot=Join-Path $batchRoot 'Data';$batchConfig|Add-Member AppRoot $batchRoot -Force
+    $output=Join-Path $batchRoot 'Batch-Diagnostics.zip';[void](Export-QaSupportBundle -AppRoot $batchRoot -Config $batchConfig -Dashboard $dashboard -SupportContext @{Reports=@();Work=@()} -DestinationPath $output)
+    $archive=[IO.Compression.ZipFile]::OpenRead($output)
+    try{
+        Check ($archive.Entries.Count -eq 7) 'Batch logging preserves the seven-entry diagnostic package'
+        foreach($entry in $archive.Entries){$text=Read-SyntheticSupportEntry $archive $entry.FullName;Check (-not $text.Contains($canary) -and -not $text.Contains('HYPERLINK') -and -not $text.Contains(('a'*64))) 'Every ZIP entry excludes batch identifiers, untrusted text and selection evidence'}
+        $activity=@((Read-SyntheticSupportEntry $archive 'Scrubbed-Activity.jsonl') -split '\r?\n'|Where-Object{$_}|ForEach-Object{$_|ConvertFrom-Json})
+        Check (@($activity|Where-Object Operation -ceq 'Reclassify').Count -eq 5 -and @($activity|Where-Object Reason -ceq 'BatchUndoSaved').Count -eq 1) 'Complete machine activity exports preserve every retained batch event'
+        $html=Read-SyntheticSupportEntry $archive 'SupportReport.html'
+        Check ($html.Contains('BatchDecisionSaved') -and $html.Contains('BatchUndoSaved') -and $html.Contains('Selected=4') -and $html.Contains('Approved=4') -and $html.Contains('Undone=4') -and $html -match '(?i)@media\s+print') 'The printable timeline includes controlled batch outcomes and its print styles'
+    }finally{$archive.Dispose()}
+}
+
+Scenario 'Pending review groups export only controlled reasons and exclude opaque local grouping keys' {
+    $rows=New-Object 'Collections.Generic.List[object]';$reasons=@{ManualReview=@('ManualReview');ReadError=@('ReaderFailed');ReferenceEvidence=@('ReferenceExcluded');Conflict=@('DateConflict');Unsupported=@('UnknownTemplate');Undo=@('UndoRestored');Other=@()}
+    foreach($group in @('ManualReview','ReadError','ReferenceEvidence','Conflict','Unsupported','Undo','Other')){
+        $row=New-SyntheticDiagnosticRow $reasons[$group];$row.textCacheStatus='Valid';$row|Add-Member filingState 'NeedsReview';$row|Add-Member groupingReason $group;$row|Add-Member groupingKey $canary;$row|Add-Member batchId $canary;$row|Add-Member measurementSupportRevision 3;[void]$rows.Add($row)
+    }
+    $waiting=New-SyntheticDiagnosticRow @('AwaitingRead');$waiting|Add-Member filingState 'WaitingRead';$waiting|Add-Member groupingReason 'ManualReview';[void]$rows.Add($waiting)
+    $filed=New-SyntheticDiagnosticRow @('SupportedProfile');$filed.filingStatus='Automatic';$filed|Add-Member filingState 'Filed';$filed|Add-Member groupingReason 'Conflict';[void]$rows.Add($filed)
+    $bad=New-SyntheticDiagnosticRow @($canary);$bad|Add-Member filingState 'NeedsReview';$bad|Add-Member groupingReason $canary;$bad|Add-Member groupingKey $canary;[void]$rows.Add($bad)
+    $report=Get-QaSupportReport -AppRoot $workspace -Config $config -Dashboard $dashboard -SupportContext @{Reports=@($rows.ToArray());Work=@()}
+    foreach($group in @('ManualReview','ReadError','ReferenceEvidence','Conflict','Unsupported','Undo')){$key='Pending'+$group;Check ($report.DiagnosticCounts.$key -eq 1) ('Independent pending group count retained: '+$group)}
+    Check ($report.DiagnosticCounts.PendingOther -eq 2 -and $report.DiagnosticCounts.NeedsReview -eq 8) 'Unknown private reasons become a safe Other bucket without inflating waiting/filed decisions'
+    Check ($report.ReportDiagnostics[7].GroupingReason -ceq 'None' -and $report.ReportDiagnostics[8].GroupingReason -ceq 'None') 'Waiting for reading and already-filed reports have no pending-review group'
+    Check ($report.ReportDiagnostics[0].MeasurementSupportRevision -eq 3) 'New measurement capabilities remain count/revision metadata rather than raw values'
+    $json=$report|ConvertTo-Json -Depth 20
+    Check (-not $json.Contains($canary) -and -not $json.Contains('groupingKey') -and -not $json.Contains('batchId')) 'Opaque local grouping keys, batch references and private reasons cannot enter the report'
+    $csv=@((& (Get-Module Support) {param($rows) ConvertTo-QaSupportReportCsv -Rows $rows} $report.ReportDiagnostics)|ConvertFrom-Csv)
+    Check ($csv.Count -eq 10 -and $csv[0].GroupingReason -ceq 'ManualReview' -and $csv[9].GroupingReason -ceq 'Other') 'CSV keeps the same complete controlled reason grouping'
+    $html=ConvertTo-QaSupportHtml -Report $report
+    Check ($html.Contains('Filing review groups') -and $html.Contains('Pending group: ManualReview') -and -not $html.Contains($canary)) 'Printable details explain the reason groups without exporting their opaque local keys'
+}
+Scenario 'Performance telemetry retains only bounded numeric stage counters in print and machine exports' {
+    $perfRoot=Join-Path $testRoot 'PerformanceDiagnosticEvents';[void][IO.Directory]::CreateDirectory($perfRoot)
+    $counts=@{WorkerStarts=1;InlinePdfReads=1;NestedReaderStarts=0;HelperMilliseconds=945;ReadWorkerMilliseconds=500;ReaderMilliseconds=120;ParseMilliseconds=25;CacheMilliseconds=9;CacheWrites=1;PlanningMilliseconds=40;SnapshotMilliseconds=87;filename=$canary;hash=('b'*64);path=$canary}
+    Write-QaSupportEvent -AppRoot $perfRoot -Operation PdfRead -Outcome Completed -DurationMs 970 -Stage Analyzing -Reason ReadCompleted -Reader Standard -Profile Basic -Counts $counts
+    $raw=[pscustomobject]@{TimeUtc=[datetime]::UtcNow.ToString('o');Operation='PdfRead';Outcome='Completed';DurationMs=971;Reason='ReadCompleted';Stage='Analyzing';Counts=[pscustomobject]@{WorkerStarts=$canary;InlinePdfReads=-1;NestedReaderStarts=2147483648;HelperMilliseconds=$canary;ReadWorkerMilliseconds=3.25;ReaderMilliseconds=1001;ParseMilliseconds=$canary;CacheMilliseconds=-9;CacheWrites=9999999999;PlanningMilliseconds=$true;SnapshotMilliseconds=@{name=$canary};Private=$canary};timings=@{filename=$canary};records=@($canary)}
+    [IO.File]::WriteAllText((Join-Path $perfRoot 'Logs/Support-events.jsonl'),($raw|ConvertTo-Json -Depth 10 -Compress))
+    $events=@(& (Get-Module Support) {param($root) Get-QaSupportEvents -AppRoot $root -All} $perfRoot)
+    $good=@($events|Where-Object DurationMs -eq 970)[0];$bad=@($events|Where-Object DurationMs -eq 971)[0]
+    foreach($key in @('WorkerStarts','InlinePdfReads','NestedReaderStarts','HelperMilliseconds','ReadWorkerMilliseconds','ReaderMilliseconds','ParseMilliseconds','CacheMilliseconds','CacheWrites','PlanningMilliseconds','SnapshotMilliseconds')){Check ($good.Counts.$key -eq $counts[$key]) ('Controlled performance counter retained: '+$key)}
+    foreach($key in @('WorkerStarts','InlinePdfReads','NestedReaderStarts','HelperMilliseconds','ReadWorkerMilliseconds','ParseMilliseconds','CacheMilliseconds','CacheWrites','PlanningMilliseconds','SnapshotMilliseconds')){Check ($bad.Counts.$key -eq 0) ('Unsafe performance value reduced to zero: '+$key)}
+    Check ($bad.Counts.ReaderMilliseconds -eq 1001) 'An independent valid reader timing remains available alongside rejected fields'
+    $json=$events|ConvertTo-Json -Depth 12
+    Check (-not $json.Contains($canary) -and -not $json.Contains(('b'*64)) -and -not $json.Contains('filename') -and -not $json.Contains('records')) 'Numeric telemetry does not pass through raw reports, paths, hashes or arbitrary timing objects'
+    $report=Get-QaSupportReport -AppRoot $perfRoot -Config $config -Dashboard $dashboard -RetainedEvents $events -SupportContext @{Reports=@();Work=@()}
+    $html=ConvertTo-QaSupportHtml -Report $report
+    Check ($html.Contains('InlinePdfReads=1') -and $html.Contains('ReaderMilliseconds=120') -and $html.Contains('HelperMilliseconds=945') -and -not $html.Contains($canary)) 'Printed timing labels retain only controlled numeric values'
+    $csv=& (Get-Module Support) {param($events) ConvertTo-QaSupportEventCsv -Events $events} $events
+    Check ($csv.Contains('ReaderMilliseconds') -and -not $csv.Contains($canary)) 'Machine activity export uses the same bounded performance allowlist'
 }
 
 $failed=@($script:Results|Where-Object Result -eq 'FAIL').Count

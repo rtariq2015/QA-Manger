@@ -5,7 +5,7 @@ $ErrorActionPreference='Stop'
 Import-Module (Join-Path $PSScriptRoot 'ContentClassifier.psm1') -DisableNameChecking -WarningAction SilentlyContinue
 
 function Get-QaMeasurementParserVersion { return 1 }
-function Get-QaMeasurementSupportRevision { return 2 }
+function Get-QaMeasurementSupportRevision { return 3 }
 
 function ConvertTo-QaMeasurementNumber {
     param([string]$Value)
@@ -71,6 +71,117 @@ function Add-QaDailyMeasurementRows {
     }
 }
 
+# These scalar alignment tables do not print a head/body, system or slice
+# identity. Preserve that absence explicitly; never invent System A or Slice 1.
+function Get-QaAlignmentSection {
+    param([string]$Label)
+    $label=([regex]::Replace($Label,'\s+',' ')).Trim()
+    switch -Regex ($label){
+        '^Lightmarker$'{return 'Lightmarker'}
+        '^External\s+Lightm\.?$'{return 'ExternalLightmarker'}
+        '^Topogram\s+Pos\.?$'{return 'TopogramPosition'}
+        '^Sag\.?\s*/\s*Cor\.?\s+Lightm\.?$'{return 'SagittalCoronalLightmarker'}
+    }
+    return ''
+}
+function Add-QaAlignmentMeasurement {
+    param([string]$ValueText,[string]$LowerText,[string]$UpperText,[int]$Page,[string]$Code,[string]$Context,$Rows,$Counts,$Issues)
+    $value=ConvertTo-QaMeasurementNumber $ValueText;$lower=ConvertTo-QaMeasurementNumber $LowerText;$upper=ConvertTo-QaMeasurementNumber $UpperText
+    if($null -eq $value -or $null -eq $lower -or $null -eq $upper){[void]$Issues.Add('UnsupportedNumericFormat');return}
+    $status='Printed'
+    if([decimal]::Parse($lower,[Globalization.CultureInfo]::InvariantCulture) -gt [decimal]::Parse($upper,[Globalization.CultureInfo]::InvariantCulture)){$lower=$null;$upper=$null;$status='NeedsReview';[void]$Issues.Add('InvalidPrintedLimits')}
+    $key=$Code+'|'+$Context
+    if($Counts.ContainsKey($key)){$Counts[$key]++}else{$Counts[$key]=1}
+    $label=switch($Code){'Lightmarker'{'Light marker alignment'}'ExternalLightmarker'{'External light marker'}'TopogramPosition'{'Topogram position'}'SagittalCoronalLightmarker'{'Sagittal / coronal alignment'}}
+    if($Rows.Count -lt 100){
+        [void]$Rows.Add([pscustomobject]@{Code=$Code;Label=$label;Value=$value;Unit='mm';Page=$Page;LowerLimit=$lower;UpperLimit=$upper;Mode='Unspecified';SourceSystem='NotSpecified';Slice='';Context=$Context;Status=$status;ContextSection=$Code;Source='PrintedAlignmentResult';_Key=$key})
+    }else{[void]$Issues.Add('MeasurementLimitReached')}
+}
+function Add-QaAlignmentBlock {
+    param($Block,[string]$Code,$Rows,$Counts,$Issues,[string]$Number)
+    if(-not $Code -or -not $Block.Count){return}
+    $headers=New-Object 'Collections.Generic.List[int]'
+    if($Code -ceq 'SagittalCoronalLightmarker'){
+        # The fixed two-column manufacturer layout explicitly labels left
+        # Sagittal and right Coronal. Complete scalar/range column pairs follow
+        # that order; partial, reordered or extra columns are not interpreted.
+        for($index=0;$index -lt $Block.Count;$index++){if([string]$Block[$index].Text -ceq 'Sagittal Light Marker Coronal Light Marker'){[void]$headers.Add($index)}}
+        if(-not $headers.Count){return}
+        if($headers.Count -ne 1){[void]$Issues.Add('AmbiguousDuplicateMeasurement');return}
+        $start=$headers[0]-1
+        if($start -lt 0 -or $start+7 -ge $Block.Count){[void]$Issues.Add('IncompleteMeasurementRow');return}
+        $page=[int]$Block[$start].Page
+        for($n=0;$n -lt 8;$n++){if($Block[$start+$n].Page -ne $page){[void]$Issues.Add('UnsupportedMeasurementRow');return}}
+        if([string]$Block[$start].Text -cne 'Result' -or [string]$Block[$start+2].Text -cne 'Result' -or [string]$Block[$start+3].Text -cne 'Tolerance'){[void]$Issues.Add('UnsupportedMeasurementRow');return}
+        $valuePattern='^(?<value>'+$Number+')[ \t]+mm$';$rangePattern='^(?<lower>'+$Number+')[ \t]*(?:\.{3}|'+[char]0x2026+')[ \t]*(?<upper>'+$Number+')[ \t]+mm$'
+        $sagittal=[regex]::Match([string]$Block[$start+4].Text,$valuePattern);$sagittalRange=[regex]::Match([string]$Block[$start+5].Text,$rangePattern)
+        $coronal=[regex]::Match([string]$Block[$start+6].Text,$valuePattern);$coronalRange=[regex]::Match([string]$Block[$start+7].Text,$rangePattern)
+        if(-not $sagittal.Success -or -not $sagittalRange.Success -or -not $coronal.Success -or -not $coronalRange.Success){[void]$Issues.Add('UnsupportedMeasurementRow');return}
+        if($start+8 -lt $Block.Count -and $Block[$start+8].Page -eq $page -and [regex]::IsMatch([string]$Block[$start+8].Text,'^'+$Number+'(?:[ \t]+.*)?$')){[void]$Issues.Add('MulticolumnMeasurementRow');return}
+        Add-QaAlignmentMeasurement -Code $Code -Context 'Sagittal' -ValueText $sagittal.Groups['value'].Value -LowerText $sagittalRange.Groups['lower'].Value -UpperText $sagittalRange.Groups['upper'].Value -Page $page -Rows $Rows -Counts $Counts -Issues $Issues
+        Add-QaAlignmentMeasurement -Code $Code -Context 'Coronal' -ValueText $coronal.Groups['value'].Value -LowerText $coronalRange.Groups['lower'].Value -UpperText $coronalRange.Groups['upper'].Value -Page $page -Rows $Rows -Counts $Counts -Issues $Issues
+        return
+    }
+    for($index=0;$index -lt $Block.Count;$index++){
+        if([string]$Block[$index].Text -cmatch '^Result[ \t]+\[mm\]$'){[void]$headers.Add($index)}
+    }
+    if(-not $headers.Count){return}
+    if($headers.Count -ne 1){[void]$Issues.Add('AmbiguousDuplicateMeasurement');return}
+    $index=$headers[0];$header=$Block[$index]
+    if($index+3 -ge $Block.Count){[void]$Issues.Add('IncompleteMeasurementRow');return}
+    $valueEntry=$Block[$index+1];$tolerance=$Block[$index+2];$rangeEntry=$Block[$index+3]
+    if($valueEntry.Page -ne $header.Page -or $tolerance.Page -ne $header.Page -or $rangeEntry.Page -ne $header.Page -or [string]$tolerance.Text -cne 'Tolerance'){
+        [void]$Issues.Add('UnsupportedMeasurementRow');return
+    }
+    $valueMatch=[regex]::Match([string]$valueEntry.Text,'^(?<value>'+$Number+')$')
+    $rangeMatch=[regex]::Match([string]$rangeEntry.Text,'^(?<lower>'+$Number+')[ \t]*(?:\.{3}|'+[char]0x2026+')[ \t]*(?<upper>'+$Number+')$')
+    if(-not $valueMatch.Success -or -not $rangeMatch.Success){[void]$Issues.Add('UnsupportedMeasurementRow');return}
+    if($index+4 -lt $Block.Count -and $Block[$index+4].Page -eq $header.Page -and [regex]::IsMatch([string]$Block[$index+4].Text,'^'+$Number+'(?:[ \t]+.*)?$')){
+        [void]$Issues.Add('MulticolumnMeasurementRow');return
+    }
+    Add-QaAlignmentMeasurement -Code $Code -Context 'Overall' -ValueText $valueMatch.Groups['value'].Value -LowerText $rangeMatch.Groups['lower'].Value -UpperText $rangeMatch.Groups['upper'].Value -Page ([int]$valueEntry.Page) -Rows $Rows -Counts $Counts -Issues $Issues
+}
+function Add-QaAlignmentMeasurementRows {
+    param($Lines,$Rows,$Counts,$Issues,[string]$Number,$Classification)
+    # Only the complete classified current body can authorize a scalar table.
+    # A standalone component title is allowed on its evidenced body page 2;
+    # a numbered heading is allowed only on its actual classified body page.
+    if(-not $Classification.CompleteRead -or $Classification.Status -cne 'Recognized' -or $Classification.DateStatus -cne 'Consensus' -or $Classification.ProfileId -cnotin @('siemens-iec-additional-v1','siemens-iec-extended-v1')){return}
+    $sections=@($Classification.Sections|Where-Object{[string]$_.Code -cin @('Lightmarker','ExternalLightmarker','TopogramPosition','SagittalCoronalLightmarker') -and $_.BodyEvidence -is [bool] -and $_.BodyEvidence})
+    if(-not $sections.Count){return}
+    $block=New-Object 'Collections.Generic.List[object]';$code=''
+    for($i=0;$i -lt $Lines.Count;$i++){
+        $entry=$Lines[$i];$line=[string]$entry.Text
+        if($entry.Page -lt 2){continue}
+        if($line -match '^[0-9]{1,2}\.$' -and $i+1 -lt $Lines.Count -and $Lines[$i+1].Page -eq $entry.Page -and $Lines[$i+1].Text -match '^Quality[ \t]+IEC[ \t]+Constancy(?:[ \t]+.*)?$'){$line+=' '+$Lines[$i+1].Text;$i++}
+        $heading=[regex]::Match($line,'^(?:(?<number>[0-9]{1,2})\.[ \t]*)?Quality[ \t]+IEC[ \t]+Constancy(?:[ \t]+(?<label>.*))?$',[Text.RegularExpressions.RegexOptions]::IgnoreCase)
+        if($heading.Success){
+            Add-QaAlignmentBlock -Block $block -Code $code -Rows $Rows -Counts $Counts -Issues $Issues -Number $Number
+            $block.Clear();$code='';$label=$heading.Groups['label'].Value.Trim()
+            # A generic page header must not consume the following real
+            # numbered heading or its wrapped ordinal. Only a canonical bare
+            # alignment label can continue this header onto the next line.
+            if(-not $label -and $i+1 -lt $Lines.Count -and $Lines[$i+1].Page -eq $entry.Page){
+                $nextLabel=[string]$Lines[$i+1].Text
+                if(Get-QaAlignmentSection $nextLabel){$i++;$label=$nextLabel}
+            }
+            $candidate=Get-QaAlignmentSection $label
+            if($candidate){
+                $numbered=$heading.Groups['number'].Success
+                $authorized=@($sections|Where-Object{
+                    [string]$_.Code -ceq $candidate -and [int]$_.Page -eq [int]$entry.Page -and
+                    (($_.EvidenceCode -ceq ('ComponentTitle.'+$candidate) -and -not $numbered -and $entry.Page -eq 2) -or
+                     ($_.EvidenceCode -ceq ('NumberedBodySection.'+$candidate) -and $numbered -and $entry.Page -ge 3 -and [int]$_.Number -eq [int]$heading.Groups['number'].Value))
+                })
+                if($authorized.Count -eq 1){$code=$candidate}
+            }
+            continue
+        }
+        if($code){[void]$block.Add($entry)}
+    }
+    Add-QaAlignmentBlock -Block $block -Code $code -Rows $Rows -Counts $Counts -Issues $Issues -Number $Number
+}
+
 function ConvertFrom-QaMeasurementText {
     [CmdletBinding()]param(
         [AllowEmptyString()][string]$Text='',
@@ -81,7 +192,7 @@ function ConvertFrom-QaMeasurementText {
     )
     $rows=New-Object 'Collections.Generic.List[object]'
     $issues=New-Object 'Collections.Generic.List[string]'
-    $result=[pscustomobject]@{MeasurementVersion=1;MeasurementSupportRevision=(Get-QaMeasurementSupportRevision);Status='NeedsReview';ReasonCode='NoSupportedTables';Reason='No supported water, noise or slice-thickness table was extracted. Review the original PDF.';CompleteRead=$false;Measurements=@();Issues=@();ClinicalResult='Not inferred'}
+    $result=[pscustomobject]@{MeasurementVersion=1;MeasurementSupportRevision=(Get-QaMeasurementSupportRevision);Status='NeedsReview';ReasonCode='NoSupportedTables';Reason='No supported measurement table was extracted. Review the original PDF.';CompleteRead=$false;Measurements=@();Issues=@();ClinicalResult='Not inferred'}
     if($NeedsOCR){$result.ReasonCode='NoReadableText';$result.Reason='No readable text is available for measurement extraction.';return $result}
     if($Text.Length -gt 2000000){$result.ReasonCode='InputLimit';$result.Reason='The text exceeds the bounded measurement-reading limit.';return $result}
     $classification=ConvertFrom-QaDocumentContent -Text $Text -Truncated $Truncated -NeedsOCR $NeedsOCR -Pages $Pages -ReadPages $ReadPages
@@ -170,6 +281,7 @@ function ConvertFrom-QaMeasurementText {
         }else{[void]$issues.Add('MeasurementLimitReached')}
         $i+=3
     }
+    Add-QaAlignmentMeasurementRows -Lines $lines -Rows $rows -Counts $counts -Issues $issues -Number $number -Classification $classification
     $final=New-Object 'Collections.Generic.List[object]'
     foreach($row in $rows){
         if($counts[[string]$row._Key] -gt 1){[void]$issues.Add('AmbiguousDuplicateMeasurement');continue}
@@ -180,7 +292,7 @@ function ConvertFrom-QaMeasurementText {
     $result.Measurements=@($final.ToArray());$result.Issues=@($issues|Select-Object -Unique)
     if($final.Count -gt 0){
         if($result.Issues.Count){$result.Status='NeedsReview';$result.ReasonCode='MeasurementReviewNeeded';$result.Reason='Printed values were extracted, but incomplete, conflicting or unsupported evidence needs review in the original PDF.'}
-        else{$result.Status='Extracted';$result.ReasonCode='SupportedPrintedValues';$result.Reason='Supported current water, noise and slice-thickness values with their explicitly printed unit-matched limits were extracted. These are printed observations, not a clinical approval.'}
+        else{$result.Status='Extracted';$result.ReasonCode='SupportedPrintedValues';$result.Reason='Supported current measurements with their explicitly printed unit-matched limits were extracted. These are printed observations, not a clinical approval.'}
     }
     return $result
 }

@@ -24,6 +24,19 @@ function New-Record($Fx,[string]$Name,[string]$Date='2025-02-01',[string]$Time='
 function New-Measurement([string]$Code='WaterCTNumber',[string]$Value='0.25',[string]$Mode='Body',[string]$System='A',[string]$Slice='1',[string]$Lower='-4',[string]$Upper='4',[int]$Page=3,[string]$Status='Printed',[string]$Unit='HU'){
     return [pscustomobject]@{Code=$Code;Value=$Value;Unit=$Unit;Page=$Page;LowerLimit=$Lower;UpperLimit=$Upper;Mode=$Mode;SourceSystem=$System;Slice=$Slice;Status=$Status}
 }
+function New-AlignmentMeasurement([string]$Code='Lightmarker',[string]$Value='0.43',[string]$Context='Overall',[string]$Lower='-1.75',[string]$Upper='1.75'){
+    $row=New-Measurement -Code $Code -Value $Value -Mode 'Unspecified' -System 'NotSpecified' -Slice '' -Lower $Lower -Upper $Upper -Unit 'mm'
+    $row|Add-Member Context $Context;$row|Add-Member ContextSection $Code;$row|Add-Member Source 'PrintedAlignmentResult';return $row
+}
+function Save-AlignmentAnalysis($Fx,$Record,[object[]]$Measurements,[string]$Code='Lightmarker',[int]$Revision=3){
+    $path=Save-Analysis $Fx $Record $Measurements -ProfileId 'siemens-iec-additional-v1'
+    $row=[IO.File]::ReadAllText($path)|ConvertFrom-Json
+    $entry=if([string]$row.RecordId -ceq [string]$Record.Id){$row}else{@($row.OtherRecords|Where-Object RecordId -CEQ $Record.Id)[0]}
+    $entry.MeasurementsDocument|Add-Member MeasurementSupportRevision $Revision -Force
+    $entry.DocumentClassification.Sections=@([pscustomobject]@{Code=$Code;BodyEvidence=$true;PrintedOutcomes=@('OK')})
+    [IO.File]::WriteAllText($path,($row|ConvertTo-Json -Depth 20),(New-Object Text.UTF8Encoding $true));return $path
+}
+
 function Save-Analysis($Fx,$Record,[object[]]$Measurements=@(),[string]$Date='', [string]$Time='', [string]$DateStatus='Consensus',[string]$MeasurementStatus='Extracted',[object[]]$Issues=@(),[bool]$Complete=$true,[string]$Outcome='OK',[int]$MeasurementVersion=1,[string]$Status='NeedsReview',[string]$ProfileId='', [bool]$IsReference=$false,[bool]$HasReferenceEvidence=$false){
     if(-not $Date){$Date=if($Record.ReportDate){$Record.ReportDate}else{'2025-02-01'}}
     if(-not $Time){$Time=if($Record.ReportTime){$Record.ReportTime}else{'07:00:00'}}
@@ -185,6 +198,57 @@ try {
             Check ($result.points[0].value -eq 2 -and $result.summary.firstDate -eq '2010-01-01') 'Plot clipping does not relabel the first retained point as the period baseline.'
         }finally{& $module {param($InsightsPath) Remove-Item Function:Get-QaSavedAnalysis -ErrorAction SilentlyContinue;Remove-Variable TrendTestAnalyses -Scope Script -ErrorAction SilentlyContinue;Import-Module $InsightsPath -DisableNameChecking -WarningAction SilentlyContinue} (Join-Path $ProductRoot 'App/Insights.psm1')}
     }
+    Scenario 'Monthly scalar alignment has fixed millimetre metrics and no fabricated system or slice' {
+        $fx=Fixture 'ScalarAlignment'
+        foreach($code in @('Lightmarker','ExternalLightmarker','TopogramPosition')){
+            $one=New-Record $fx ($code+'Earlier');$two=New-Record $fx ($code+'Later') '2025-02-02'
+            [void](Save-AlignmentAnalysis $fx $one @((New-AlignmentMeasurement -Code $code)) -Code $code)
+            [void](Save-AlignmentAnalysis $fx $two @((New-AlignmentMeasurement -Code $code -Value '0.58')) -Code $code)
+            $r=Read-Trend $fx @{Metric=$code}
+            Check ($r.points.Count -eq 2 -and $r.unit -ceq 'mm' -and $r.metricDefinition.code -ceq $code -and $r.summary.change -eq 0.15) 'Each fixed alignment metric plots only its own current millimetre values and change.'
+            Check ($r.selectedSeries -ceq ('CT_Edge|'+$code+'|Unspecified|NotSpecified|Overall') -and $r.series[0].label -ceq 'Overall alignment' -and $r.series[0].system -ceq 'NotSpecified' -and $r.series[0].slice -eq 0) 'The series identifies its actual overall context instead of guessing acquisition identities.'
+            $selected=Read-Trend $fx @{Metric=$code;SourceSystem='notspecified';SeriesKey=('CT_Edge|'+$code+'|Unspecified|NotSpecified|Overall')}
+            Check ($selected.points.Count -eq 2 -and $selected.points[0].page -eq 3 -and $selected.points[0].lower -eq -1.75) 'The exact available typed series retains source pages and explicit limits.'
+        }
+        $hu=New-Record $fx 'ExistingHU';[void](Save-Analysis $fx $hu @((New-Measurement)))
+        $old=Read-Trend $fx @{Metric='WaterCTNumber'};Check ($old.points.Count -eq 1 -and $old.unit -ceq 'HU') 'Compatible existing HU caches remain independently graphable.'
+    }
+    Scenario 'Printed sagittal and coronal axes remain separate series and alias conflicts stay within their own axis' {
+        $fx=Fixture 'AxisAlignment';$one=New-Record $fx 'AxisOne' -SameContent 'SYNTHETIC_ALIGNMENT_ALIAS_BYTES';$two=New-Record $fx 'AxisTwo' -SameContent 'SYNTHETIC_ALIGNMENT_ALIAS_BYTES'
+        [void](Save-AlignmentAnalysis $fx $one @((New-AlignmentMeasurement -Code SagittalCoronalLightmarker -Context Sagittal -Value '0.27'),(New-AlignmentMeasurement -Code SagittalCoronalLightmarker -Context Coronal -Value '-0.38')) -Code SagittalCoronalLightmarker)
+        [void](Save-AlignmentAnalysis $fx $two @((New-AlignmentMeasurement -Code SagittalCoronalLightmarker -Context Sagittal -Value '0.27'),(New-AlignmentMeasurement -Code SagittalCoronalLightmarker -Context Coronal -Value '-0.38')) -Code SagittalCoronalLightmarker)
+        $r=Read-Trend $fx @{Metric='SagittalCoronalLightmarker';SeriesKey='CT_Edge|SagittalCoronalLightmarker|Unspecified|NotSpecified|Sagittal'}
+        Check ($r.series.Count -eq 2 -and $r.points.Count -eq 1 -and $r.points[0].value -eq 0.27 -and $r.series[0].label -notmatch 'System|Slice') 'The axis explicitly printed in each header is separate from the other axis at the same timestamp.'
+        [void](Save-AlignmentAnalysis $fx $two @((New-AlignmentMeasurement -Code SagittalCoronalLightmarker -Context Sagittal -Value '0.91'),(New-AlignmentMeasurement -Code SagittalCoronalLightmarker -Context Coronal -Value '-0.38')) -Code SagittalCoronalLightmarker)
+        $r=Read-Trend $fx @{Metric='SagittalCoronalLightmarker';SeriesKey='CT_Edge|SagittalCoronalLightmarker|Unspecified|NotSpecified|Coronal'}
+        Check ($r.series.Count -eq 1 -and $r.points.Count -eq 1 -and $r.points[0].value -eq -0.38 -and $r.coverage.conflicts -eq 1) 'Disagreeing cache aliases suppress only the conflicting sagittal identity; the agreeing coronal value is retained.'
+    }
+    Scenario 'Alignment requires its exact fixed context and recognized current document rather than legacy numeric labels' {
+        foreach($variant in @('System','Slice','Context','Section','Source','Unit','Profile','DocumentStatus','Reference')){
+            $fx=Fixture ('AlignmentReject'+$variant);$record=New-Record $fx ('Rejected'+$variant);$measurement=New-AlignmentMeasurement
+            switch($variant){'System'{$measurement.SourceSystem='A'}'Slice'{$measurement.Slice='1'}'Context'{$measurement.Context='Untrusted'}'Section'{$measurement.ContextSection='Noise'}'Source'{$measurement.Source='Untrusted'}'Unit'{$measurement.Unit='HU'}}
+            $path=Save-AlignmentAnalysis $fx $record @($measurement);$cache=[IO.File]::ReadAllText($path)|ConvertFrom-Json
+            switch($variant){'Profile'{$cache.DocumentClassification.ProfileId='siemens-iec-basic-v1'}'DocumentStatus'{$cache.DocumentClassification.Status='NeedsReview'}'Reference'{$cache.DocumentClassification.HasReferenceEvidence=$true}}
+            [IO.File]::WriteAllText($path,($cache|ConvertTo-Json -Depth 20),(New-Object Text.UTF8Encoding $true))
+            $r=Read-Trend $fx @{Metric='Lightmarker'}
+            Check ($r.points.Count -eq 0 -and $r.pendingIds.Count -eq 0) 'A mismatched unit/context/profile/source or suspected reference cannot supply a current alignment graph.'
+        }
+        $fx=Fixture 'AlignmentSeriesValidation'
+        foreach($key in @('CT_Edge|Lightmarker|Body|A|1','CT_Edge|Lightmarker|Unspecified|NotSpecified|Sagittal','CT_Edge|SagittalCoronalLightmarker|Unspecified|NotSpecified|Overall')){
+            $rejected=$false;try{Read-Trend $fx @{Metric='Lightmarker';SeriesKey=$key}|Out-Null}catch{$rejected=$true};Check $rejected 'Impossible cross-metric context keys are rejected rather than normalized to a convenient series.'
+        }
+    }
+    Scenario 'Only eligible older alignment caches wait for one capability upgrade and attempted unsupported layouts stop retrying' {
+        $fx=Fixture 'AlignmentUpgrade';$record=New-Record $fx 'OlderAlignment';$path=Save-AlignmentAnalysis $fx $record @() -Revision 2
+        $old=Read-Trend $fx @{Metric='Lightmarker'}
+        Check ($old.points.Count -eq 0 -and $old.coverage.pendingReports -eq 1 -and $old.pendingIds.Count -eq 1 -and $old.pendingIds[0] -ceq $record.Id) 'A pre-capability-three alignment section is explicitly waiting for a bounded measurement read.'
+        $cache=[IO.File]::ReadAllText($path)|ConvertFrom-Json;$cache.MeasurementsDocument.MeasurementSupportRevision=3;$cache.MeasurementsDocument.Status='NeedsReview';[IO.File]::WriteAllText($path,($cache|ConvertTo-Json -Depth 20),(New-Object Text.UTF8Encoding $true))
+        $attempted=Read-Trend $fx @{Metric='Lightmarker'}
+        Check ($attempted.points.Count -eq 0 -and $attempted.coverage.pendingReports -eq 0 -and $attempted.coverage.unsupportedReports -eq 1) 'A completed unsupported extraction attempt stays visible without an endless pending/retry loop.'
+        $basic=New-Record $fx 'UnchangedBasicHU' '2025-02-02';[void](Save-Analysis $fx $basic @((New-Measurement)))
+        $hu=Read-Trend $fx @{Metric='WaterCTNumber'};Check ($hu.points.Count -eq 1 -and $hu.coverage.pendingReports -eq 0) 'The additive Monthly capability does not queue or invalidate an existing Basic HU cache.'
+    }
+
     Scenario 'The production query reads managed archive state without rebuilding dashboard attention' {
         Import-Module (Join-Path $ProductRoot 'App/Archive.psm1') -DisableNameChecking -WarningAction SilentlyContinue
         $root=Join-Path $TestRoot 'ManagedArchive';[void][IO.Directory]::CreateDirectory($root);$config=Get-QaDefaultConfig -AppRoot $root;$config.ArchiveRoot=Join-Path $root 'Data';$config.MinimumFileAgeSeconds=0

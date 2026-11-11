@@ -1,4 +1,4 @@
-# CT QA Manager Pro 5.4.0
+# CT QA Manager Pro 5.5.0
 
 A portable offline HTML interface built on the original Windows archive, network, PDF and export modules. Run **Start CT QA Manager.cmd**. The local helper and runtime are bundled; the work computer needs no separate runtime installation or administrator launch. Its application policy must permit the included Windows x64 executable and local browser access.
 
@@ -7,6 +7,16 @@ A portable offline HTML interface built on the original Windows archive, network
 ![The redesigned Today workspace in the tested Windows browser interface, using synthetic demonstration data](docs/images/today-light-web-demo.png)
 
 The release includes an offline visual preview of the main workspace screens. These are actual Windows interface captures using synthetic data.
+
+Version 5.5 makes the filing target visible: **Approve as Daily**, **Approve as Monthly** or **Approve as Other**. Reports without a reliable proposal require an explicit file-type choice. Review groups processed exceptions by scanner, supported format, reason and suggested type; select up to 50 files, see their type breakdown, save the suggested or explicitly selected labels together, and use durable **Undo batch**. A stale or changed member rejects the whole selection before any labels are saved. Original PDFs and clinical review records remain protected.
+
+The **Daily report calendar** uses the existing cached overview. It follows each scanner's All days / Weekdays / Off schedule, activation date and excluded dates; future dates stay neutral. Selecting a date opens its saved Daily reports and can carry that exact date into Exports. Scanner names have consistent accent colors across the workspaces; receipt and review states retain their own text and status indicators.
+
+**Folders** is a separate workspace for managers: open the ordinary Report Library, export every saved PDF into a complete folder ZIP with an offline summary and CSV, or create a full backup. The folder structure is scanner → year → month → Daily / Monthly / Other. Browsing the extracted PDF folders requires no application. Filtered Exports keeps its own selections; exporting the full library does not replace those filters.
+
+**Trends** now supports seven metric families: water CT, image noise, slice thickness, light marker alignment, external light marker, topogram position, and sagittal/coronal alignment. Printed millimetre values, limits and source pages remain linked; sagittal and coronal axes have separate series. Tables without a printed acquisition system or slice retain that absence instead of being assigned to System A or Slice 1. Current reference documents remain excluded. MTF, contrast and table-position outcomes can still be read in Report contents; their additional numeric contexts are not flattened into these graphs.
+
+The background reader keeps a disposable single-PDF helper and removes its redundant nested read helper. Fresh membership, direct-path, exact-byte hash and metadata checks remain, with a bounded read deadline and child-process cleanup. Pause, foreground handoff, cancellation and automatic Stop intent remain tested. This reduces repeated process work; recorded timings describe synthetic local runs rather than hospital-workstation throughput.
 
 Version 5.3.0 integrates the portable Python PDF reader that passed the workstation compatibility test, alongside the Standard reader. Automatic starts with Standard, which was faster in the cold-reader comparison, and uses Python as an alternate when needed. The report inspector now shows current **water CT values and image-noise measurements**, their clearly printed HU bounds, Head/Body and slice context, and page references. Parenthesized references and unsupported multicolumn tables are not treated as current measurements. Reading and filing remain separate from clinical approval.
 
@@ -24,7 +34,7 @@ Repeat updates reuse unchanged readable copies and their index. Progress shows t
 
 ## The original program, with a new browser interface
 
-**Today** shows Daily receipt, compact scanner connections and department Monthly evidence. **Reports** searches the saved library. **Review** provides a large, continuously scrolling PDF and simple Approve/Disapprove controls. **Exports** has its own scanner, month, year/multiple-year and document-type filters; each ZIP includes all matching PDFs, a readable summary and CSV inventory. **Trends** shows supported printed water CT, image noise and slice-thickness measurements with links back to their source pages. **Settings** groups connections, archive, reading, maintenance, updates and support. The Light/Dark appearance is saved with the portable workspace.
+**Today** shows Daily receipt, compact scanner connections and department Monthly evidence. **Reports** searches the saved library. **Review** provides a large, continuously scrolling PDF and simple Approve/Disapprove controls. **Exports** has its own scanner, month, year/multiple-year and document-type filters; each ZIP includes all matching PDFs, a readable summary and CSV inventory. **Folders** opens or packages the complete readable PDF library and provides the full-backup action. **Trends** shows supported printed HU, slice-thickness and alignment measurements with links back to their source pages. **Settings** groups connections, archive, reading, maintenance, updates and support. The Light/Dark appearance is saved with the portable workspace.
 
 Unread reports are shown as waiting for background reading. Only processed exceptions enter the Review queue. Optional file decisions have two primary actions: **Approve** keeps the suggested type; **Disapprove** keeps the PDF as Other. The item leaves Pending and the next PDF opens. Undo remains available after a restart. No typed name, authorization checkbox, reason or second confirmation is required for sorting files. Approve, Disapprove and Undo reuse one validated dashboard and the committed organization state; their readable-folder refresh targets the selected PDF. The full response remains consistent without a second full dashboard reload.
 

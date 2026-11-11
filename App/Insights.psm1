@@ -48,10 +48,15 @@ function Get-QaAnalysisEligibility {
     if($UpgradeMeasurements -and -not $reference){
         $measurements=Get-QaInsightValue $Saved MeasurementsDocument $null
         if((Get-QaAnalysisVersionValue (Get-QaInsightValue $measurements MeasurementVersion 0)) -ne (Get-QaMeasurementParserVersion)){return 'MeasurementUpgrade'}
-        # Capability upgrades are selective: existing complete HU evidence stays
-        # reusable. New Daily/slice tables receive one bounded extraction attempt.
-        $supportedNewTable=([string](Get-QaInsightValue $doc ProfileId '') -ceq 'siemens-quality-daily-v1' -or @((Get-QaInsightValue $doc Sections @())|Where-Object{[string](Get-QaInsightValue $_ Code '') -ceq 'Slice'}).Count -gt 0)
-        if($supportedNewTable -and (Get-QaAnalysisVersionValue (Get-QaInsightValue $measurements MeasurementSupportRevision 0)) -lt (Get-QaMeasurementSupportRevision)){return 'MeasurementUpgrade'}
+        # Each capability retains its own introduction revision. A newer Monthly
+        # table must not invalidate already-current Daily, slice or HU readings.
+        $savedRevision=Get-QaAnalysisVersionValue (Get-QaInsightValue $measurements MeasurementSupportRevision 0)
+        $availableRevision=Get-QaMeasurementSupportRevision
+        $sections=@((Get-QaInsightValue $doc Sections @())|ForEach-Object{[string](Get-QaInsightValue $_ Code '')})
+        $dailyOrSlice=([string](Get-QaInsightValue $doc ProfileId '') -ceq 'siemens-quality-daily-v1' -or $sections -ccontains 'Slice')
+        if($availableRevision -ge 2 -and $savedRevision -lt 2 -and $dailyOrSlice){return 'MeasurementUpgrade'}
+        $alignment=@($sections|Where-Object{$_ -cin @('Lightmarker','ExternalLightmarker','TopogramPosition','SagittalCoronalLightmarker')}).Count -gt 0
+        if($availableRevision -ge 3 -and $savedRevision -lt 3 -and $alignment){return 'MeasurementUpgrade'}
     }
     return ''
 }
@@ -151,6 +156,7 @@ function Invoke-QaAnalysis {
     $records=@($Records|Sort-Object ReportDate -Descending)
     if($PSBoundParameters.ContainsKey('RecordIds')){$records=@(Select-QaAnalysisRecords -Records $records -RecordIds $RecordIds)}
     $analyzedIds=New-Object 'Collections.Generic.List[string]'
+    $performance=[ordered]@{ReaderMilliseconds=0L;ReadWorkerMilliseconds=0L;ParseMilliseconds=0L;CacheMilliseconds=0L;NestedReaderStarts=0L;InlinePdfReads=0L;CacheWrites=0L}
     # Determine this bounded batch once, without reopening already cached PDF text.
     $candidates=New-Object 'Collections.Generic.List[object]'
     Set-QaAnalysisWorkProgress $Progress 0 0
@@ -168,10 +174,26 @@ function Invoke-QaAnalysis {
         Set-QaAnalysisWorkProgress $Progress ($done+$failed) $candidates.Count
         $readClock=[Diagnostics.Stopwatch]::StartNew();$source=@($Config.Sources|Where-Object Scanner -eq $record.Scanner|Select-Object -First 1);$number=0;if($source.Count){$number=1+[Array]::IndexOf([object[]]$Config.Sources,$source[0])}
         $eventReader='Unknown';$eventProfile='Unknown';$eventReason='ReadCompleted'
+        $readMetrics=@{ReaderMilliseconds=0L;ReadWorkerMilliseconds=0L;ParseMilliseconds=0L;CacheMilliseconds=0L;NestedReaderStarts=0L;InlinePdfReads=0L;CacheWrites=0L}
         Write-QaSupportEvent -AppRoot $Config.AppRoot -Operation PdfRead -Outcome Started -ScannerNumber $number -Stage Analyzing -Reason ReadStarted -Reader Unknown -Profile Unknown
         try {
             $before=Get-QaAnalysisMetadata ([string]$record.DestinationPath)
-            $read=Invoke-QaIsolatedTask -Action ReadPdf -InputObject ([pscustomobject]@{Config=$Config;RecordId=$record.Id;Reader=$requestedReader}) -TimeoutSeconds 90 -Progress $Progress
+            $readerClock=[Diagnostics.Stopwatch]::StartNew()
+            try{
+                if([bool](Get-QaInsightValue $Progress ReaderProcessIsolated $false)){
+                    # This single-PDF WebWorker is the process-isolation boundary.
+                    # The reader still reloads archive membership under its own
+                    # lock and verifies the exact parsed bytes on every call.
+                    Import-Module (Join-Path $PSScriptRoot 'PdfReader.psm1') -Scope Local -DisableNameChecking -WarningAction SilentlyContinue
+                    $readMetrics.InlinePdfReads=1L
+                    $read=Read-QaReportText -Config $Config -RecordId ([string]$record.Id) -Reader $requestedReader -Progress $Progress
+                }else{
+                    $read=Invoke-QaIsolatedTask -Action ReadPdf -InputObject ([pscustomobject]@{Config=$Config;RecordId=$record.Id;Reader=$requestedReader}) -TimeoutSeconds 90 -Progress $Progress
+                    $readMetrics.NestedReaderStarts=1L
+                }
+            }finally{$readMetrics.ReadWorkerMilliseconds=$readerClock.ElapsedMilliseconds}
+            $engineMilliseconds=0.0
+            if([double]::TryParse([string](Get-QaInsightValue $read ReadMilliseconds 0),[ref]$engineMilliseconds) -and -not [double]::IsNaN($engineMilliseconds) -and -not [double]::IsInfinity($engineMilliseconds) -and $engineMilliseconds -ge 0 -and $engineMilliseconds -le 3600000){$readMetrics.ReaderMilliseconds=[long][math]::Round($engineMilliseconds)}
             $observedReader=[string](Get-QaInsightValue $read ReaderUsed '');if($observedReader -cin @('Standard','Python','Legacy')){$eventReader=$observedReader}
             if([bool](Get-QaInsightValue (Get-QaInsightValue $read Summary $null) Cancelled $false) -or [bool](Get-QaInsightValue $Progress Cancel $false)){
                 $cancelled=$true;Write-QaSupportEvent -AppRoot $Config.AppRoot -Operation PdfRead -Outcome Cancelled -ScannerNumber $number -DurationMs $readClock.ElapsedMilliseconds -Stage Analyzing -Reason WorkerCancelled -Reader $eventReader -Profile $eventProfile;break
@@ -179,10 +201,12 @@ function Invoke-QaAnalysis {
             $after=Get-QaAnalysisMetadata ([string]$record.DestinationPath)
             $verifiedHash=[string](Get-QaInsightValue $read VerifiedHash '');$verifiedLength=[long](Get-QaInsightValue $read VerifiedLength -1);$verifiedTicks=[long](Get-QaInsightValue $read VerifiedWriteTicks 0)
             if($verifiedHash -notmatch '^[0-9A-Fa-f]{64}$' -or $verifiedHash -ne [string]$record.Hash -or $verifiedLength -ne [long]$record.Length -or -not $before.Exists -or -not $after.Exists -or $verifiedLength -ne $before.Length -or $verifiedLength -ne $after.Length -or $verifiedTicks -le 0 -or $verifiedTicks -ne $before.WriteTicks -or $verifiedTicks -ne $after.WriteTicks){throw 'The saved PDF changed or the reader did not return matching verified provenance. Run an integrity audit before retrying.'}
+            $parseClock=[Diagnostics.Stopwatch]::StartNew()
             $row=ConvertFrom-QaReportText -Text ([string]$read.Text) -Truncated ([bool]$read.Truncated)
             $classification=ConvertFrom-QaDocumentContent -Text ([string]$read.Text) -Truncated ([bool]$read.Truncated) -NeedsOCR ([bool]$read.NeedsOCR) -Pages ([int]$read.Pages) -ReadPages ([int]$read.ReadPages)
             $classification|Add-Member -NotePropertyName Pages -NotePropertyValue ([int]$read.Pages) -Force;$classification|Add-Member -NotePropertyName ReadPages -NotePropertyValue ([int]$read.ReadPages) -Force;$classification|Add-Member -NotePropertyName NeedsOCR -NotePropertyValue ([bool]$read.NeedsOCR) -Force
             $measurements=ConvertFrom-QaMeasurementText -Text ([string]$read.Text) -Truncated ([bool]$read.Truncated) -NeedsOCR ([bool]$read.NeedsOCR) -Pages ([int]$read.Pages) -ReadPages ([int]$read.ReadPages)
+            $readMetrics.ParseMilliseconds=$parseClock.ElapsedMilliseconds
             $eventProfile=switch([string]$classification.ProfileId){'siemens-iec-basic-v1'{'Basic'}'siemens-iec-extended-v1'{'Extended'}'siemens-iec-additional-v1'{'Additional'}'siemens-quality-daily-v1'{'Daily'}'siemens-iec-reference-v1'{'Reference'}default{'Unknown'}}
             $documentReason=[string]$classification.ReasonCode;$measurementReason=[string]$measurements.ReasonCode
             if($documentReason -ceq 'SupportedProfile' -and $measurementReason -cin @('NoReadableText','InputLimit','UnsupportedProfile','NoSupportedTables','MeasurementReviewNeeded','SupportedPrintedValues')){$eventReason=$measurementReason}elseif($documentReason -cin @('SupportedProfile','UnknownTemplate','IncompleteRead','UncertainReportDate','ConflictingExplicitTitles','UnrecognizedSections','ReferenceDocument')){$eventReason=$documentReason}
@@ -197,9 +221,12 @@ function Invoke-QaAnalysis {
             $row|Add-Member ReaderMessage ([string]$read.Message)
             $row|Add-Member SavedWriteTicks $verifiedTicks;$row|Add-Member SavedLength $verifiedLength
             if([bool](Get-QaInsightValue $Progress Cancel $false)){$cancelled=$true;Write-QaSupportEvent -AppRoot $Config.AppRoot -Operation PdfRead -Outcome Cancelled -ScannerNumber $number -DurationMs $readClock.ElapsedMilliseconds -Stage Analyzing -Reason WorkerCancelled -Reader $eventReader -Profile $eventProfile;break}
+            $cacheClock=[Diagnostics.Stopwatch]::StartNew()
             Write-QaAnalysisFile -Root $root -Hash $record.Hash -Value $row
+            $readMetrics.CacheMilliseconds=$cacheClock.ElapsedMilliseconds;$readMetrics.CacheWrites=1L
             $done++;[void]$analyzedIds.Add([string]$record.Id)
-            Write-QaSupportEvent -AppRoot $Config.AppRoot -Operation PdfRead -Outcome Completed -ScannerNumber $number -DurationMs $readClock.ElapsedMilliseconds -Stage Analyzing -Reason $eventReason -Reader $eventReader -Profile $eventProfile -Counts @{Analyzed=1;Truncated=[int][bool]$row.Truncated;PrintedPass=[int]($row.Status -eq 'ReportedPass');PrintedFailure=[int]($row.Status -eq 'ReportedFailure');NeedsReview=[int]($row.Status -eq 'NeedsReview')}
+            $readMetrics.Analyzed=1;$readMetrics.Truncated=[int][bool]$row.Truncated;$readMetrics.PrintedPass=[int]($row.Status -eq 'ReportedPass');$readMetrics.PrintedFailure=[int]($row.Status -eq 'ReportedFailure');$readMetrics.NeedsReview=[int]($row.Status -eq 'NeedsReview')
+            Write-QaSupportEvent -AppRoot $Config.AppRoot -Operation PdfRead -Outcome Completed -ScannerNumber $number -DurationMs $readClock.ElapsedMilliseconds -Stage Analyzing -Reason $eventReason -Reader $eventReader -Profile $eventProfile -Counts $readMetrics
         } catch {
             if([bool](Get-QaInsightValue $Progress Cancel $false) -or $_.Exception -is [OperationCanceledException]){$cancelled=$true;Write-QaSupportEvent -AppRoot $Config.AppRoot -Operation PdfRead -Outcome Cancelled -ScannerNumber $number -DurationMs $readClock.ElapsedMilliseconds -Stage Analyzing -Reason WorkerCancelled -Reader $eventReader -Profile $eventProfile;break}
             Write-QaSupportEvent -AppRoot $Config.AppRoot -Operation PdfRead -Outcome Failed -ScannerNumber $number -DurationMs $readClock.ElapsedMilliseconds -Stage Analyzing -Reason ReadFailed -Reader $eventReader -Profile $eventProfile -ErrorKind (Get-QaSupportErrorKind $_.Exception.Message) -Counts @{ReadErrors=1}
@@ -209,11 +236,11 @@ function Invoke-QaAnalysis {
             $observed=Get-QaAnalysisMetadata ([string]$record.DestinationPath)
             $row=[pscustomobject]@{AnalysisCacheSchemaVersion=3;ContentSupportRevision=(Get-QaContentSupportRevision);RequestedReaderMode=$requestedReader;ParserVersion=1;Hash=[string]$record.Hash;RecordId=[string]$record.Id;Status='ReadError';Truncated=$true;Findings=@();ReadUtc=[datetime]::UtcNow.ToString('o');ReaderMessage='The saved PDF could not be read and verified. Check the PDF, reader components, and archive integrity before retrying.';SavedWriteTicks=$observed.WriteTicks;SavedLength=$observed.Length}
             Write-QaAnalysisFile -Root $root -Hash $record.Hash -Value $row
-        }
+        }finally{foreach($metric in @($performance.Keys)){$performance[$metric]+=[long]$readMetrics[$metric]}}
     }
     Set-QaAnalysisWorkProgress $Progress ($done+$failed) $candidates.Count
     if([bool](Get-QaInsightValue $Progress Cancel $false)){$cancelled=$true}
-    return [pscustomobject]@{Mode='Analysis';Summary=[pscustomobject]@{Description=($done.ToString()+' PDFs analyzed; '+$skipped+' cached; '+$failed+' need review. No reviewed labels changed.');Cancelled=$cancelled};Analyzed=$done;AnalyzedIds=@($analyzedIds.ToArray());Failed=$failed;Cached=$skipped;Pending=[math]::Max(0,($records.Count-$done-$failed-$skipped))}
+    return [pscustomobject]@{Mode='Analysis';Performance=[pscustomobject]$performance;Summary=[pscustomobject]@{Description=($done.ToString()+' PDFs analyzed; '+$skipped+' cached; '+$failed+' need review. No reviewed labels changed.');Cancelled=$cancelled};Analyzed=$done;AnalyzedIds=@($analyzedIds.ToArray());Failed=$failed;Cached=$skipped;Pending=[math]::Max(0,($records.Count-$done-$failed-$skipped))}
 }
 function Write-QaAnalysisFile {
     param([string]$Root,[string]$Hash,$Value)

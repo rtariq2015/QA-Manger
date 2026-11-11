@@ -40,6 +40,14 @@ function New-DailyMeasurementDocument([string]$Noise='', [string]$Water=''){
     $text='';for($page=1;$page -le 3;$page++){$text+='--- Page '+$page+" ---`n"+$parts[$page-1]+"`n2025-02-03 08:15:00`nPage: "+$page+" / 3`n`n"};return $text
 }
 
+function New-AlignmentDocument([string]$Label='Lightmarker',[string]$Table='', [switch]$Standalone,[string]$ExtraSections=''){
+    if(-not $Table){$Table="Result [mm]`n0.43`nTolerance`n-1.75 ... 1.75"}
+    $title=if($Standalone){'Quality IEC Constancy '+$Label}else{'1. Quality IEC Constancy '+$Label}
+    $body=$title+"`nTest: Synthetic alignment check`n"+$Table+"`nTest Results OK"+$ExtraSections
+    $parts=if($Standalone){@("SOMATOM Definition Flash`nQuality IEC Constancy`nSYNTHETIC ALIGNMENT EXAMPLE",$body)}else{@("SOMATOM Definition Flash`nQuality IEC Constancy`nSYNTHETIC ALIGNMENT EXAMPLE",'Table of contents',$body)}
+    $text='';for($page=1;$page -le $parts.Count;$page++){$text+='--- Page '+$page+" ---`n"+$parts[$page-1]+"`n2025-04-09 09:25:00`nPage: "+$page+' / '+$parts.Count+"`n`n"};return $text
+}
+
 $script:Basic=New-MeasurementDocument
 
 Scenario 'The two explicit HU tables yield current measurements, printed limits and fixed provenance' {
@@ -143,7 +151,7 @@ Scenario 'Wrapped numbered headings and split mode labels keep fixed document co
 Scenario 'Manufacturer Daily inline tables supply separate head and body readings with one printed range per table' {
     foreach($model in @('SOMATOM Definition Edge','SOMATOM Definition Flash','SOMATOM Drive')){
         $text=(New-DailyMeasurementDocument).Replace('SOMATOM Definition Edge',$model);$r=Read-Measurements $text
-        Check ($r.MeasurementVersion -eq 1 -and $r.MeasurementSupportRevision -eq 2 -and (Get-QaMeasurementSupportRevision) -eq 2) 'The additive support revision does not invalidate existing schema-one HU measurements.'
+        Check ($r.MeasurementVersion -eq 1 -and $r.MeasurementSupportRevision -eq 3 -and (Get-QaMeasurementSupportRevision) -eq 3) 'The additive support revision does not invalidate existing schema-one HU measurements.'
         Check ($r.Status -eq 'Extracted' -and $r.Measurements.Count -eq 20) 'The four exact single-system Daily tables provide twenty current readings.'
         Check (@(Metric $r WaterCTNumber).Count -eq 10 -and @(Metric $r ImageNoise).Count -eq 10) 'Water and noise remain different fixed metrics.'
         Check (@($r.Measurements|Where-Object{$_.Mode -eq 'Head'}).Count -eq 6 -and @($r.Measurements|Where-Object{$_.Mode -eq 'Body'}).Count -eq 14) 'Head and body slices remain separate, without context averaging.'
@@ -194,14 +202,108 @@ Scenario 'Slice-thickness results use current millimetres and skip acquisition p
 Scenario 'Historical reference documents cannot supply current measurements even when they contain readable-looking values' {
     $text=$script:Basic.Replace('1. Quality IEC Constancy Homogeneity / Water','1. Quality IEC Constancy Reference Homogeneity / Water').Replace('2. Quality IEC Constancy Noise','2. Quality IEC Constancy Reference Noise')
     $r=Read-Measurements $text
-    Check ($r.Measurements.Count -eq 0 -and $r.ReasonCode -ceq 'ReferenceDocument' -and $r.MeasurementSupportRevision -eq 2) 'Recognized historical-reference text is explicitly excluded before numeric parsing.'
+    Check ($r.Measurements.Count -eq 0 -and $r.ReasonCode -ceq 'ReferenceDocument' -and $r.MeasurementSupportRevision -eq 3) 'Recognized historical-reference text is explicitly excluded before numeric parsing.'
     Check ($r.CompleteRead -and $r.ClinicalResult -eq 'Not inferred') 'Reading a reference document neither converts its numbers into current points nor creates clinical approval.'
     $mixed=$script:Basic.Replace('1. Quality IEC Constancy Homogeneity / Water','1. Quality IEC Constancy Reference Unknown Historical Test');$unknown=Read-Measurements $mixed
     Check ($unknown.Measurements.Count -eq 0 -and $unknown.ReasonCode -ceq 'ReferenceDocument') 'An unknown or mixed actual Reference heading is excluded independently of strict reference-profile recognition.'
 }
 
+Scenario 'Monthly scalar alignment tables retain printed units and avoid invented acquisition identities' {
+    foreach($pair in @(@('Lightmarker','Lightmarker'),@('External Lightm.','ExternalLightmarker'),@('Topogram Pos.','TopogramPosition'))){
+        $r=Read-Measurements (New-AlignmentDocument -Label $pair[0]);$rows=@(Metric $r $pair[1])
+        Check ($r.Status -ceq 'Extracted' -and $r.MeasurementVersion -eq 1 -and $r.MeasurementSupportRevision -eq 3 -and $rows.Count -eq 1) 'A complete supported current scalar section supplies one capability-three reading.'
+        $m=$rows[0];Check ($m.Value -ceq '0.43' -and $m.LowerLimit -ceq '-1.75' -and $m.UpperLimit -ceq '1.75' -and $m.Unit -ceq 'mm' -and $m.Page -eq 3) 'The explicit Result unit binds only its adjacent current scalar and range on their source page.'
+        Check ($m.Mode -ceq 'Unspecified' -and $m.SourceSystem -ceq 'NotSpecified' -and $m.Slice -ceq '' -and $m.Context -ceq 'Overall' -and $m.ContextSection -ceq $pair[1] -and $m.Source -ceq 'PrintedAlignmentResult') 'Missing system and slice identities are preserved as absent, with a fixed section context.'
+        Check ($r.ClinicalResult -ceq 'Not inferred' -and $m.Status -ceq 'Printed') 'A printed numeric reading does not manufacture a clinical decision.'
+    }
+}
+Scenario 'Standalone page-two component titles and wrapped numbered titles use classified body evidence' {
+    foreach($pair in @(@('Lightmarker','Lightmarker'),@('External Lightm.','ExternalLightmarker'),@('Topogram Pos.','TopogramPosition'))){
+        $text=New-AlignmentDocument -Label $pair[0] -Standalone;$r=ConvertFrom-QaMeasurementText -Text $text -Pages 2 -ReadPages 2
+        Check ($r.Status -ceq 'Extracted' -and $r.Measurements.Count -eq 1 -and $r.Measurements[0].Code -ceq $pair[1] -and $r.Measurements[0].Page -eq 2) 'Only a recognized standalone component can authorize its page-two scalar table.'
+    }
+    $text=(New-AlignmentDocument).Replace('1. Quality IEC Constancy Lightmarker',"1.`nQuality IEC Constancy`nLightmarker")
+    $r=Read-Measurements $text;Check ($r.Measurements.Count -eq 1 -and $r.Measurements[0].Code -ceq 'Lightmarker') 'Equivalent split ordinal and label preserve the same exact classified body section.'
+}
+Scenario 'Generic page headers do not consume the following real numbered alignment heading' {
+    foreach($title in @('1. Quality IEC Constancy Lightmarker',"1.`nQuality IEC Constancy Lightmarker","1.`nQuality IEC Constancy`nLightmarker")){
+        $body="SOMATOM Definition Flash`nQuality IEC Constancy`n"+$title
+        $text=(New-AlignmentDocument).Replace('1. Quality IEC Constancy Lightmarker',$body)
+        $r=Read-Measurements $text;$rows=@(Metric $r Lightmarker)
+        Check ($r.Status -ceq 'Extracted' -and $rows.Count -eq 1 -and $rows[0].Value -ceq '0.43' -and $rows[0].Page -eq 3) 'A generic manufacturer page header leaves the first full or wrapped body heading available for exact classified authorization.'
+    }
+}
+Scenario 'Separate monthly sections stay distinct and nearby historical comparisons are not current values' {
+    $extra="`n2. Quality IEC Constancy External Lightm.`nTest: Synthetic external alignment`nResult [mm]`n-0.31`nTolerance`n-2.25 ... 2.25`nTest Results OK`n3. Quality IEC Constancy Topogram Pos.`nTest: Synthetic topogram check`nResult [mm]`n0.62`nTolerance`n-2.5 ... 2.5`nTest Results OK"
+    $table="Reference comparison [mm]`n98.2`nScan position 200 mm`nResult [mm]`n0.43`nTolerance`n-1.75 ... 1.75"
+    $r=Read-Measurements (New-AlignmentDocument -Table $table -ExtraSections $extra)
+    Check ($r.Status -ceq 'Extracted' -and $r.Measurements.Count -eq 3 -and @(Metric $r Lightmarker).Count -eq 1 -and @(Metric $r ExternalLightmarker).Count -eq 1 -and @(Metric $r TopogramPosition).Count -eq 1) 'Each classified scalar section has its own metric identity.'
+    Check (@($r.Measurements|Where-Object Value -in @('98.2','200')).Count -eq 0 -and @(Metric $r ExternalLightmarker)[0].Value -ceq '-0.31') 'A comparison value or scan-position parameter cannot replace the current Result scalar.'
+}
+Scenario 'Scalar alignment rejects malformed, detached, ambiguous and mismatched-unit tables' {
+    foreach($table in @("Result [mm]`n0.43 0.44`nTolerance`n-1.75 ... 1.75", "Result [mm]`n0.43`n0.44`nTolerance`n-1.75 ... 1.75", "Result [mm]`n0.43`nTolerance`n-1.75 ... 1.75 cm", "Result [cm]`n0.43`nTolerance`n-1.75 ... 1.75", "Result [mm]`n0.43 mm`nTolerance`n-1.75 ... 1.75", "Result [mm]`n1,234`nTolerance`n-1.75 ... 1.75", "Result [mm]`n0.43`nTolerance`n-1.75 ... 1.75`n0.99")){
+        $r=Read-Measurements (New-AlignmentDocument -Table $table)
+        Check ($r.Measurements.Count -eq 0 -and $r.Status -ceq 'NeedsReview') 'An ambiguous scalar layout never selects a convenient value or guesses its unit.'
+    }
+    $table="Result [mm]`n0.43`nTolerance`n-1.75 ... 1.75`nResult [mm]`n0.44`nTolerance`n-1.75 ... 1.75"
+    $r=Read-Measurements (New-AlignmentDocument -Table $table)
+    Check ($r.Measurements.Count -eq 0 -and $r.Issues -contains 'AmbiguousDuplicateMeasurement') 'Two Result tables in one scalar section are withheld rather than merged.'
+}
+Scenario 'Scalar alignment tables cannot borrow across page boundaries or override incomplete date evidence' {
+    $text=(New-AlignmentDocument).Replace(' / 3',' / 4').Replace('Page: 3 / 4','Page: 4 / 4')
+    $text=$text.Replace("0.43`nTolerance", "0.43`n2025-04-09 09:25:00`nPage: 3 / 4`n`n--- Page 4 ---`nTolerance")
+    $r=ConvertFrom-QaMeasurementText -Text $text -Pages 4 -ReadPages 4
+    Check ($r.CompleteRead -and $r.Measurements.Count -eq 0 -and $r.Issues -contains 'UnsupportedMeasurementRow' -and $r.Issues -notcontains 'UncertainReportDate') 'A complete date-consistent report still cannot borrow scalar Result and Tolerance cells across a page boundary.'
+    $text=New-AlignmentDocument;$partial=ConvertFrom-QaMeasurementText -Text $text -Pages 3 -ReadPages 2 -Truncated $true
+    Check ($partial.Measurements.Count -eq 0 -and -not $partial.CompleteRead) 'New scalar metrics require a complete read instead of presenting partial body values.'
+    $text=$text.Replace('2025-04-09 09:25:00'+"`nPage: 2",'2025-04-10 09:25:00'+"`nPage: 2")
+    $conflict=Read-Measurements $text
+    Check ($conflict.Measurements.Count -eq 0 -and $conflict.Issues -contains 'UncertainReportDate') 'Conflicting footer dates cannot authorize new current alignment values.'
+}
+Scenario 'Alignment requires actual body evidence rather than a plausible table of contents or empty Extended section' {
+    $fake="1. Quality IEC Constancy Lightmarker`nTest: TOC only`nResult [mm]`n91.7`nTolerance`n-99 ... 99`nTest Results OK"
+    $text=(New-AlignmentDocument).Replace('Table of contents',"Table of contents`n"+$fake);$r=Read-Measurements $text
+    Check ($r.Measurements.Count -eq 1 -and $r.Measurements[0].Value -ceq '0.43' -and $r.Measurements[0].Page -eq 3) 'A page-two contents table cannot override the separate classified body-page Result.'
+    $bare="1. Quality IEC Constancy Lightmarker`nTest: Synthetic alignment`nResult [mm]`n0.43`nTolerance`n-1.75 ... 1.75"
+    $text=(New-MeasurementDocument -Extended).Replace("1. Quality IEC Constancy Lightmarker`nTest Results OK",$bare);$r=Read-Measurements $text
+    Check (@(Metric $r Lightmarker).Count -eq 0 -and @(Metric $r WaterCTNumber).Count -eq 1) 'A section without classified body evidence cannot borrow the other Extended sections to authorize an alignment reading.'
+}
+Scenario 'Alignment normalization retains current values but uncertain bounds remain explicit' {
+    $table="Result [mm]`n+0,43`nTolerance`n-1,75 ... 1,75";$r=Read-Measurements (New-AlignmentDocument -Table $table)
+    Check ($r.Measurements.Count -eq 1 -and $r.Measurements[0].Value -ceq '0.43' -and $r.Measurements[0].LowerLimit -ceq '-1.75') 'Supported decimal commas and leading signs normalize invariantly.'
+    $bad=Read-Measurements (New-AlignmentDocument -Table "Result [mm]`n0.43`nTolerance`n1.75 ... -1.75")
+    Check ($bad.Measurements.Count -eq 1 -and $bad.Measurements[0].Status -ceq 'NeedsReview' -and $null -eq $bad.Measurements[0].LowerLimit -and $null -eq $bad.Measurements[0].UpperLimit -and $bad.Issues -contains 'InvalidPrintedLimits') 'Reversed explicit limits remain absent without hiding the separately clear current value.'
+}
+Scenario 'Historical and suspected reference alignment bodies never supply current measurements' {
+    foreach($label in @('Reference Lightmarker','Reference Unlisted Test')){
+        $text=New-AlignmentDocument -Label $label;$r=Read-Measurements $text
+        Check ($r.Measurements.Count -eq 0 -and $r.ReasonCode -ceq 'ReferenceDocument') 'A known or suspected Reference heading excludes scalar evidence before extraction.'
+    }
+    $unknown=Read-Measurements ((New-AlignmentDocument).Replace('SOMATOM Definition Flash','SYNTHETIC UNKNOWN MODEL'))
+    Check ($unknown.Measurements.Count -eq 0 -and $unknown.ReasonCode -ceq 'UnsupportedProfile') 'An unknown manufacturer body cannot authorize an otherwise plausible scalar row.'
+}
+
+Scenario 'Explicit sagittal and coronal header columns retain their separate printed axis values' {
+    $table="Result`nSagittal Light Marker Coronal Light Marker`nResult`nTolerance`n0.27 mm`n-1.65 ... 1.65 mm`n-0.38 mm`n-1.45 ... 1.45 mm"
+    foreach($standalone in @($false,$true)){
+        $text=New-AlignmentDocument -Label 'Sag./Cor. Lightm.' -Table $table -Standalone:$standalone;$pages=if($standalone){2}else{3};$r=ConvertFrom-QaMeasurementText -Text $text -Pages $pages -ReadPages $pages
+        $axes=@(Metric $r SagittalCoronalLightmarker)
+        Check ($r.Status -ceq 'Extracted' -and $axes.Count -eq 2) 'The exact explicitly labelled two-column block supplies both complete axis pairs.'
+        $s=@($axes|Where-Object Context -CEQ 'Sagittal')[0];$c=@($axes|Where-Object Context -CEQ 'Coronal')[0]
+        Check ($s.Value -ceq '0.27' -and $s.LowerLimit -ceq '-1.65' -and $s.UpperLimit -ceq '1.65' -and $c.Value -ceq '-0.38' -and $c.LowerLimit -ceq '-1.45' -and $c.UpperLimit -ceq '1.45') 'Distinct scalar/range column pairs remain bound to their printed sagittal and coronal headers.'
+        Check (@($axes|Where-Object{$_.Mode -cne 'Unspecified' -or $_.SourceSystem -cne 'NotSpecified' -or $_.Slice -cne '' -or $_.Page -ne $pages -or $_.Unit -cne 'mm'}).Count -eq 0) 'Axes do not manufacture head/body, system or slice identities.'
+    }
+}
+Scenario 'Axis alignment rejects reordered headers, missing pairs and extra numeric columns' {
+    $table="Result`nSagittal Light Marker Coronal Light Marker`nResult`nTolerance`n0.27 mm`n-1.65 ... 1.65 mm`n-0.38 mm`n-1.45 ... 1.45 mm"
+    foreach($bad in @($table.Replace('Sagittal Light Marker Coronal Light Marker','Coronal Light Marker Sagittal Light Marker'),$table.Replace("0.27 mm`n",''),$table.Replace('0.27 mm','0.27 mm 0.28 mm'),$table.Replace('-0.38 mm','-0.38 cm'),($table+"`n0.55 mm"),($table+"`n"+$table))){
+        $r=Read-Measurements (New-AlignmentDocument -Label 'Sag./Cor. Lightm.' -Table $bad)
+        Check ($r.Measurements.Count -eq 0 -and $r.Status -ceq 'NeedsReview') 'A malformed or ambiguous axis layout cannot guess column roles from its title.'
+    }
+}
+
 $failed=@($script:Results|Where-Object Result -eq 'FAIL').Count
-$report=[pscustomobject]@{Product='CT QA Manager Pro';Feature='Printed measurement extraction';MeasurementVersion=1;MeasurementSupportRevision=2;Runtime=$PSVersionTable.PSVersion.ToString();WindowsPowerShell51ActuallyRun=($PSVersionTable.PSVersion.Major -eq 5 -and [Environment]::OSVersion.Platform -eq [PlatformID]::Win32NT);SyntheticOnly=$true;Tests=$script:Results.Count;Assertions=$script:Assertions;Failed=$failed;Results=@($script:Results.ToArray());Scope='Synthetic IEC water/noise/slice-thickness tables and manufacturer Daily inline single-system HU tables only. Explicit current HU values and printed bounds are kept separate from parenthesized references, scan parameters, other tables and clinical approval. Unknown, incomplete, conflicting, ambiguous and clipped evidence remains marked for review.'}
+$report=[pscustomobject]@{Product='CT QA Manager Pro';Feature='Printed measurement extraction';MeasurementVersion=1;MeasurementSupportRevision=3;Runtime=$PSVersionTable.PSVersion.ToString();WindowsPowerShell51ActuallyRun=($PSVersionTable.PSVersion.Major -eq 5 -and [Environment]::OSVersion.Platform -eq [PlatformID]::Win32NT);SyntheticOnly=$true;Tests=$script:Results.Count;Assertions=$script:Assertions;Failed=$failed;Results=@($script:Results.ToArray());Scope='Synthetic IEC water/noise/slice-thickness tables, manufacturer Daily inline single-system HU tables and bounded Monthly alignment tables. Explicit current HU values and printed bounds are kept separate from parenthesized references, scan parameters, other tables and clinical approval. Unknown, incomplete, conflicting, ambiguous and clipped evidence remains marked for review.'}
 if($OutputPath){[IO.File]::WriteAllText([IO.Path]::GetFullPath($OutputPath),($report|ConvertTo-Json -Depth 12),(New-Object Text.UTF8Encoding $true))}
 Write-Host ('Result: '+($report.Tests-$failed)+'/'+$report.Tests+' scenarios; '+$report.Assertions+' assertions.')
 if($failed){exit 1}
