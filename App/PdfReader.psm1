@@ -169,53 +169,83 @@ function Invoke-QaPythonPdfText {
     param([byte[]]$Bytes,[string]$ExpectedHash,$Progress,[int]$MaximumPages,[int]$MaximumCharacters,[int]$MaximumSeconds)
     $process=$null;$job=$null;$sendTask=$null;$stdoutTask=$null;$stderrTask=$null
     $timer=[Diagnostics.Stopwatch]::StartNew()
+    $stage='Availability';$failureCode=''
     try {
         if(Test-QaReaderCancel $Progress){throw [OperationCanceledException]::new('Reading cancelled.')}
         if(-not (Test-QaPythonReaderAvailable)){throw 'The portable Python reader is unavailable on this computer. Choose Automatic or Standard reading.'}
-        $bundle=Assert-QaPythonReaderBundle
-        Initialize-QaPythonJobType
-        $info=New-Object Diagnostics.ProcessStartInfo
+        $stage='BundleCheck';$bundle=Assert-QaPythonReaderBundle
+        $stage='JobType';Initialize-QaPythonJobType
+        $stage='StartInfo';$info=New-Object Diagnostics.ProcessStartInfo
         $info.FileName=Join-Path $bundle 'runtime/python.exe'
         $info.Arguments='-I -B -S "'+(Join-Path $bundle 'read_pdf.py')+'"'
         $info.WorkingDirectory=$bundle
         $info.UseShellExecute=$false;$info.CreateNoWindow=$true
         $info.RedirectStandardInput=$true;$info.RedirectStandardOutput=$true;$info.RedirectStandardError=$true
+        # Modern runtimes expose a stdin encoding selector; older Windows
+        # PowerShell versions may not. The binary protocol also recognizes a
+        # single UTF-8 framing preamble from their default StreamWriter.
+        if($null -ne $info.PSObject.Properties['StandardInputEncoding']){$info.StandardInputEncoding=New-Object Text.UTF8Encoding($false)}
         $info.StandardOutputEncoding=New-Object Text.UTF8Encoding($false)
         $info.StandardErrorEncoding=New-Object Text.UTF8Encoding($false)
         $process=New-Object Diagnostics.Process
         $process.StartInfo=$info
+        $stage='Start'
         if(-not $process.Start()){throw 'The portable Python reader could not start. Choose Automatic or Standard reading.'}
         # The owning PowerShell process holds the only job handle. Forced task
         # cancellation therefore terminates the Python child as well.
-        $job=[CtQaPortablePythonJob]::Attach($process.Handle)
-        $stdoutTask=$process.StandardOutput.ReadToEndAsync()
+        $stage='JobAttach';$job=[CtQaPortablePythonJob]::Attach($process.Handle)
+        $stage='ReadPipes';$stdoutTask=$process.StandardOutput.ReadToEndAsync()
         $stderrTask=$process.StandardError.ReadToEndAsync()
-        $header=[Text.Encoding]::UTF8.GetBytes((@{schemaVersion=1;length=$Bytes.Length;maximumPages=$MaximumPages;maximumCharacters=$MaximumCharacters;maximumSeconds=$MaximumSeconds}|ConvertTo-Json -Compress))
+        $stage='WriteHeader';$header=[Text.Encoding]::UTF8.GetBytes((@{schemaVersion=1;length=$Bytes.Length;maximumPages=$MaximumPages;maximumCharacters=$MaximumCharacters;maximumSeconds=$MaximumSeconds}|ConvertTo-Json -Compress))
         $prefix=[BitConverter]::GetBytes([int]$header.Length)
         $process.StandardInput.BaseStream.Write($prefix,0,$prefix.Length)
         $process.StandardInput.BaseStream.Write($header,0,$header.Length)
-        $sendTask=$process.StandardInput.BaseStream.WriteAsync($Bytes,0,$Bytes.Length)
+        $stage='SendBody';$sendTask=$process.StandardInput.BaseStream.WriteAsync($Bytes,0,$Bytes.Length)
         $inputClosed=$false
+        $stage='Wait'
         while(-not $process.WaitForExit(50)) {
             if(Test-QaReaderCancel $Progress){throw [OperationCanceledException]::new('Reading cancelled.')}
             if($timer.Elapsed.TotalSeconds -gt ($MaximumSeconds+5)){throw 'The portable Python reader exceeded its time limit. Try Automatic or Standard reading.'}
-            if(-not $inputClosed -and $sendTask.IsCompleted){[void]$sendTask.GetAwaiter().GetResult();$process.StandardInput.Close();$inputClosed=$true}
+            if(-not $inputClosed -and $sendTask.IsCompleted){$stage='CloseInput';[void]$sendTask.GetAwaiter().GetResult();$process.StandardInput.BaseStream.Close();$inputClosed=$true;$stage='Wait'}
             Set-QaReaderProgress $Progress 'Reading this PDF with the portable reader...' 45
         }
         if(Test-QaReaderCancel $Progress){throw [OperationCanceledException]::new('Reading cancelled.')}
-        if(-not $inputClosed){[void]$sendTask.GetAwaiter().GetResult();$process.StandardInput.Close()}
+        if(-not $inputClosed){$stage='CloseInput';[void]$sendTask.GetAwaiter().GetResult();$process.StandardInput.BaseStream.Close()}
         # Library diagnostics and exception text are never propagated. Only the
         # versioned successful response schema is accepted as report evidence.
-        $raw=$stdoutTask.GetAwaiter().GetResult()
+        $stage='ReadResponse';$raw=$stdoutTask.GetAwaiter().GetResult()
         [void]$stderrTask.GetAwaiter().GetResult()
-        if($process.ExitCode -ne 0 -or [string]::IsNullOrWhiteSpace($raw) -or $raw.Length -gt (12*$MaximumCharacters+65536)){throw 'The portable Python reader could not read this PDF. It may be encrypted, damaged or unsupported.'}
-        try{$result=$raw|ConvertFrom-Json}catch{throw 'The portable Python reader returned an invalid response. Try Automatic or Standard reading.'}
-        if([int]$result.schemaVersion -ne 1 -or $result.success -isnot [bool] -or -not $result.success){throw 'The portable Python reader could not read this PDF. It may be encrypted, damaged or unsupported.'}
-        if([string]$result.hash -cne $ExpectedHash -or [long]$result.length -ne $Bytes.Length){throw 'The portable Python reader returned a different PDF fingerprint. No extracted result was accepted.'}
+        if([string]::IsNullOrWhiteSpace($raw) -or $raw.Length -gt (12*$MaximumCharacters+65536)){$failureCode='InvalidResponse';throw 'The portable Python reader could not read this PDF.'}
+        $stage='DecodeResponse'
+        try{$result=$raw|ConvertFrom-Json}catch{$failureCode='InvalidResponse';throw 'The portable Python reader returned an invalid response.'}
+        $stage='Schema'
+        if([int]$result.schemaVersion -ne 1 -or $result.success -isnot [bool]){$failureCode='InvalidResponse';throw 'The portable Python reader returned an invalid response.'}
+        if(-not $result.success){
+            if([string]$result.error -cin @('InvalidInput','UnsupportedPdf','ReaderUnavailable','LimitExceeded')){$failureCode='Worker'+[string]$result.error}else{$failureCode='InvalidResponse'}
+            throw 'The portable Python reader could not read this PDF.'
+        }
+        if($process.ExitCode -ne 0){$failureCode='WorkerExitFailure';throw 'The portable Python reader could not finish this PDF.'}
+        $stage='Fingerprint'
+        if([string]$result.hash -cne $ExpectedHash -or [long]$result.length -ne $Bytes.Length){$failureCode='FingerprintMismatch';throw 'The portable Python reader returned a different PDF fingerprint. No extracted result was accepted.'}
+        $stage='TextSchema'
         if($result.text -isnot [string] -or $result.text.Length -gt $MaximumCharacters -or $result.truncated -isnot [bool] -or $result.needsOCR -isnot [bool] -or [int]$result.pages -lt 1 -or [int]$result.pages -gt 100000 -or [int]$result.readPages -lt 0 -or [int]$result.readPages -gt [math]::Min([int]$result.pages,$MaximumPages) -or [string]$result.engine -cne 'Python' -or [string]$result.readerVersion -cne 'Python 3.14.10 / pypdf 7.0.1'){throw 'The portable Python reader returned an invalid response. No extracted result was accepted.'}
+        $stage='Return'
         return [pscustomobject]@{Text=[string]$result.text;Pages=[int]$result.pages;ReadPages=[int]$result.readPages;Truncated=[bool]$result.truncated;NeedsOCR=[bool]$result.needsOCR;ReaderUsed='Python';ReaderVersion=[string]$result.readerVersion}
     } catch [OperationCanceledException] {throw}
-    catch {throw 'The portable Python reader could not read this PDF or was blocked. Choose Automatic or Standard reading. Encrypted or damaged files may be unsupported.'}
+    catch {
+        # Keep only fixed stages and known symbolic codes. Diagnostic callers
+        # can identify the failed boundary without PDF text, paths or raw errors.
+        $knownTypes=@('MethodInvocationException','RuntimeException','PSInvalidOperationException','InvalidOperationException','Win32Exception','IOException','ObjectDisposedException','CommandNotFoundException','ParameterBindingException','TypeInitializationException','UnauthorizedAccessException','FormatException','InvalidCastException','ArgumentException','ArgumentNullException','InvalidDataException')
+        $kind=[string]$_.Exception.GetType().Name
+        if($kind -cnotin $knownTypes){$kind='Exception'}
+        $knownIds=@('MethodInvocationException','MethodArgumentConversionInvalidCastArgument','MethodCountCouldNotFindBest','PropertyNotFoundStrict','PropertyAssignmentException','TypeNotFound','VariableIsUndefined','CommandNotFoundException','AmbiguousParameterSet','ParameterBindingValidationException','ParameterArgumentValidationError','InvalidOperation','InvalidCastFromStringToInteger','CannotConvertArgumentNoMessage','ConstructorInvokedThrowException','InvalidType','TYPE_NOT_FOUND','TYPE_ALREADY_EXISTS,Microsoft.PowerShell.Commands.AddTypeCommand','COMPILER_ERRORS,Microsoft.PowerShell.Commands.AddTypeCommand')
+        $symbol=[string]$_.FullyQualifiedErrorId
+        if(-not $failureCode){$failureCode=$kind;if($symbol -cin $knownIds){$failureCode=$symbol}}
+        $safe=New-Object InvalidOperationException('The portable Python reader could not read this PDF or was blocked. Choose Automatic or Standard reading. Encrypted or damaged files may be unsupported.')
+        $safe.Data['PythonStage']=$stage;$safe.Data['PythonCauseCode']=$failureCode
+        if($null -ne $process){try{if($process.HasExited){$safe.Data['PythonExitCode']=[int]$process.ExitCode}}catch{}}
+        throw $safe
+    }
     finally {
         if($null -ne $process){try{if(-not $process.HasExited){$process.Kill();[void]$process.WaitForExit(3000)}}catch{}}
         if($null -ne $job){try{$job.Dispose()}catch{}}

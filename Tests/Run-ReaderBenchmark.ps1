@@ -23,6 +23,21 @@ function Get-SafeTestFailure($Failure){
     if($symbol -notmatch '^[A-Za-z0-9_.+,`-]{1,200}$'){$symbol='Unclassified'}
     $line=0;if($null -ne $Failure.InvocationInfo){$line=[math]::Max(0,[int]$Failure.InvocationInfo.ScriptLineNumber)}
     $detail=$kind+' [Code='+$symbol+'; TestLine='+$line+']'
+    $stages=@('Availability','BundleCheck','JobType','StartInfo','Start','JobAttach','ReadPipes','WriteHeader','SendBody','Wait','CloseInput','ReadResponse','DecodeResponse','Schema','Fingerprint','TextSchema','Return')
+    $diagnostics=New-Object 'Collections.Generic.List[string]';$current=$Failure.Exception
+    for($depth=0;$depth -lt 8 -and $null -ne $current;$depth++){
+        if($null -ne $current.Data){
+            $stage=[string]$current.Data['PythonStage'];$cause=[string]$current.Data['PythonCauseCode']
+            $values=New-Object 'Collections.Generic.List[string]'
+            if($stages -ccontains $stage){[void]$values.Add('PythonStage='+$stage)}
+            if($cause -cmatch '^[A-Za-z0-9_.+,`-]{1,200}$'){[void]$values.Add('PythonCause='+$cause)}
+            $exit=[long]0
+            if($current.Data.Contains('PythonExitCode') -and [long]::TryParse([string]$current.Data['PythonExitCode'],[ref]$exit) -and $exit -ge [int]::MinValue -and $exit -le [int]::MaxValue){[void]$values.Add('PythonExit='+$exit)}
+            if($values.Count){$item='['+($values -join '; ')+']';if(-not $diagnostics.Contains($item)){[void]$diagnostics.Add($item)}}
+        }
+        $current=$current.InnerException
+    }
+    if($diagnostics.Count){$detail+=' '+($diagnostics -join ' ')}
     if($Failure.Exception.Message.StartsWith('CHECK: ')){$detail=$Failure.Exception.Message.Substring(7)+' '+$detail}
     return $detail
 }

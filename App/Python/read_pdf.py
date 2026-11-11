@@ -1,6 +1,8 @@
 """Private pipe-only PDF reading worker for the bundled portable interpreter.
 
-Input: little-endian uint32 JSON-header length, header, then the exact PDF bytes.
+Input: optional single UTF-8 transport preamble, little-endian uint32 JSON-header
+length, header, then the exact PDF bytes. The preamble accommodates Windows
+PowerShell 5.1's redirected-input writer; PDF-body bytes are never stripped.
 Output: one JSON response. No file paths, filenames or raw errors are accepted or
 printed. Extracted text is returned only through the parent's private pipe.
 """
@@ -66,7 +68,12 @@ def read_exact(stream, count: int) -> bytes:
 
 
 def read_request(stream) -> tuple[dict, bytes]:
-    header_size = struct.unpack("<I", read_exact(stream, 4))[0]
+    prefix = read_exact(stream, 4)
+    if prefix[:3] == b"\xef\xbb\xbf":
+        # A valid bounded header length cannot begin with these three bytes.
+        # Consume exactly one transport BOM, never scan or trim the PDF body.
+        prefix = prefix[3:] + read_exact(stream, 3)
+    header_size = struct.unpack("<I", prefix)[0]
     if not 1 <= header_size <= MAXIMUM_HEADER:
         raise InputError()
     try:
