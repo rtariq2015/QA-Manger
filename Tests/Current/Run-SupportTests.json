@@ -2,8 +2,8 @@
   "Version": "5.3.1",
   "Runtime": "7.4.13",
   "WindowsPowerShell51ActuallyRun": false,
-  "Tests": 22,
-  "Assertions": 170,
+  "Tests": 23,
+  "Assertions": 184,
   "Failed": 0,
   "Results": [
     {
@@ -113,6 +113,11 @@
     },
     {
       "Name": "Real connection-result handling avoids repeated prompts and remembers only accepted sign-ins",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "Filing basis and reading state remain separate scrubbed facts across machine and print diagnostics",
       "Result": "PASS",
       "Details": ""
     }

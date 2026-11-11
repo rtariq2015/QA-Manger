@@ -1,8 +1,8 @@
 ﻿{
-    "Version":  "5.3.1",
+    "Version":  "5.4.0",
     "Runtime":  "5.1.26100.33648",
-    "Tests":  29,
-    "Assertions":  129,
+    "Tests":  42,
+    "Assertions":  254,
     "Failed":  0,
     "Results":  [
                     {
@@ -149,7 +149,72 @@
                         "Name":  "Diagnostic exports report unreadable organization history without treating saved decisions as absent",
                         "Result":  "PASS",
                         "Details":  ""
+                    },
+                    {
+                        "Name":  "Absent and legacy blank format settings automatically file complete Basic and Extended content",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Auto and Ask format policies round-trip while explicit scanner rules retain precedence",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Additional test sets reuse an existing Daily or Monthly grouping without guessing an ungrouped procedure",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Explicit document titles override inference while contradictory explicit evidence remains exceptional",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Filing counters separate waiting-to-read files from actual reader and content exceptions",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Saved decisions and explicit Undo remain authoritative when automatic policy is enabled",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Reference documents file as Other and do not count as received Daily reports",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Unknown reference evidence cannot inherit generic Daily filing or cached current measurements",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Older unsupported format reads await one compatibility refresh while current exceptions and failures remain actionable",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Trusted reading plans reject malformed scopes and controls without touching PDF bytes",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "A compact one-PDF checkpoint defers dashboards and folders until an explicit checked synchronization",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "A queued ID cannot bypass fresh archive membership or exact PDF-byte verification",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Durable file decisions reuse one validated dashboard and organization while refreshing only their selected readable PDF",
+                        "Result":  "PASS",
+                        "Details":  ""
                     }
                 ],
-    "Scope":  "Synthetic PDFs and local scanner folders; independent file organization, no fabricated clinical review, stale/changed-file rejection, append-only Undo, readable ownership, exports and stdin/stdout JSON worker."
+    "Scope":  "Synthetic PDFs, local scanner folders and controlled cached classifier observations with matching fixture-byte provenance; actual extraction is covered separately. Hands-off filing policy, inferred-label disclosure, waiting/review counters, independent file organization, no fabricated clinical review, stale/changed-file rejection, append-only Undo, readable ownership, exports and stdin/stdout JSON worker."
 }

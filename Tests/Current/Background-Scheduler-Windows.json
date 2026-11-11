@@ -2,6 +2,13 @@
   "passed": true,
   "syntheticOnly": true,
   "scope": "Real host scheduler with a deterministic PowerShell adapter; no real PDF reader speed claim.",
+  "syntheticAdapterJobMetrics": {
+    "planBuilds": 2,
+    "fullSnapshots": 3,
+    "librarySyncs": 3,
+    "processedReports": 25,
+    "cacheSkips": 0
+  },
   "checks": [
     "Duplicate background reads are rejected without blocking foreground controls",
     "Pause finishes the current PDF and preserves a cumulative 1/8 checkpoint",
@@ -11,8 +18,12 @@
     "A foreground action queued during a PDF runs before the archive batch completes",
     "One-PDF requests are sanitized, mutations stay serialized, and cancel preserves cumulative work",
     "A bulk action stops after twenty actual PDFs and reports the remaining work",
+    "A 25-PDF job reuses two plans and keeps PDF steps separate from overview checkpoints",
     "An explicitly started backlog continues beyond twenty and synchronizes readable folders",
+    "AutoAnalyze false keeps an eligible archive manual",
+    "Stop intent persists across Refresh independently of cooldown",
+    "App reopen automatically reads eligible backlog after initial Refresh",
     "Shutdown cancels background reading at a safe checkpoint and leaves no running helper"
   ],
-  "checkCount": 10
+  "checkCount": 14
 }

@@ -1,0 +1,70 @@
+{
+  "Scope": "Actual local Host/API and isolated verified Standard PDF workers on 25 generated synthetic PDFs, Linux PowerShell7/.NET10. One run per version, no browser, no private reports, no hospital SMB, no performance threshold. Disposable worker trace records only fixed action names and snapshot booleans.",
+  "SyntheticOnly": true,
+  "PrimaryReadGates": "Analyzed25/Failed0/ReadErrors0/VerifiedHashMatches25/CompleteRead25 required before recording any timing result",
+  "BaselineSource": "9f51277",
+  "Runs": [
+    {
+      "Mode": "LegacyPerPDFSnapshots",
+      "Documents": 25,
+      "StartupSeconds": 4.634,
+      "QueueSeconds": 165.841,
+      "DocumentsPerMinute": 9.045,
+      "SourcePDFsAndStateUnchanged": true,
+      "ReadEverySelectedRecord": true,
+      "SuccessfulReadGates": {
+        "Analyzed": 25,
+        "Failed": 0,
+        "ReadErrors": 0,
+        "VerifiedHashMatches": 25,
+        "CompleteRead": 25
+      },
+      "SnapshotRecords": 25,
+      "WorkerInvocations": {
+        "Snapshot": 1,
+        "Analyze": 25,
+        "SyncLibrary": 1
+      },
+      "BackgroundJobFullSnapshots": 26,
+      "FullSnapshotWorkerResponses": 27,
+      "JobPerformance": null
+    },
+    {
+      "Mode": "PlannedDeferredSnapshots",
+      "Documents": 25,
+      "StartupSeconds": 3.22,
+      "QueueSeconds": 147.011,
+      "DocumentsPerMinute": 10.203,
+      "SourcePDFsAndStateUnchanged": true,
+      "ReadEverySelectedRecord": true,
+      "SuccessfulReadGates": {
+        "Analyzed": 25,
+        "Failed": 0,
+        "ReadErrors": 0,
+        "VerifiedHashMatches": 25,
+        "CompleteRead": 25
+      },
+      "SnapshotRecords": 25,
+      "WorkerInvocations": {
+        "Snapshot": 1,
+        "AnalysisPlan": 2,
+        "Analyze": 25,
+        "SyncLibrary": 14
+      },
+      "BackgroundJobFullSnapshots": 14,
+      "FullSnapshotWorkerResponses": 15,
+      "JobPerformance": {
+        "planBuilds": 2,
+        "fullSnapshots": 14,
+        "librarySyncs": 14,
+        "processedReports": 25,
+        "cacheSkips": 0
+      }
+    }
+  ],
+  "State": "VerifiedSuccessfulPDFReadComparison",
+  "DistinctSyntheticPDFHashes": 6,
+  "PerformanceThresholdAsserted": false,
+  "Interpretation": "Both successfulreadgatespass:25analyzed,0failed,0ReadError,25matchingverifiedhashes,25completePDFreads. Single sequential runs, shared local Linux environment,25savedrecordswith6distinctgeneratedPDFhashes. DoesnotestablishWindows/hospitalSMB/1367recordthroughput. Compareorchestrationcountsandboundedlocaltimingonly.",
+  "QueueWallTimeDecreasePercent": 11.354
+}

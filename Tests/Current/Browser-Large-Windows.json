@@ -1,16 +1,16 @@
 {
-  "version": "5.3.1",
+  "version": "5.4.0",
   "syntheticOnly": true,
   "browserChannel": "msedge",
   "records": 1367,
-  "tests": 4,
-  "assertions": 27328,
+  "tests": 5,
+  "assertions": 27347,
   "failed": 0,
   "externalAssetRequests": 0,
   "javascriptErrors": [],
   "results": [
     {
-      "name": "The full library shows known reports as automatic and reserves review for 217 uncertain PDFs",
+      "name": "The full library separates unread filing work from actual review exceptions",
       "result": "PASS"
     },
     {
@@ -23,6 +23,10 @@
     },
     {
       "name": "A subsequent unchanged Refresh finishes after reload and reuses cached readable PDFs",
+      "result": "PASS"
+    },
+    {
+      "name": "Reading one unsupported synthetic PDF creates one genuine review exception",
       "result": "PASS"
     }
   ],

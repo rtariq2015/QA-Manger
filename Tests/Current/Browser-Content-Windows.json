@@ -1,16 +1,20 @@
 {
-  "version": "5.3.1",
+  "version": "5.4.0",
   "syntheticOnly": true,
   "nativeContinuousPreviewActuallyRun": true,
   "browserChannel": "msedge",
-  "tests": 6,
-  "assertions": 188,
+  "tests": 7,
+  "assertions": 214,
   "failed": 0,
   "javascriptErrors": [],
   "externalAssetRequests": 0,
   "results": [
     {
-      "name": "Read contents reads only the selected Basic PDF and shows raw printed evidence without a site-wide rule",
+      "name": "Unread filing work is distinct from review exceptions and Automatic is the default",
+      "result": "PASS"
+    },
+    {
+      "name": "Explicit Ask keeps a selected Basic PDF for a decision while showing raw printed evidence",
       "result": "PASS"
     },
     {

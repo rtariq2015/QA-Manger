@@ -4,8 +4,8 @@
   "Runtime": "7.4.13",
   "WindowsPowerShell51ActuallyRun": false,
   "SyntheticOnly": true,
-  "Tests": 16,
-  "Assertions": 44,
+  "Tests": 19,
+  "Assertions": 53,
   "Failed": 0,
   "Results": [
     {
@@ -15,6 +15,21 @@
     },
     {
       "Name": "Different scanners, head/body modes, systems, slices and metrics are separate series",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "Slice-thickness millimetres use their own metric descriptor and cannot mix with HU values",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "Historical reference caches never become current points or pending measurement work",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "A reference cache alias cannot override or fabricate conflicts with verified current evidence",
       "Result": "PASS",
       "Details": ""
     },

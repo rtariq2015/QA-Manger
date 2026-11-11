@@ -2,11 +2,12 @@
     "Product":  "CT QA Manager Pro",
     "Feature":  "Printed measurement extraction",
     "MeasurementVersion":  1,
+    "MeasurementSupportRevision":  2,
     "Runtime":  "5.1.26100.33648",
     "WindowsPowerShell51ActuallyRun":  true,
     "SyntheticOnly":  true,
-    "Tests":  14,
-    "Assertions":  37,
+    "Tests":  20,
+    "Assertions":  70,
     "Failed":  0,
     "Results":  [
                     {
@@ -64,7 +65,31 @@
                     {
                         "Name":  "Wrapped numbered headings and split mode labels keep fixed document context",
                         "Result":  "PASS"
+                    },
+                    {
+                        "Name":  "Manufacturer Daily inline tables supply separate head and body readings with one printed range per table",
+                        "Result":  "PASS"
+                    },
+                    {
+                        "Name":  "Dual-source Daily columns and unsupported acquisition names cannot merge with single-system body readings",
+                        "Result":  "PASS"
+                    },
+                    {
+                        "Name":  "Daily inline rows require their own complete unit-matched range and preserve malformed evidence as an issue",
+                        "Result":  "PASS"
+                    },
+                    {
+                        "Name":  "Repeated Daily table context is withheld and incomplete Daily reads remain warned",
+                        "Result":  "PASS"
+                    },
+                    {
+                        "Name":  "Slice-thickness results use current millimetres and skip acquisition parameters and parenthesized references",
+                        "Result":  "PASS"
+                    },
+                    {
+                        "Name":  "Historical reference documents cannot supply current measurements even when they contain readable-looking values",
+                        "Result":  "PASS"
                     }
                 ],
-    "Scope":  "Synthetic IEC single-metric water/noise tables only. Explicit current HU values and printed bounds are kept separate from parenthesized references, scan parameters, other tables and clinical approval. Unknown, incomplete, conflicting, ambiguous and clipped evidence remains marked for review."
+    "Scope":  "Synthetic IEC water/noise/slice-thickness tables and manufacturer Daily inline single-system HU tables only. Explicit current HU values and printed bounds are kept separate from parenthesized references, scan parameters, other tables and clinical approval. Unknown, incomplete, conflicting, ambiguous and clipped evidence remains marked for review."
 }

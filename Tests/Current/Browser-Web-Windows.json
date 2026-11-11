@@ -1,11 +1,11 @@
 {
-  "version": "5.3.1",
+  "version": "5.4.0",
   "syntheticOnly": true,
   "browser": "Chromium via Playwright",
   "browserChannel": "msedge",
   "nativePdfPreviewActuallyRun": true,
   "tests": 15,
-  "assertions": 553,
+  "assertions": 562,
   "failed": 0,
   "externalAssetRequests": 0,
   "javascriptErrors": [],

@@ -1,8 +1,8 @@
 ﻿{
-    "Version":  "5.3.1",
+    "Version":  "5.4.0",
     "Runtime":  "5.1.26100.33648",
-    "Tests":  19,
-    "Assertions":  128,
+    "Tests":  25,
+    "Assertions":  342,
     "Failed":  0,
     "Results":  [
                     {
@@ -96,10 +96,40 @@
                         "Details":  ""
                     },
                     {
+                        "Name":  "Exact historical reference headings are filed as Other without current QA sections",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Reference recognition rejects unknown labels, mixed current evidence and invalid body structure",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Unsupported and mixed actual reference headings retain an exclusion signal without accepted identity",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Reference documents retain full-read footer and model safeguards and current documents retain their identity",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "A complete standalone current IEC component retains its actual test identity without claiming department frequency",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Standalone IEC components cannot borrow missing table evidence or absorb mixed report headings",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
                         "Name":  "Classifier metadata and evidence codes are fixed and support safe display allowlists",
                         "Result":  "PASS",
                         "Details":  ""
                     }
                 ],
-    "Scope":  "Synthetic Edge, compatible Flash and Drive model text only. Covers exact Basic and Extended IEC profiles, bounded individual/combined additional test sets and the explicit Quality Daily body family. Exact numbered Siemens IEC body-section profiles and repeated report footer consensus. Profile suggestions are separate from department mappings and clinical QA evidence."
+    "Scope":  "Synthetic Edge, compatible Flash and Drive model text only. Covers exact Basic and Extended IEC profiles, bounded individual/combined additional test sets the explicit Quality Daily body family, isolated historical reference documents, and strict standalone current component templates. Exact numbered Siemens IEC body-section profiles and repeated report footer consensus. Profile suggestions are separate from department mappings and clinical QA evidence."
 }

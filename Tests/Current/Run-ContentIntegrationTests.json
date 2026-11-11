@@ -4,12 +4,12 @@
   "Runtime": "7.4.13",
   "WindowsPowerShell51ActuallyRun": false,
   "SyntheticOnly": true,
-  "Tests": 12,
-  "Assertions": 313,
+  "Tests": 15,
+  "Assertions": 408,
   "Failed": 0,
   "Results": [
     {
-      "Name": "Read one PDF extracts real body headings, footer dates and raw OK evidence while mappings default to Ask",
+      "Name": "Explicit Ask keeps real body readings available while manual filing is requested",
       "Result": "PASS"
     },
     {
@@ -54,6 +54,18 @@
     },
     {
       "Name": "Real Drive Additional and manufacturer Daily PDFs retain separate filing rules and protected original evidence",
+      "Result": "PASS"
+    },
+    {
+      "Name": "Automatic filing uses already-read Basic and Extended profiles without approvals or new reads",
+      "Result": "PASS"
+    },
+    {
+      "Name": "Actual isolated PDF readers collect manufacturer Daily inline measurements and source-linked cached trends",
+      "Result": "PASS"
+    },
+    {
+      "Name": "Actual isolated PDF readers keep current slice-thickness millimetres separate from existing HU trends",
       "Result": "PASS"
     }
   ],

@@ -1,10 +1,10 @@
 {
-  "Version": "5.3.1",
-  "SourceCommit": "006268bb12a6ca93c428ac5cbe1078d7d3976bf3",
-  "WorkflowRun": "https://github.com/rtariq2015/QA-Manger/actions/runs/43062859219",
+  "Version": "5.4.0",
+  "SourceCommit": "bb611aa93947bf01b0576616a34a5b44cbeda1a3",
+  "WorkflowRun": "https://github.com/rtariq2015/QA-Manger/actions/runs/43092551021",
   "Runtime": "Windows PowerShell 5.1",
-  "Tests": 306,
-  "Assertions": 2608,
+  "Tests": 343,
+  "Assertions": 3201,
   "Failed": 0,
   "Suites": [
     {
@@ -15,32 +15,32 @@
     },
     {
       "Name": "Run-MeasurementTests",
-      "Tests": 14,
-      "Assertions": 37,
+      "Tests": 20,
+      "Assertions": 70,
       "Failed": 0
     },
     {
       "Name": "Run-ContentTests",
-      "Tests": 19,
-      "Assertions": 128,
+      "Tests": 25,
+      "Assertions": 342,
       "Failed": 0
     },
     {
       "Name": "Run-AnalysisTests",
-      "Tests": 15,
-      "Assertions": 73,
+      "Tests": 18,
+      "Assertions": 101,
       "Failed": 0
     },
     {
       "Name": "Run-ContentIntegrationTests",
-      "Tests": 12,
-      "Assertions": 313,
+      "Tests": 15,
+      "Assertions": 472,
       "Failed": 0
     },
     {
       "Name": "Run-WebServiceTests",
-      "Tests": 29,
-      "Assertions": 129,
+      "Tests": 42,
+      "Assertions": 254,
       "Failed": 0
     },
     {
@@ -57,8 +57,8 @@
     },
     {
       "Name": "Run-SupportTests",
-      "Tests": 22,
-      "Assertions": 171,
+      "Tests": 23,
+      "Assertions": 185,
       "Failed": 0
     },
     {
@@ -69,8 +69,8 @@
     },
     {
       "Name": "Run-Tests",
-      "Tests": 24,
-      "Assertions": 247,
+      "Tests": 26,
+      "Assertions": 258,
       "Failed": 0
     },
     {
@@ -111,8 +111,8 @@
     },
     {
       "Name": "Run-TrendTests",
-      "Tests": 16,
-      "Assertions": 48,
+      "Tests": 19,
+      "Assertions": 57,
       "Failed": 0
     }
   ],
@@ -125,6 +125,10 @@
   "ProductionPythonNonAdministratorActuallyRun": true,
   "ProductionPythonLiveCancellationActuallyRun": true,
   "StandardAccountCleanupSucceeded": true,
+  "SelfContainedWindowsHostSHA256": "3670a5251e916e0c61018774ee9b6952ce3dc118b26137bfcb27a447ec7d1100",
+  "PortablePythonRuntimeArtifactZipSHA256": "23c80279da30e0ff9787e1472caa7fd1779012fe908ccaef8e0327f726063953",
+  "PortablePythonIntegrityManifestSHA256": "7bb612a33fa72070b608fc7a67ab93d9de48aebafc6c3ebd1978aff3fd9f27d4",
+  "ValidationArtifactZipSHA256": "0ca2e006eda468b4a39efe1c9c76af7e7c5aabdaa50e9dc53631968546bd7a70",
   "ReaderBenchmark": {
     "Evidence": "../Reader-Benchmark-Windows.json",
     "Tests": 3,
@@ -136,25 +140,31 @@
       "Extended:6pages"
     ],
     "WholeIsolatedReadMediansMilliseconds": {
-      "Standard": 1135.01,
-      "Python": 1614.14
+      "Standard": 1370.557,
+      "Python": 2036.892
     },
     "FasterReaderForThisFixture": "Standard",
-    "StandardMedianDividedByPythonMedian": 0.703,
+    "StandardMedianDividedByPythonMedian": 0.673,
     "CachedAnalysis": {
       "ColdAnalyzed": 2,
-      "ColdMilliseconds": 2550.358,
+      "ColdMilliseconds": 2348.882,
       "WarmAnalyzed": 0,
       "WarmCached": 2,
-      "WarmMilliseconds": 94.46,
+      "WarmMilliseconds": 78.368,
       "WarmCacheWrites": 0
     },
     "MemoryMeasured": false,
     "HospitalNetworkSpeedMeasured": false
   },
-  "SelfContainedWindowsHostSHA256": "7016cbd150d99f9b707c14593fca32c46dd4d31b59d680d9790b17961318f53b",
-  "PortablePythonRuntimeArtifactZipSHA256": "a72161ecdadc2699af66c79b28e68d338850d95108aedca097ac6f5a1f6c2942",
-  "ValidationArtifactZipSHA256": "5fa0296b6ffa967e24ef754baea0eca1c53c7d013c60e1163ac65321fed801cb",
+  "BackgroundScheduler": {
+    "Evidence": "../Background-Scheduler-Windows.json",
+    "Passed": true,
+    "CheckCount": 14,
+    "SyntheticOnly": true,
+    "ExecutionPlatform": "Native Windows workflow execution",
+    "PowerShellAssertionsReported": false,
+    "Scope": "Actual host scheduler with a deterministic synthetic PowerShell adapter; separate check outcomes, no real PDF-reader speed claim."
+  },
   "Screenshots": [
     "today-light-web-demo.png",
     "today-dark-web-demo.png",
@@ -186,22 +196,15 @@
     "python-measurements-web-demo.png",
     "python-measurements-small-web-demo.png",
     "python-reader-settings-web-demo.png",
-    "trends-measurements-web-demo.png"
+    "trends-measurements-web-demo.png",
+    "daily-readings-web-demo.png",
+    "slice-thickness-trends-web-demo.png"
   ],
-  "BackgroundScheduler": {
-    "Evidence": "../Background-Scheduler-Windows.json",
-    "Passed": true,
-    "CheckCount": 10,
-    "SyntheticOnly": true,
-    "ExecutionPlatform": "Native Windows workflow execution",
-    "Scope": "Actual self-contained host scheduler with a deterministic synthetic PowerShell adapter. These ten check outcomes are separate from PowerShell suite scenarios/assertions and do not measure real PDF-reader speed."
-  },
-  "Scope": "Final pinned execution with generated PDFs and local scanner folders. Eighteen native PowerShell suites, ten separate actual-host/synthetic-adapter scheduler checks, a separate three-scenario reader comparison, real Edge standard/content/Python/large-browser workloads, and a separate large-library workload are counted independently. Standard-user Python execution and live cancellation, continuous native PDF scrolling, six interface tabs, both themes, seven-entry scrubbed diagnostics, printable reports and explicit pending-file automatic processing are actually exercised. Additional, Daily and Drive parser regressions use synthetic layouts only; departmental filing mappings remain Ask until confirmed. No hospital sign-in, workplace policy approval, real reports or hospital SMB timing is established. Raw reports and screenshots are copied unchanged.",
-  "PortablePythonIntegrityManifestSHA256": "7bb612a33fa72070b608fc7a67ab93d9de48aebafc6c3ebd1978aff3fd9f27d4",
+  "Scope": "Final pinned generated-data execution: eighteen native PowerShell suites, fourteen separate host/synthetic-adapter scheduler outcomes, reader comparison, all four actual Edge browser workloads and a separate large-library workload. Native core has 26 scenarios and its raw platform-specific assertion count; Linux adds a case-sensitive-filesystem negative. Automatic inferred filing, explicit Ask, reference exclusions, selective Daily/slice measurement upgrades, source-linked trends, compact background checkpoints, persistent support links and privacy are actually exercised. No hospital sign-in/SMB/workstation-policy or real-report timing is established. Raw reports/captures are copied unchanged.",
   "Browser": {
     "Evidence": "../Browser-Web-Windows.json",
     "Tests": 15,
-    "Assertions": 553,
+    "Assertions": 562,
     "Failed": 0
   },
   "LargeLibrary": {
@@ -212,20 +215,25 @@
   },
   "LargeBrowser": {
     "Evidence": "../Browser-Large-Windows.json",
-    "Tests": 4,
-    "Assertions": 27328,
+    "Tests": 5,
+    "Assertions": 27347,
     "Failed": 0
   },
   "ContentBrowser": {
     "Evidence": "../Browser-Content-Windows.json",
-    "Tests": 6,
-    "Assertions": 188,
+    "Tests": 7,
+    "Assertions": 214,
     "Failed": 0
   },
   "PythonBrowser": {
     "Evidence": "../Browser-Python-Windows.json",
-    "Tests": 4,
-    "Assertions": 118,
+    "Tests": 6,
+    "Assertions": 208,
     "Failed": 0
-  }
+  },
+  "WorkflowStatus": "completed",
+  "WorkflowConclusion": "success",
+  "WorkflowCompleted": true,
+  "WorkflowPassed": true,
+  "TestEvidenceStatus": "Passed"
 }
