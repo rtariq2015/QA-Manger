@@ -291,8 +291,45 @@ Scenario 'Concurrent edits cannot seed a verified source or readable-file metada
     }
 }
 
+Scenario 'Appearance persists across fresh snapshots without changing report evidence' {
+    $f=New-WebFixture 'Appearance';$before=(Get-FileHash $f.StatePath).Hash
+    $saved=Invoke-QaWebRequest $f.AppRoot ([pscustomobject]@{action='Settings';theme='Dark'})
+    Check ($saved.snapshot.settings.theme -ceq 'Dark' -and (Get-Web $f).settings.theme -ceq 'Dark') 'Dark appearance survives a fresh config and snapshot load'
+    $saved=Invoke-QaWebRequest $f.AppRoot ([pscustomobject]@{action='Settings';theme='Light'})
+    Check ($saved.snapshot.settings.theme -ceq 'Light') 'Light appearance can be restored'
+    $caught=$false;try{Invoke-QaWebRequest $f.AppRoot ([pscustomobject]@{action='Settings';theme='unsupported'})|Out-Null}catch{$caught=$true}
+    Check ($caught -and (Get-Web $f).settings.theme -ceq 'Light') 'Unsupported appearance is rejected without replacing saved preference'
+    Check ((Get-FileHash $f.StatePath).Hash -ceq $before) 'Appearance never edits clinical archive evidence'
+}
+Scenario 'Explicit empty or conflicting reading groups cannot expand into an archive-wide read' {
+    $f=New-WebFixture 'BoundedReadScope';$before=(Get-FileHash $f.StatePath).Hash
+    foreach($request in @([pscustomobject]@{action='Analyze';ids=@()},[pscustomobject]@{action='Analyze';ids=$null},[pscustomobject]@{action='Analyze';id=$f.Record.Id;ids=@()},[pscustomobject]@{action='Analyze';ids=@('../not-a-record')})){
+        $caught=$false;try{Invoke-QaWebRequest $f.AppRoot $request|Out-Null}catch{$caught=$true};Check $caught 'Explicit invalid or conflicting scope is refused before a PDF is read'
+    }
+    Check ((Get-FileHash $f.StatePath).Hash -ceq $before) 'Rejected scopes leave authoritative archive bytes untouched'
+    Check (-not [IO.Directory]::Exists((Join-Path $f.Config.ArchiveRoot '.ctqa/analysis'))) 'Rejected scopes create no analysis cache'
+}
+Scenario 'PDF reading chunk limits accept only bounded integers' {
+    $f=New-WebFixture 'ReadingLimits'
+    foreach($limit in @(0,21,-1,'1',$true,1.5)){
+        $caught=$false;try{Invoke-QaWebRequest $f.AppRoot ([pscustomobject]@{action='Analyze';analysisLimit=$limit})|Out-Null}catch{$caught=$true};Check $caught 'Malformed or unbounded reading chunk limit is refused before reading'
+    }
+}
+Scenario 'Trend queries read cached metadata without creating PDF readings or rewriting the archive' {
+    $f=New-WebFixture 'TrendQuery';$before=(Get-FileHash $f.StatePath).Hash
+    $result=Invoke-QaWebRequest $f.AppRoot ([pscustomobject]@{action='Trends';scanner='CT_Edge';metric='WaterCTNumber'})
+    Check ($result.schemaVersion -eq 1 -and $result.scanner -ceq 'CT_Edge' -and $result.metric -ceq 'WaterCTNumber') 'Authenticated adapter returns the selected cached trend model'
+    Check ($result.points.Count -eq 0 -and $result.coverage.pendingReports -eq 1) 'Unread source stays pending instead of becoming an invented zero reading'
+    Check ($result.clinicalResult -ceq 'Not inferred') 'Graph access cannot create clinical approval'
+    Check ((Get-FileHash $f.StatePath).Hash -ceq $before) 'Trend queries never rewrite authoritative evidence'
+    Check (-not [IO.Directory]::Exists((Join-Path $f.Config.ArchiveRoot '.ctqa/analysis'))) 'Viewing a chart starts no PDF reading work'
+    foreach($request in @([pscustomobject]@{action='Trends';metric='Unknown'},[pscustomobject]@{action='Trends';slice='../1'},[pscustomobject]@{action='Trends';start='2026-02-30'},[pscustomobject]@{action='Trends';series=('a'*129)})){
+        $caught=$false;try{Invoke-QaWebRequest $f.AppRoot $request|Out-Null}catch{$caught=$true};Check $caught 'Invalid chart filter is refused without reading PDFs'
+    }
+}
+
 $failed=@($script:Results|Where-Object Result -eq 'FAIL').Count
-$report=[pscustomobject]@{Version='5.1.0';Runtime=$PSVersionTable.PSVersion.ToString();Tests=$script:Results.Count;Assertions=$script:Assertions;Failed=$failed;Results=@($script:Results.ToArray());Scope='Synthetic PDFs and local scanner folders; independent file organization, no fabricated clinical review, stale/changed-file rejection, append-only Undo, readable ownership, exports and stdin/stdout JSON worker.'}
+$report=[pscustomobject]@{Version='5.3.0';Runtime=$PSVersionTable.PSVersion.ToString();Tests=$script:Results.Count;Assertions=$script:Assertions;Failed=$failed;Results=@($script:Results.ToArray());Scope='Synthetic PDFs and local scanner folders; independent file organization, no fabricated clinical review, stale/changed-file rejection, append-only Undo, readable ownership, exports and stdin/stdout JSON worker.'}
 if($OutputPath){$report|ConvertTo-Json -Depth 12|Set-Content $OutputPath -Encoding UTF8}
 Write-Host ('Result: '+($report.Tests-$failed)+'/'+$report.Tests+' scenarios; '+$report.Assertions+' assertions.')
 if([IO.Directory]::Exists($TestRoot)){Remove-Item $TestRoot -Recurse -Force}

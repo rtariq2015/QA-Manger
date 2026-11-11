@@ -54,7 +54,7 @@ app.Use(async (context, next) => {
     context.Response.Headers.CacheControl = "no-store";
     context.Response.Headers.XContentTypeOptions = "nosniff";
     context.Response.Headers["Referrer-Policy"] = "no-referrer";
-    context.Response.Headers["Content-Security-Policy"] = "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; frame-src 'self' blob:; connect-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors " + (context.Request.Path.StartsWithSegments("/api/pdf") ? "'self'" : "'none'");
+    context.Response.Headers["Content-Security-Policy"] = "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: blob:; frame-src 'self' blob:; connect-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors " + (context.Request.Path.StartsWithSegments("/api/pdf") ? "'self'" : "'none'");
     if (context.Request.Path.StartsWithSegments("/api") && !HeaderAuthorized(context.Request) && !Authorized(context.Request)) {
         context.Response.StatusCode = 401; await context.Response.WriteAsJsonAsync(new { error = "The local session expired. Reopen CT QA Manager." }); return;
     }
@@ -70,6 +70,7 @@ app.Use(async (context, next) => {
 app.MapGet("/", () => Results.File(Path.Combine(root, "App", "Web", "index.html"), "text/html; charset=utf-8"));
 app.MapGet("/app.css", () => Results.File(Path.Combine(root, "App", "Web", "app.css"), "text/css; charset=utf-8"));
 app.MapGet("/app.js", () => Results.File(Path.Combine(root, "App", "Web", "app.js"), "application/javascript; charset=utf-8"));
+app.MapGet("/trends.js", () => Results.File(Path.Combine(root, "App", "Web", "trends.js"), "application/javascript; charset=utf-8"));
 app.MapGet("/favicon.ico", () => Results.NoContent());
 app.MapPost("/api/session", (HttpContext context) => {
     if (!HeaderAuthorized(context.Request)) return Results.Unauthorized();
@@ -85,9 +86,9 @@ app.MapPost("/api/actions", async (HttpContext context) => {
     var action = request?["action"] is JsonValue actionValue && actionValue.TryGetValue<string>(out var actionText) ? actionText : "";
     if (!HostState.AllowedActions.Contains(action)) return Results.BadRequest(new { error = "Choose a supported CT QA Manager action." });
     if (action is "Shutdown" or "OpenClassic") {
-        if (state.Busy) return Results.Conflict(new { error = "Wait for the current action to finish before closing the program." });
+        if (action == "Shutdown" ? !state.TryBeginShutdown() : state.Busy) return Results.Conflict(new { error = "Wait for the current action to finish before closing the program." });
         if (action == "OpenClassic") { if (!OperatingSystem.IsWindows()) return Results.BadRequest(new { error = "The original Windows interface requires Windows." }); LaunchClassic(root); }
-        _ = Task.Run(async () => { await Task.Delay(1200); app.Lifetime.StopApplication(); });
+        _ = Task.Run(async () => { if (action == "Shutdown") await state.WaitForBackgroundStop(); await Task.Delay(1200); app.Lifetime.StopApplication(); });
         return Results.Json(new { shutdown = true });
     }
     if (action == "InstallPreparedUpdate" && state.Busy) return Results.Conflict(new { error = "Finish other actions before installing an update." });
@@ -103,6 +104,14 @@ app.MapPost("/api/jobs/{id}/cancel", (string id) => {
     if (!state.Jobs.TryGetValue(id, out var job)) return Results.NotFound();
     if (!job.RequestCancel()) return Results.Conflict(new { error = "This step is already finishing or must finish atomically." });
     return Results.Json(new { cancelRequested = true });
+});
+app.MapPost("/api/jobs/{id}/pause", async (string id, HttpContext context) => {
+    context.Features.Get<IHttpMaxRequestBodySizeFeature>()!.MaxRequestBodySize = 1024;
+    if (!state.Jobs.TryGetValue(id, out var job)) return Results.NotFound();
+    var request = await JsonNode.ParseAsync(context.Request.Body, cancellationToken: context.RequestAborted) as JsonObject;
+    if (request?["paused"] is not JsonValue value || !value.TryGetValue<bool>(out var paused)) return Results.BadRequest(new { error = "Choose Pause or Resume for background reading." });
+    if (!job.RequestPause(paused)) return Results.Conflict(new { error = "This background reading job has already finished." });
+    return Results.Json(new { pauseRequested = paused, paused = job.Paused });
 });
 app.MapPost("/api/update", async (HttpContext context) => {
     if (!context.Request.HasFormContentType) return Results.BadRequest(new { error = "Choose one update ZIP file." });
@@ -132,6 +141,15 @@ app.MapGet("/api/pdf/{id}", async (string id, HttpContext context) => {
     if (string.IsNullOrWhiteSpace(name)) name = "QA-report.pdf";
     context.Response.Headers["Content-Disposition"] = "inline; filename*=UTF-8''" + Uri.EscapeDataString(name);
     return Results.File(path, "application/pdf", enableRangeProcessing: true);
+});
+app.MapGet("/api/trends", async (HttpContext context) => {
+    var request = new JsonObject { ["action"] = "Trends" };
+    foreach (var name in new[] { "scanner", "metric", "mode", "system", "slice", "start", "end", "series" }) {
+        var value = context.Request.Query[name].ToString();
+        if (value.Length > 128) return Results.BadRequest(new { error = "Choose a shorter trend filter." });
+        if (value.Length > 0) request[name] = value;
+    }
+    return Results.Json(await bridge.Run(request, 90, context.RequestAborted));
 });
 app.MapGet("/api/preview/{id}", async (string id, HttpContext context) => {
     if (!SafeFiles.ValidRecordId(id)) return Results.BadRequest(new { error = "Select a saved report." });
@@ -182,7 +200,7 @@ _ = Task.Run(async () => {
                 break;
             }
             var saved = state.Snapshot;
-            if (!state.Busy && DateTimeOffset.UtcNow - state.LastHeartbeat < TimeSpan.FromSeconds(90) && saved?["setupComplete"]?.GetValue<bool>() == true) {
+            if (!state.ForegroundBusy && DateTimeOffset.UtcNow - state.LastHeartbeat < TimeSpan.FromSeconds(90) && saved?["setupComplete"]?.GetValue<bool>() == true) {
                 var monitor = saved?["settings"]?["monitorMinutes"]?.GetValue<int>() ?? 0;
                 if (monitor > 0 && DateTimeOffset.UtcNow - state.LastRefresh > TimeSpan.FromMinutes(monitor))
                     state.QueueWhenIdle(new JsonObject { ["action"] = "Refresh" }, app.Lifetime.ApplicationStopping);
@@ -257,6 +275,7 @@ sealed class WorkerBridge(string root, string powerShell) {
             info.ArgumentList.Add("-CancelPath"); info.ArgumentList.Add(progressJob.CancelPath!);
         }
         using var process = Process.Start(info) ?? throw new WorkerException("Windows could not start the local file helper. Check workstation policy.");
+        if (progressJob?.Background == true) { try { process.PriorityClass = ProcessPriorityClass.BelowNormal; } catch { /* Policy may deny a priority hint; correctness does not depend on it. */ } }
         var outputTask = process.StandardOutput.ReadToEndAsync(cancellationToken);
         var errorTask = process.StandardError.ReadToEndAsync(cancellationToken);
         using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
@@ -288,17 +307,18 @@ sealed class WorkerBridge(string root, string powerShell) {
         } finally { if (!process.HasExited) { try { process.Kill(entireProcessTree: true); } catch { } } }
     }
 }
-sealed class Job(string action) {
+sealed class Job(string action, bool background = false) {
     private static readonly HashSet<string> CooperativeActions = new(StringComparer.Ordinal) { "Refresh", "Analyze", "Export", "Backup", "Audit", "Browse" };
     private static readonly HashSet<string> Stages = new(StringComparer.Ordinal) { "Preparing", "Connecting", "Scanning", "Copying", "Library", "Analyzing", "Exporting", "BackingUp", "Restoring", "Verifying", "Finishing" };
     private readonly object progressLock = new();
-    private bool cancelRequested;
+    private bool cancelRequested, pauseRequested, paused, atBoundary;
     private string stage = "Preparing";
     private long completed, total, copied, unchanged, failed;
     private double percent = -1;
     private long finishedTicks;
     public string Id { get; } = Guid.NewGuid().ToString("N");
     public string Action { get; } = action;
+    public bool Background { get; } = background;
     public DateTimeOffset StartedUtc { get; } = DateTimeOffset.UtcNow;
     public string Status { get; set; } = "queued";
     public string Message { get; set; } = "Waiting for the current safe step…";
@@ -308,6 +328,8 @@ sealed class Job(string action) {
     public string? ProgressPath { get; private set; }
     public string? CancelPath { get; private set; }
     public bool CancelRequested { get { lock (progressLock) return cancelRequested; } }
+    public bool PauseRequested { get { lock (progressLock) return pauseRequested; } }
+    public bool Paused { get { lock (progressLock) return paused; } }
     public bool Cancellable => Status == "queued" || (Status == "running" && CooperativeActions.Contains(Action));
     public void PrepareProgress(string root) {
         lock (progressLock) {
@@ -316,11 +338,38 @@ sealed class Job(string action) {
             if (cancelRequested) File.WriteAllText(CancelPath, "", new UTF8Encoding(false));
         }
     }
+    public bool RequestPause(bool value) {
+        lock (progressLock) {
+            if (!Background || Status is not ("queued" or "running") || cancelRequested) return false;
+            pauseRequested = value;
+            return true;
+        }
+    }
+    public void SetBoundary(bool waiting, bool blockedByForeground = false) {
+        lock (progressLock) {
+            atBoundary = waiting;
+            paused = waiting && (pauseRequested || blockedByForeground);
+            if (paused) { stage = "Paused"; Message = pauseRequested ? "Background reading paused. Completed readings are saved." : "Background reading is waiting for your current action…"; }
+            else if (waiting) { stage = "Preparing"; Message = "Background reading is yielding between PDFs…"; }
+            else {
+                stage = "Analyzing"; Message = "Reading PDFs in the background, one at a time…";
+                // A previous chunk's final progress must not appear as the next PDF's progress.
+                if (ProgressPath is not null) { try { File.Delete(ProgressPath); } catch { } }
+            }
+        }
+    }
+    public void SetBackgroundProgress(long analyzed, long errors, long pending, long cached) {
+        lock (progressLock) {
+            completed = analyzed + errors; failed = errors; unchanged = cached;
+            total = Math.Min(20, completed + pending);
+            percent = total > 0 ? Math.Clamp(100.0 * completed / total, 0, 100) : 100;
+        }
+    }
     public bool RequestCancel() {
         lock (progressLock) {
             if (!Cancellable) return false;
             cancelRequested = true;
-            Cancel.Cancel(); // Used only while waiting for the mutation slot; running workers read the marker.
+            Cancel.Cancel(); // Waiting slots use the token; a running PDF stops through the safe marker.
             if (CancelPath is not null) File.WriteAllText(CancelPath, "", new UTF8Encoding(false));
             return true;
         }
@@ -335,7 +384,9 @@ sealed class Job(string action) {
                 using var reader = new StreamReader(input);
                 var data = JsonNode.Parse(reader.ReadToEnd());
                 var nextStage = data?["stage"]?.GetValue<string>();
-                if (nextStage is not null && Stages.Contains(nextStage)) stage = nextStage;
+                if (!atBoundary && nextStage is not null && Stages.Contains(nextStage)) stage = nextStage;
+                // Background counters describe the overall job, never the latest 1/1 chunk.
+                if (Background) return;
                 long Number(string name) => data?[name] is JsonValue v && v.TryGetValue<long>(out var n) && n >= 0 && n <= 100_000_000 ? n : 0;
                 completed = Number("completed"); total = Number("total"); copied = Number("copied"); unchanged = Number("unchanged"); failed = Number("failed");
                 if (total > 0) completed = Math.Min(completed, total);
@@ -344,7 +395,7 @@ sealed class Job(string action) {
         }
     }
     public long ElapsedSeconds { get { var end = Interlocked.Read(ref finishedTicks); if (end <= 0) end = DateTimeOffset.UtcNow.UtcTicks; return (long)Math.Max(0, (new DateTimeOffset(end, TimeSpan.Zero) - StartedUtc).TotalSeconds); } }
-    public void MarkFinished() => Interlocked.Exchange(ref finishedTicks, DateTimeOffset.UtcNow.UtcTicks);
+    public void MarkFinished() { lock (progressLock) { paused = false; pauseRequested = false; if (Status == "completed") stage = "Finishing"; } Interlocked.Exchange(ref finishedTicks, DateTimeOffset.UtcNow.UtcTicks); }
     public void CleanupProgress() {
         ReadProgress();
         lock (progressLock) {
@@ -354,7 +405,7 @@ sealed class Job(string action) {
     }
     public object PublicView() {
         ReadProgress();
-        lock (progressLock) return new { id = Id, action = Action, status = Status, message = cancelRequested && Status == "running" ? "Cancel requested. Waiting for the current Windows read or safe checkpoint…" : Message, result = Result, error = Error, startedUtc = StartedUtc, stage = Status == "queued" ? "Queued" : stage, completed, total, copied, unchanged, failed, percent = percent >= 0 ? (double?)percent : null, elapsedSeconds = ElapsedSeconds, cancellable = Cancellable && !cancelRequested, cancelRequested };
+        lock (progressLock) return new { id = Id, action = Action, status = Status, message = cancelRequested && Status == "running" ? "Cancel requested. Waiting for the current Windows read or safe checkpoint…" : Message, result = Result, error = Error, startedUtc = StartedUtc, stage = Status == "queued" ? "Queued" : stage, completed, total, copied, unchanged, failed, percent = percent >= 0 ? (double?)percent : null, elapsedSeconds = ElapsedSeconds, cancellable = Cancellable && !cancelRequested, cancelRequested, background = Background, pausable = Background && (Status is "queued" or "running") && !cancelRequested, paused, pauseRequested };
     }
 }
 sealed record Download(string Path);
@@ -365,6 +416,7 @@ sealed class HostState(WorkerBridge bridge, string root) {
     private readonly SemaphoreSlim mutation = new(1, 1);
     private readonly object queueGate = new();
     private readonly CancellationTokenSource shutdown = new();
+    private bool closing;
     private JsonNode? snapshot;
     private long lastActivity = DateTimeOffset.UtcNow.UtcTicks;
     private long lastHeartbeat = DateTimeOffset.MinValue.UtcTicks;
@@ -376,6 +428,19 @@ sealed class HostState(WorkerBridge bridge, string root) {
     public void Heartbeat() { Interlocked.Exchange(ref lastHeartbeat, DateTimeOffset.UtcNow.UtcTicks); Touch(); }
     public DateTimeOffset LastActivity => new(Interlocked.Read(ref lastActivity), TimeSpan.Zero);
     public bool Busy => Jobs.Values.Any(j => j.Status is "queued" or "running");
+    public bool ForegroundBusy => Jobs.Values.Any(j => !j.Background && (j.Status is "queued" or "running"));
+    public bool TryBeginShutdown() {
+        lock (queueGate) {
+            if (ForegroundBusy) return false;
+            closing = true;
+            foreach (var job in Jobs.Values.Where(j => j.Background && (j.Status is "queued" or "running"))) job.RequestCancel();
+            return true;
+        }
+    }
+    public async Task WaitForBackgroundStop() {
+        var timer = Stopwatch.StartNew();
+        while (Busy && timer.Elapsed < TimeSpan.FromSeconds(185)) await Task.Delay(100);
+    }
     public void Touch() => Interlocked.Exchange(ref lastActivity, DateTimeOffset.UtcNow.UtcTicks);
     public void Stop() => shutdown.Cancel();
     public async Task LoadSnapshot(CancellationToken token) {
@@ -384,19 +449,31 @@ sealed class HostState(WorkerBridge bridge, string root) {
         Volatile.Write(ref snapshot, (value["snapshot"] ?? value).DeepClone()); StartupError = null;
     }
     public void QueueWhenIdle(JsonObject request, CancellationToken hostToken) {
-        lock (queueGate) { if (Busy) return; Queue(request, hostToken); }
+        lock (queueGate) {
+            if (closing || ForegroundBusy || (request["action"]?.GetValue<string>() == "Analyze" && Busy)) { request.Clear(); return; }
+            Queue(request, hostToken);
+        }
     }
     public Job Queue(JsonObject request, CancellationToken hostToken, Action<JsonNode?>? completed = null, string? cleanupPath = null) {
         Job job;
         var action = request["action"]!.GetValue<string>();
+        var background = action == "Analyze" && (request["id"] is null || request["id"] is JsonValue idValue && idValue.TryGetValue<string>(out var id) && string.IsNullOrEmpty(id));
         lock (queueGate) {
+            if (closing) { request.Clear(); throw new WorkerException("The program is closing after the current safe checkpoint. Reopen it to continue."); }
             if (action == "Refresh") {
                 var existing = Jobs.Values.FirstOrDefault(j => j.Action == action && (j.Status is "queued" or "running"));
-                if (existing is not null) return existing;
+                if (existing is not null) { request.Clear(); return existing; }
+            }
+            if (background && Jobs.Values.Any(j => j.Background && (j.Status is "queued" or "running"))) {
+                request.Clear();
+                throw new WorkerException("Background reading is already running. Finish or stop its current batch before starting another.");
             }
             if (Jobs.Values.Count(j => j.Status is "queued" or "running") >= 32) throw new WorkerException("The action queue is full. Wait for existing work to finish.");
             foreach (var old in Jobs.Values.Where(j => j.Status is "completed" or "failed" or "cancelled").OrderByDescending(j => j.StartedUtc).Skip(80)) { if (Jobs.TryRemove(old.Id, out var removed)) removed.Cancel.Dispose(); }
-            job = new Job(action); Jobs[job.Id] = job;
+            // Only supported reading options survive in a long-running background request.
+            // In particular, do not retain unrelated transient credential fields.
+            if (background) foreach (var name in request.Select(p => p.Key).Where(n => n is not ("action" or "ids" or "measurements" or "analysisLimit" or "force" or "id")).ToArray()) request.Remove(name);
+            job = new Job(action, background); Jobs[job.Id] = job;
             if (action == "Refresh") LastRefresh = DateTimeOffset.UtcNow;
             if (action == "Analyze") LastAnalysis = DateTimeOffset.UtcNow;
         }
@@ -405,18 +482,28 @@ sealed class HostState(WorkerBridge bridge, string root) {
             using var waiting = CancellationTokenSource.CreateLinkedTokenSource(execution.Token, job.Cancel.Token);
             var entered = false; var timer = Stopwatch.StartNew();
             try {
-                if (action != "Diagnostics") { await mutation.WaitAsync(waiting.Token); entered = true; }
-                waiting.Token.ThrowIfCancellationRequested();
-                job.PrepareProgress(root);
-                job.Status = "running"; job.Message = MessageFor(action);
-                var result = await bridge.Run(request, action is "Refresh" or "Backup" or "Restore" or "Analyze" or "Export" ? 1800 : 120, execution.Token, job);
-                job.ReadProgress();
+                JsonNode? result;
+                if (job.Background) {
+                    job.PrepareProgress(root); job.Status = "running";
+                    result = await RunBackgroundAnalysis(request, job, execution.Token, waiting.Token);
+                } else {
+                    if (action != "Diagnostics") { await mutation.WaitAsync(waiting.Token); entered = true; }
+                    waiting.Token.ThrowIfCancellationRequested();
+                    job.PrepareProgress(root);
+                    job.Status = "running"; job.Message = MessageFor(action);
+                    result = await bridge.Run(request, action is "Refresh" or "Backup" or "Restore" or "Analyze" or "Export" ? 1800 : 120, execution.Token, job);
+                    job.ReadProgress();
+                    if (action != "Diagnostics") {
+                        var previousArchive = Snapshot?["archiveRoot"]?.GetValue<string>();
+                        if (result?["snapshot"] is JsonNode nextSnapshot) Volatile.Write(ref snapshot, nextSnapshot.DeepClone());
+                        else if (action != "InstallPreparedUpdate") await LoadSnapshot(execution.Token);
+                        var nextArchive = Snapshot?["archiveRoot"]?.GetValue<string>();
+                        if (previousArchive is not null && nextArchive is not null && !SafeFiles.SamePath(previousArchive, nextArchive))
+                            foreach (var reading in Jobs.Values.Where(j => j.Background && (j.Status is "queued" or "running"))) reading.RequestCancel();
+                    }
+                }
                 var wasCancelled = result?["cancelled"]?.GetValue<bool>() == true;
                 if (!wasCancelled) completed?.Invoke(result);
-                if (action != "Diagnostics") {
-                    if (result?["snapshot"] is JsonNode nextSnapshot) Volatile.Write(ref snapshot, nextSnapshot.DeepClone());
-                    else if (action != "InstallPreparedUpdate") await LoadSnapshot(execution.Token);
-                }
                 var published = result?.DeepClone();
                 if (published is JsonObject obj) {
                     obj.Remove("snapshot"); obj.Remove("installUpdate"); obj.Remove("stageRoot"); obj.Remove("sourceFolder"); obj.Remove("targetFolder");
@@ -436,7 +523,7 @@ sealed class HostState(WorkerBridge bridge, string root) {
             } catch (Exception ex) {
                 var stoppedBeforeStarting = ex is OperationCanceledException && job.CancelRequested;
                 job.Status = stoppedBeforeStarting ? "cancelled" : "failed";
-                job.Error = stoppedBeforeStarting ? "Cancelled before starting. Saved reports were not changed." : ex is WorkerException ? ex.Message : ex is OperationCanceledException ? "The local session stopped." : "The action could not finish. Export support logs if this repeats.";
+                job.Error = stoppedBeforeStarting ? (job.Background ? "Background reading stopped safely. Completed readings remain saved." : "Cancelled before starting. Saved reports were not changed.") : ex is WorkerException ? ex.Message : ex is OperationCanceledException ? "The local session stopped." : "The action could not finish. Export support logs if this repeats.";
                 job.Message = job.Error; WriteActivity(action, stoppedBeforeStarting ? "Cancelled" : "Failed", timer.ElapsedMilliseconds);
                 if (job.CancelRequested) { LastRefresh = DateTimeOffset.UtcNow; LastAnalysis = DateTimeOffset.UtcNow; }
                 if (entered && action == "Refresh" && !execution.IsCancellationRequested) { try { await LoadSnapshot(execution.Token); } catch { } }
@@ -444,11 +531,73 @@ sealed class HostState(WorkerBridge bridge, string root) {
                 request.Clear(); // Includes transient password fields. Never retain request payloads in job history.
                 job.CleanupProgress(); job.MarkFinished();
                 if (action == "Refresh") LastRefresh = DateTimeOffset.UtcNow;
+                if (action == "Analyze") LastAnalysis = DateTimeOffset.UtcNow;
                 if (entered) mutation.Release();
                 if (cleanupPath is not null) { try { File.Delete(cleanupPath); } catch { } }
             }
         });
         return job;
+    }
+    private async Task<JsonNode?> RunBackgroundAnalysis(JsonObject request, Job job, CancellationToken executionToken, CancellationToken waitingToken) {
+        long analyzed = 0, failed = 0, cached = 0, pending = 0;
+        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var analyzedIds = new JsonArray();
+        var cancelled = false;
+        JsonNode? last = null;
+        while (true) {
+            // Never hold the archive mutation slot while paused or waiting for a foreground action.
+            job.SetBoundary(true, ForegroundBusy);
+            while (true) {
+                waitingToken.ThrowIfCancellationRequested();
+                if (job.PauseRequested || ForegroundBusy) { job.SetBoundary(true, ForegroundBusy); await Task.Delay(100, waitingToken); continue; }
+                await mutation.WaitAsync(waitingToken);
+                // A foreground request may have arrived while the semaphore became available.
+                lock (queueGate) {
+                    if (!job.PauseRequested && !ForegroundBusy) break;
+                }
+                mutation.Release();
+                await Task.Delay(100, waitingToken);
+            }
+            try {
+                waitingToken.ThrowIfCancellationRequested();
+                job.SetBoundary(false);
+                var chunk = (JsonObject)request.DeepClone();
+                chunk["analysisLimit"] = 1;
+                try { last = await bridge.Run(chunk, 90, executionToken, job); }
+                finally { chunk.Clear(); }
+                job.ReadProgress();
+                // Publish only while holding the same archive slot as this chunk's commit.
+                // A later foreground result can never be overwritten by an older chunk snapshot.
+                if (last?["snapshot"] is JsonNode nextSnapshot) Volatile.Write(ref snapshot, nextSnapshot.DeepClone());
+                else if (!executionToken.IsCancellationRequested) await LoadSnapshot(executionToken);
+                cancelled = last?["cancelled"]?.GetValue<bool>() == true || job.CancelRequested;
+                if (last?["result"] is JsonObject result) {
+                    long Count(string name) => result[name] is JsonValue v && v.TryGetValue<long>(out var n) && n is >= 0 and <= 100_000_000 ? n : 0;
+                    var done = Count("Analyzed"); var errors = Count("Failed"); var remaining = Count("Pending");
+                    // Cached includes earlier chunks on subsequent requests; never add it repeatedly.
+                    cached = Math.Max(cached, Math.Max(0, Count("Cached") - analyzed - failed));
+                    analyzed += done; failed += errors; pending = remaining;
+                    if (result["AnalyzedIds"] is JsonArray ids) foreach (var item in ids) {
+                        if (item is JsonValue v && v.TryGetValue<string>(out var id) && SafeFiles.ValidRecordId(id) && seen.Add(id)) analyzedIds.Add(id);
+                    }
+                    job.SetBackgroundProgress(analyzed, failed, pending, cached);
+                    if (!cancelled && pending > 0 && done + errors == 0)
+                        throw new WorkerException("Background reading stopped because no further PDF could be saved. Completed readings remain available; export support logs before retrying.");
+                } else if (!cancelled) throw new WorkerException("The background reader did not return a complete progress result. Completed readings remain saved.");
+            } finally { mutation.Release(); }
+            if (cancelled || pending == 0 || analyzed + failed >= 20) break;
+            // Give foreground jobs and the workstation a scheduling opportunity after each PDF.
+            job.SetBoundary(true, ForegroundBusy);
+            await Task.Delay(200, waitingToken);
+        }
+        var description = $"{analyzed} PDFs analyzed; {cached} cached; {failed} need attention.";
+        if (!cancelled && pending > 0) description += $" {pending} remain for the next reading batch.";
+        return new JsonObject {
+            ["cancelled"] = cancelled, ["message"] = cancelled ? "Stopped safely. Completed readings remain saved." : description,
+            ["result"] = new JsonObject { ["Mode"] = "Analysis", ["Analyzed"] = analyzed, ["Failed"] = failed, ["Cached"] = cached, ["Pending"] = pending, ["AnalyzedIds"] = analyzedIds,
+                ["Summary"] = new JsonObject { ["Description"] = description, ["Cancelled"] = cancelled } },
+            ["warning"] = last?["warning"]?.DeepClone()
+        };
     }
     private void WriteActivity(string action, string outcome, long duration) {
         try {

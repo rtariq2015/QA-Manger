@@ -1,4 +1,4 @@
-﻿[CmdletBinding()]param([Parameter(Mandatory=$true)][string]$FixtureRoot,[string]$ProductRoot='')
+﻿[CmdletBinding()]param([Parameter(Mandatory=$true)][string]$FixtureRoot,[string]$ProductRoot='',[switch]$IncludeHistoricalYear)
 Set-StrictMode -Version 2.0
 $ErrorActionPreference='Stop'
 if(-not $ProductRoot){$ProductRoot=Split-Path -Parent (Split-Path -Parent $PSScriptRoot)}
@@ -37,7 +37,13 @@ $sourceFiles=New-Object 'System.Collections.Generic.List[string]'
 [void]$sourceFiles.Add((New-WebDemoPdf (Join-Path $cfg.Sources[0].Path ('Quality_Constancy_'+$today+'_08-00-00.pdf')) 'Synthetic CT Edge' 'Monthly QA' 95000))
 [void]$sourceFiles.Add((New-WebDemoPdf (Join-Path $cfg.Sources[1].Path ('Quality_Constancy_'+$today+'_08-05-00.pdf')) 'Synthetic CT Flash' 'Monthly QA' 96000))
 [void]$sourceFiles.Add((New-WebDemoPdf (Join-Path $cfg.Sources[0].Path ('Monthly_Constancy_'+$previous+'_08-10-00.pdf')) 'Synthetic CT Edge' 'Monthly QA' 97000))
+if($IncludeHistoricalYear){
+    $historic=(Get-Date).AddYears(-1).ToString('yyyy-MM')+'-15'
+    [void]$sourceFiles.Add((New-WebDemoPdf (Join-Path $cfg.Sources[0].Path ('Monthly_Constancy_'+$historic+'_08-20-00.pdf')) 'Synthetic CT Edge' 'Monthly QA' 98000))
+    $cfg.MonthlyLookbackMonths=14
+}
 [void](Import-Fixture $cfg)
+$cfg.MonthlyLookbackMonths=2
 $legacy=@((Get-QaDashboard $cfg).Records|Where-Object ReportDate -eq $previous)[0]
 [void](Invoke-QaOperation $cfg -Mode Reclassify -Decisions @([pscustomobject]@{RecordId=$legacy.Id;Hash=$legacy.Hash;Category='Monthly_QA';Reviewer='Synthetic evidence reviewer';Reason='Synthetic legacy evidence preservation fixture';ConfirmedComponents=@('MTF')}))
 $cfg.SetupComplete=$true

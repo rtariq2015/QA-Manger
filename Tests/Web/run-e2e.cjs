@@ -16,6 +16,16 @@ fs.mkdirSync(output, { recursive: true });
 let ready, child, browser, page, context;
 let assertions = 0;
 let nativePreviewActuallyRun = false;
+const insightFile=path.join(root,'App/Insights.psm1'),originalInsights=fs.readFileSync(insightFile);
+const analyzeHold=path.join(root,'test-analyze-hold'),analyzeReached=path.join(root,'test-analyze-reached');
+function analysisBarrier(){
+  const source=originalInsights.toString('utf8'),needle='            $read=Invoke-QaIsolatedTask -Action ReadPdf';
+  if(!source.includes(needle))throw Error('Synthetic analysis checkpoint was not found.');
+  const checkpoint="            if($null -ne $Progress -and [IO.File]::Exists((Join-Path $Config.AppRoot 'test-analyze-hold')) -and -not [IO.File]::Exists((Join-Path $Config.AppRoot 'test-analyze-reached'))){[IO.File]::WriteAllText((Join-Path $Config.AppRoot 'test-analyze-reached'),'synthetic checkpoint');while([IO.File]::Exists((Join-Path $Config.AppRoot 'test-analyze-hold')) -and -not [bool]$Progress.Cancel){Start-Sleep -Milliseconds 50}}\n";
+  fs.writeFileSync(insightFile,source.replace(needle,checkpoint+needle));
+}
+function holdAnalysis(){fs.rmSync(analyzeReached,{force:true});fs.writeFileSync(analyzeHold,'synthetic fixture only');}
+function releaseAnalysis(){fs.rmSync(analyzeHold,{force:true});}
 const results = [], errors = [], externalRequests = [], dialogs = [], previewRequests = [];
 const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
 const sha = bytes => crypto.createHash('sha256').update(bytes).digest('hex').toUpperCase();
@@ -88,9 +98,10 @@ async function loadBrowserPage() {
   page.on('dialog', async dialog => { dialogs.push(dialog.type()); await dialog.dismiss(); });
   await page.goto(ready.url + '#session=' + encodeURIComponent(ready.token), { waitUntil: 'domcontentloaded' });
   await page.locator('#refresh-button').waitFor({ state: 'visible' });
-  await until(async () => !(await page.locator('#refresh-button').isDisabled()), 'The browser did not load the saved snapshot.');
+  await until(async () => Number((await page.locator('#report-total').innerText()).replaceAll(',',''))===baseline.RecordCount&&!(await page.locator('#refresh-button').isDisabled()), 'The browser did not render the saved snapshot.');
 }
 async function nav(name) { await page.locator('.main-nav button[data-page="' + name + '"]').click(); }
+async function settings(tab='connections'){await nav('settings');await page.locator('[data-settings-tab="'+tab+'"]').click();}
 async function selectPending(recordId) {
   await nav('reports');
   await page.locator('#clear-filters').click();
@@ -126,6 +137,7 @@ function verifyArchivePreserved() {
 (async () => {
   let chosen, before;
   try {
+    analysisBarrier();
     await startHost();
     await scenario('The local API rejects missing authentication, hostile origins and arbitrary actions', async () => {
       let response = await api('/api/snapshot', {}, false); check([401, 403].includes(response.status), 'Saved data is inaccessible without the session token');
@@ -140,21 +152,42 @@ function verifyArchivePreserved() {
     browser = await chromium.launch(launchOptions);
     context = await browser.newContext({ viewport: { width: 1440, height: 1000 }, acceptDownloads: true });
     await context.route('**/*', route => { const url = new URL(route.request().url()); if (['http:', 'https:'].includes(url.protocol) && !['127.0.0.1', 'localhost', '[::1]'].includes(url.hostname)) { externalRequests.push(url.hostname); route.abort(); } else route.continue(); });
-    await scenario('The three-screen interface loads locally without external assets', async () => {
+    await scenario('The six-tab interface loads locally without external assets', async () => {
       await loadBrowserPage();
-      check(await page.locator('.main-nav button[data-page]').count() === 3, 'Only Today, Reports and Settings appear as primary navigation');
+      check(JSON.stringify(await page.locator('.main-nav button[data-page]').evaluateAll(nodes=>nodes.map(n=>n.dataset.page)))===JSON.stringify(['today','reports','review','exports','trends','settings']), 'Today, Reports, Review, Exports, Trends and Settings have separate tabs');
       await page.screenshot({ path: path.join(output, 'today-web-demo.png'), fullPage: true });
-      await nav('settings'); await page.locator('#connection-scanner').waitFor({ state: 'visible' });
+      await settings(); await page.locator('#connection-scanner').waitFor({ state: 'visible' });
       await page.screenshot({ path: path.join(output, 'settings-web-demo.png'), fullPage: true });
+      await nav('reports');await page.screenshot({path:path.join(output,'reports-web-demo.png'),fullPage:true});
+      await nav('exports');await page.screenshot({path:path.join(output,'exports-web-demo.png'),fullPage:true});
+      await nav('trends');await page.locator('#trend-chart').waitFor({state:'visible'});await page.screenshot({path:path.join(output,'trends-web-demo.png'),fullPage:true});
       await selectPending(chosen.id);
       check(await page.locator('#review-actions input, #review-actions textarea, #review-actions select').count() === 0, 'Pending review has no name, reason or authorization field');
       check(await page.locator('#review-actions button').count() === 2, 'Pending review has exactly Approve and Disapprove as its primary actions');
       await delay(4000);
-      await page.screenshot({ path: path.join(output, 'reports-web-demo.png'), fullPage: true });
+      await page.screenshot({ path: path.join(output, 'review-web-demo.png'), fullPage: true });
+      check(await page.locator('#review-queue-toggle').getAttribute('aria-expanded')==='false','The review queue starts collapsed to give the PDF more room');
+      check(await page.locator('#page-review').isVisible()&&!(await page.locator('#page-reports').isVisible()),'Opening a report enters the separate Review workspace');
       check(externalRequests.length === 0, 'All requested interface assets came from the local host');
     });
+    await scenario('Light and Dark appearance apply consistently across all six tabs and persist in saved settings',async()=>{
+      check((await snapshot()).settings.theme==='Light','The imported baseline starts in Light appearance');
+      for(const theme of ['Dark','Light']){
+        await page.locator('#theme-toggle').click();
+        await until(async()=>(await snapshot()).settings.theme===theme,'The appearance preference was not saved.');
+        await until(()=>page.locator('#theme-toggle').isEnabled(),'The appearance save did not release its toggle.');
+        for(const tab of ['today','reports','review','exports','trends','settings']){
+          await nav(tab);
+          check(await page.locator('html').getAttribute('data-theme')===theme.toLowerCase(),'The '+tab+' tab uses the chosen '+theme+' appearance');
+          check(await page.locator('#page-'+tab).isVisible(),'The '+tab+' tab is available in '+theme+' appearance');
+          await page.screenshot({path:path.join(output,tab+'-'+theme.toLowerCase()+'-web-demo.png'),fullPage:true});
+        }
+        check(await page.locator('#theme-toggle').getAttribute('aria-pressed')===String(theme==='Dark'),'Appearance toggle describes its current state accessibly');
+      }
+      await selectPending(chosen.id);verifyArchivePreserved();
+    });
     await scenario('Normal mouse-release clicks keep settings and search fields focused for real keyboard input', async () => {
-      await nav('settings');
+      await settings();
       const scanner = before.scanners.find(s => s.id === chosen.scanner);
       await page.locator('#connection-scanner').selectOption(scanner.id);
       const typedPath = scanner.path + ' typed-edit';
@@ -178,7 +211,7 @@ function verifyArchivePreserved() {
     });
     if (args['focus-only'] === 'true') return;
     await scenario('Connection drafts survive blur, unrelated job completion and scanner switching', async () => {
-      await nav('settings');
+      await settings();
       const scannerA = before.scanners.find(s => s.id === chosen.scanner);
       const scannerB = before.scanners.find(s => s.id !== scannerA.id);
       await page.locator('#connection-scanner').selectOption(scannerA.id);
@@ -193,15 +226,17 @@ function verifyArchivePreserved() {
       const observeSnapshot = response => { if (new URL(response.url()).pathname === '/api/snapshot' && response.status() === 200) browserSnapshots++; };
       page.on('response', observeSnapshot);
       const previousJobs = new Set((await jobs()).map(job => job.id));
+      await settings('support');
       await page.locator('#diagnostics-button').click();
       await until(async () => (await jobs()).some(job => !previousJobs.has(job.id) && job.action === 'Diagnostics' && job.status === 'completed'), 'The unrelated diagnostics job did not finish.', 180000);
       await until(() => browserSnapshots > 0, 'The browser did not refresh its saved snapshot after diagnostics');
       await until(async () => !(await page.locator('#connect-button').isDisabled()), 'The connection form did not become available after diagnostics');
       page.off('response', observeSnapshot);
+      await settings();
       check((await page.locator('#connection-path').inputValue()) === draftPath, 'Pasted folder draft survives blur and the unrelated job snapshot');
       check((await page.locator('#connection-username').inputValue()) === draftUsername, 'Typed username survives blur and the unrelated job snapshot');
       check((await page.locator('#connection-password').inputValue()) === secret, 'Same-scanner snapshot rendering does not erase an unsaved password');
-      await nav('today'); await nav('settings');
+      await nav('today'); await settings();
       check((await page.locator('#connection-path').inputValue()) === draftPath && (await page.locator('#connection-username').inputValue()) === draftUsername, 'Unsaved nonsecret connection fields survive navigation');
       await page.locator('#connection-scanner').selectOption(scannerB.id);
       check((await page.locator('#connection-password').inputValue()) === '', 'Switching scanners clears the password field');
@@ -234,11 +269,12 @@ function verifyArchivePreserved() {
       if (String(before.previewMode || '').toLowerCase() === 'windows') {
         check(await page.locator('#pdf-image').isVisible(), 'Windows shows the rendered PDF page inside the review pane');
         const source = await page.locator('#pdf-image').getAttribute('src');
-        check(source && source.startsWith('data:image/png;base64,'), 'The native review preview is an actual decoded PNG');
-        const bytes = Buffer.from(source.split(',')[1], 'base64');
+        check(source && source.startsWith('blob:'), 'The native review uses a local revocable image URL');
+        const bytes = Buffer.from(await page.locator('#pdf-image').evaluate(async image=>Array.from(new Uint8Array(await(await fetch(image.src)).arrayBuffer()))));
         check(bytes.subarray(0, 8).toString('hex') === '89504e470d0a1a0a', 'The preview page has a PNG signature');
         check(previewRequests.includes('/api/preview/' + chosen.id), 'The rendered preview was requested for the selected report ID');
-        check(await page.locator('#preview-previous-page').isDisabled() && await page.locator('#preview-next-page').isDisabled(), 'One-page synthetic PDFs do not offer nonexistent pages');
+        check(!(await page.locator('#preview-previous-page').isVisible())&&!(await page.locator('#preview-next-page').isVisible()), 'Continuous PDF review does not require Previous or Next page buttons');
+        check(await page.locator('#pdf-pages .pdf-page').count()===1,'The one-page synthetic document has exactly one page in the scrolling preview');
         nativePreviewActuallyRun = true;
       } else {
         const frameSrc = await page.locator('#pdf-frame').getAttribute('src'); check(frameSrc && frameSrc.includes('/api/pdf/' + chosen.id), 'The browser preview is bound to the selected report ID');
@@ -252,6 +288,8 @@ function verifyArchivePreserved() {
       check(after.records.filter(r => r.pending).length === pendingBefore - 1, 'Only the chosen report leaves pending');
       check(after.records.length === before.records.length, 'Approving preserves the entire report library');
       await page.locator('#undo-button').waitFor({ state: 'visible' });
+      const next=await page.locator('#report-content-panel').getAttribute('data-record-id');
+      check(next!==chosen.id&&after.records.some(row=>row.id===next&&row.pending),'Review automatically advances to another pending PDF outside the filtered Reports list');
       verifyArchivePreserved(); check(dialogs.length === 0, 'No modal confirmation dialog appeared');
     });
     await scenario('Undo restores pending and Disapprove keeps the PDF as Other', async () => {
@@ -278,6 +316,15 @@ function verifyArchivePreserved() {
       check(expected.length > 0, 'The export filter has actual imported Monthly documents');
       await until(async () => (await page.locator('.report-item').count()) === expected.length, 'The filtered report list did not match the saved snapshot');
       check(await page.locator('.report-item').count() === expected.length, 'Scanner/type filtering has the exact expected count');
+      await page.locator('#report-export-shortcut').click();
+      check(await page.locator('#page-exports').isVisible(),'The Reports export shortcut opens the separate Exports tab');
+      check(await page.locator('#export-scanner-filter').inputValue()===chosen.scanner&&await page.locator('#export-type-filter').inputValue()==='monthly','The explicit export shortcut copies current report filters');
+      check(Number((await page.locator('#export-count').innerText()).replaceAll(',',''))===expected.length,'The export package previews every matching report');
+      await page.locator('#export-choose-years').click();
+      check(await page.locator('#year-choices input[type="checkbox"]').count()>=2,'The export fixture includes reports from multiple real indexed years');
+      for(const box of await page.locator('#year-choices input[type="checkbox"]').all())await box.check();
+      await page.locator('#apply-years').click();
+      check(await page.locator('#export-year-filter').inputValue()==='multiple','Exports retain an explicit multiple-year selection');
       await page.locator('#export-button').click();
       await until(async () => (await jobs()).some(j => j.action === 'Export' && j.status === 'completed'), 'The report ZIP did not finish.', 180000);
       const job = (await jobs()).find(j => j.action === 'Export' && j.status === 'completed');
@@ -287,20 +334,31 @@ function verifyArchivePreserved() {
       const verification = JSON.parse(execFileSync(args.python || (process.platform === 'win32' ? 'python' : 'python3'), ['-c', 'import json,zipfile,sys,hashlib;z=zipfile.ZipFile(sys.argv[1]);pdf=[i for i in z.namelist() if i.lower().endswith(".pdf")];print(json.dumps({"pdfs":len(pdf),"hashes":[hashlib.sha256(z.read(i)).hexdigest().upper() for i in pdf],"summary":any(i.endswith(".html") for i in z.namelist())}))', destination], { encoding: 'utf8' }));
       check(verification.pdfs === expected.length && verification.summary, 'The ZIP includes exactly the filtered PDFs and an offline summary');
       check(verification.hashes.every(hash => expected.some(r => baseline.Records.find(b => b.Id === r.id).Hash === hash)), 'Every exported PDF retains its original fingerprint');
+      await nav('reports');await page.locator('#report-search').fill('No synthetic report has this phrase');
+      await until(async()=>await page.locator('.report-item').count()===0,'The independent Reports search did not apply.');
+      await nav('exports');
+      check(Number((await page.locator('#export-count').innerText()).replaceAll(',',''))===expected.length&&await page.locator('#export-search').inputValue()==='','Changing Reports search does not silently change the prepared export package');
     });
     await scenario('Saved organization decisions survive a full host restart', async () => {
       if (!args.host) { check(false, 'Supply --host for the required restart persistence regression'); }
+      await page.locator('#theme-toggle').click();
+      await until(async()=>(await snapshot()).settings.theme==='Dark','Dark appearance did not save before restart.');
+      await until(()=>page.locator('#theme-toggle').isEnabled(),'Appearance toggle did not finish saving before restart.');
       const oldToken = ready.token; await stopHost(); await startHost();
       check(oldToken !== ready.token, 'A restarted host gets a fresh authentication token');
       const oldResponse = await api('/api/snapshot', { headers: { 'X-Qa-Session': oldToken } }); check(oldResponse.status === 401, 'The previous process token cannot access the restarted host');
       const after = await waitSnapshot(); check(after.records.some(r => r.id === chosen.id && !r.pending && /^disapproved$/i.test(r.decision)), 'The saved Disapprove state survives a new process');
-      await loadBrowserPage(); await nav('reports'); await page.locator('#status-filter').selectOption('disapproved');
+      check(after.settings.theme==='Dark','The saved Dark preference survives a full host restart');
+      await loadBrowserPage();check(await page.locator('html').getAttribute('data-theme')==='dark','A fresh session on a new local port loads the saved Dark appearance');
+      await page.locator('#theme-toggle').click();await until(async()=>(await snapshot()).settings.theme==='Light','The test could not restore Light appearance.');
+      await nav('reports'); await page.locator('#status-filter').selectOption('disapproved');
       await page.locator('.report-item[data-record-id="' + chosen.id + '"]').waitFor({ state: 'visible' });
+      await nav('review');
       check(await page.locator('#undo-button').isVisible(), 'Undo remains available from persisted last-decision metadata');
       verifyArchivePreserved();
     });
     await scenario('Connection failures remain visible and job records do not expose entered passwords', async () => {
-      await nav('settings'); await page.locator('#connection-scanner').selectOption(chosen.scanner);
+      await settings(); await page.locator('#connection-scanner').selectOption(chosen.scanner);
       const canary = 'Synthetic test password - not a real credential';
       await page.locator('#connection-password').fill(canary);
       await page.locator('#remember-credentials').uncheck();
@@ -322,6 +380,45 @@ function verifyArchivePreserved() {
       check((await page.locator('#connection-password').inputValue()) === '', 'The entered password is not left displayed in the form');
       verifyArchivePreserved();
     });
+    await scenario('Background PDF reading pauses at a saved boundary and allows review, settings and exports to continue',async()=>{
+      holdAnalysis();await settings('reading');
+      const previous=new Set((await jobs()).map(job=>job.id));await page.locator('#analyze-button').click();
+      await until(()=>fs.existsSync(analyzeReached),'The real PDF analysis did not reach its disposable test checkpoint.');
+      const running=await until(async()=>(await jobs()).find(job=>!previous.has(job.id)&&job.action==='Analyze'&&job.status==='running'),'The background reader was not visible.');
+      check(running.background&&running.pausable,'Whole-library analysis is identified as pausable background work');
+      await page.locator('#background-reading-band').waitFor({state:'visible'});
+      await page.locator('#background-reading-toggle').click();
+      await until(async()=>(await jobs()).some(job=>job.id===running.id&&job.pauseRequested),'Pause did not reach the host.');
+      releaseAnalysis();
+      const paused=await until(async()=>(await jobs()).find(job=>job.id===running.id&&job.paused),'Background reading did not pause after its current PDF.');
+      check(paused.stage==='Paused'&&paused.completed>=1,'Pause retains a factual saved PDF checkpoint');
+      await settings('reading');check(await page.locator('#pdf-reader-mode').isEnabled(),'Reading preferences stay editable while background analysis is paused');
+      await nav('reports');await page.locator('#clear-filters').click();await page.locator('#report-search').fill('Monthly');
+      check(await page.locator('.report-item').count()>0,'Reports stay searchable while the reader is paused');
+      const pending=(await snapshot()).records.find(row=>row.pending);check(!!pending,'A pending report remains for the foreground review test');
+      await selectPending(pending.id);check(await page.locator('#approve-button').isEnabled(),'Approve stays available during background work');
+      let foreground=new Set((await jobs()).map(job=>job.id));await page.locator('#approve-button').click();
+      await until(async()=>(await jobs()).some(job=>!foreground.has(job.id)&&job.action==='Approve'&&job.status==='completed'),'Foreground review did not finish while background analysis was paused.');
+      await nav('exports');await page.locator('#export-clear-filters').click();
+      await until(()=>page.locator('#export-button').isEnabled(),'Exports did not become available while background reading stayed paused.');
+      check(true,'Exports stay available during paused background reading');
+      foreground=new Set((await jobs()).map(job=>job.id));await page.locator('#export-button').click();
+      await until(async()=>(await jobs()).some(job=>!foreground.has(job.id)&&job.action==='Export'&&job.status==='completed'),'Foreground export did not finish while background analysis was paused.');
+      check((await jobs()).find(job=>job.id===running.id)?.paused,'Foreground work does not silently resume the background reader');
+      const completed=paused.completed;
+      holdAnalysis();await page.locator('#background-reading-toggle').click();
+      await until(()=>fs.existsSync(analyzeReached),'Resume did not start the next PDF chunk.');
+      check((await jobs()).find(job=>job.id===running.id)?.id===running.id,'Resume continues the same background job');
+      await page.locator('#background-reading-cancel').click();
+      const cancelled=await until(async()=>(await jobs()).find(job=>job.id===running.id&&['completed','failed','cancelled'].includes(job.status)),'Cancelling the resumed background reader did not finish.');
+      check(cancelled.status==='cancelled'&&cancelled.cancelRequested,'Cancellation finishes as cancelled and starts no further batch');
+      check(cancelled.completed>=completed,'Cancellation retains already saved PDF progress');
+      releaseAnalysis();await until(async()=>!(await page.locator('#background-reading-band').isVisible()),'The completed reader left its background controls visible.');
+      await nav('review');await until(()=>page.locator('#undo-button').isEnabled(),'The saved foreground decision was not available for Undo.');
+      await page.locator('#undo-button').click();await waitSnapshot(value=>value.records.some(row=>row.id===pending.id&&row.pending));
+      check(true,'Undo remains usable after background cancellation and restores the pending filing decision');
+      verifyArchivePreserved();
+    });
     await scenario('The interface remains usable at a smaller workstation size', async () => {
       await page.setViewportSize({ width: 1024, height: 768 }); await nav('reports'); await page.locator('#clear-filters').click(); await page.locator('#status-filter').selectOption('pending');
       const pending = (await waitSnapshot()).records.find(r => r.pending); await page.locator('.report-item[data-record-id="' + pending.id + '"]').click();
@@ -338,7 +435,9 @@ function verifyArchivePreserved() {
     });
   } catch (error) { if (page) try { await page.screenshot({ path: path.join(output, 'failure-web-demo.png'), fullPage: true }); } catch {} if (!results.some(r => r.result === 'FAIL')) results.push({ name: 'Test setup or completion', result: 'FAIL', details: clean(error.stack || error.message) }); process.exitCode = 1; }
   finally {
+    releaseAnalysis();
     if (browser) await browser.close(); await stopHost();
+    fs.writeFileSync(insightFile,originalInsights);
     const summary = { version: '5.3.0', syntheticOnly: true, browser: 'Chromium via Playwright', browserChannel: args['browser-channel'] || 'chromium', nativePdfPreviewActuallyRun: nativePreviewActuallyRun, tests: results.length, assertions, failed: results.filter(r => r.result === 'FAIL').length, externalAssetRequests: externalRequests.length, javascriptErrors: errors, results, scope: 'Actual local host, PowerShell adapter and synthetic archived PDFs. Does not establish hospital network access or workstation endpoint-policy approval.' };
     fs.writeFileSync(path.join(output, 'browser-summary.json'), JSON.stringify(summary, null, 2) + '\n');
     process.stdout.write('Result: ' + (summary.tests - summary.failed) + '/' + summary.tests + ' scenarios; ' + assertions + ' assertions.\n');

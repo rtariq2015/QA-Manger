@@ -16,6 +16,8 @@ function Invoke-QaIsolatedTask {
         $info.Arguments='-NoLogo -NoProfile -File "'+$worker+'" -Action '+$Action+' -InputPath "'+$inputPath+'" -OutputPath "'+$outputPath+'"'
         $info.UseShellExecute=$false;$info.CreateNoWindow=$true
         $process=[Diagnostics.Process]::Start($info);$timer=[Diagnostics.Stopwatch]::StartNew()
+        $backgroundRead=($null -ne $Progress -and $Progress -is [Collections.IDictionary] -and $Progress.Contains('BackgroundRead') -and [bool]$Progress['BackgroundRead'])
+        if($backgroundRead){try{$process.PriorityClass=[Diagnostics.ProcessPriorityClass]::BelowNormal}catch{}}
         while(-not $process.WaitForExit(100)) {
             if(($null -ne $Progress -and $Progress.Cancel) -or $timer.Elapsed.TotalSeconds -gt $TimeoutSeconds) {
                 try{$process.Kill();[void]$process.WaitForExit(3000)}catch{}

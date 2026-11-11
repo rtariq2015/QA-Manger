@@ -90,7 +90,7 @@ function Set-QaAnalysisWorkProgress {
     foreach($key in $values.Keys){if($Progress -is [Collections.IDictionary]){$Progress[$key]=$values[$key]}else{$Progress|Add-Member -NotePropertyName $key -NotePropertyValue $values[$key] -Force}}
 }
 function Invoke-QaAnalysis {
-    [CmdletBinding()]param($Config,$Progress=$null,[int]$Limit=20,[string[]]$RecordIds=@(),[switch]$Force)
+    [CmdletBinding()]param($Config,$Progress=$null,[int]$Limit=20,[string[]]$RecordIds=@(),[switch]$Force,[switch]$UpgradeMeasurements)
     $dashboard=Get-QaDashboard -Config $Config;$done=0;$skipped=0;$failed=0;$cancelled=$false;$requestedReader=Get-QaAnalysisReaderMode $Config
     $root=Join-Path $Config.ArchiveRoot '.ctqa/analysis'
     $records=@($dashboard.Records|Sort-Object ReportDate -Descending)
@@ -112,7 +112,9 @@ function Invoke-QaAnalysis {
     Set-QaAnalysisWorkProgress $Progress 0 0
     foreach($record in $records){
         if([bool](Get-QaInsightValue $Progress Cancel $false)){$cancelled=$true;break}
-        if(-not $Force -and $null -ne (Get-QaSavedAnalysis $Config $record)){$skipped++;continue}
+        $saved=Get-QaSavedAnalysis $Config $record
+        $needsMeasurements=($UpgradeMeasurements -and $null -ne $saved -and [string](Get-QaInsightValue $saved Status '') -ne 'ReadError' -and [int](Get-QaInsightValue (Get-QaInsightValue $saved MeasurementsDocument $null) MeasurementVersion 0) -ne (Get-QaMeasurementParserVersion))
+        if(-not $Force -and $null -ne $saved -and -not $needsMeasurements){$skipped++;continue}
         if($candidates.Count -lt [math]::Max(0,$Limit)){[void]$candidates.Add($record)}
     }
     # Content classification is derived evidence. It never writes a clinical

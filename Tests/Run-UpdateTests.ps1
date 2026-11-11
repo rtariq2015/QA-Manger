@@ -115,7 +115,7 @@ function New-PythonUpdateFixture {
     Copy-Item -LiteralPath $source -Destination $Folder -Recurse
     $names=@(
         'App/Start-Web.ps1','App/WebWorker.ps1','App/WebService.psm1','App/Host/CTQa.Host.exe',
-        'App/Web/index.html','App/Web/app.css','App/Web/app.js','App/MeasurementParser.psm1',
+        'App/Web/index.html','App/Web/app.css','App/Web/app.js','App/Web/trends.js','App/Trends.psm1','App/MeasurementParser.psm1',
         'App/Python/read_pdf.py','App/Python/Sources.json','App/Python/Integrity.json',
         'App/Python/runtime/python.exe','App/Python/runtime/pythonw.exe','App/Python/runtime/python314._pth',
         'App/Python/runtime/python314.zip','App/Python/runtime/python.cat','App/Python/runtime/_socket.pyd',

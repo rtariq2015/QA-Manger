@@ -55,5 +55,6 @@
   ],
   "MonitorMinutes": 15,
   "AutoAnalyze": true,
-  "PdfReaderMode": "Auto"
+  "PdfReaderMode": "Auto",
+  "Theme": "Light"
 }

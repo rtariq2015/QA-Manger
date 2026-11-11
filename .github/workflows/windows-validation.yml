@@ -61,11 +61,16 @@ jobs:
         run: |
           New-Item -ItemType Directory -Path artifacts/windows -Force | Out-Null
           $failed = $false
-          foreach ($name in @('Run-PythonReaderTests','Run-MeasurementTests','Run-ContentTests','Run-AnalysisTests','Run-ContentIntegrationTests','Run-WebServiceTests','Run-ReviewQueueTests','Run-UpdateTests','Run-SupportTests','Run-NetworkTests','Run-Tests','Run-ExportTests','Run-ConnectionTests','Run-BrowseTests','Run-MonthlyTests','Run-PdfTests','Run-PortableTests')) {
+          foreach ($name in @('Run-PythonReaderTests','Run-MeasurementTests','Run-TrendTests','Run-ContentTests','Run-AnalysisTests','Run-ContentIntegrationTests','Run-WebServiceTests','Run-ReviewQueueTests','Run-UpdateTests','Run-SupportTests','Run-NetworkTests','Run-Tests','Run-ExportTests','Run-ConnectionTests','Run-BrowseTests','Run-MonthlyTests','Run-PdfTests','Run-PortableTests')) {
             & powershell.exe -NoProfile -File ".\Tests\$name.ps1" -OutputPath ".\artifacts\windows\$name.json"
             if ($LASTEXITCODE -ne 0) { $failed = $true; break }
           }
           if ($failed) { exit 1 }
+      - name: Background reading scheduler and pause checkpoints
+        shell: powershell
+        run: |
+          python Tests/Web/run-background-e2e.py --host App/Host/CTQa.Host.exe --output artifacts/windows/Background-Scheduler.json
+          if ($LASTEXITCODE -ne 0) { exit 1 }
       - name: Load native WPF and capture synthetic dashboard
         if: always()
         shell: powershell

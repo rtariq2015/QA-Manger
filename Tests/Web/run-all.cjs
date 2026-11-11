@@ -18,7 +18,7 @@ const powershell = args.powershell || process.env.CTQA_TEST_POWERSHELL || (isWin
 const host = args.host || (isWindows ? path.join(product, 'App/Host/CTQa.Host.exe') : '/tmp/ctqa-host-build/CTQa.Host.dll');
 const dotnet = args.dotnet || (!isWindows ? '/tmp/ctqa-dotnet/dotnet' : null);
 fs.mkdirSync(output, { recursive: true });
-const fixtureResult = spawnSync(powershell, ['-NoProfile', '-File', path.join(__dirname, 'New-WebFixture.ps1'), '-FixtureRoot', fixture, '-ProductRoot', product], { cwd: product, encoding: 'utf8', windowsHide: true, timeout: 180000 });
+const fixtureResult = spawnSync(powershell, ['-NoProfile', '-File', path.join(__dirname, 'New-WebFixture.ps1'), '-FixtureRoot', fixture, '-ProductRoot', product, '-IncludeHistoricalYear'], { cwd: product, encoding: 'utf8', windowsHide: true, timeout: 180000 });
 process.stdout.write(fixtureResult.stdout || '');
 if (fixtureResult.status !== 0) {
   process.stderr.write(fixtureResult.stderr || 'Synthetic fixture creation failed.\n');

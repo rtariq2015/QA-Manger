@@ -14,7 +14,7 @@ function Start-QaWebProgressMonitor {
         while($ancestor){if(([IO.File]::Exists($ancestor) -or [IO.Directory]::Exists($ancestor)) -and (([IO.File]::GetAttributes($ancestor) -band [IO.FileAttributes]::ReparsePoint) -ne 0)){throw 'Use direct files for local progress.'};$ancestor=[IO.Path]::GetDirectoryName($ancestor)}
     }
     if([IO.Path]::GetDirectoryName([IO.Path]::GetFullPath($Destination)) -cne [IO.Path]::GetDirectoryName([IO.Path]::GetFullPath($Cancellation))){throw 'The local progress channel is invalid.'}
-    return [hashtable]::Synchronized(@{Stage='Preparing';Completed=0;Total=0;Percent=-1;Copied=0;Unchanged=0;Failed=0;Cancel=[IO.File]::Exists($Cancellation);Done=$false;Message=''})
+    return [hashtable]::Synchronized(@{Stage='Preparing';Completed=0;Total=0;Percent=-1;Copied=0;Unchanged=0;Failed=0;Cancel=[IO.File]::Exists($Cancellation);Done=$false;Message='';BackgroundRead=$false})
 }
 
 try{
@@ -31,6 +31,9 @@ try{
     if($null -ne $request.PSObject.Properties['action'] -and $maps.ContainsKey([string]$request.action)){$operation=$maps[[string]$request.action];Write-QaSupportEvent -AppRoot $AppRoot -Operation $operation -Outcome Started}
     $shared=Start-QaWebProgressMonitor -Root $AppRoot -Destination $ProgressPath -Cancellation $CancelPath
     if($null -ne $shared){
+        $selected=if($null -ne $request.PSObject.Properties['id']){[string]$request.id}else{''}
+        $shared.BackgroundRead=($null -ne $request.PSObject.Properties['action'] -and [string]$request.action -ceq 'Analyze' -and -not $selected)
+        if($shared.BackgroundRead){try{[Diagnostics.Process]::GetCurrentProcess().PriorityClass=[Diagnostics.ProcessPriorityClass]::BelowNormal}catch{}}
         $watchCode=@'
 param($Progress,$Path,$Cancellation)
 $ErrorActionPreference='Stop'

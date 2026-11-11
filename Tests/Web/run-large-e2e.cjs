@@ -81,7 +81,7 @@ function injectBarrier(){
    if(await page.locator('#pdf-image').isVisible())await until(()=>page.locator('#pdf-image').evaluate(image=>image.complete&&image.naturalWidth>0),'The native PDF page did not finish rendering during Refresh.');
    const pdf=await api('/api/pdf/'+recordId);check(pdf.ok&&Buffer.from(await pdf.arrayBuffer()).subarray(0,5).toString()==='%PDF-','A real saved PDF remains available through the authenticated route during Refresh');
    await page.screenshot({path:path.join(output,'large-refresh-progress.png'),fullPage:true});
-   await navigate('settings');check(await page.locator('#diagnostics-button').isEnabled(),'Support logs can be requested while Refresh is still running');
+   await navigate('settings');await page.locator('[data-settings-tab="support"]').click();check(await page.locator('#diagnostics-button').isEnabled(),'Support logs can be requested while Refresh is still running');
    const beforeDiagnostics=new Set((await jobs()).map(job=>job.id));await page.locator('#diagnostics-button').click();
    const diagnostics=await until(async()=>(await jobs()).find(job=>!beforeDiagnostics.has(job.id)&&job.action==='Diagnostics'&&['completed','failed'].includes(job.status)),'Support logs did not complete while Refresh was held.');
    check(diagnostics.status==='completed','Diagnostics completes independently of the held archive update');

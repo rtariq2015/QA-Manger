@@ -191,6 +191,9 @@ function Invoke-QaPythonPdfText {
         $process.StartInfo=$info
         $stage='Start'
         if(-not $process.Start()){throw 'The portable Python reader could not start. Choose Automatic or Standard reading.'}
+        # Background reading only hints the priority of our own child process.
+        # A policy denial leaves the reader functional and all safety checks intact.
+        try{if([Diagnostics.Process]::GetCurrentProcess().PriorityClass -eq [Diagnostics.ProcessPriorityClass]::BelowNormal){$process.PriorityClass=[Diagnostics.ProcessPriorityClass]::BelowNormal}}catch{}
         # The owning PowerShell process holds the only job handle. Forced task
         # cancellation therefore terminates the Python child as well.
         $stage='JobAttach';$job=[CtQaPortablePythonJob]::Attach($process.Handle)
