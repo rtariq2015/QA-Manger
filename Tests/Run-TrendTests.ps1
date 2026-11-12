@@ -249,6 +249,51 @@ try {
         $hu=Read-Trend $fx @{Metric='WaterCTNumber'};Check ($hu.points.Count -eq 1 -and $hu.coverage.pendingReports -eq 0) 'The additive Monthly capability does not queue or invalidate an existing Basic HU cache.'
     }
 
+    Scenario 'Table-position methods and numbered positions remain eight separate source-linked millimetre series' {
+        $fx=Fixture 'TablePositionSeries';$one=New-Record $fx 'TableEarlier';$two=New-Record $fx 'TableLater' '2025-02-02'
+        foreach($record in @($one,$two)){
+            $rows=@();foreach($method in @('Continuous','Stepwise')){for($position=1;$position -le 4;$position++){$row=New-AlignmentMeasurement -Code 'TablePosition' -Context ($method+'Position'+$position) -Value $(if($record.Id -ceq $one.Id){'0.23'}else{'0.43'});$row.Source='PrintedTablePositionResult';$rows+=@($row)}}
+            [void](Save-AlignmentAnalysis $fx $record $rows -Code 'TablePosition' -Revision 4)
+        }
+        $r=Read-Trend $fx @{Metric='TablePosition'}
+        Check ($r.metricDefinition.label -ceq 'Table position' -and $r.unit -ceq 'mm' -and $r.series.Count -eq 8 -and $r.points.Count -eq 2 -and $r.summary.change -eq 0.2) 'The query exposes eight method/position series while summarizing only the selected one.'
+        foreach($method in @('Continuous','Stepwise')){for($position=1;$position -le 4;$position++){
+            $key='CT_Edge|TablePosition|Unspecified|NotSpecified|'+$method+'Position'+$position;$q=Read-Trend $fx @{Metric='TablePosition';SeriesKey=$key};$selected=@($q.series|Where-Object key -ceq $key)[0]
+            Check ($q.selectedSeries -ceq $key -and $q.points.Count -eq 2 -and $selected.label -ceq ($method+' move / Position '+$position) -and $selected.slice -eq 0 -and $selected.system -ceq 'NotSpecified') 'Fixed method and position identity is visible without relabelling it as a scanner slice or acquisition system.'
+        }}
+        Check ($r.clinicalResult -ceq 'Not inferred' -and $r.points[0].page -eq 3 -and $r.points[0].lower -eq -1.75) 'The query retains printed limits and source pages without clinical sign-off.'
+    }
+    Scenario 'Incomplete or untrusted cached table blocks cannot publish partial method series' {
+        foreach($variant in @('Missing','Duplicate','Unit','Source','System','Slice','Context','Page','Limits','Revision','Reference','Document','Body')){
+            $fx=Fixture ('TableReject'+$variant);$record=New-Record $fx ('Table'+$variant);$rows=@()
+            foreach($method in @('Continuous','Stepwise')){for($position=1;$position -le 4;$position++){$row=New-AlignmentMeasurement -Code 'TablePosition' -Context ($method+'Position'+$position);$row.Source='PrintedTablePositionResult';$rows+=@($row)}}
+            switch($variant){'Missing'{$rows=@($rows|Select-Object -First 7)}'Duplicate'{$rows[7].Context='ContinuousPosition1'}'Unit'{$rows[7].Unit='HU'}'Source'{$rows[7].Source='PrintedAlignmentResult'}'System'{$rows[7].SourceSystem='A'}'Slice'{$rows[7].Slice='1'}'Context'{$rows[7].Context='ForwardPosition1'}'Page'{$rows[7].Page=2}'Limits'{$rows[7].LowerLimit='9'}}
+            $revision=if($variant -ceq 'Revision'){3}else{4};$path=Save-AlignmentAnalysis $fx $record $rows -Code 'TablePosition' -Revision $revision;$cache=[IO.File]::ReadAllText($path)|ConvertFrom-Json
+            switch($variant){'Reference'{$cache.DocumentClassification.HasReferenceEvidence=$true}'Document'{$cache.DocumentClassification.Status='NeedsReview'}'Body'{$cache.DocumentClassification.Sections[0].BodyEvidence='true'}}
+            [IO.File]::WriteAllText($path,($cache|ConvertTo-Json -Depth 20),(New-Object Text.UTF8Encoding $true));$q=Read-Trend $fx @{Metric='TablePosition'}
+            Check ($q.points.Count -eq 0 -and $q.series.Count -eq 0) 'One malformed context, limit, page or authority field withholds the entire cached table family.'
+        }
+        $fx=Fixture 'TableSeriesValidation';foreach($key in @('CT_Edge|TablePosition|Body|A|1','CT_Edge|TablePosition|Unspecified|NotSpecified|ContinuousPosition5','CT_Edge|TablePosition|Unspecified|NotSpecified|ForwardPosition1')){$caught=$false;try{Read-Trend $fx @{Metric='TablePosition';SeriesKey=$key}|Out-Null}catch{$caught=$true};Check $caught 'Only the eight exact method/position keys are admitted.'}
+    }
+    Scenario 'Only older complete table evidence waits for a capability-four read while existing measurements remain usable' {
+        $fx=Fixture 'TableCapabilityUpgrade';$record=New-Record $fx 'OldTable';$path=Save-AlignmentAnalysis $fx $record @() -Code 'TablePosition' -Revision 3
+        $pending=Read-Trend $fx @{Metric='TablePosition'};Check ($pending.pendingIds.Count -eq 1 -and $pending.coverage.pendingReports -eq 1) 'Eligible table evidence at revision three requests one bounded capability upgrade.'
+        $cache=[IO.File]::ReadAllText($path)|ConvertFrom-Json;$cache.MeasurementsDocument.MeasurementSupportRevision=4;[IO.File]::WriteAllText($path,($cache|ConvertTo-Json -Depth 20),(New-Object Text.UTF8Encoding $true));$done=Read-Trend $fx @{Metric='TablePosition'}
+        Check ($done.pendingIds.Count -eq 0 -and $done.coverage.unsupportedReports -eq 1) 'An attempted unsupported table at revision four does not remain in a retry loop.'
+        $old=New-Record $fx 'RetainedAlignment' '2025-02-02';[void](Save-AlignmentAnalysis $fx $old @((New-AlignmentMeasurement)) -Revision 3);$q=Read-Trend $fx @{Metric='Lightmarker'}
+        Check ($q.points.Count -eq 1 -and $q.coverage.pendingReports -eq 0) 'The new capability leaves already-supported revision-three alignment data usable.'
+    }
+
+    Scenario 'Selected-metric coverage distinguishes absent tests from unusable evidence without counting pending or references twice' {
+        $fx=Fixture 'MetricPresence';$absent=New-Record $fx 'ValidOtherTest';[void](Save-AlignmentAnalysis $fx $absent @((New-AlignmentMeasurement)) -Code 'Lightmarker')
+        $unavailable=New-Record $fx 'AttemptedTable';[void](Save-AlignmentAnalysis $fx $unavailable @() -Code 'TablePosition' -Revision 4)
+        $waiting=New-Record $fx 'UnreadTable';$reference=New-Record $fx 'HistoricalTable';[void](Save-Analysis $fx $reference @() -ProfileId 'siemens-iec-reference-v1' -IsReference $true)
+        $q=Read-Trend $fx @{Metric='TablePosition'}
+        Check ($q.coverage.unsupportedReports -eq 2 -and $q.coverage.metricNotPresentReports -eq 1 -and $q.coverage.metricUnavailableReports -eq 1) 'Only complete recognized current evidence lacking the selected test is classified as absent; attempted unusable table evidence is separate.'
+        Check ($q.coverage.pendingReports -eq 1 -and $q.coverage.referenceReports -eq 1 -and $q.coverage.readReports -eq 3) 'Pending and reference records retain their existing separate counters without entering the two unsupported subcategories.'
+        Check ($q.coverage.metricNotPresentReports+$q.coverage.metricUnavailableReports -eq $q.coverage.unsupportedReports) 'The additive counters partition the compatible aggregate rather than silently double-counting reports.'
+    }
+
     Scenario 'The production query reads managed archive state without rebuilding dashboard attention' {
         Import-Module (Join-Path $ProductRoot 'App/Archive.psm1') -DisableNameChecking -WarningAction SilentlyContinue
         $root=Join-Path $TestRoot 'ManagedArchive';[void][IO.Directory]::CreateDirectory($root);$config=Get-QaDefaultConfig -AppRoot $root;$config.ArchiveRoot=Join-Path $root 'Data';$config.MinimumFileAgeSeconds=0

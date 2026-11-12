@@ -1,7 +1,7 @@
 ﻿# Offline HTML application adapter. Organization decisions are not clinical review.
 Set-StrictMode -Version 2.0
 $ErrorActionPreference='Stop'
-foreach($name in @('Archive','Workspace','Review','Network','Credentials','Insights','Reports','Maintenance','Support','Updates','PdfPreview','ContentClassifier','Trends')){Import-Module (Join-Path $PSScriptRoot ($name+'.psm1')) -DisableNameChecking -WarningAction SilentlyContinue}
+foreach($name in @('Archive','Workspace','Review','Network','Credentials','Insights','Reports','Maintenance','Support','Updates','PdfPreview','ContentClassifier','Monthly','Trends')){Import-Module (Join-Path $PSScriptRoot ($name+'.psm1')) -DisableNameChecking -WarningAction SilentlyContinue}
 function Get-QaWebValue($Object,[string]$Name,$Default=$null){
     if($null -eq $Object){return $Default};if($Object -is [Collections.IDictionary]){if($Object.Contains($Name)){return $Object[$Name]}}elseif($null -ne $Object.PSObject.Properties[$Name]){return $Object.$Name};return $Default
 }
@@ -175,10 +175,12 @@ function Get-QaWebAlignmentContext($Analysis,$Measurement,$Document,$Row,$Record
     } $Analysis $Measurement $Document $Row $Record $Metric
 }
 
-function Get-QaWebContentContext($Config,$Record){
+function Get-QaWebContentContext($Config,$Record,$TrendCacheMetadata=$null){
     $date=[string]$Record.ReportDate;$time=[string]$Record.ReportTime
     $view=[pscustomobject]@{status='NotRead';profileId='';profileName='';date='';time='';dateStatus='Missing';reason='Read this PDF to look for a supported report format.';mappedCategory='';suggestedCategory='';components=@();readPages=0;pages=0;completeRead=$false;reader=[pscustomobject]@{name='';version='';elapsedMs=0;fallback=$false};measurements=@();measurementStatus='NotRead';ruleMode='Auto';isReference=$false;hasReferenceEvidence=$false;compatibilityRefreshPending=$false}
-    $context=[pscustomobject]@{view=$view;profileUsable=$false;dateConflict=$false;typeConflict=$false;dateSafe=$false;effectiveDate=$date;effectiveTime=$time;mappedCategory='';explicitCategory='';suggestedCategory='';stamp='';ruleMode='Auto';isReference=$false;hasReferenceEvidence=$false;compatibilityRefreshPending=$false;cacheStatus='Missing'}
+    $context=[pscustomobject]@{view=$view;profileUsable=$false;dateConflict=$false;typeConflict=$false;dateSafe=$false;effectiveDate=$date;effectiveTime=$time;mappedCategory='';explicitCategory='';suggestedCategory='';stamp='';ruleMode='Auto';isReference=$false;hasReferenceEvidence=$false;compatibilityRefreshPending=$false;cacheStatus='Missing';document=$null;trendStamp=''}
+    $analysis=$null
+    try{
     $analysis=Get-QaSavedAnalysis -Config $Config -Record $Record
     if($null -eq $analysis){
         # A stale version/provenance row is waiting for a current read. A corrupt
@@ -194,7 +196,7 @@ function Get-QaWebContentContext($Config,$Record){
         return $context
     }
     $context.cacheStatus='Valid'
-    $doc=Get-QaWebValue $analysis DocumentClassification
+    $doc=Get-QaWebValue $analysis DocumentClassification;$context.document=$doc
     if(-not [string](Get-QaWebValue $doc ProfileId '') -and [string](Get-QaWebValue $doc ReasonCode '') -cin @('UnknownTemplate','UnrecognizedSections')){
         $context.compatibilityRefreshPending=[bool](&(Get-Module Insights){param($saved) (Get-QaAnalysisEligibility -Saved $saved -RefreshUnsupported) -ceq 'UnsupportedUpgrade'} $analysis)
         $view.compatibilityRefreshPending=$context.compatibilityRefreshPending
@@ -210,7 +212,7 @@ function Get-QaWebContentContext($Config,$Record){
         $view.measurementStatus=if([string](Get-QaWebValue $measured Status '') -ceq 'Extracted'){'Read'}else{'NeedsReview'}
         $measurementRows=New-Object 'Collections.Generic.List[object]'
         foreach($item in @(Get-QaWebValue $measured Measurements @()|Select-Object -First 100)){
-            $code=[string](Get-QaWebValue $item Code '');if($code -cnotin @('WaterCTNumber','ImageNoise','SliceThickness','Lightmarker','ExternalLightmarker','TopogramPosition','SagittalCoronalLightmarker')){continue}
+            $code=[string](Get-QaWebValue $item Code '');if($code -cnotin @('WaterCTNumber','ImageNoise','SliceThickness','Lightmarker','ExternalLightmarker','TopogramPosition','SagittalCoronalLightmarker','TablePosition')){continue}
             $value=[string](Get-QaWebValue $item Value '');$unit=[string](Get-QaWebValue $item Unit '');$page=[int](Get-QaWebValue $item Page 0)
             $numeric='^[+-]?(?:[0-9]{1,9}(?:\.[0-9]{1,9})?|\.[0-9]{1,9})$'
             if($value -notmatch $numeric -or $unit -cne $(if($code -cin @('WaterCTNumber','ImageNoise')){'HU'}else{'mm'}) -or $page -lt 1 -or $page -gt 1000){continue}
@@ -220,8 +222,8 @@ function Get-QaWebContentContext($Config,$Record){
             $mode=[string](Get-QaWebValue $item Mode '');if($mode -cin @('Head','Body')){[void]$parts.Add($mode)}
             $system=[string](Get-QaWebValue $item SourceSystem '');if($system -cin @('A','B')){[void]$parts.Add(('System '+$system))}
             $slice=[string](Get-QaWebValue $item Slice '');if($slice -cmatch '^[1-9][0-9]{0,2}$'){[void]$parts.Add(('Slice '+$slice))}
-            if($code -cin @('Lightmarker','ExternalLightmarker','TopogramPosition','SagittalCoronalLightmarker')){$alignment=Get-QaWebAlignmentContext $analysis $measured $doc $item $Record $code;if($null -eq $alignment){continue};$parts.Clear();[void]$parts.Add([string]$alignment.context)}
-            $metricLabel=switch($code){'WaterCTNumber'{'Water CT value'}'ImageNoise'{'Image noise'}'SliceThickness'{'Slice thickness'}'Lightmarker'{'Light marker alignment'}'ExternalLightmarker'{'External light marker'}'TopogramPosition'{'Topogram position'}'SagittalCoronalLightmarker'{'Sagittal / coronal alignment'}}
+            if($code -cin @('Lightmarker','ExternalLightmarker','TopogramPosition','SagittalCoronalLightmarker','TablePosition')){$alignment=Get-QaWebAlignmentContext $analysis $measured $doc $item $Record $code;if($null -eq $alignment){continue};$parts.Clear();[void]$parts.Add([string]$alignment.context)}
+            $metricLabel=switch($code){'WaterCTNumber'{'Water CT value'}'ImageNoise'{'Image noise'}'SliceThickness'{'Slice thickness'}'Lightmarker'{'Light marker alignment'}'ExternalLightmarker'{'External light marker'}'TopogramPosition'{'Topogram position'}'SagittalCoronalLightmarker'{'Sagittal / coronal alignment'}'TablePosition'{'Table position'}}
             [void]$measurementRows.Add([pscustomobject]@{label=$metricLabel;value=$value;unit=$unit;page=$page;lower=$lower;upper=$upper;context=($parts -join ' / ')})
         }
         $view.measurements=@($measurementRows.ToArray())
@@ -268,6 +270,7 @@ function Get-QaWebContentContext($Config,$Record){
     if($context.profileUsable -and $context.ruleMode -ceq 'Ask' -and -not $context.explicitCategory -and -not $context.dateConflict){$view.reason+=' This scanner format is set to Ask. Approve this file or choose Automatic in Report formats.'}
     $context.stamp=Get-QaWebHash (($profile,[string]$view.status,[string]$view.dateStatus,[string]$context.effectiveDate,[string]$context.effectiveTime,[string]$context.mappedCategory,[string]$context.suggestedCategory,[string]$context.dateConflict,[string]$context.typeConflict,[string]$context.dateSafe,[string]$view.completeRead,[string]$context.ruleMode,[string]$context.isReference,[string]$context.hasReferenceEvidence,[string]$context.compatibilityRefreshPending) -join '|')
     return $context
+    }finally{if($null -ne $TrendCacheMetadata){$context.trendStamp=Get-QaWebTrendStamp $Config $Record $context $analysis $TrendCacheMetadata}}
 }
 function Get-QaWebEffectiveRecord($Record,$Context){
     if($null -eq $Context -or ([string]$Record.ReportDate -ceq [string]$Context.effectiveDate -and [string]$Record.ReportTime -ceq [string]$Context.effectiveTime)){return $Record}
@@ -348,19 +351,20 @@ function Get-QaWebConnectionRows($Config){
 }
 function Get-QaWebSnapshot {
     [CmdletBinding()]param($Config,$Dashboard=$null,$Organization=$null)
-    if($null -eq $Dashboard){$Dashboard=Get-QaDashboard $Config};if($null -eq $Organization){$Organization=Get-QaWebOrganization $Config};$entryIndex=Get-QaWebEntryIndex $Organization;$records=New-Object 'Collections.Generic.List[object]';$connections=@(Get-QaWebConnectionRows $Config);$sources=@{};$sourceNumbers=@{};$ordinal=0
+    if($null -eq $Dashboard){$Dashboard=Get-QaDashboard $Config};if($null -eq $Organization){$Organization=Get-QaWebOrganization $Config};$entryIndex=Get-QaWebEntryIndex $Organization;$records=New-Object 'Collections.Generic.List[object]';$connections=@(Get-QaWebConnectionRows $Config);$sources=@{};$sourceNumbers=@{};$ordinal=0;$trendCacheMetadata=@{};$trendTokens=@{}
     foreach($source in $Config.Sources){$sources[[string]$source.Scanner]=$source;$ordinal++;$sourceNumbers[[string]$source.Scanner]=$ordinal}
     foreach($record in @($dashboard.Records|Sort-Object ReportDate,ReportTime -Descending)){
-        $entry=Get-QaWebIndexedEntry $entryIndex $record;$content=Get-QaWebContentContext $Config $record;$classification=Get-QaWebClassification $record $entry $content;$category=$classification.category;$pending=$classification.pending
+        $entry=Get-QaWebIndexedEntry $entryIndex $record;$content=Get-QaWebContentContext $Config $record $trendCacheMetadata;$trendTokens[[string]$record.Id]=$content.trendStamp;$classification=Get-QaWebClassification $record $entry $content;$category=$classification.category;$pending=$classification.pending
         $date=[string]$content.effectiveDate;$name=[string]$sources[[string]$record.Scanner].Name;$group=Get-QaWebReviewGroup $classification $content ([int]$sourceNumbers[[string]$record.Scanner])
         [void]$records.Add([pscustomobject]@{id=[string]$record.Id;scanner=[string]$record.Scanner;scannerName=$name;date=$date;time=[string]$content.effectiveTime;title=($name+' - '+$date+' - '+$category+' QA');filename=[string]$record.OriginalFileName;category=$category;pending=[bool]$pending;decision=$classification.decision;organizationSource=$classification.source;organizationReason=$classification.reason;filingState=$classification.filingState;filingBasis=$classification.filingBasis;inferred=[bool]$classification.inferred;filingReason=$classification.filingReason;isReference=[bool]$content.isReference;hasReferenceEvidence=[bool]$content.hasReferenceEvidence;stamp=(Get-QaWebStamp $record $entry $content);content=$content.view;reviewId=[string](Get-QaWebValue $entry revision '');printedResult='Not inferred from file classification';clinicalComponents=@(Get-QaWebValue $record ConfirmedComponents @());classificationOnly=$true;groupingKey=$group.key;groupingReason=$group.reason;approvalCategory=(Get-QaWebApprovalCategory $classification $content);approvalNeedsCategory=($classification.filingState -ceq 'NeedsReview' -and -not (Get-QaWebApprovalCategory $classification $content))})
     }
     $scanners=New-Object 'Collections.Generic.List[object]'
     foreach($source in $Config.Sources){
+        $monthlySetup=Get-QaMonthlySetup $source
         $row=@($dashboard.Scanners|Where-Object Scanner -eq $source.Scanner|Select-Object -First 1);$connection=@($connections|Where-Object Scanner -eq $source.Scanner|Select-Object -Last 1)
         $status=if(Test-QaPlaceholderConnection $source){'NotConfigured'}elseif($connection.Count){[string]$connection[0].Status}elseif($row.Count){[string]$row[0].Status}else{'Unknown'}
         $message=if($status -eq 'NotConfigured'){'Apply your scanner connection profile or enter the real reports folder.'}elseif($connection.Count){[string]$connection[0].Message}elseif($row.Count){[string]$row[0].Message}else{'Use Test connection to check this scanner.'}
-        [void]$scanners.Add([pscustomobject]@{id=[string]$source.Scanner;name=[string]$source.Name;path=[string]$source.Path;username=[string]$source.Username;drive=[string]$source.DriveLetter;status=$status;message=$message;code=$(if($connection.Count){[int](Get-QaWebValue $connection[0] NativeCode 0)}else{0});savedReports=@($records|Where-Object scanner -eq $source.Scanner).Count;dailySchedule=[string]$source.DailySchedule;activeFrom=[string]$source.ActiveFrom;expectedMonthly=[bool]$source.ExpectedMonthly;monthlyDueDay=[int](Get-QaWebValue $source MonthlyDueDay 0);contentProfiles=@(Get-QaWebValue $source ContentProfiles @());checklist=@(Get-QaWebValue $source MonthlyChecklist @());excludedDates=@(Get-QaWebValue $source ExcludedDates @())})
+        [void]$scanners.Add([pscustomobject]@{id=[string]$source.Scanner;name=[string]$source.Name;path=[string]$source.Path;username=[string]$source.Username;drive=[string]$source.DriveLetter;status=$status;message=$message;code=$(if($connection.Count){[int](Get-QaWebValue $connection[0] NativeCode 0)}else{0});savedReports=@($records|Where-Object scanner -eq $source.Scanner).Count;dailySchedule=[string]$source.DailySchedule;activeFrom=[string]$source.ActiveFrom;expectedMonthly=[bool]$source.ExpectedMonthly;monthlyDueDay=[int](Get-QaWebValue $source MonthlyDueDay 0);contentProfiles=@(Get-QaWebValue $source ContentProfiles @());checklist=@(Get-QaWebValue $source MonthlyChecklist @());checklistEffectiveMonth=$monthlySetup.checklistEffectiveMonth;monthlyChecklistHistory=$monthlySetup.monthlyChecklistHistory;nextChecklistEffectiveMonth=$monthlySetup.nextChecklistEffectiveMonth;excludedDates=@(Get-QaWebValue $source ExcludedDates @())})
     }
     # Reference/baseline PDFs remain available but cannot supply current Daily
     # receipt or reviewed Monthly evidence, even after an old file decision.
@@ -376,7 +380,7 @@ function Get-QaWebSnapshot {
     foreach($history in @($organization.History|Select-Object -Last 1)){
         if($history.action -eq 'Undo' -or [string](Get-QaWebValue $history batchId '')){continue};$matching=@($records|Where-Object id -ceq $history.recordId);if($matching.Count -eq 1 -and $matching[0].reviewId -ceq $history.reviewId){$last=[pscustomobject]@{recordId=$history.recordId;reviewId=$history.reviewId;stamp=$matching[0].stamp}}
     }
-    return [pscustomobject]@{version='5.5.0';previewMode=$(if([Environment]::OSVersion.Platform -eq [PlatformID]::Win32NT){'windows'}else{'browser'});workspace=[string]$Config.AppRoot;archiveRoot=[string]$Config.ArchiveRoot;libraryRoot=(Join-Path $Config.ArchiveRoot 'Report Library');setupComplete=[bool]$dashboard.SetupComplete;records=@($records.ToArray());scanners=@($scanners.ToArray());today=[pscustomobject]@{headline=$headline;received=$received;expected=$expected;date=$day};months=@(Get-QaMonthOverview $Config $receiptDashboard|ForEach-Object{[pscustomobject]@{scanner=$_.Scanner;name=$_.Name;month=$_.Month;progress=$_.Progress;due=$_.Due;timing=$_.Timing;detail=$_.Detail;status=$_.Status}});analysis=$( $a=Get-QaAnalysisProgress $Config @($dashboard.Records);[pscustomobject]@{total=$a.Total;cached=$a.Cached;pending=$a.Pending;errors=$a.Errors;measurementUpgradePending=$a.MeasurementUpgradePending;unsupportedUpgradePending=$a.UnsupportedUpgradePending;backlogPending=$a.BacklogPending});settings=[pscustomobject]@{monitorMinutes=[int](Get-QaWebValue $Config MonitorMinutes 15);autoAnalyze=[bool](Get-QaWebValue $Config AutoAnalyze $true);autoUpdateOnOpen=[bool](Get-QaWebValue $Config AutoUpdateOnOpen $true);pdfReaderMode=(Get-QaAnalysisReaderMode $Config);theme=$(if([string](Get-QaWebValue $Config Theme 'Light') -ceq 'Dark'){'Dark'}else{'Light'})};filingSummary=[pscustomobject]@{waitingRead=@($records|Where-Object filingState -ceq 'WaitingRead').Count;needsReview=@($records|Where-Object filingState -ceq 'NeedsReview').Count;filed=@($records|Where-Object filingState -ceq 'Filed').Count;inferred=@($records|Where-Object inferred).Count};pendingSummary=[pscustomobject]@{pending=@($records|Where-Object pending).Count;automatic=@($records|Where-Object decision -eq 'Automatic').Count;approved=@($records|Where-Object decision -eq 'Approved').Count;disapproved=@($records|Where-Object decision -eq 'Disapproved').Count};lastDecision=$last;undoBatch=(Get-QaWebUndoBatch $Config $Dashboard $Organization @($records.ToArray()));batchReviewLimit=50;attentionCount=@($dashboard.Attention).Count;onlineEnabled=$false}
+    return [pscustomobject]@{version='5.6.0';previewMode=$(if([Environment]::OSVersion.Platform -eq [PlatformID]::Win32NT){'windows'}else{'browser'});workspace=[string]$Config.AppRoot;archiveRoot=[string]$Config.ArchiveRoot;libraryRoot=(Join-Path $Config.ArchiveRoot 'Report Library');setupComplete=[bool]$dashboard.SetupComplete;records=@($records.ToArray());scanners=@($scanners.ToArray());today=[pscustomobject]@{headline=$headline;received=$received;expected=$expected;date=$day};months=@(Get-QaMonthOverview $Config $receiptDashboard|ForEach-Object{[pscustomobject]@{scanner=$_.Scanner;name=$_.Name;month=$_.Month;progress=$_.Progress;due=$_.Due;timing=$_.Timing;detail=$_.Detail;status=$_.Status}});analysis=$( $a=Get-QaAnalysisProgress $Config @($dashboard.Records);[pscustomobject]@{total=$a.Total;cached=$a.Cached;pending=$a.Pending;errors=$a.Errors;measurementUpgradePending=$a.MeasurementUpgradePending;unsupportedUpgradePending=$a.UnsupportedUpgradePending;backlogPending=$a.BacklogPending});trendsRevision=(Get-QaWebTrendsRevision $Config @($dashboard.Records) $trendTokens);settings=[pscustomobject]@{monitorMinutes=[int](Get-QaWebValue $Config MonitorMinutes 15);autoAnalyze=[bool](Get-QaWebValue $Config AutoAnalyze $true);autoUpdateOnOpen=[bool](Get-QaWebValue $Config AutoUpdateOnOpen $true);pdfReaderMode=(Get-QaAnalysisReaderMode $Config);theme=$(if([string](Get-QaWebValue $Config Theme 'Light') -ceq 'Dark'){'Dark'}else{'Light'})};filingSummary=[pscustomobject]@{waitingRead=@($records|Where-Object filingState -ceq 'WaitingRead').Count;needsReview=@($records|Where-Object filingState -ceq 'NeedsReview').Count;filed=@($records|Where-Object filingState -ceq 'Filed').Count;inferred=@($records|Where-Object inferred).Count};pendingSummary=[pscustomobject]@{pending=@($records|Where-Object pending).Count;automatic=@($records|Where-Object decision -eq 'Automatic').Count;approved=@($records|Where-Object decision -eq 'Approved').Count;disapproved=@($records|Where-Object decision -eq 'Disapproved').Count};lastDecision=$last;undoBatch=(Get-QaWebUndoBatch $Config $Dashboard $Organization @($records.ToArray()));batchReviewLimit=50;attentionCount=@($dashboard.Attention).Count;onlineEnabled=$false}
 }
 function ConvertTo-QaWebName([string]$Name){$name=($Name -replace '[<>:"/\\|?*\x00-\x1f]','-').Trim().TrimEnd('.',' ');if(-not $name){$name='Report'};if($name -match '^(?i:CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])(?:\.|$)'){$name='Report-'+$name};if($name.Length -gt 42){$name=$name.Substring(0,42)};return $name}
 function Test-QaWebRelative([string]$Path){if(-not $Path -or $Path -match '[\\:\x00-\x1f]' -or $Path.StartsWith('/')){return $false};foreach($part in $Path.Split('/')){if($part -in @('','.','..')){return $false}};return $true}
@@ -587,6 +591,55 @@ function Get-QaWebSupportContext {
     }
     return [pscustomobject]@{Reports=@($rows.ToArray());Work=@($Work);Settings=[pscustomobject]@{readerMode=(Get-QaAnalysisReaderMode $Config);autoAnalyze=[bool](Get-QaWebValue $Config AutoAnalyze $true);monitorMinutes=[int](Get-QaWebValue $Config MonitorMinutes 0);readingBatchLimit=20;supportRevision=(Get-QaContentSupportRevision)}}
 }
+function Get-QaWebTrendStamp($Config,$Record,$Context,$Analysis,$Metadata){
+    $hash=[string](Get-QaWebValue $Record Hash '');$cache='Missing'
+    if($hash -cmatch '^[A-Fa-f0-9]{64}$'){
+        if($Metadata.ContainsKey($hash)){$cache=[string]$Metadata[$hash]}else{
+            $path=Join-Path $Config.ArchiveRoot ('.ctqa/analysis/'+$hash+'.json')
+            try{Assert-QaWebDirect $path;$info=New-Object IO.FileInfo($path);$cache=([string]$info.Exists)+'|'+$(if($info.Exists){[string]$info.Length}else{'0'})+'|'+[string]$info.LastWriteTimeUtc.Ticks}catch{$cache='Unavailable'}
+            $Metadata[$hash]=$cache
+        }
+    }
+    return Get-QaWebHash (([string]$Context.cacheStatus,[string](Get-QaWebValue $Analysis Status ''),[string]$Context.stamp,$cache) -join '|')
+}
+function Get-QaWebTrendsRevision($Config,$Records,$Tokens){
+    $parts=New-Object 'Collections.Generic.List[string]';[void]$parts.Add(('ReaderMode|'+(Get-QaAnalysisReaderMode $Config)))
+    foreach($source in @($Config.Sources|Sort-Object Scanner)){[void]$parts.Add(('Scanner|'+[string]$source.Scanner+'|'+[string]$source.Name))}
+    foreach($record in @($Records|Sort-Object Id)){
+        $archived=Get-QaWebValue $record FirstArchived '';$parsed=[datetime]::MinValue;$ticks=[long]0
+        if($archived -is [datetime]){$ticks=$archived.ToUniversalTime().Ticks}elseif([datetime]::TryParse([string]$archived,[Globalization.CultureInfo]::InvariantCulture,[Globalization.DateTimeStyles]::RoundtripKind,[ref]$parsed)){$ticks=$parsed.ToUniversalTime().Ticks}
+        [void]$parts.Add((([string]$record.Id,[string]$record.Hash,([string](Get-QaWebValue $record SourcePath '')).ToUpperInvariant(),[string]$ticks,[string]$record.ReportDate,[string]$record.ReportTime,[string]$Tokens[[string]$record.Id]) -join '|'))
+    }
+    return Get-QaWebHash ($parts -join "`n")
+}
+function Assert-QaWebMonthlySettings($Source,$Request){
+    $values=@{}
+    if(Test-QaWebHasProperty $Request expectedMonthly){$value=$Request.expectedMonthly;if($value -isnot [bool]){throw 'Monthly scheduling must be on or off.'};$values.ExpectedMonthly=$value}
+    if(Test-QaWebHasProperty $Request monthlyDueDay){$value=$Request.monthlyDueDay;if(($value -isnot [int] -and $value -isnot [long]) -or $value -lt 0 -or $value -gt 31){throw 'Monthly due day must be an integer from 0 through 31.'};$values.MonthlyDueDay=[int]$value}
+    $changed=$false
+    if(Test-QaWebHasProperty $Request checklist){$value=$Request.checklist;if($value -isnot [array] -or $value.Count -gt 32 -or @($value|Where-Object{$_ -isnot [string]}).Count){throw 'The department checklist must be an array of at most 32 text labels.'};$values.MonthlyChecklist=[object[]]$value;$old=@(Get-QaWebValue $Source MonthlyChecklist @());$changed=(($old -join '|') -cne ($value -join '|'))}
+    $effective='';if(Test-QaWebHasProperty $Request checklistEffectiveMonth){if($Request.checklistEffectiveMonth -isnot [string]){throw 'Checklist effective month must use yyyy-MM.'};$effective=[string]$Request.checklistEffectiveMonth;if($effective){[void](ConvertTo-QaMonthlyDate $effective);$values.ChecklistEffectiveMonth=$effective}}
+    if($changed -and -not $effective){$setup=Get-QaMonthlySetup $Source;$effective=[string]$setup.nextChecklistEffectiveMonth;if(-not $effective){throw 'No later checklist effective month is available.'};$values.ChecklistEffectiveMonth=$effective}
+    return $values
+}
+function Get-QaWebMonthlyWorkspace {
+    [CmdletBinding()]param($Config,[string]$Month)
+    [void](ConvertTo-QaMonthlyDate $Month)
+    $records=@(Select-QaMonthlyCurrentRecords @(Get-QaWebAnalysisRecords $Config));$organization=Get-QaWebOrganization $Config;$entries=Get-QaWebEntryIndex $organization;$bindings=New-Object 'Collections.Generic.List[object]'
+    $root=[IO.Path]::GetFullPath((Join-Path $Config.ArchiveRoot 'Reports')).TrimEnd('\','/')+[IO.Path]::DirectorySeparatorChar
+    foreach($record in $records){
+        $raw=[string]$record.ReportDate;if($raw -cmatch '^\d{4}-\d{2}-\d{2}$' -and -not $raw.StartsWith($Month+'-',[StringComparison]::Ordinal)){continue}
+        $context=Get-QaWebContentContext $Config $record
+        if(-not ([string]$context.effectiveDate).StartsWith($Month+'-',[StringComparison]::Ordinal)){continue}
+        $entry=Get-QaWebIndexedEntry $entries $record;$filing=Get-QaWebClassification $record $entry $context;$available=$false
+        if([string]$filing.category -ceq 'Monthly'){
+            try{$path=[IO.Path]::GetFullPath([string]$record.DestinationPath);if($path.StartsWith($root,[StringComparison]::OrdinalIgnoreCase) -and [IO.Path]::GetExtension($path) -ieq '.pdf'){Assert-QaWebDirect $path;$info=New-Object IO.FileInfo($path);$available=($info.Exists -and $info.Length -eq [long]$record.Length)}}catch{$available=$false}
+        }
+        [void]$bindings.Add([pscustomobject]@{Record=$record;Context=$context;Filing=$filing;Available=$available})
+    }
+    return New-QaMonthlyWorkspace -Config $Config -Month $Month -Bindings @($bindings.ToArray()) -Records $records
+}
+
 function Get-QaWebAnalysisRecords {
     param($Config)
     $path=[IO.Path]::GetFullPath((Join-Path $PSScriptRoot 'Archive.psm1'))
@@ -626,8 +679,12 @@ function Get-QaWebAnalysisPlan {
 }
 function Invoke-QaWebRequest {
     [CmdletBinding()]param([string]$AppRoot,$Request,$Progress=$null)
-    $AppRoot=[IO.Path]::GetFullPath($AppRoot);Assert-QaWebDirect $AppRoot;[void](Initialize-QaWorkspace $AppRoot);$config=Read-QaConfig $AppRoot;$action=[string](Get-QaWebValue $Request action '')
-    $allowed=@('Snapshot','AnalysisPlan','Refresh','Approve','Disapprove','Undo','Reconnect','Settings','ApplyProfile','Export','Analyze','Backup','Diagnostics','Pdf','Browse','PickArchive','PrepareUpdate','InstallPreparedUpdate','Audit','ScannerSettings','Restore','PreviewPdf','Trends','PrintDiagnostics','SyncLibrary')
+    $AppRoot=[IO.Path]::GetFullPath($AppRoot);Assert-QaWebDirect $AppRoot;$action=[string](Get-QaWebValue $Request action '')
+    # Monthly is a pure cached read, including on an uninitialized workspace.
+    # It must not inherit bootstrap settings/folder writes or error snapshots.
+    if($action -ceq 'Monthly'){[void](ConvertTo-QaMonthlyDate ([string](Get-QaWebValue $Request month '')));$config=Read-QaConfig $AppRoot;return Get-QaWebMonthlyWorkspace -Config $config -Month ([string]$Request.month)}
+    [void](Initialize-QaWorkspace $AppRoot);$config=Read-QaConfig $AppRoot
+    $allowed=@('Snapshot','Monthly','AnalysisPlan','Refresh','Approve','Disapprove','Undo','Reconnect','Settings','ApplyProfile','Export','Analyze','Backup','Diagnostics','Pdf','Browse','PickArchive','PrepareUpdate','InstallPreparedUpdate','Audit','ScannerSettings','Restore','PreviewPdf','Trends','PrintDiagnostics','SyncLibrary')
     if($action -cnotin $allowed){throw 'This application action is not supported.'}
     $value=$null;$message='';$warning='';$path='';$decision=$null;$snapshotDashboard=$null;$snapshotOrganization=$null;$cancelled=$false
     Set-QaWebProgress $Progress 'Preparing' 0 0
@@ -689,7 +746,9 @@ function Invoke-QaWebRequest {
         }
         'ScannerSettings'{
             $id=[string](Get-QaWebValue $Request scanner '');$matches=@($config.Sources|Where-Object Scanner -ceq $id);if($matches.Count -ne 1){throw 'Choose an existing scanner before editing settings.'};$source=$matches[0]
-            foreach($pair in @(@('name','Name'),@('path','Path'),@('drive','DriveLetter'),@('username','Username'),@('dailySchedule','DailySchedule'),@('activeFrom','ActiveFrom'),@('expectedMonthly','ExpectedMonthly'),@('monthlyDueDay','MonthlyDueDay'),@('checklist','MonthlyChecklist'),@('excludedDates','ExcludedDates'),@('checklistEffectiveMonth','ChecklistEffectiveMonth'))){
+            $monthlyValues=Assert-QaWebMonthlySettings $source $Request
+            foreach($key in $monthlyValues.Keys){$source|Add-Member -NotePropertyName $key -NotePropertyValue $monthlyValues[$key] -Force}
+            foreach($pair in @(@('name','Name'),@('path','Path'),@('drive','DriveLetter'),@('username','Username'),@('dailySchedule','DailySchedule'),@('activeFrom','ActiveFrom'),@('excludedDates','ExcludedDates'))){
                 $incoming=Get-QaWebValue $Request $pair[0];if($null -ne $incoming){if($pair[0] -eq 'expectedMonthly' -and $incoming -isnot [bool]){throw 'Monthly scheduling must be on or off.'};$source|Add-Member -NotePropertyName $pair[1] -NotePropertyValue $incoming -Force}
             }
             if(($Request -is [Collections.IDictionary] -and $Request.Contains('contentProfiles')) -or ($Request -isnot [Collections.IDictionary] -and $null -ne $Request.PSObject.Properties['contentProfiles'])){$source|Add-Member -NotePropertyName ContentProfiles -NotePropertyValue ([object[]]@(ConvertTo-QaWebContentProfiles $Request.contentProfiles)) -Force}

@@ -151,7 +151,7 @@ Scenario 'Wrapped numbered headings and split mode labels keep fixed document co
 Scenario 'Manufacturer Daily inline tables supply separate head and body readings with one printed range per table' {
     foreach($model in @('SOMATOM Definition Edge','SOMATOM Definition Flash','SOMATOM Drive')){
         $text=(New-DailyMeasurementDocument).Replace('SOMATOM Definition Edge',$model);$r=Read-Measurements $text
-        Check ($r.MeasurementVersion -eq 1 -and $r.MeasurementSupportRevision -eq 3 -and (Get-QaMeasurementSupportRevision) -eq 3) 'The additive support revision does not invalidate existing schema-one HU measurements.'
+        Check ($r.MeasurementVersion -eq 1 -and $r.MeasurementSupportRevision -eq 4 -and (Get-QaMeasurementSupportRevision) -eq 4) 'The additive support revision does not invalidate existing schema-one HU measurements.'
         Check ($r.Status -eq 'Extracted' -and $r.Measurements.Count -eq 20) 'The four exact single-system Daily tables provide twenty current readings.'
         Check (@(Metric $r WaterCTNumber).Count -eq 10 -and @(Metric $r ImageNoise).Count -eq 10) 'Water and noise remain different fixed metrics.'
         Check (@($r.Measurements|Where-Object{$_.Mode -eq 'Head'}).Count -eq 6 -and @($r.Measurements|Where-Object{$_.Mode -eq 'Body'}).Count -eq 14) 'Head and body slices remain separate, without context averaging.'
@@ -202,7 +202,7 @@ Scenario 'Slice-thickness results use current millimetres and skip acquisition p
 Scenario 'Historical reference documents cannot supply current measurements even when they contain readable-looking values' {
     $text=$script:Basic.Replace('1. Quality IEC Constancy Homogeneity / Water','1. Quality IEC Constancy Reference Homogeneity / Water').Replace('2. Quality IEC Constancy Noise','2. Quality IEC Constancy Reference Noise')
     $r=Read-Measurements $text
-    Check ($r.Measurements.Count -eq 0 -and $r.ReasonCode -ceq 'ReferenceDocument' -and $r.MeasurementSupportRevision -eq 3) 'Recognized historical-reference text is explicitly excluded before numeric parsing.'
+    Check ($r.Measurements.Count -eq 0 -and $r.ReasonCode -ceq 'ReferenceDocument' -and $r.MeasurementSupportRevision -eq 4) 'Recognized historical-reference text is explicitly excluded before numeric parsing.'
     Check ($r.CompleteRead -and $r.ClinicalResult -eq 'Not inferred') 'Reading a reference document neither converts its numbers into current points nor creates clinical approval.'
     $mixed=$script:Basic.Replace('1. Quality IEC Constancy Homogeneity / Water','1. Quality IEC Constancy Reference Unknown Historical Test');$unknown=Read-Measurements $mixed
     Check ($unknown.Measurements.Count -eq 0 -and $unknown.ReasonCode -ceq 'ReferenceDocument') 'An unknown or mixed actual Reference heading is excluded independently of strict reference-profile recognition.'
@@ -211,7 +211,7 @@ Scenario 'Historical reference documents cannot supply current measurements even
 Scenario 'Monthly scalar alignment tables retain printed units and avoid invented acquisition identities' {
     foreach($pair in @(@('Lightmarker','Lightmarker'),@('External Lightm.','ExternalLightmarker'),@('Topogram Pos.','TopogramPosition'))){
         $r=Read-Measurements (New-AlignmentDocument -Label $pair[0]);$rows=@(Metric $r $pair[1])
-        Check ($r.Status -ceq 'Extracted' -and $r.MeasurementVersion -eq 1 -and $r.MeasurementSupportRevision -eq 3 -and $rows.Count -eq 1) 'A complete supported current scalar section supplies one capability-three reading.'
+        Check ($r.Status -ceq 'Extracted' -and $r.MeasurementVersion -eq 1 -and $r.MeasurementSupportRevision -eq 4 -and $rows.Count -eq 1) 'A complete supported current scalar section supplies one supported scalar reading.'
         $m=$rows[0];Check ($m.Value -ceq '0.43' -and $m.LowerLimit -ceq '-1.75' -and $m.UpperLimit -ceq '1.75' -and $m.Unit -ceq 'mm' -and $m.Page -eq 3) 'The explicit Result unit binds only its adjacent current scalar and range on their source page.'
         Check ($m.Mode -ceq 'Unspecified' -and $m.SourceSystem -ceq 'NotSpecified' -and $m.Slice -ceq '' -and $m.Context -ceq 'Overall' -and $m.ContextSection -ceq $pair[1] -and $m.Source -ceq 'PrintedAlignmentResult') 'Missing system and slice identities are preserved as absent, with a fixed section context.'
         Check ($r.ClinicalResult -ceq 'Not inferred' -and $m.Status -ceq 'Printed') 'A printed numeric reading does not manufacture a clinical decision.'
@@ -302,8 +302,45 @@ Scenario 'Axis alignment rejects reordered headers, missing pairs and extra nume
     }
 }
 
+function New-TablePositionTable([switch]$AllZero){
+    $values=@(@('0.23','-1.40','1.40','-0.37','-1.60','1.60'),@('1.14','-2.20','2.20','0.62','-2.40','2.40'),@('-0.48','-1.80','1.80','0.91','-1.90','1.90'),@('0.72','-2.10','2.10','-0.19','-2.30','2.30'))
+    $text='Continuous Move Stepwise Move'
+    for($position=1;$position -le 4;$position++){$v=$values[$position-1];$continuous=if($AllZero){'0'}else{$v[0]};$stepwise=if($AllZero){'0'}else{$v[3]};$text+="`nPosition "+$position+"`nTolerance`n"+$continuous+" mm`n"+$v[1]+' ... '+$v[2]+" mm`n"+$stepwise+" mm`n"+$v[4]+' ... '+$v[5]+' mm'}
+    return $text
+}
+Scenario 'Complete table-position results retain eight distinct movement and position contexts' {
+    foreach($model in @('SOMATOM Definition Edge','SOMATOM Definition Flash','SOMATOM Drive')){
+        foreach($standalone in @($false,$true)){
+            $text=(New-AlignmentDocument -Label 'Table Position' -Table (New-TablePositionTable) -Standalone:$standalone).Replace('SOMATOM Definition Flash',$model);$pages=if($standalone){2}else{3}
+            $r=ConvertFrom-QaMeasurementText -Text $text -Pages $pages -ReadPages $pages;$rows=@(Metric $r TablePosition)
+            Check ($r.Status -ceq 'Extracted' -and $r.MeasurementSupportRevision -eq 4 -and $rows.Count -eq 8) 'Each supported complete current template yields all eight capability-four table readings.'
+            $one=@($rows|Where-Object Context -ceq 'ContinuousPosition1')[0];$other=@($rows|Where-Object Context -ceq 'StepwisePosition4')[0]
+            Check ($one.Value -ceq '0.23' -and $one.LowerLimit -ceq '-1.4' -and $one.UpperLimit -ceq '1.4' -and $other.Value -ceq '-0.19' -and $other.LowerLimit -ceq '-2.3' -and $other.UpperLimit -ceq '2.3') 'Distinct current values and their own unit-matched bounds remain assigned to the explicit method and position.'
+            Check (@($rows|Where-Object{$_.Unit -cne 'mm' -or $_.Page -ne $pages -or $_.Mode -cne 'Unspecified' -or $_.SourceSystem -cne 'NotSpecified' -or $_.Slice -cne '' -or $_.ContextSection -cne 'TablePosition' -or $_.Source -cne 'PrintedTablePositionResult'}).Count -eq 0) 'The fixed result source and actual page are retained without inventing direction or acquisition identity.'
+            Check ($r.ClinicalResult -ceq 'Not inferred' -and @($rows.Context|Select-Object -Unique).Count -eq 8) 'Numeric table contexts do not create a clinical approval or collapse equal movement values.'
+        }
+    }
+    $r=Read-Measurements (New-AlignmentDocument -Label 'Table Position' -Table (New-TablePositionTable -AllZero));Check ($r.Measurements.Count -eq 8 -and @($r.Measurements|Where-Object Value -cne '0').Count -eq 0) 'All-zero results remain eight separate explicitly named source contexts.'
+}
+Scenario 'Malformed table-position blocks are withheld as a whole while older metrics remain usable' {
+    $table=New-TablePositionTable
+    $cases=@($table.Replace('Continuous Move Stepwise Move','Stepwise Move Continuous Move'),$table.Replace('Continuous Move Stepwise Move','Forward Move Backward Move'),$table.Replace('Position 2','Position 1'),$table.Replace('Position 2','Position 5'),$table.Replace('Position 2','Position 3'),$table.Replace('0.23 mm','0.23 cm'),$table.Replace('0.23 mm','0.23 mm 0.24 mm'),$table.Replace('-2.30 ... 2.30 mm','2.30 ... -2.30 mm'),$table.Replace('-0.19 mm','NaN mm'),($table+"`nPosition 5`nTolerance`n0 mm`n-1 ... 1 mm`n0 mm`n-1 ... 1 mm"),($table+"`n0.33 mm"),($table+"`n"+$table),([regex]::Replace($table,'(?s)\nPosition 4.*$','')))
+    foreach($bad in $cases){$r=Read-Measurements (New-AlignmentDocument -Label 'Table Position' -Table $bad);Check (@(Metric $r TablePosition).Count -eq 0) 'An ambiguous method, position, unit, number, extra column, duplicate table or incomplete final pair cannot partially publish the table.'}
+    $extra="`n2. Quality IEC Constancy Table Position`nTest: Synthetic movement check`n"+$table.Replace('-2.30 ... 2.30 mm','2.30 ... -2.30 mm')+"`nTest Results OK"
+    $r=Read-Measurements (New-AlignmentDocument -ExtraSections $extra);Check (@(Metric $r TablePosition).Count -eq 0 -and @(Metric $r Lightmarker).Count -eq 1 -and $r.Issues -contains 'InvalidPrintedLimits') 'A rejected table preserves an independently clear older alignment result and explains the unusable range.'
+}
+Scenario 'Table-position context requires evidenced current body and one complete result page' {
+    $table=New-TablePositionTable;$text=New-AlignmentDocument -Label 'Table Position' -Table $table
+    foreach($heading in @('1. Quality IEC Constancy Table Position',"1.`nQuality IEC Constancy Table Position","1.`nQuality IEC Constancy`nTable Position")){
+        $wrapped=$text.Replace('1. Quality IEC Constancy Table Position',"Quality IEC Constancy`n"+$heading);$r=Read-Measurements $wrapped;Check (@(Metric $r TablePosition).Count -eq 8) 'A generic page header cannot consume the actual complete or wrapped table-position heading.'
+    }
+    foreach($label in @('Reference Table Position','Reference Unlisted Test','Unsupported synthetic test')){$r=Read-Measurements (New-AlignmentDocument -Label $label -Table $table);Check ($r.Measurements.Count -eq 0) 'Historical, suspected-reference and unknown test bodies cannot authorize a current table.'}
+    $toc=$text.Replace('Table of contents',("Table of contents`n1. Quality IEC Constancy Table Position`n"+$table)).Replace("1. Quality IEC Constancy Table Position`nTest: Synthetic alignment check`n"+$table+"`nTest Results OK",'SYNTHETIC EMPTY BODY');$r=Read-Measurements $toc;Check ($r.Measurements.Count -eq 0) 'A table-of-contents-only copy cannot supply eight body readings.'
+    $split=$text.Replace(' / 3',' / 4').Replace('Page: 3 / 4','Page: 4 / 4').Replace("Position 3`n",("2025-04-09 09:25:00`nPage: 3 / 4`n--- Page 4 ---`nPosition 3`n"));$r=ConvertFrom-QaMeasurementText -Text $split -Pages 4 -ReadPages 4;Check (@(Metric $r TablePosition).Count -eq 0) 'An otherwise complete report cannot borrow table rows across page boundaries.'
+    foreach($r in @((ConvertFrom-QaMeasurementText -Text $text -Pages 3 -ReadPages 2),(ConvertFrom-QaMeasurementText -Text $text -Pages 3 -ReadPages 3 -Truncated $true),(Read-Measurements ($text.Replace("2025-04-09 09:25:00`nPage: 3 / 3","2025-04-08 09:25:00`nPage: 3 / 3"))))){Check (@(Metric $r TablePosition).Count -eq 0) 'Incomplete or conflicting footer evidence withholds the complete table.'}
+}
 $failed=@($script:Results|Where-Object Result -eq 'FAIL').Count
-$report=[pscustomobject]@{Product='CT QA Manager Pro';Feature='Printed measurement extraction';MeasurementVersion=1;MeasurementSupportRevision=3;Runtime=$PSVersionTable.PSVersion.ToString();WindowsPowerShell51ActuallyRun=($PSVersionTable.PSVersion.Major -eq 5 -and [Environment]::OSVersion.Platform -eq [PlatformID]::Win32NT);SyntheticOnly=$true;Tests=$script:Results.Count;Assertions=$script:Assertions;Failed=$failed;Results=@($script:Results.ToArray());Scope='Synthetic IEC water/noise/slice-thickness tables, manufacturer Daily inline single-system HU tables and bounded Monthly alignment tables. Explicit current HU values and printed bounds are kept separate from parenthesized references, scan parameters, other tables and clinical approval. Unknown, incomplete, conflicting, ambiguous and clipped evidence remains marked for review.'}
+$report=[pscustomobject]@{Product='CT QA Manager Pro';Feature='Printed measurement extraction';MeasurementVersion=1;MeasurementSupportRevision=4;Runtime=$PSVersionTable.PSVersion.ToString();WindowsPowerShell51ActuallyRun=($PSVersionTable.PSVersion.Major -eq 5 -and [Environment]::OSVersion.Platform -eq [PlatformID]::Win32NT);SyntheticOnly=$true;Tests=$script:Results.Count;Assertions=$script:Assertions;Failed=$failed;Results=@($script:Results.ToArray());Scope='Synthetic IEC water/noise/slice-thickness tables, manufacturer Daily inline single-system HU tables, bounded Monthly alignment tables and complete eight-context table-position results. Explicit current HU values and printed bounds are kept separate from parenthesized references, scan parameters, other tables and clinical approval. Unknown, incomplete, conflicting, ambiguous and clipped evidence remains marked for review.'}
 if($OutputPath){[IO.File]::WriteAllText([IO.Path]::GetFullPath($OutputPath),($report|ConvertTo-Json -Depth 12),(New-Object Text.UTF8Encoding $true))}
 Write-Host ('Result: '+($report.Tests-$failed)+'/'+$report.Tests+' scenarios; '+$report.Assertions+' assertions.')
 if($failed){exit 1}

@@ -5,6 +5,7 @@ Set-StrictMode -Version 2.0
 $ErrorActionPreference='Stop'
 $ProductRoot=Split-Path -Parent $PSScriptRoot
 Import-Module (Join-Path $ProductRoot 'App/Archive.psm1') -Force
+Import-Module (Join-Path $ProductRoot 'App/Monthly.psm1') -DisableNameChecking
 $TestRoot=Join-Path ([IO.Path]::GetTempPath()) ('CTQA_MonthlySynthetic_'+[guid]::NewGuid().ToString('N'))
 [void][IO.Directory]::CreateDirectory($TestRoot)
 $script:Results=New-Object 'System.Collections.Generic.List[object]';$script:Assertions=0
@@ -286,6 +287,106 @@ Run-Test 'Reclassification away from Monthly clears component evidence for month
     Assert-Equal 'NoConfirmedReport' $row.Status 'Daily reclassification no longer provides confirmed Monthly coverage'
     Assert-Equal 0 $row.ConfirmedReportCount 'No confirmed Monthly report remains'
     Assert-ComponentSet @('MTF','Slice Thickness') @($row.MissingComponents) 'All monthly components require valid Monthly evidence again'
+}
+function New-ObservedMonthlyBinding($Record,[string[]]$Codes=@('MTF'),[string]$Category='Monthly',[string]$State='Filed',[bool]$Reference=$false){
+    $sections=@($Codes|ForEach-Object{[pscustomobject]@{Code=$_;Page=3;BodyEvidence=$true;EvidenceCode=('NumberedBodySection.'+$_);PrintedOutcomes=@('OK')}})
+    $doc=[pscustomobject]@{Status='Recognized';ProfileId='siemens-iec-additional-v1';CompleteRead=$true;DateStatus='Consensus';ReadPages=3;Sections=$sections;DocumentKind=$(if($Reference){'Reference'}else{'Current'})}
+    $context=[pscustomobject]@{document=$doc;hasReferenceEvidence=$Reference;isReference=$Reference;dateSafe=$true;dateConflict=$false;typeConflict=$false;effectiveDate=[string]$Record.ReportDate;effectiveTime=[string]$Record.ReportTime;view=[pscustomobject]@{status='Recognized'}}
+    return [pscustomobject]@{Record=$Record;Context=$context;Available=$true;Filing=[pscustomobject]@{category=$Category;pending=($State -cne 'Filed');filingState=$State;inferred=$true}}
+}
+function Get-ObservedMonthlyRow($Fixture,$Bindings,[string]$Month='2025-12',[datetime]$Today=[datetime]'2025-12-15'){
+    return @((New-QaMonthlyWorkspace -Config $Fixture.Config -Month $Month -Records $Fixture.Records -Bindings @($Bindings) -Today $Today).scanners|Where-Object id -ceq 'CT_Edge')[0]
+}
+Run-Test 'Cached Monthly receipt and printed components remain distinct from recorded reviewed evidence'{
+    $f=New-MonthlyFixture 'ObservedVersusReviewed' -Count 3;$before=(Get-FileHash (Join-Path $f.Config.ArchiveRoot '.ctqa/state.json')).Hash
+    $bindings=@((New-ObservedMonthlyBinding $f.Records[0] @('MTF')),(New-ObservedMonthlyBinding $f.Records[1] @('Slice')),(New-ObservedMonthlyBinding $f.Records[2] @('LowContrast')))
+    $row=Get-ObservedMonthlyRow $f $bindings
+    Assert-Equal 3 $row.receipt.count 'Three filed Monthly PDFs are received'
+    Assert-Equal 'AllItemsFound' $row.detected.status 'Canonical section presence covers exact configured legacy labels'
+    Assert-True $row.detected.allItemsFound 'All printed checklist items found is explicit document presence'
+    Assert-Equal 0 $row.reviewed.confirmedReportCount 'No clinical reviewer or evidence is fabricated by detected components'
+    Assert-Equal 'NeedsConfirmation' $row.reviewed.status 'The existing recorded evidence state is retained separately'
+    Assert-Equal $before (Get-FileHash (Join-Path $f.Config.ArchiveRoot '.ctqa/state.json')).Hash 'The entire projection is read-only'
+}
+Run-Test 'Daily reference pending and unavailable reports cannot supply Monthly receipt or detected coverage'{
+    $f=New-MonthlyFixture 'ObservedBoundaries' -Count 3;$daily=New-ObservedMonthlyBinding $f.Records[0] @('MTF') 'Daily';$reference=New-ObservedMonthlyBinding $f.Records[1] @('Slice') 'Monthly' 'Filed' $true;$pending=New-ObservedMonthlyBinding $f.Records[2] @('LowContrast') 'Monthly' 'WaitingRead'
+    $row=Get-ObservedMonthlyRow $f @($daily,$reference,$pending)
+    Assert-Equal 0 $row.receipt.count 'Daily, Reference and awaiting-read files are not Monthly receipts'
+    Assert-Equal 1 $row.receipt.waitingCount 'A genuine awaiting-read Monthly label remains visible separately'
+    Assert-Equal 1 $row.excludedReferenceCount 'Reference exclusion is explicit'
+    Assert-Equal 0 $row.detected.foundCount 'Those documents cannot populate the component checklist'
+    $pending.Filing.pending=$false;$pending.Filing.filingState='Filed';$pending.Available=$false;$row=Get-ObservedMonthlyRow $f @($pending)
+    Assert-Equal 0 $row.receipt.count 'A missing saved PDF cannot be a currently available receipt'
+    Assert-Equal 1 $row.receipt.reviewCount 'An unavailable saved PDF is surfaced for attention'
+}
+Run-Test 'Exact checklist aliases are bounded and custom department text is never fuzzy-matched'{
+    $f=New-MonthlyFixture 'ExactAliases' -Checklist @('MTF','Slice Thickness','Spatial resolution (MTF)')
+    $row=Get-ObservedMonthlyRow $f @((New-ObservedMonthlyBinding $f.Records[0] @('MTF','Slice')))
+    Assert-Equal 2 $row.detected.foundCount 'Only declared exact aliases match'
+    Assert-Equal 'Partial' $row.detected.status 'A custom requirement stays unresolved'
+    Assert-Equal 'Spatial resolution (MTF)' $row.checklist.unmatchedItems[0] 'Original custom labels remain unchanged and visible'
+    Assert-True (-not $row.detected.allItemsFound) 'No fuzzy label inference can declare all items present'
+    $options=@(Get-QaMonthlyComponentOptions);$slice=@($options|Where-Object code -ceq 'Slice')[0]
+    Assert-True (@($slice.aliases|Where-Object{$_ -ieq 'Slice Thickness'}).Count -eq 1) 'The UI receives the same finite legacy alias mapping as the engine'
+}
+Run-Test 'Only actual complete current body evidence can populate the printed component checklist'{
+    $f=New-MonthlyFixture 'BodyEvidenceOnly' -Checklist @('MTF');$binding=New-ObservedMonthlyBinding $f.Records[0] @('MTF')
+    foreach($kind in @('FalseBody','StringBody','Toc','Truncated','Unknown','DateConflict')){
+        $case=$binding|ConvertTo-Json -Depth 18|ConvertFrom-Json
+        switch($kind){'FalseBody'{$case.Context.document.Sections[0].BodyEvidence=$false}'StringBody'{$case.Context.document.Sections[0].BodyEvidence='true'}'Toc'{$case.Context.document.Sections[0].Page=2}'Truncated'{$case.Context.document.CompleteRead=$false}'Unknown'{$case.Context.document.Status='NeedsReview'}'DateConflict'{$case.Context.dateConflict=$true}}
+        Assert-Equal 0 (Get-ObservedMonthlyRow $f @($case)).detected.foundCount 'Unsupported, incomplete or non-body observations stay absent'
+    }
+    $binding.Context.document.Sections[0].PSObject.Properties.Remove('BodyEvidence')
+    Assert-Equal 1 (Get-ObservedMonthlyRow $f @($binding)).detected.foundCount 'Strict literal numbered-body outcomes support a compatible older cached observation'
+    $binding.Context.document.Sections[0].PrintedOutcomes=@();Assert-Equal 0 (Get-ObservedMonthlyRow $f @($binding)).detected.foundCount 'Legacy headings without printed body evidence cannot stand in for a completed read'
+}
+Run-Test 'Selected-month checklist history is preserved and the next editable effective month is explicit'{
+    $f=New-MonthlyFixture 'ObservedRuleHistory' -Checklist @('Slice')
+    $f.Config.Sources[0]|Add-Member MonthlyChecklistHistory @([pscustomobject]@{EffectiveMonth='0001-01';Components=@('MTF')},[pscustomobject]@{EffectiveMonth='2025-12';Components=@('Slice')}) -Force
+    $setup=Get-QaMonthlySetup $f.Config.Sources[0] ([datetime]'2025-12-15')
+    Assert-Equal '2025-12' $setup.checklistEffectiveMonth 'Latest saved version is visible for setup'
+    Assert-Equal '2026-01' $setup.nextChecklistEffectiveMonth 'A changed rule cannot silently replace the latest effective version'
+    $old=Get-ObservedMonthlyRow $f @() '2025-11';$current=Get-ObservedMonthlyRow $f @() '2025-12'
+    Assert-Equal 'MTF' $old.checklist.items[0].label 'Historical checklist remains in its own month'
+    Assert-Equal '0001-01' $old.checklist.effectiveMonth 'The actual historical baseline is disclosed'
+    Assert-Equal 'Slice' $current.checklist.items[0].label 'Selected current month uses its later rule'
+}
+Run-Test 'Future off-schedule and pre-activation months have neutral requirements while receipts remain visible'{
+    $f=New-MonthlyFixture 'ObservedApplicability' -Checklist @('MTF');$f.Config.Sources[0]|Add-Member MonthlyDueDay 10 -Force;$binding=New-ObservedMonthlyBinding $f.Records[0] @('MTF')
+    $f.Config.Sources[0].ExpectedMonthly=$false;$row=Get-ObservedMonthlyRow $f @($binding)
+    Assert-Equal 'NotRequired' $row.applicability 'Off-schedule scanner is explicit'
+    Assert-Equal 'NotRequired' $row.due.timing 'No overdue claim is invented for a disabled requirement'
+    Assert-Equal 1 $row.receipt.count 'Existing filed PDFs remain visible off schedule'
+    $f.Config.Sources[0].ExpectedMonthly=$true;$f.Config.Sources[0].ActiveFrom='2026-01-01';$row=Get-ObservedMonthlyRow $f @($binding)
+    Assert-Equal 'NotActive' $row.detected.status 'A selected month before activation does not become missing work'
+    $f.Config.Sources[0].ActiveFrom='2024-01-01';$row=Get-ObservedMonthlyRow $f @() '2026-01'
+    Assert-Equal 'Future' $row.due.timing 'A future month stays neutral'
+    Assert-True (-not $row.detected.allItemsFound) 'An unassessed future month does not become clinically complete'
+    $f.Config.Sources[0].ActiveFrom='2025-12-20';$row=Get-ObservedMonthlyRow $f @() '2025-12' ([datetime]'2025-12-15')
+    Assert-Equal 'NotActive' $row.applicability 'A scanner activating later in the current month is not required yet'
+    Assert-Equal 'NotActive' $row.due.timing 'A due day before future activation cannot create a false overdue alert'
+    $row=Get-ObservedMonthlyRow $f @($binding) '2025-12' ([datetime]'2025-12-25')
+    Assert-Equal 'ConfirmFirstMonthDue' $row.due.timing 'A due date before activation stays neutral even after the scanner becomes active'
+    Assert-Equal 1 $row.receipt.count 'First-month due uncertainty does not hide received reports'
+}
+Run-Test 'Printed failures are documentary warnings and bounded lists retain truthful total receipt counts'{
+    $f=New-MonthlyFixture 'ObservedPrintedWarnings' -Checklist @('MTF') -Count 3;$bindings=@($f.Records|ForEach-Object{New-ObservedMonthlyBinding $_ @('MTF')});$bindings[0].Context.document.Sections[0].PrintedOutcomes=@('NOT OK')
+    $model=New-QaMonthlyWorkspace -Config $f.Config -Month '2025-12' -Records $f.Records -Bindings $bindings -Today ([datetime]'2025-12-15') -ReportLimit 1;$row=@($model.scanners|Where-Object id -ceq 'CT_Edge')[0]
+    Assert-Equal 3 $row.receipt.count 'Report presence totals are computed before the output cap'
+    Assert-Equal 1 $row.reports.Count 'Only the bounded report list is returned'
+    Assert-True $model.limitReached 'The output cap is explicitly disclosed'
+    Assert-Equal 1 $row.detected.printedWarningReportCount 'Literal printed warning does not disappear when the component is found'
+    Assert-Equal 0 $row.reviewed.confirmedReportCount 'All found components and printed warnings still confer no formal sign-off'
+    Assert-Equal 'CurrentConfiguration' $row.due.policy 'Due-day display never pretends to reconstruct an old approved due policy'
+    foreach($bad in @('2025-13','2025-2','2025-12/../01','2025-12-01','0000-01')){$caught=$false;try{ConvertTo-QaMonthlyDate $bad|Out-Null}catch{$caught=$true};Assert-True $caught 'Only real exact calendar months are accepted'}
+}
+
+Run-Test 'Setup history cannot forward nested objects or invalid labels from an unselected future rule'{
+    $f=New-MonthlyFixture 'SetupHistoryValidation' -Checklist @('MTF')
+    foreach($bad in @([pscustomobject]@{Untrusted='Synthetic nested data'},'=Formula','MTF;Noise',('x'*81))){
+        $f.Config.Sources[0]|Add-Member MonthlyChecklistHistory @([pscustomobject]@{EffectiveMonth='0001-01';Components=@('MTF')},[pscustomobject]@{EffectiveMonth='2099-01';Components=@($bad)}) -Force
+        $caught=$false;try{Get-QaMonthlySetup $f.Config.Sources[0]|Out-Null}catch{$caught=$true};Assert-True $caught 'Future rules are projected only as validated bounded text labels'
+    }
 }
 $failed=@($script:Results|Where-Object{$_.Result -eq 'FAIL'}).Count
 $passed=$script:Results.Count-$failed

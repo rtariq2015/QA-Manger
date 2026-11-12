@@ -5,7 +5,7 @@ $ErrorActionPreference='Stop'
 Import-Module (Join-Path $PSScriptRoot 'ContentClassifier.psm1') -DisableNameChecking -WarningAction SilentlyContinue
 
 function Get-QaMeasurementParserVersion { return 1 }
-function Get-QaMeasurementSupportRevision { return 3 }
+function Get-QaMeasurementSupportRevision { return 4 }
 
 function ConvertTo-QaMeasurementNumber {
     param([string]$Value)
@@ -80,6 +80,7 @@ function Get-QaAlignmentSection {
         '^Lightmarker$'{return 'Lightmarker'}
         '^External\s+Lightm\.?$'{return 'ExternalLightmarker'}
         '^Topogram\s+Pos\.?$'{return 'TopogramPosition'}
+        '^Table\s+Position$'{return 'TablePosition'}
         '^Sag\.?\s*/\s*Cor\.?\s+Lightm\.?$'{return 'SagittalCoronalLightmarker'}
     }
     return ''
@@ -97,9 +98,53 @@ function Add-QaAlignmentMeasurement {
         [void]$Rows.Add([pscustomobject]@{Code=$Code;Label=$label;Value=$value;Unit='mm';Page=$Page;LowerLimit=$lower;UpperLimit=$upper;Mode='Unspecified';SourceSystem='NotSpecified';Slice='';Context=$Context;Status=$status;ContextSection=$Code;Source='PrintedAlignmentResult';_Key=$key})
     }else{[void]$Issues.Add('MeasurementLimitReached')}
 }
+# The printed movement methods are Continuous and Stepwise, not travel
+# directions. Validate the complete table before publishing any of its rows.
+function Add-QaTablePositionBlock {
+    param($Block,$Rows,$Counts,$Issues,[string]$Number)
+    $headers=@();$positions=@()
+    for($index=0;$index -lt $Block.Count;$index++){
+        $text=[string]$Block[$index].Text
+        if($text -ceq 'Continuous Move Stepwise Move'){$headers+=@($index)}
+        if($text -cmatch '^Position(?:[ \t]|$)'){$positions+=@($index)}
+    }
+    if(-not $headers.Count){return}
+    if($headers.Count -ne 1 -or $positions.Count -ne 4){[void]$Issues.Add('AmbiguousDuplicateMeasurement');return}
+    $start=[int]$headers[0];$page=[int]$Block[$start].Page
+    if($start+24 -ge $Block.Count){[void]$Issues.Add('IncompleteMeasurementRow');return}
+    for($offset=0;$offset -le 24;$offset++){if([int]$Block[$start+$offset].Page -ne $page){[void]$Issues.Add('UnsupportedMeasurementRow');return}}
+    $valuePattern='^(?<value>'+$Number+')[ \t]+mm$';$rangePattern='^(?<lower>'+$Number+')[ \t]*(?:\.{3}|'+[char]0x2026+')[ \t]*(?<upper>'+$Number+')[ \t]+mm$'
+    $planned=New-Object 'Collections.Generic.List[object]'
+    for($position=1;$position -le 4;$position++){
+        $index=$start+1+6*($position-1)
+        if($positions[$position-1] -ne $index -or [string]$Block[$index].Text -cne ('Position '+$position) -or [string]$Block[$index+1].Text -cne 'Tolerance'){[void]$Issues.Add('UnsupportedMeasurementRow');return}
+        foreach($method in @('Continuous','Stepwise')){
+            $offset=if($method -ceq 'Continuous'){2}else{4}
+            $valueMatch=[regex]::Match([string]$Block[$index+$offset].Text,$valuePattern);$rangeMatch=[regex]::Match([string]$Block[$index+$offset+1].Text,$rangePattern)
+            if(-not $valueMatch.Success -or -not $rangeMatch.Success){[void]$Issues.Add('UnsupportedMeasurementRow');return}
+            $value=ConvertTo-QaMeasurementNumber $valueMatch.Groups['value'].Value;$lower=ConvertTo-QaMeasurementNumber $rangeMatch.Groups['lower'].Value;$upper=ConvertTo-QaMeasurementNumber $rangeMatch.Groups['upper'].Value
+            if($null -eq $value -or $null -eq $lower -or $null -eq $upper){[void]$Issues.Add('UnsupportedNumericFormat');return}
+            if([decimal]::Parse($lower,[Globalization.CultureInfo]::InvariantCulture) -gt [decimal]::Parse($upper,[Globalization.CultureInfo]::InvariantCulture)){[void]$Issues.Add('InvalidPrintedLimits');return}
+            $context=$method+'Position'+$position
+            [void]$planned.Add([pscustomobject]@{Code='TablePosition';Label='Table position';Value=$value;Unit='mm';Page=$page;LowerLimit=$lower;UpperLimit=$upper;Mode='Unspecified';SourceSystem='NotSpecified';Slice='';Context=$context;Status='Printed';ContextSection='TablePosition';Source='PrintedTablePositionResult';_Key=('TablePosition|'+$context)})
+        }
+    }
+    # Extra bare numeric columns on this page cannot be mistaken for a third
+    # movement method. Parameters before the method header are not result rows.
+    for($index=$start+25;$index -lt $Block.Count -and [int]$Block[$index].Page -eq $page;$index++){
+        if([regex]::IsMatch([string]$Block[$index].Text,'^'+$Number+'(?:[ \t]+.*)?$')){[void]$Issues.Add('MulticolumnMeasurementRow');return}
+    }
+    if($Rows.Count+8 -gt 100){[void]$Issues.Add('MeasurementLimitReached');return}
+    $duplicate=$false
+    foreach($row in $planned){if($Counts.ContainsKey([string]$row._Key)){$duplicate=$true}}
+    foreach($row in $planned){$key=[string]$row._Key;if($Counts.ContainsKey($key)){$Counts[$key]++}else{$Counts[$key]=1}}
+    if($duplicate){[void]$Issues.Add('AmbiguousDuplicateMeasurement');return}
+    foreach($row in $planned){[void]$Rows.Add($row)}
+}
 function Add-QaAlignmentBlock {
     param($Block,[string]$Code,$Rows,$Counts,$Issues,[string]$Number)
     if(-not $Code -or -not $Block.Count){return}
+    if($Code -ceq 'TablePosition'){Add-QaTablePositionBlock -Block $Block -Rows $Rows -Counts $Counts -Issues $Issues -Number $Number;return}
     $headers=New-Object 'Collections.Generic.List[int]'
     if($Code -ceq 'SagittalCoronalLightmarker'){
         # The fixed two-column manufacturer layout explicitly labels left
@@ -147,7 +192,7 @@ function Add-QaAlignmentMeasurementRows {
     # A standalone component title is allowed on its evidenced body page 2;
     # a numbered heading is allowed only on its actual classified body page.
     if(-not $Classification.CompleteRead -or $Classification.Status -cne 'Recognized' -or $Classification.DateStatus -cne 'Consensus' -or $Classification.ProfileId -cnotin @('siemens-iec-additional-v1','siemens-iec-extended-v1')){return}
-    $sections=@($Classification.Sections|Where-Object{[string]$_.Code -cin @('Lightmarker','ExternalLightmarker','TopogramPosition','SagittalCoronalLightmarker') -and $_.BodyEvidence -is [bool] -and $_.BodyEvidence})
+    $sections=@($Classification.Sections|Where-Object{[string]$_.Code -cin @('Lightmarker','ExternalLightmarker','TopogramPosition','SagittalCoronalLightmarker','TablePosition') -and $_.BodyEvidence -is [bool] -and $_.BodyEvidence})
     if(-not $sections.Count){return}
     $block=New-Object 'Collections.Generic.List[object]';$code=''
     for($i=0;$i -lt $Lines.Count;$i++){
@@ -160,7 +205,7 @@ function Add-QaAlignmentMeasurementRows {
             $block.Clear();$code='';$label=$heading.Groups['label'].Value.Trim()
             # A generic page header must not consume the following real
             # numbered heading or its wrapped ordinal. Only a canonical bare
-            # alignment label can continue this header onto the next line.
+            # supported measurement label can continue this header onto the next line.
             if(-not $label -and $i+1 -lt $Lines.Count -and $Lines[$i+1].Page -eq $entry.Page){
                 $nextLabel=[string]$Lines[$i+1].Text
                 if(Get-QaAlignmentSection $nextLabel){$i++;$label=$nextLabel}

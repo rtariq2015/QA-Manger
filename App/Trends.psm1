@@ -4,7 +4,7 @@ $ErrorActionPreference='Stop'
 Import-Module (Join-Path $PSScriptRoot 'Insights.psm1') -DisableNameChecking -WarningAction SilentlyContinue
 
 function Get-QaTrendMetricDefinition {
-    [CmdletBinding()]param([ValidateSet('WaterCTNumber','ImageNoise','SliceThickness','Lightmarker','ExternalLightmarker','TopogramPosition','SagittalCoronalLightmarker')][string]$Metric='WaterCTNumber')
+    [CmdletBinding()]param([ValidateSet('WaterCTNumber','ImageNoise','SliceThickness','Lightmarker','ExternalLightmarker','TopogramPosition','SagittalCoronalLightmarker','TablePosition')][string]$Metric='WaterCTNumber')
     switch($Metric){
         'WaterCTNumber'{return [pscustomobject]@{code='WaterCTNumber';label='Water CT number';unit='HU';axisLabel='Hounsfield units (HU)'}}
         'ImageNoise'{return [pscustomobject]@{code='ImageNoise';label='Image noise';unit='HU';axisLabel='Hounsfield units (HU)'}}
@@ -13,6 +13,7 @@ function Get-QaTrendMetricDefinition {
         'ExternalLightmarker'{return [pscustomobject]@{code='ExternalLightmarker';label='External light marker';unit='mm';axisLabel='Millimetres (mm)'}}
         'TopogramPosition'{return [pscustomobject]@{code='TopogramPosition';label='Topogram position';unit='mm';axisLabel='Millimetres (mm)'}}
         'SagittalCoronalLightmarker'{return [pscustomobject]@{code='SagittalCoronalLightmarker';label='Sagittal / coronal alignment';unit='mm';axisLabel='Millimetres (mm)'}}
+        'TablePosition'{return [pscustomobject]@{code='TablePosition';label='Table position';unit='mm';axisLabel='Millimetres (mm)'}}
     }
 }
 function Test-QaTrendReference {param($Analysis)
@@ -46,19 +47,45 @@ function Get-QaTrendArchiveRecords {param($Config)
 }
 function Test-QaTrendAlignmentMetric {param([string]$Metric) return ($Metric -cin @('Lightmarker','ExternalLightmarker','TopogramPosition','SagittalCoronalLightmarker'))}
 function Test-QaTrendMetricDocument {param($Measurement,$Document,[string]$Metric)
-    if(-not (Test-QaTrendAlignmentMetric $Metric)){return $true}
-    if([int](Get-QaTrendValue $Measurement MeasurementSupportRevision 0) -lt 3 -or [string](Get-QaTrendValue $Document ProfileId '') -cnotin @('siemens-iec-extended-v1','siemens-iec-additional-v1') -or [string](Get-QaTrendValue $Document Status '') -cne 'Recognized'){return $false}
+    if(-not (Test-QaTrendAlignmentMetric $Metric) -and $Metric -cne 'TablePosition'){return $true}
+    $requiredRevision=if($Metric -ceq 'TablePosition'){4}else{3}
+    if([int](Get-QaTrendValue $Measurement MeasurementSupportRevision 0) -lt $requiredRevision -or [string](Get-QaTrendValue $Document ProfileId '') -cnotin @('siemens-iec-extended-v1','siemens-iec-additional-v1') -or [string](Get-QaTrendValue $Document Status '') -cne 'Recognized'){return $false}
     $sections=@(Get-QaTrendValue $Document Sections @()|Where-Object{[string](Get-QaTrendValue $_ Code '') -ceq $Metric -and (Test-QaTrendTrue (Get-QaTrendValue $_ BodyEvidence $false))})
-    return ($sections.Count -eq 1)
+    if($sections.Count -ne 1){return $false}
+    if($Metric -ceq 'TablePosition'){
+        $rows=@(Get-QaTrendValue $Measurement Measurements @()|Where-Object{[string](Get-QaTrendValue $_ Code '') -ceq 'TablePosition'})
+        if($rows.Count -ne 8){return $false};$contexts=@{};$pages=@{}
+        foreach($row in $rows){
+            $context=Get-QaTrendRowContext $row $Metric;$page=[int](Get-QaTrendValue $row Page 0)
+            $value=Get-QaTrendNumber (Get-QaTrendValue $row Value);$lower=Get-QaTrendNumber (Get-QaTrendValue $row LowerLimit);$upper=Get-QaTrendNumber (Get-QaTrendValue $row UpperLimit)
+            if($null -eq $context -or $contexts.ContainsKey([string]$context.context) -or [string](Get-QaTrendValue $row Unit '') -cne 'mm' -or [string](Get-QaTrendValue $row Status '') -cne 'Printed' -or $page -lt 1 -or $page -gt [int](Get-QaTrendValue $Document ReadPages 0) -or $null -eq $value -or $null -eq $lower -or $null -eq $upper -or $lower -gt $upper){return $false}
+            $contexts[[string]$context.context]=$true;$pages[$page]=$true
+        }
+        return ($contexts.Count -eq 8 -and $pages.Count -eq 1)
+    }
+    return $true
 }
 function Test-QaTrendCapabilityPending {param($Measurement,$Document,[string]$Metric)
     $revision=[int](Get-QaTrendValue $Measurement MeasurementSupportRevision 0)
+    if($Metric -ceq 'TablePosition'){return ($revision -lt 4 -and [string](Get-QaTrendValue $Document ProfileId '') -cin @('siemens-iec-additional-v1','siemens-iec-extended-v1') -and [string](Get-QaTrendValue $Document Status '') -ceq 'Recognized' -and (Test-QaTrendTrue (Get-QaTrendValue $Document CompleteRead $false)) -and @((Get-QaTrendValue $Document Sections @())|Where-Object{[string](Get-QaTrendValue $_ Code '') -ceq 'TablePosition' -and (Test-QaTrendTrue (Get-QaTrendValue $_ BodyEvidence $false))}).Count -eq 1)}
     if(Test-QaTrendAlignmentMetric $Metric){return ($revision -lt 3 -and @((Get-QaTrendValue $Document Sections @())|Where-Object{[string](Get-QaTrendValue $_ Code '') -ceq $Metric}).Count -gt 0)}
     if($Metric -ceq 'SliceThickness'){return ($revision -lt 2 -and @((Get-QaTrendValue $Document Sections @())|Where-Object{[string](Get-QaTrendValue $_ Code '') -ceq 'Slice'}).Count -gt 0)}
     return ($revision -lt 2 -and [string](Get-QaTrendValue $Document ProfileId '') -ceq 'siemens-quality-daily-v1')
 }
+function Test-QaTrendMetricAbsent {param($Measurement,$Document,[string]$Metric)
+    if(-not (Test-QaTrendTrue (Get-QaTrendValue $Document CompleteRead $false)) -or -not (Test-QaTrendTrue (Get-QaTrendValue $Measurement CompleteRead $false)) -or [string](Get-QaTrendValue $Document Status '') -cne 'Recognized' -or [string](Get-QaTrendValue $Document ProfileId '') -cnotin @('siemens-iec-basic-v1','siemens-iec-extended-v1','siemens-iec-additional-v1','siemens-quality-daily-v1')){return $false}
+    $sections=@(Get-QaTrendValue $Document Sections @());if(-not $sections.Count){return $false}
+    $required=switch($Metric){'WaterCTNumber'{'HomogeneityWater'}'ImageNoise'{'Noise'}'SliceThickness'{'Slice'}default{$Metric}}
+    return (@($sections|Where-Object{[string](Get-QaTrendValue $_ Code '') -ceq $required}).Count -eq 0)
+}
 function Get-QaTrendRowContext {param($Row,[string]$Metric)
     $mode=[string](Get-QaTrendValue $Row Mode '');$system=[string](Get-QaTrendValue $Row SourceSystem '');$slice=[string](Get-QaTrendValue $Row Slice '')
+    if($Metric -ceq 'TablePosition'){
+        $context=[string](Get-QaTrendValue $Row Context '')
+        if($mode -cne 'Unspecified' -or $system -cne 'NotSpecified' -or $slice -cne '' -or $context -cnotmatch '^(Continuous|Stepwise)Position[1-4]$' -or [string](Get-QaTrendValue $Row ContextSection '') -cne 'TablePosition' -or [string](Get-QaTrendValue $Row Source '') -cne 'PrintedTablePositionResult'){return $null}
+        $label=$context -creplace '^(Continuous|Stepwise)Position([1-4])$','$1 move / Position $2'
+        return [pscustomobject]@{mode='Unspecified';system='NotSpecified';slice=0;context=$context;suffix=('Unspecified|NotSpecified|'+$context);label=$label}
+    }
     if(Test-QaTrendAlignmentMetric $Metric){
         $context=[string](Get-QaTrendValue $Row Context '')
         if($mode -cne 'Unspecified' -or $system -cne 'NotSpecified' -or $slice -cne '' -or (($Metric -ceq 'SagittalCoronalLightmarker' -and $context -cnotin @('Sagittal','Coronal')) -or ($Metric -cne 'SagittalCoronalLightmarker' -and $context -cne 'Overall')) -or [string](Get-QaTrendValue $Row ContextSection '') -cne $Metric -or [string](Get-QaTrendValue $Row Source '') -cne 'PrintedAlignmentResult'){return $null}
@@ -105,7 +132,7 @@ function Get-QaTrendData {
     [CmdletBinding()]param(
         [Parameter(Mandatory=$true)]$Config,
         [string]$Scanner='',
-        [ValidateSet('WaterCTNumber','ImageNoise','SliceThickness','Lightmarker','ExternalLightmarker','TopogramPosition','SagittalCoronalLightmarker')][string]$Metric='WaterCTNumber',
+        [ValidateSet('WaterCTNumber','ImageNoise','SliceThickness','Lightmarker','ExternalLightmarker','TopogramPosition','SagittalCoronalLightmarker','TablePosition')][string]$Metric='WaterCTNumber',
         [ValidateSet('','Head','Body','Unspecified')][string]$Mode='',
         [ValidateSet('','A','B','NotSpecified')][string]$SourceSystem='',
         [ValidateRange(0,999)][int]$Slice=0,
@@ -121,7 +148,7 @@ function Get-QaTrendData {
     if($StartDateISO){$start=Get-QaTrendDate $StartDateISO;if($null -eq $start){throw 'Choose a valid start date using yyyy-MM-dd.'}}
     if($EndDateISO){$end=Get-QaTrendDate $EndDateISO;if($null -eq $end){throw 'Choose a valid end date using yyyy-MM-dd.'}}
     if($null -ne $start -and $null -ne $end -and $start -gt $end){throw 'The start date must be on or before the end date.'}
-    if($SeriesKey -and $SeriesKey -cnotmatch '^[A-Za-z][A-Za-z0-9_]{0,31}\|(?:(?:WaterCTNumber|ImageNoise|SliceThickness)\|(?:Head|Body|Unspecified)\|[AB]\|[1-9][0-9]{0,2}|(?:(?:Lightmarker|ExternalLightmarker|TopogramPosition)\|Unspecified\|NotSpecified\|Overall|SagittalCoronalLightmarker\|Unspecified\|NotSpecified\|(?:Sagittal|Coronal)))$'){throw 'Choose one available measurement series.'}
+    if($SeriesKey -and $SeriesKey -cnotmatch '^[A-Za-z][A-Za-z0-9_]{0,31}\|(?:(?:WaterCTNumber|ImageNoise|SliceThickness)\|(?:Head|Body|Unspecified)\|[AB]\|[1-9][0-9]{0,2}|(?:(?:Lightmarker|ExternalLightmarker|TopogramPosition)\|Unspecified\|NotSpecified\|Overall|SagittalCoronalLightmarker\|Unspecified\|NotSpecified\|(?:Sagittal|Coronal)|TablePosition\|Unspecified\|NotSpecified\|(?:Continuous|Stepwise)Position[1-4]))$'){throw 'Choose one available measurement series.'}
     $scanners=New-Object 'Collections.Generic.List[object]';$sourceIds=@{}
     foreach($source in @(Get-QaTrendValue $Config Sources @())){
         $id=[string](Get-QaTrendValue $source Scanner '')
@@ -133,7 +160,7 @@ function Get-QaTrendData {
     if(-not @($scanners|Where-Object id -CEQ $Scanner).Count){throw 'Choose a configured scanner.'}
     if(-not $PSBoundParameters.ContainsKey('Records')){$Records=@(Get-QaTrendArchiveRecords $Config)}
     if($Records.Count -gt 100000){throw 'This archive is too large for one trend query. Use a smaller managed archive.'}
-    $coverage=[ordered]@{savedReports=0;readReports=0;pendingReports=0;unsupportedReports=0;failedReports=0;conflicts=0;unknownDates=0;duplicateReports=0;supersededReports=0;reviewReports=0;dateConflicts=0;referenceReports=0}
+    $coverage=[ordered]@{savedReports=0;readReports=0;pendingReports=0;unsupportedReports=0;failedReports=0;conflicts=0;unknownDates=0;duplicateReports=0;supersededReports=0;reviewReports=0;dateConflicts=0;referenceReports=0;metricNotPresentReports=0;metricUnavailableReports=0}
     $sourceGroups=@{}
     foreach($record in $Records){
         if([string](Get-QaTrendValue $record Scanner '') -cne $Scanner -or [string](Get-QaTrendValue $record Id '') -notmatch '^[0-9A-Fa-f]{64}$' -or [string](Get-QaTrendValue $record Hash '') -notmatch '^[0-9A-Fa-f]{64}$'){continue}
@@ -192,8 +219,9 @@ function Get-QaTrendData {
         if(Test-QaTrendReference $analysis){$coverage.referenceReports++;$coverage.readReports++;continue}
         if($null -eq $analysis -or [int](Get-QaTrendValue $measurement MeasurementVersion 0) -ne 1 -or (Test-QaTrendCapabilityPending $measurement $doc $Metric)){$coverage.pendingReports++;if($pending.Count -lt 100){[void]$pending.Add([string]$record.Id)};continue}
         $coverage.readReports++
+        $metricAbsent=($dated -and -not $dateConflict -and (Test-QaTrendMetricAbsent $measurement $doc $Metric))
         if(-not $dated -or $dateConflict -or -not (Test-QaTrendTrue (Get-QaTrendValue $doc CompleteRead $false)) -or -not (Test-QaTrendTrue (Get-QaTrendValue $measurement CompleteRead $false)) -or [string](Get-QaTrendValue $measurement Status '') -cnotin @('Extracted','NeedsReview') -or -not (Test-QaTrendMetricDocument $measurement $doc $Metric)){
-            $coverage.unsupportedReports++;if($dateConflict -or [string](Get-QaTrendValue $doc DateStatus '') -cin @('Conflict','Invalid')){$coverage.dateConflicts++};continue
+            $coverage.unsupportedReports++;if($metricAbsent){$coverage.metricNotPresentReports++}else{$coverage.metricUnavailableReports++};if($dateConflict -or [string](Get-QaTrendValue $doc DateStatus '') -cin @('Conflict','Invalid')){$coverage.dateConflicts++};continue
         }
         $reportWarnings=New-Object 'Collections.Generic.List[string]'
         if([string](Get-QaTrendValue $measurement Status '') -ceq 'NeedsReview'){[void]$reportWarnings.Add('DocumentNeedsReview')}
@@ -214,7 +242,7 @@ function Get-QaTrendData {
             if($seenRows.ContainsKey($series)){$seenRows[$series]++}else{$seenRows[$series]=1}
             [void]$rows.Add([pscustomobject]@{_series=$series;_hash=[string]$record.Hash;_mode=[string]$context.mode;_system=[string]$context.system;_slice=[int]$context.slice;_context=[string]$context.context;_label=[string]$context.label;recordId=[string]$record.Id;date=$printedDate.ToString('yyyy-MM-dd',[Globalization.CultureInfo]::InvariantCulture);time=$time;value=$value;unit=$unit;lower=$lower;upper=$upper;page=$page;reviewWarning=($warnings.Count -gt 0);outsidePrintedRange=($null -ne $lower -and ($value -lt $lower -or $value -gt $upper));warnings=@($warnings|Select-Object -Unique)})
         }
-        if(-not $rows.Count){$coverage.unsupportedReports++}
+        if(-not $rows.Count){$coverage.unsupportedReports++;if($metricAbsent){$coverage.metricNotPresentReports++}else{$coverage.metricUnavailableReports++}}
         if($reportWarnings.Count -or @($rows|Where-Object reviewWarning).Count){$coverage.reviewReports++}
         foreach($point in $rows){
             if($seenRows[[string]$point._series] -gt 1){$coverage.conflicts++;continue}

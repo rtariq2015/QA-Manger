@@ -20,6 +20,8 @@ const dotnet = args.dotnet || (!isWindows ? '/tmp/ctqa-dotnet/dotnet' : null);
 fs.mkdirSync(output, { recursive: true });
 const calendar = spawnSync(process.execPath, [path.join(__dirname, 'run-calendar-tests.cjs'), '--output', path.join(output, 'calendar-rules.json')], { cwd: product, stdio: 'inherit', windowsHide: true, timeout: 30000 });
 if (calendar.status !== 0) process.exit(calendar.status || 1);
+const trendsRefresh = spawnSync(process.execPath, [path.join(__dirname, 'run-trends-refresh-tests.cjs'), '--output', path.join(output, 'trends-refresh/controller-summary.json')], { cwd: product, stdio: 'inherit', windowsHide: true, timeout: 30000 });
+if (trendsRefresh.status !== 0) process.exit(trendsRefresh.status || 1);
 const fixtureResult = spawnSync(powershell, ['-NoProfile', '-File', path.join(__dirname, 'New-WebFixture.ps1'), '-FixtureRoot', fixture, '-ProductRoot', product, '-IncludeHistoricalYear'], { cwd: product, encoding: 'utf8', windowsHide: true, timeout: 180000 });
 process.stdout.write(fixtureResult.stdout || '');
 if (fixtureResult.status !== 0) {

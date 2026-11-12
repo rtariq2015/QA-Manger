@@ -57,6 +57,7 @@ function Get-QaAnalysisEligibility {
         if($availableRevision -ge 2 -and $savedRevision -lt 2 -and $dailyOrSlice){return 'MeasurementUpgrade'}
         $alignment=@($sections|Where-Object{$_ -cin @('Lightmarker','ExternalLightmarker','TopogramPosition','SagittalCoronalLightmarker')}).Count -gt 0
         if($availableRevision -ge 3 -and $savedRevision -lt 3 -and $alignment){return 'MeasurementUpgrade'}
+        if($availableRevision -ge 4 -and $savedRevision -lt 4 -and $sections -ccontains 'TablePosition'){return 'MeasurementUpgrade'}
     }
     return ''
 }

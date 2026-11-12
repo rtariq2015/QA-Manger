@@ -75,7 +75,7 @@ app.MapGet("/favicon.ico", () => Results.NoContent());
 app.MapPost("/api/session", (HttpContext context) => {
     if (!HeaderAuthorized(context.Request)) return Results.Unauthorized();
     context.Response.Cookies.Append("ctqa-session", token, new CookieOptions { HttpOnly = true, SameSite = SameSiteMode.Strict, IsEssential = true, Path = "/api", MaxAge = TimeSpan.FromHours(24) });
-    return Results.Json(new { connected = true, version = "5.5.0" });
+    return Results.Json(new { connected = true, version = "5.6.0" });
 });
 app.MapPost("/api/heartbeat", () => { state.Heartbeat(); return Results.Json(new { alive = true }); });
 app.MapGet("/api/snapshot", () => state.Snapshot is JsonNode snapshot ? Results.Json(snapshot) : Results.Json(new { error = state.StartupError ?? "The saved library is loading. Please wait a moment." }, statusCode: 503));
@@ -145,6 +145,12 @@ app.MapGet("/api/pdf/{id}", async (string id, HttpContext context) => {
     context.Response.Headers["Content-Disposition"] = "inline; filename*=UTF-8''" + Uri.EscapeDataString(name);
     return Results.File(path, "application/pdf", enableRangeProcessing: true);
 });
+app.MapGet("/api/monthly", async (HttpContext context) => {
+    var month = context.Request.Query["month"].ToString();
+    if (month.Length != 7 || !DateOnly.TryParseExact(month + "-01", "yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out _))
+        return Results.BadRequest(new { error = "Choose a valid month in YYYY-MM format." });
+    return Results.Json(await bridge.Run(new JsonObject { ["action"] = "Monthly", ["month"] = month }, 90, context.RequestAborted));
+});
 app.MapGet("/api/trends", async (HttpContext context) => {
     var request = new JsonObject { ["action"] = "Trends" };
     foreach (var name in new[] { "scanner", "metric", "mode", "system", "slice", "start", "end", "series" }) {
@@ -178,7 +184,7 @@ state.RecordLifecycle("Startup", "Started");
 app.Lifetime.ApplicationStopped.Register(() => state.RecordLifecycle("Shutdown", "Completed"));
 origin = app.Services.GetRequiredService<IServer>().Features.Get<IServerAddressesFeature>()!.Addresses.Single().TrimEnd('/');
 // Kestrel starts on an OS-selected loopback port. No URL ACL, service or firewall rule is created.
-var ready = JsonSerializer.Serialize(new { url = origin, token, pid = Environment.ProcessId, version = "5.5.0" });
+var ready = JsonSerializer.Serialize(new { url = origin, token, pid = Environment.ProcessId, version = "5.6.0" });
 SafeFiles.WritePrivate(readyPath, ready);
 var browserStartup = Stopwatch.StartNew();
 var startupFailed = 0;

@@ -5,6 +5,8 @@ if(-not $ProductRoot){$ProductRoot=Split-Path -Parent (Split-Path -Parent $PSScr
 & (Join-Path $PSScriptRoot 'New-WebFixture.ps1') -FixtureRoot $FixtureRoot -ProductRoot $ProductRoot
 Import-Module (Join-Path $FixtureRoot 'App/Archive.psm1') -Force -DisableNameChecking -WarningAction SilentlyContinue
 $cfg=Read-QaConfig $FixtureRoot
+# Historical generated PDFs are part of this scanner's active test period.
+foreach($source in $cfg.Sources){$source.ActiveFrom='2025-01-01'}
 function ConvertTo-ContentPdfString([string]$Value){return $Value.Replace('\','\\').Replace('(','\(').Replace(')','\)')}
 function New-ContentPdf {
     param([string]$Path,[string]$Profile,[int]$Pages,[string]$Date='2025-02-03',[string]$Time='08:00:00',[switch]$Conflict,[switch]$MissingFooter,[ValidateSet('Edge','Flash')][string]$Model='Edge')

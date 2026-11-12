@@ -1,0 +1,128 @@
+﻿{
+    "Product":  "CT QA Manager Pro",
+    "Feature":  "Conservative cached measurement trends",
+    "Runtime":  "5.1.26100.33648",
+    "WindowsPowerShell51ActuallyRun":  true,
+    "SyntheticOnly":  true,
+    "Tests":  23,
+    "Assertions":  84,
+    "Failed":  0,
+    "Results":  [
+                    {
+                        "Name":  "Chronological printed readings and explicit ranges remain documentary and input files are unchanged",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Different scanners, head/body modes, systems, slices and metrics are separate series",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Slice-thickness millimetres use their own metric descriptor and cannot mix with HU values",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Historical reference caches never become current points or pending measurement work",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "A reference cache alias cannot override or fabricate conflicts with verified current evidence",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Printed failures and values outside printed limits stay visible with review warnings",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Missing or invalid printed bounds do not invent limits or discard the current numeric value",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Uncertain dates and incomplete reads never enter the chart as normal points",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Verified footer dates can supply missing indexed dates and period boundaries are inclusive",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Only the newest revision of a source is charted and an ambiguous revision timestamp is withheld",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Content aliases and identical timestamp values are deduplicated without averaging conflicts",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Disagreeing reader caches for identical PDF aliases cannot select an arbitrary reading",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Pending coverage includes old measurement caches and unknown dates without retrying failed reads",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Changed saved-file metadata invalidates trend evidence and requires a new verified read",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Queries reject unsupported inputs and public results exclude private record fields",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Unknown completeness flags cannot become verified chart evidence",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Pending read identities are capped while the complete pending count stays visible",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Plot point limits preserve full-period summary statistics and disclose truncation",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Monthly scalar alignment has fixed millimetre metrics and no fabricated system or slice",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Printed sagittal and coronal axes remain separate series and alias conflicts stay within their own axis",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Alignment requires its exact fixed context and recognized current document rather than legacy numeric labels",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Only eligible older alignment caches wait for one capability upgrade and attempted unsupported layouts stop retrying",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "The production query reads managed archive state without rebuilding dashboard attention",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    }
+                ],
+    "Scope":  "Synthetic owned PDF bytes and independently verified analysis-cache provenance. Current-source revisions, separate measurement contexts, printed outliers/review flags, date conflicts, alias deduplication, pending/error coverage, strict query values and public-data privacy are exercised. No scanner network, real clinical report or clinical pass/fail inference is used."
+}

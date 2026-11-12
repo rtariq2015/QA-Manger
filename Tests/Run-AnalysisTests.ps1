@@ -304,6 +304,43 @@ Scenario 'New measurement capabilities selectively refresh Daily and slice evide
     Check ((Get-FileHash $state).Hash -ceq $stateHash) 'Measurement capability updates leave archive review state byte-for-byte unchanged'
     foreach($record in $fx.Records){Check ((Get-FileHash $record.DestinationPath).Hash -ceq $record.Hash) 'All selected and untouched source PDF bytes remain unchanged'}
 }
+Scenario 'Table position revision4 upgrades only older table evidence once and keeps existing measurements and references warm' {
+    $fx=Fixture 'TablePositionCapabilityRevision' 12;$control=Install-ReadMock $fx;[void](Invoke-QaAnalysis $fx.Config)
+    foreach($n in 0..11){
+        $record=$fx.Records[$n];$row=Get-QaSavedAnalysis $fx.Config $record
+        $row.DocumentClassification.Status='Recognized';$row.DocumentClassification.ReasonCode='SupportedProfile';$row.DocumentClassification.ProfileId='siemens-iec-basic-v1';$row.DocumentClassification.Sections=@()
+        $row.MeasurementsDocument|Add-Member MeasurementSupportRevision 3 -Force
+        switch($n){
+            1 {$row.DocumentClassification.ProfileId='siemens-iec-additional-v1';$row.DocumentClassification.Sections=@([pscustomobject]@{Code='TablePosition';Page=1;BodyEvidence=$true})}
+            2 {$row.DocumentClassification.ProfileId='siemens-iec-extended-v1';$row.DocumentClassification.Sections=@([pscustomobject]@{Code='TablePosition';Page=1;BodyEvidence=$true});$row.MeasurementsDocument.MeasurementSupportRevision=0}
+            3 {$row.DocumentClassification.ProfileId='siemens-iec-additional-v1';$row.DocumentClassification.Sections=@([pscustomobject]@{Code='Lightmarker';Page=1;BodyEvidence=$true})}
+            4 {$row.DocumentClassification.ProfileId='siemens-iec-additional-v1';$row.DocumentClassification.Sections=@([pscustomobject]@{Code='Slice';Page=1;BodyEvidence=$true});$row.MeasurementsDocument.MeasurementSupportRevision=2}
+            5 {$row.DocumentClassification.ProfileId='siemens-quality-daily-v1';$row.MeasurementsDocument.MeasurementSupportRevision=2}
+            6 {$row.DocumentClassification.ProfileId='siemens-iec-reference-v1';$row.DocumentClassification.Sections=@([pscustomobject]@{Code='TablePosition';Page=1;BodyEvidence=$true});$row.MeasurementsDocument.MeasurementSupportRevision=0}
+            7 {$row.DocumentClassification.ProfileId='siemens-iec-additional-v1';$row.DocumentClassification.Sections=@([pscustomobject]@{Code='TablePosition';Page=1;BodyEvidence=$true});$row.DocumentClassification|Add-Member HasReferenceEvidence $true -Force;$row.MeasurementsDocument.MeasurementSupportRevision=0}
+            8 {$row.Status='ReadError';$row.DocumentClassification.ProfileId='siemens-iec-additional-v1';$row.DocumentClassification.Sections=@([pscustomobject]@{Code='TablePosition';Page=1;BodyEvidence=$true});$row.MeasurementsDocument.MeasurementSupportRevision=0}
+            9 {$row.DocumentClassification.ProfileId='siemens-iec-additional-v1';$row.DocumentClassification.Sections=@([pscustomobject]@{Code='TablePosition';Page=1;BodyEvidence=$true});$row.MeasurementsDocument.MeasurementSupportRevision=4}
+            11 {$row.DocumentClassification.ProfileId='siemens-iec-additional-v1';$row.DocumentClassification.Sections=@([pscustomobject]@{Code='TablePosition';Page=1;BodyEvidence=$true});$row.MeasurementsDocument.MeasurementSupportRevision=4;$row.MeasurementsDocument.Status='NeedsReview'}
+        }
+        Write-TestAnalysisCache $fx $record $row
+    }
+    $protected=@{};foreach($n in @(0,3,4,5,6,7,8,9,10,11)){$protected[$n]=(Get-FileHash (CachePath $fx $fx.Records[$n])).Hash}
+    $state=Join-Path $fx.Config.ArchiveRoot '.ctqa/state.json';$before=(Get-FileHash $state).Hash
+    $plan=Get-QaAnalysisWorkPlan -Config $fx.Config -Records $fx.Records -UpgradeMeasurements -RefreshUnsupported
+    Check ($plan.Pending -eq 2 -and $plan.MeasurementUpgradePending -eq 2 -and $plan.Errors -eq 1) 'Only the two older table-position capabilities need an attempt'
+    Check ($plan.RecordIds.Count -eq 2 -and $plan.RecordIds -contains $fx.Records[1].Id -and $plan.RecordIds -contains $fx.Records[2].Id) 'Existing water noise slice and alignment values stay warm; references and errors are not retried'
+    Check (Test-QaAnalysisSelectedRefresh $fx.Config $fx.Records[1]) 'Opening an older table-position document offers its bounded capability update'
+    Check (-not (Test-QaAnalysisSelectedRefresh $fx.Config $fx.Records[9])) 'A current table-position cache is already reusable'
+    Check (-not (Test-QaAnalysisSelectedRefresh $fx.Config $fx.Records[7])) 'Suspected reference evidence is excluded from the new capability'
+    $first=Invoke-QaAnalysis $fx.Config -Limit 1 -UpgradeMeasurements -RefreshUnsupported
+    Check ($first.Analyzed -eq 1 -and $first.Pending -eq 1) 'A one-report checkpoint retains the remaining eligible table'
+    $second=Invoke-QaAnalysis $fx.Config -UpgradeMeasurements -RefreshUnsupported;$warm=Invoke-QaAnalysis $fx.Config -UpgradeMeasurements -RefreshUnsupported
+    Check ($second.Analyzed -eq 1 -and $warm.Analyzed -eq 0 -and $warm.Cached -eq 12 -and $control.Requests.Count -eq 14) 'Each older table is attempted once and an unsupported current attempt does not loop'
+    foreach($n in @(1,2)){Check ((Get-QaSavedAnalysis $fx.Config $fx.Records[$n]).MeasurementsDocument.MeasurementSupportRevision -eq 4) 'The successful read records capability4 without changing the measurement schema'}
+    foreach($n in $protected.Keys){Check ((Get-FileHash (CachePath $fx $fx.Records[$n])).Hash -ceq $protected[$n]) 'Every protected or already-current cache remains byte-identical'}
+    Check ((Get-FileHash $state).Hash -ceq $before) 'The table-position capability refresh leaves clinical and archive state unchanged'
+    foreach($record in $fx.Records){Check ((Get-FileHash $record.DestinationPath).Hash -ceq $record.Hash) 'No original or archived PDF bytes change during a capability upgrade'}
+}
 Scenario 'Monthly revision3 upgrades only newly supported alignment tables and keeps current Daily slice HU and reference evidence warm' {
     $fx=Fixture 'MonthlyCapabilityRevision' 13;$control=Install-ReadMock $fx;[void](Invoke-QaAnalysis $fx.Config)
     foreach($n in 0..12){

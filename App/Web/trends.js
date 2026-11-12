@@ -2,12 +2,12 @@
 (() => {
   const NS = 'http://www.w3.org/2000/svg';
   const MAX_POINTS = 1000;
-  const METRICS = {WaterCTNumber:{label:'Water CT number',unit:'HU',axisLabel:'Hounsfield units (HU)'},ImageNoise:{label:'Image noise',unit:'HU',axisLabel:'Hounsfield units (HU)'},SliceThickness:{label:'Slice thickness',unit:'mm',axisLabel:'Millimetres (mm)'},Lightmarker:{label:'Light marker alignment',unit:'mm',axisLabel:'Millimetres (mm)'},ExternalLightmarker:{label:'External light marker',unit:'mm',axisLabel:'Millimetres (mm)'},TopogramPosition:{label:'Topogram position',unit:'mm',axisLabel:'Millimetres (mm)'},SagittalCoronalLightmarker:{label:'Sagittal / coronal alignment',unit:'mm',axisLabel:'Millimetres (mm)'}};
+  const METRICS = {WaterCTNumber:{label:'Water CT number',unit:'HU',axisLabel:'Hounsfield units (HU)'},ImageNoise:{label:'Image noise',unit:'HU',axisLabel:'Hounsfield units (HU)'},SliceThickness:{label:'Slice thickness',unit:'mm',axisLabel:'Millimetres (mm)'},Lightmarker:{label:'Light marker alignment',unit:'mm',axisLabel:'Millimetres (mm)'},ExternalLightmarker:{label:'External light marker',unit:'mm',axisLabel:'Millimetres (mm)'},TopogramPosition:{label:'Topogram position',unit:'mm',axisLabel:'Millimetres (mm)'},SagittalCoronalLightmarker:{label:'Sagittal / coronal alignment',unit:'mm',axisLabel:'Millimetres (mm)'},TablePosition:{label:'Table position',unit:'mm',axisLabel:'Millimetres (mm)'}};
   const metricDefinition=()=>METRICS[state.metric]||METRICS.WaterCTNumber;
   const metricLabel=()=>metricDefinition().label;
   const metricUnit=()=>metricDefinition().unit;
   const PERIODS = new Set(['30','90','365','all']);
-  const state = {ready:false, api:null, openRecord:null, readPending:null, isBusy:()=>false, isBackgroundReading:()=>false, snapshot:null, scanners:[], scanner:'', metric:'WaterCTNumber', series:'', seriesLabel:'', period:'90', data:null, dataKey:'', dirty:true, loading:false, controller:null, generation:0, requestKey:'', reading:false, error:'', notice:''};
+  const state = {ready:false, api:null, openRecord:null, readPending:null, isBusy:()=>false, isBackgroundReading:()=>false, snapshot:null, sourceRevision:'', dataRevision:'', scanners:[], scanner:'', metric:'WaterCTNumber', series:'', seriesLabel:'', period:'90', data:null, dataKey:'', dirty:true, loading:false, controller:null, generation:0, requestKey:'', reading:false, error:'', notice:''};
   const $ = id => document.getElementById(id);
   const text = value => value == null ? '' : String(value);
   const list = value => Array.isArray(value) ? value : [];
@@ -22,6 +22,26 @@
       const key=Object.keys(object).find(item=>item.toLowerCase()===name.toLowerCase());
       if (key !== undefined) return object[key];
     }
+  }
+  function snapshotRevision(snapshot) {
+    const supplied=text(field(snapshot,'trendsRevision'));
+    if(/^[0-9a-f]{64}$/i.test(supplied))return 'validated:'+supplied.toLowerCase();
+    // Compatibility for an older local helper: compare only known graph data,
+    // never object identity, job progress, appearance or connection messages.
+    // The current helper supplies its validated opaque revision instead.
+    const scalar=value=>['string','number','boolean'].includes(typeof value)?value:null;
+    const scanners=normalizeScanners(field(snapshot,'scanners')).map(item=>[item.id,item.name]).sort((a,b)=>a[0].localeCompare(b[0]));
+    const records=list(field(snapshot,'records')).map(record=>{
+      const content=field(record,'content')||{};
+      const measurements=list(field(content,'measurements')).slice(0,100).map(row=>['label','value','unit','page','lower','upper','context'].map(name=>scalar(field(row,name)))).map(row=>JSON.stringify(row)).sort();
+      const components=list(field(content,'components')).map(row=>['name','result','page'].map(name=>scalar(field(row,name)))).map(row=>JSON.stringify(row)).sort();
+      return JSON.stringify([
+        ...['id','scanner','date','time','stamp','isReference','hasReferenceEvidence'].map(name=>scalar(field(record,name))),
+        ...['status','profileId','date','time','dateStatus','readPages','pages','completeRead','measurementStatus','isReference','hasReferenceEvidence'].map(name=>scalar(field(content,name))),measurements,components
+      ]);
+    }).sort();
+    const analysis=field(snapshot,'analysis')||{};
+    return 'legacy:'+JSON.stringify([scanners,records,['cached','pending','errors','measurementUpgradePending','unsupportedUpgradePending'].map(name=>scalar(field(analysis,name)))]);
   }
   function html(tag,className,value) {
     const node=document.createElement(tag);
@@ -121,9 +141,15 @@
   function renderCoverage() {
     const coverage=state.data?.coverage;
     if(!coverage){setText('trend-coverage',state.loading?'Checking saved measurement coverage…':'Measurements appear after supported PDFs have been read.');return;}
-    const details=[`${count(coverage.readReports)} of ${count(coverage.savedReports)} saved PDFs read`,`${count(coverage.pendingReports)} need measurement reading`];
-    for(const [key,label] of [['unsupportedReports','without usable readings for this measurement'],['failedReports','could not be read'],['conflicts','with conflicting evidence'],['unknownDates','without a usable printed date'],['referenceReports','reference documents excluded from current readings']])if(Number(coverage[key])>0)details.push(`${count(coverage[key])} ${label}`);
-    setText('trend-coverage',details.join(' · ')+'.');
+    const data=state.data,series=currentSeries(),readings=Number(data?.summary?.count??data?.totalPointCount??data?.points?.length)||0;
+    const details=[`${count(coverage.readReports)} of ${count(coverage.savedReports)} saved PDFs read for this scanner and period`,`${count(coverage.pendingReports)} waiting for text or measurement reading`,`${count(readings)} ${metricLabel()} readings${series?' · '+contextLabel(series):' in the selected context'}`];
+    const hasSpecificAvailability=number(coverage.metricNotPresentReports)!==null&&number(coverage.metricUnavailableReports)!==null;
+    if(hasSpecificAvailability){
+      if(coverage.metricNotPresentReports>0)details.push(`${count(coverage.metricNotPresentReports)} PDFs do not contain this test section`);
+      if(coverage.metricUnavailableReports>0)details.push(`${count(coverage.metricUnavailableReports)} PDFs have no usable value for this measurement`);
+    }else if(Number(coverage.unsupportedReports)>0)details.push(`${count(coverage.unsupportedReports)} PDFs have no usable value for this measurement; the test may be absent or its evidence unresolved`);
+    for(const [key,label] of [['failedReports','PDFs could not be read'],['conflicts','with conflicting evidence'],['unknownDates','without a usable printed date'],['referenceReports','reference documents excluded from current readings']])if(Number(coverage[key])>0)details.push(`${count(coverage[key])} ${label}`);
+    setText('trend-coverage',details.join(' · ')+'. One PDF can contain several readings.');
   }
   function boundsLabel(point) {
     if(point.lower!==null&&point.upper!==null)return `${format(point.lower)} to ${format(point.upper)} ${point.unit||metricUnit()}`;
@@ -258,12 +284,13 @@
     const requestKey=query();
     if(state.loading&&state.requestKey===requestKey)return;
     if(state.controller)state.controller.abort();
-    const controller=new AbortController(),generation=++state.generation,snapshot=state.snapshot,requestedSeries=state.series;
-    state.controller=controller;state.requestKey=requestKey;state.loading=true;state.error='';render();
+    const controller=new AbortController(),generation=++state.generation,revision=state.sourceRevision,requestedSeries=state.series;
+    let queryChanged=false;
+    state.controller=controller;state.requestKey=requestKey;state.loading=true;state.dirty=false;state.error='';render();
     try {
       const raw=await state.api(`/api/trends?${requestKey}`,{signal:controller.signal});
       if(generation!==state.generation||controller.signal.aborted)return;
-      if(requestKey!==query()){state.dirty=true;return;}
+      if(requestKey!==query()){state.dirty=true;queryChanged=true;return;}
       const scanners=normalizeScanners(raw?.scanners),previousScanner=state.scanner;
       if(scanners.length)updateScanners(scanners);
       const backendScanner=text(raw?.selection?.scanner);
@@ -274,12 +301,12 @@
       state.data=data;state.series=data.selectedSeries||requestedSeries;
       if(data.selectedSeries)state.seriesLabel=contextLabel(data.series.find(item=>item.key===data.selectedSeries));
       // A default series becomes part of the current key, avoiding an unnecessary second fetch.
-      state.dataKey=query();state.dirty=snapshot!==state.snapshot;state.notice='';
+      state.dataKey=query();state.dataRevision=revision;state.dirty=revision!==state.sourceRevision;state.notice='';
     } catch(error) {
       if(generation!==state.generation||error?.name==='AbortError')return;
       state.error=error instanceof Error?error.message:'The saved measurements could not be loaded.';state.dirty=true;
     } finally {
-      if(generation===state.generation){state.loading=false;state.controller=null;render();if(snapshot!==state.snapshot&&visible())load();}
+      if(generation===state.generation){state.loading=false;state.controller=null;render();if((queryChanged||revision!==state.sourceRevision)&&visible())load();}
     }
   }
   function changed(kind) {
@@ -314,14 +341,15 @@
   }
   function refresh(snapshot) {
     if(!state.ready)return;
-    const changedSnapshot=snapshot!==state.snapshot;
-    if(changedSnapshot){
+    const revision=snapshotRevision(snapshot),changedRevision=revision!==state.sourceRevision;
+    state.snapshot=snapshot;
+    if(changedRevision){
       const previousScanner=state.scanner;
-      state.snapshot=snapshot;state.dirty=true;state.scanners=normalizeScanners(field(snapshot,'scanners'));updateScanners(state.scanners);
+      state.sourceRevision=revision;state.dirty=true;state.scanners=normalizeScanners(field(snapshot,'scanners'));updateScanners(state.scanners);
       if(previousScanner!==state.scanner){if(state.controller)state.controller.abort();state.generation++;state.loading=false;state.controller=null;}
     }
     updateReadButton();
-    if(changedSnapshot&&visible())load();
+    if((changedRevision||(state.dataKey&&state.dataKey!==query()))&&visible())load();
   }
   function show() {
     if(!state.ready||!visible())return;

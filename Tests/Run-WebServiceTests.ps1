@@ -787,6 +787,58 @@ Scenario 'Alignment inspector rows share current graph capability body and expli
     [IO.File]::WriteAllText($path,$valid,(New-Object Text.UTF8Encoding $true));Check-BatchProtected $f
 }
 
+Scenario 'Monthly reads use cached scoped data without full snapshots PDF work or archive writes' {
+    $f=New-WebBatchFixture 'MonthlyReadOnlyApi' 4;$cfg=Read-QaConfig $f.AppRoot;$source=@($cfg.Sources|Where-Object Scanner -ceq 'CT_Edge')[0];$source.ContentProfiles=@([pscustomobject]@{profileId='siemens-iec-basic-v1';category='Auto'});[void](Save-QaConfig $f.AppRoot $cfg)
+    $item=[pscustomobject]@{Record=$f.Records[0];AppRoot=$f.AppRoot};$path=Set-WebFilingCache $item 'siemens-iec-extended-v1';$cache=Get-Content $path -Raw|ConvertFrom-Json;$cache.DocumentClassification.Sections=@('MTF','Slice'|ForEach-Object{[pscustomobject]@{Code=$_;Page=3;BodyEvidence=$true;EvidenceCode=('NumberedBodySection.'+$_);PrintedOutcomes=@('OK')}});[IO.File]::WriteAllText($path,($cache|ConvertTo-Json -Depth 20),(New-Object Text.UTF8Encoding $true))
+    $item=[pscustomobject]@{Record=$f.Records[2];AppRoot=$f.AppRoot};[void](Set-WebFilingCache $item '' '' 'NeedsReview');$item=[pscustomobject]@{Record=$f.Records[3];AppRoot=$f.AppRoot};[void](Set-WebFilingCache $item 'siemens-iec-reference-v1' 'Other' 'Recognized' 'Consensus' $true)
+    $files=@(Get-ChildItem $f.AppRoot -Recurse -File|ForEach-Object{[pscustomobject]@{Path=$_.FullName;Hash=(Get-FileHash $_.FullName).Hash}});$module=Get-Module WebService;$names=@('Get-QaDashboard','Get-QaWebSnapshot','Invoke-QaOperation','Update-QaWebLibrary','Write-QaWebAtomic','Write-QaSupportEvent','Assert-QaWebPdf');$originals=@{}
+    try{
+        foreach($name in $names){$originals[$name]=&$module {param($n)(Get-Command $n).ScriptBlock} $name;&$module {param($n)Set-Item ('Function:script:'+$n) {throw 'Monthly attempted a forbidden write, full snapshot, dashboard or PDF operation.'}} $name}
+        $month=(Get-Date).ToString('yyyy-MM');$model=Invoke-QaWebRequest $f.AppRoot ([pscustomobject]@{action='Monthly';month=$month});$row=@($model.scanners|Where-Object id -ceq 'CT_Edge')[0]
+        Check ($model.schemaVersion -eq 1 -and $model.month -ceq $month -and $null -eq $model.PSObject.Properties['snapshot']) 'The endpoint returns its bounded read model directly'
+        Check ($row.receipt.count -eq 1 -and $row.receipt.reviewCount -eq 1 -and $row.excludedReferenceCount -eq 1) 'Monthly receipt excludes Daily and Reference files while processed Monthly exceptions remain separate'
+        Check ($row.detected.allItemsFound -and $row.detected.foundCount -eq 2 -and $row.reviewed.confirmedReportCount -eq 0) 'Observed printed components never fabricate recorded clinical evidence'
+        $json=$model|ConvertTo-Json -Depth 20 -Compress;Check (-not $json.Contains($f.Config.ArchiveRoot) -and $json -notmatch '"(?:SourcePath|DestinationPath|Username|Password|Text)"') 'The local model projects bounded report IDs and controlled metadata instead of raw cached/config/path objects'
+        foreach($bad in @('2026-13','2026-1','2026-11-01','../2026-11','0000-01')){$caught=$false;try{Invoke-QaWebRequest $f.AppRoot ([pscustomobject]@{action='Monthly';month=$bad})|Out-Null}catch{$caught=$true};Check $caught 'The backend independently requires one exact real calendar month'}
+    }finally{foreach($name in $names){&$module {param($n,$body)Set-Item ('Function:script:'+$n) $body} $name $originals[$name]}}
+    Check (@(Get-ChildItem $f.AppRoot -Recurse -File).Count -eq $files.Count) 'Read-only Monthly requests create no new archive, library or activity files'
+    foreach($file in $files){Check ((Get-FileHash $file.Path).Hash -ceq $file.Hash) 'Every preexisting settings, cache, archive and original PDF byte remains unchanged'}
+}
+Scenario 'Monthly setup validates bounded values preserves network settings and versions changed checklists' {
+    $f=New-WebFixture 'MonthlySetupApi';[void](Get-Web $f);$before=Read-QaConfig $f.AppRoot;$original=$before.Sources[0];$settings=Join-Path $f.AppRoot 'Config/Settings.local.json';$core=(Get-FileHash $f.StatePath).Hash
+    foreach($payload in @(@{expectedMonthly='true'},@{monthlyDueDay=1.5},@{monthlyDueDay=$true},@{monthlyDueDay=32},@{checklist='MTF'},@{checklist=@([pscustomobject]@{Label='MTF'})},@{checklist=@('=Formula')},@{checklistEffectiveMonth='2026-13'})){
+        $request=@{action='ScannerSettings';scanner='CT_Edge'};foreach($key in $payload.Keys){$request[$key]=$payload[$key]};$saved=(Get-FileHash $settings).Hash;$caught=$false;try{Invoke-QaWebRequest $f.AppRoot ([pscustomobject]$request)|Out-Null}catch{$caught=$true};Check ($caught -and (Get-FileHash $settings).Hash -ceq $saved) 'Malformed Monthly setup cannot silently coerce values or replace configuration'
+    }
+    $oldSnapshot=Get-Web $f;$effective=$oldSnapshot.scanners[0].nextChecklistEffectiveMonth;$result=Invoke-QaWebRequest $f.AppRoot ([pscustomobject]@{action='ScannerSettings';scanner='CT_Edge';expectedMonthly=$true;monthlyDueDay=22;checklist=@('MTF');checklistEffectiveMonth=''})
+    $saved=Read-QaConfig $f.AppRoot;$source=$saved.Sources[0]
+    Check ($result.snapshot.scanners[0].checklistEffectiveMonth -ceq $effective -and $result.snapshot.scanners[0].monthlyChecklistHistory.Count -ge 2) 'A blank legacy effective field uses the explicit next allowed version rather than overwriting history'
+    Check ($source.Path -ceq $original.Path -and $source.Username -ceq $original.Username -and $source.DriveLetter -ceq $original.DriveLetter -and $source.Name -ceq $original.Name) 'Monthly-only setup does not change scanner connections or identity'
+    Check ($source.MonthlyDueDay -eq 22 -and @($source.MonthlyChecklist).Count -eq 1 -and $source.MonthlyChecklist[0] -ceq 'MTF') 'A bounded one-item checklist remains an array and due day persists'
+    Check ((Get-FileHash $f.StatePath).Hash -ceq $core -and (Get-FileHash $f.Source).Hash -ceq $f.SourceHash) 'Setup changes no protected clinical or original PDF data'
+}
+Scenario 'Opaque trend revisions ignore identical reordered theme and connection snapshots but follow cached data changes' {
+    $f=New-WebBatchFixture 'TrendsRevisionApi';$a=Get-Web $f;$b=Get-Web $f
+    Check ($a.trendsRevision -cmatch '^[A-Fa-f0-9]{64}$' -and $a.trendsRevision -ceq $b.trendsRevision) 'Identical snapshots have a stable opaque graph revision'
+    $cfg=Read-QaConfig $f.AppRoot;$dashboard=Get-QaDashboard $cfg;$reverse=$dashboard|Select-Object *;$reverse.Records=@($dashboard.Records|Sort-Object Id -Descending);$other=&(Get-Module WebService){param($c,$d)Get-QaWebSnapshot -Config $c -Dashboard $d} $cfg $reverse
+    Check ($a.trendsRevision -ceq $other.trendsRevision) 'Record enumeration order does not dirty trend requests'
+    $theme=Invoke-QaWebRequest $f.AppRoot ([pscustomobject]@{action='Settings';theme='Dark'});Check ($theme.snapshot.trendsRevision -ceq $a.trendsRevision) 'Theme and UI settings do not invent a graph data change'
+    $connections=Join-Path $f.Config.ArchiveRoot '.ctqa/web-connections.json';[IO.File]::WriteAllText($connections,'{"Connections":[]}',(New-Object Text.UTF8Encoding $true));Check ((Get-Web $f).trendsRevision -ceq $a.trendsRevision) 'Connection status files do not invalidate cached measurement queries'
+    $path=Join-Path $f.Config.ArchiveRoot ('.ctqa/analysis/'+$f.Records[0].Hash+'.json');$cache=Get-Content $path -Raw|ConvertFrom-Json;$cache.MeasurementsDocument.Measurements=@([pscustomobject]@{Code='WaterCTNumber';Value='0.2';Unit='HU';Page=3});[IO.File]::WriteAllText($path,($cache|ConvertTo-Json -Depth 20),(New-Object Text.UTF8Encoding $true));$c=Get-Web $f
+    $cache.MeasurementsDocument.Measurements[0].Value='0.3';[IO.File]::WriteAllText($path,($cache|ConvertTo-Json -Depth 20),(New-Object Text.UTF8Encoding $true));[IO.File]::SetLastWriteTimeUtc($path,[datetime]::UtcNow.AddSeconds(2));$d=Get-Web $f
+    Check ($c.trendsRevision -cne $d.trendsRevision -and $c.records.Count -eq $d.records.Count) 'A same-count same-width printed value update changes the cache/provenance fingerprint'
+    [IO.File]::SetLastWriteTimeUtc($f.Records[0].DestinationPath,[datetime]::UtcNow.AddSeconds(3));$e=Get-Web $f;Check ($e.trendsRevision -cne $d.trendsRevision) 'A cache becoming stale against the saved PDF changes graph eligibility'
+}
+Scenario 'Table-position inspector rows require the complete capability-four eight-context table' {
+    $f=New-WebFixture 'TablePositionFacade';$path=Set-WebFilingCache $f 'siemens-iec-additional-v1';$cache=Get-Content $path -Raw|ConvertFrom-Json;$cache.MeasurementsDocument|Add-Member MeasurementSupportRevision 4 -Force;$cache.MeasurementsDocument.Status='Extracted';$cache.DocumentClassification.Sections=@([pscustomobject]@{Code='TablePosition';BodyEvidence=$true;Page=3;EvidenceCode='NumberedBodySection.TablePosition';PrintedOutcomes=@('OK')})
+    $rows=@(foreach($method in @('Continuous','Stepwise')){foreach($position in 1..4){[pscustomobject]@{Code='TablePosition';Value='0.2';Unit='mm';Page=3;LowerLimit='-1';UpperLimit='1';Mode='Unspecified';SourceSystem='NotSpecified';Slice='';Context=($method+'Position'+$position);ContextSection='TablePosition';Source='PrintedTablePositionResult';Status='Printed'}}})
+    $cache.MeasurementsDocument.Measurements=$rows;$valid=$cache|ConvertTo-Json -Depth 20;[IO.File]::WriteAllText($path,$valid,(New-Object Text.UTF8Encoding $true));$projection=(Get-Web $f).records[0].content.measurements
+    Check ($projection.Count -eq 8 -and @($projection|Where-Object{$_.label -ceq 'Table position' -and $_.context -cmatch '^(Continuous|Stepwise)Position[1-4]$'}).Count -eq 8) 'All eight verified method/position readings appear without invented acquisition identities'
+    foreach($kind in @('OldCapability','MissingRow','DuplicateContext','WrongSource','InventedSystem','MixedPages','WrongProfile','MissingLimits')){
+        $bad=$valid|ConvertFrom-Json;switch($kind){'OldCapability'{$bad.MeasurementsDocument.MeasurementSupportRevision=3}'MissingRow'{$bad.MeasurementsDocument.Measurements=@($bad.MeasurementsDocument.Measurements|Select-Object -First 7)}'DuplicateContext'{$bad.MeasurementsDocument.Measurements[7].Context='ContinuousPosition1'}'WrongSource'{$bad.MeasurementsDocument.Measurements[0].Source='PrintedAlignmentResult'}'InventedSystem'{$bad.MeasurementsDocument.Measurements[0].SourceSystem='A'}'MixedPages'{$bad.MeasurementsDocument.Measurements[0].Page=2}'WrongProfile'{$bad.DocumentClassification.ProfileId='siemens-iec-basic-v1'}'MissingLimits'{$bad.MeasurementsDocument.Measurements[0].LowerLimit=''}}
+        [IO.File]::WriteAllText($path,($bad|ConvertTo-Json -Depth 20),(New-Object Text.UTF8Encoding $true));Check ((Get-Web $f).records[0].content.measurements.Count -eq 0) 'An incomplete, legacy or malformed table is withheld as a whole rather than partially projected'
+    }
+}
+
 $failed=@($script:Results|Where-Object Result -eq 'FAIL').Count
 $report=[pscustomobject]@{Version='5.4.0';Runtime=$PSVersionTable.PSVersion.ToString();Tests=$script:Results.Count;Assertions=$script:Assertions;Failed=$failed;Results=@($script:Results.ToArray());Scope='Synthetic PDFs, local scanner folders and controlled cached classifier observations with matching fixture-byte provenance; actual extraction is covered separately. Hands-off filing policy, inferred-label disclosure, waiting/review counters, independent file organization, no fabricated clinical review, stale/changed-file rejection, append-only Undo, readable ownership, exports and stdin/stdout JSON worker.'}
 if($OutputPath){$report|ConvertTo-Json -Depth 12|Set-Content $OutputPath -Encoding UTF8}

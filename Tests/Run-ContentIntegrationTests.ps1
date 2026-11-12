@@ -230,7 +230,7 @@ Scenario 'Automatic filing uses already-read Basic and Extended profiles without
 # Reuse only generated text builders from the semantic measurement tests; the
 # PDF below is a real, independently read document, not a mocked reader result.
 $measurementAst=[Management.Automation.Language.Parser]::ParseFile((Join-Path $PSScriptRoot 'Run-MeasurementTests.ps1'),[ref]$null,[ref]$null)
-foreach($name in @('New-ValueRow','New-MeasurementDocument','New-DailyMeasurementDocument','New-AlignmentDocument')){$fn=$measurementAst.Find({param($n)$n -is [Management.Automation.Language.FunctionDefinitionAst] -and $n.Name -eq $name},$true);. ([scriptblock]::Create($fn.Extent.Text))}
+foreach($name in @('New-ValueRow','New-MeasurementDocument','New-DailyMeasurementDocument','New-AlignmentDocument','New-TablePositionTable')){$fn=$measurementAst.Find({param($n)$n -is [Management.Automation.Language.FunctionDefinitionAst] -and $n.Name -eq $name},$true);. ([scriptblock]::Create($fn.Extent.Text))}
 function New-ActualMeasurementPdf([string]$Path,[string]$Text){
     $pages=@([regex]::Matches($Text,'(?ms)^--- Page (?<number>[0-9]+) ---\r?\n(?<body>.*?)(?=^--- Page [0-9]+ ---\r?\n|\z)'))
     if($pages.Count -ne 3){throw 'The generated measurement PDF requires exactly three complete synthetic pages.'}
@@ -264,7 +264,7 @@ Scenario 'Actual isolated PDF readers collect manufacturer Daily inline measurem
         $cfg=Read-QaConfig $FixtureRoot;$raw=@((Get-QaDashboard $cfg).Records|Where-Object Id -ceq (Original 'measurementDaily').id)[0];$cache=&(Get-Module WebService){param($c,$r) Get-QaSavedAnalysis $c $r} $cfg $raw
         Check ($result.result.Analyzed -eq 1 -and $result.result.Failed -eq 0 -and $cache.ReaderUsed -ceq $engine) 'Each available explicit engine actually reads the generated Daily PDF without a fallback or mock'
         Check ($cache.VerifiedHash -ceq (Original 'measurementDaily').hash -and $cache.VerifiedLength -eq (Get-Item $raw.DestinationPath).Length -and $cache.DocumentClassification.DateStatus -ceq 'Consensus') 'Measurement evidence retains the verified PDF fingerprint, length and matching complete footer dates'
-        Check ($cache.MeasurementsDocument.MeasurementSupportRevision -eq 3 -and @($cache.MeasurementsDocument.Measurements).Count -eq 20 -and @($row.content.measurements).Count -eq 20) 'The actual reader, cached parser and public report facade all retain twenty current Daily readings'
+        Check ($cache.MeasurementsDocument.MeasurementSupportRevision -eq 4 -and @($cache.MeasurementsDocument.Measurements).Count -eq 20 -and @($row.content.measurements).Count -eq 20) 'The actual reader, cached parser and public report facade all retain twenty current Daily readings'
         $trend=Request @{action='Trends';scanner=$raw.Scanner;metric='ImageNoise';series=($raw.Scanner+'|ImageNoise|Body|A|1')}
         Check (@($trend.points|Where-Object recordId -ceq $raw.Id).Count -eq 1 -and $trend.unit -ceq 'HU' -and $trend.points[0].page -eq 3) 'The actual authenticated trend action links an exact unit-matched Body/A/slice reading to its source page'
         Preserve
@@ -294,13 +294,30 @@ Scenario 'Actual isolated PDF readers retain Monthly alignment metrics and separ
         [void](Request @{action='Settings';pdfReaderMode=$engine});$result=Request @{action='Analyze';id=(Original 'measurementMonthlyAlignment').id;force=$true};$row=Record 'measurementMonthlyAlignment'
         $cfg=Read-QaConfig $FixtureRoot;$raw=@((Get-QaDashboard $cfg).Records|Where-Object Id -ceq (Original 'measurementMonthlyAlignment').id)[0];$cache=&(Get-Module WebService){param($c,$r) Get-QaSavedAnalysis $c $r} $cfg $raw
         Check ($result.result.Analyzed -eq 1 -and $result.result.Failed -eq 0 -and $cache.ReaderUsed -ceq $engine -and $cache.VerifiedHash -ceq (Original 'measurementMonthlyAlignment').hash) 'Each available explicit reader actually parses the same generated Monthly alignment PDF bytes.'
-        Check ($cache.MeasurementsDocument.MeasurementSupportRevision -eq 3 -and $cache.MeasurementsDocument.Measurements.Count -eq 5 -and $row.content.measurements.Count -eq 5) 'Five current scalar/axis readings survive the real reader, cache and report-inspector projection.'
+        Check ($cache.MeasurementsDocument.MeasurementSupportRevision -eq 4 -and $cache.MeasurementsDocument.Measurements.Count -eq 5 -and $row.content.measurements.Count -eq 5) 'Five current scalar/axis readings survive the real reader, cache and report-inspector projection.'
         foreach($case in @(@('Lightmarker','Overall','0.43'),@('ExternalLightmarker','Overall','-0.31'),@('TopogramPosition','Overall','0.62'),@('SagittalCoronalLightmarker','Sagittal','0.27'),@('SagittalCoronalLightmarker','Coronal','-0.38'))){
             $series=$raw.Scanner+'|'+$case[0]+'|Unspecified|NotSpecified|'+$case[1];$trend=Request @{action='Trends';scanner=$raw.Scanner;metric=$case[0];series=$series}
             Check ($trend.points.Count -eq 1 -and $trend.points[0].recordId -ceq $raw.Id -and [decimal]$trend.points[0].value -eq [decimal]::Parse($case[2],[Globalization.CultureInfo]::InvariantCulture) -and $trend.points[0].unit -ceq 'mm' -and $trend.points[0].page -eq 3) 'The exact selected metric/context links its current millimetre reading back to the verified source PDF page.'
             Check ($trend.selectedSeries -ceq $series -and $trend.series[0].label -notmatch 'System|Slice') 'Unprinted acquisition identities remain absent from each scalar or explicit-axis series.'
         }
         Check ($row.clinicalComponents.Count -eq 0 -and $row.printedResult -ceq 'Not inferred from file classification') 'Numeric Monthly trends do not create clinical approval or completed checklist evidence.'
+        Preserve
+    }}finally{[void](Request @{action='Settings';pdfReaderMode=$originalMode})}
+}
+
+Scenario 'Actual isolated readers preserve eight table-position method contexts through cached facade and trends' {
+    $text=(New-AlignmentDocument -Label 'Table Position' -Table (New-TablePositionTable)).Replace('2025-04-09 09:25:00','2025-02-03 08:15:00').Replace('1. Quality IEC Constancy Table Position',"SOMATOM Definition Flash`nQuality IEC Constancy`n1. Quality IEC Constancy Table Position")
+    Add-MeasurementIntegrationPdf 'measurementTablePosition' $text;$originalMode=[string](Snapshot).settings.pdfReaderMode
+    try{foreach($engine in @(Get-MeasurementIntegrationReaders)){
+        [void](Request @{action='Settings';pdfReaderMode=$engine});$result=Request @{action='Analyze';id=(Original 'measurementTablePosition').id;force=$true};$row=Record 'measurementTablePosition'
+        $cfg=Read-QaConfig $FixtureRoot;$raw=@((Get-QaDashboard $cfg).Records|Where-Object Id -ceq (Original 'measurementTablePosition').id)[0];$cache=&(Get-Module WebService){param($c,$r) Get-QaSavedAnalysis $c $r} $cfg $raw
+        Check ($result.result.Analyzed -eq 1 -and $result.result.Failed -eq 0 -and $cache.ReaderUsed -ceq $engine -and $cache.VerifiedHash -ceq (Original 'measurementTablePosition').hash) 'Every available explicit reader parses the real generated table PDF with verified byte provenance.'
+        Check ($cache.MeasurementsDocument.MeasurementSupportRevision -eq 4 -and $cache.MeasurementsDocument.Measurements.Count -eq 8 -and @($row.content.measurements).Count -eq 8) 'All eight source-linked method/position values survive the actual reader, cache and report facade.'
+        foreach($context in @('ContinuousPosition1','StepwisePosition1','ContinuousPosition2','StepwisePosition2','ContinuousPosition3','StepwisePosition3','ContinuousPosition4','StepwisePosition4')){
+            $series=$raw.Scanner+'|TablePosition|Unspecified|NotSpecified|'+$context;$trend=Request @{action='Trends';scanner=$raw.Scanner;metric='TablePosition';series=$series};$point=$trend.points[0]
+            Check ($trend.points.Count -eq 1 -and $point.recordId -ceq $raw.Id -and $point.page -eq 3 -and $point.unit -ceq 'mm' -and $trend.selectedSeries -ceq $series) 'The exact movement-method and position series links to its verified current source page.'
+        }
+        Check ($row.clinicalComponents.Count -eq 0 -and $row.printedResult -ceq 'Not inferred from file classification') 'Table-position numbers and folder labels do not create clinical approval.'
         Preserve
     }}finally{[void](Request @{action='Settings';pdfReaderMode=$originalMode})}
 }
