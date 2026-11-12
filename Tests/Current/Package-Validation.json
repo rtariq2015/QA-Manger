@@ -1,17 +1,17 @@
 {
-  "ProvenanceFile": "/tmp/ctqa-550-final-artifact-provenance.json",
-  "Version": "5.5.0",
-  "SourceCommit": "0199b05bf0e52cc12ca03d576a2583ebe736cb9a",
-  "RunId": 43117160248,
+  "ProvenanceFile": "/tmp/ctqa-560-final-artifact-provenance.json",
+  "Version": "5.6.0",
+  "SourceCommit": "bea7a3ef62ad6db598ec1d27ee8bfc2a70b16980",
+  "RunId": 43135344109,
   "Runtime": "Linux / PowerShell 7.4.13: ZIP and installation/staging logic only; Windows executables were not launched in these local checks.",
-  "HostSHA256": "c3163cca9e233bd15b020678068f299227795ecdb4ec82bee9d7045af2bce86f",
+  "HostSHA256": "c1523e7269f9c2be6d3cf27bad1e55f7de5f6f19cec4eb1c7135febb53ddd522",
   "PythonIntegritySHA256": "7bb612a33fa72070b608fc7a67ab93d9de48aebafc6c3ebd1978aff3fd9f27d4",
   "PythonManifestFiles": 103,
   "HospitalNetworkContacted": false,
   "PrivatePackagesLocalOnly": true,
   "Checks": [
     {
-      "Name": "Portable metadata declares5.5.0",
+      "Name": "Portable metadata declares5.6.0",
       "Passed": true
     },
     {
@@ -288,6 +288,14 @@
     },
     {
       "Name": "Portable manifest member App/MeasurementParser.psm1",
+      "Passed": true
+    },
+    {
+      "Name": "Portable unique manifest member App/Monthly.psm1",
+      "Passed": true
+    },
+    {
+      "Name": "Portable manifest member App/Monthly.psm1",
       "Passed": true
     },
     {
@@ -1371,6 +1379,10 @@
       "Passed": true
     },
     {
+      "Name": "Portable includes the current Monthly module under the previous updater PSM allowlist",
+      "Passed": true
+    },
+    {
       "Name": "Portable support diagnostics source present",
       "Passed": true
     },
@@ -1383,7 +1395,7 @@
       "Passed": true
     },
     {
-      "Name": "Update metadata declares5.5.0",
+      "Name": "Update metadata declares5.6.0",
       "Passed": true
     },
     {
@@ -1660,6 +1672,14 @@
     },
     {
       "Name": "Update manifest member App/MeasurementParser.psm1",
+      "Passed": true
+    },
+    {
+      "Name": "Update unique manifest member App/Monthly.psm1",
+      "Passed": true
+    },
+    {
+      "Name": "Update manifest member App/Monthly.psm1",
       "Passed": true
     },
     {
@@ -2743,6 +2763,10 @@
       "Passed": true
     },
     {
+      "Name": "Update includes the current Monthly module under the previous updater PSM allowlist",
+      "Passed": true
+    },
+    {
       "Name": "Update support diagnostics source present",
       "Passed": true
     },
@@ -2755,7 +2779,7 @@
       "Passed": true
     },
     {
-      "Name": "Upgrade metadata declares5.5.0",
+      "Name": "Upgrade metadata declares5.6.0",
       "Passed": true
     },
     {
@@ -3032,6 +3056,14 @@
     },
     {
       "Name": "Upgrade manifest member App/MeasurementParser.psm1",
+      "Passed": true
+    },
+    {
+      "Name": "Upgrade unique manifest member App/Monthly.psm1",
+      "Passed": true
+    },
+    {
+      "Name": "Upgrade manifest member App/Monthly.psm1",
       "Passed": true
     },
     {
@@ -4115,6 +4147,10 @@
       "Passed": true
     },
     {
+      "Name": "Upgrade includes the current Monthly module under the previous updater PSM allowlist",
+      "Passed": true
+    },
+    {
       "Name": "Upgrade support diagnostics source present",
       "Passed": true
     },
@@ -4127,7 +4163,7 @@
       "Passed": true
     },
     {
-      "Name": "Work_Portable metadata declares5.5.0",
+      "Name": "Work_Portable metadata declares5.6.0",
       "Passed": true
     },
     {
@@ -4404,6 +4440,14 @@
     },
     {
       "Name": "Work_Portable manifest member App/MeasurementParser.psm1",
+      "Passed": true
+    },
+    {
+      "Name": "Work_Portable unique manifest member App/Monthly.psm1",
+      "Passed": true
+    },
+    {
+      "Name": "Work_Portable manifest member App/Monthly.psm1",
       "Passed": true
     },
     {
@@ -5495,6 +5539,10 @@
       "Passed": true
     },
     {
+      "Name": "Work_Portable includes the current Monthly module under the previous updater PSM allowlist",
+      "Passed": true
+    },
+    {
       "Name": "Work_Portable support diagnostics source present",
       "Passed": true
     },
@@ -5507,7 +5555,7 @@
       "Passed": true
     },
     {
-      "Name": "Work_Upgrade metadata declares5.5.0",
+      "Name": "Work_Upgrade metadata declares5.6.0",
       "Passed": true
     },
     {
@@ -5784,6 +5832,14 @@
     },
     {
       "Name": "Work_Upgrade manifest member App/MeasurementParser.psm1",
+      "Passed": true
+    },
+    {
+      "Name": "Work_Upgrade unique manifest member App/Monthly.psm1",
+      "Passed": true
+    },
+    {
+      "Name": "Work_Upgrade manifest member App/Monthly.psm1",
       "Passed": true
     },
     {
@@ -6875,6 +6931,10 @@
       "Passed": true
     },
     {
+      "Name": "Work_Upgrade includes the current Monthly module under the previous updater PSM allowlist",
+      "Passed": true
+    },
+    {
       "Name": "Work_Upgrade support diagnostics source present",
       "Passed": true
     },
@@ -6895,7 +6955,7 @@
       "Passed": true
     },
     {
-      "Name": "Previous install is the real5.4.0 package",
+      "Name": "Previous install is the real5.5.0 package",
       "Passed": true
     },
     {
@@ -6903,7 +6963,7 @@
       "Passed": true
     },
     {
-      "Name": "Existing5.4.0 updater stages and installs actual5.5.0 Update ZIP",
+      "Name": "Existing5.5.0 updater stages and installs actual5.6.0 Update ZIP",
       "Passed": true
     },
     {
@@ -6930,49 +6990,49 @@
   "Packages": [
     {
       "Kind": "Portable",
-      "Name": "CT_QA_Manager_Pro_v5.5.0_Portable.zip",
-      "Bytes": 59585028,
-      "SHA256": "dfb98962645579486aeb8797d6561a2e44fc0c49ce91f8da20ed31e4859cb7f9",
-      "ManifestMembers": 167
+      "Name": "CT_QA_Manager_Pro_v5.6.0_Portable.zip",
+      "Bytes": 59599982,
+      "SHA256": "8ee64f4ffa0c5f45ce3998821dc7393906878768d2a94f6986cc51fd5ee6809d",
+      "ManifestMembers": 168
     },
     {
       "Kind": "Update",
-      "Name": "CT_QA_Manager_Pro_v5.5.0_Update.zip",
-      "Bytes": 59585028,
-      "SHA256": "c3c0d20ec5e57494c8c0f8d0a448849d7969f2d73d1dd83834b672537b1e0ef9",
-      "ManifestMembers": 167
+      "Name": "CT_QA_Manager_Pro_v5.6.0_Update.zip",
+      "Bytes": 59599982,
+      "SHA256": "9d01f35c0700ac77bb561d7ff46638e3904150d0bc593933c6f2c7233b084d68",
+      "ManifestMembers": 168
     },
     {
       "Kind": "Upgrade",
-      "Name": "CT_QA_Manager_Pro_v5.5.0_Upgrade.zip",
-      "Bytes": 59586382,
-      "SHA256": "7a97d2c44b2408f07f4a423ab62c9523c1e0df9e2197d94899a63d489c9676b7",
-      "ManifestMembers": 167
+      "Name": "CT_QA_Manager_Pro_v5.6.0_Upgrade.zip",
+      "Bytes": 59601336,
+      "SHA256": "fa6cab744b4560fad9515fdb6267225dbf74f3babe0b187a717089b858e9a903",
+      "ManifestMembers": 168
     },
     {
       "Kind": "Work_Portable",
-      "Name": "CT_QA_Manager_Pro_v5.5.0_Work_Portable.zip",
-      "Bytes": 59585436,
-      "SHA256": "ede569ecb8e51a4cf9b9c307617eabb7c72259675d24d453eaaaffb5c5639d9d",
-      "ManifestMembers": 168
+      "Name": "CT_QA_Manager_Pro_v5.6.0_Work_Portable.zip",
+      "Bytes": 59600390,
+      "SHA256": "87ea9ec970957f75daf3e4bc81d183f5f472b160fe89402e405ba48df95f868f",
+      "ManifestMembers": 169
     },
     {
       "Kind": "Work_Upgrade",
-      "Name": "CT_QA_Manager_Pro_v5.5.0_Work_Upgrade.zip",
-      "Bytes": 59586591,
-      "SHA256": "72e6a7629d74ce2147a01b445a728e8626520700e891ecf34c68b66a211d5622",
-      "ManifestMembers": 168
+      "Name": "CT_QA_Manager_Pro_v5.6.0_Work_Upgrade.zip",
+      "Bytes": 59601545,
+      "SHA256": "58e8ee9b65f0e07667d7370b262c3eb73de9df09ece158213ecdfa898fba6909",
+      "ManifestMembers": 169
     }
   ],
   "Failed": 0,
-  "GenericUpgradeOutput": "All five release ZIPs: clean contents, manifests verified, no passwords bundled.\nActual packaged one-time upgrade from v5.4.0 passed: all data/config/credential/archive/history/prior-log sentinel hashes preserved; new program installed and prior program backed up.\nStandalone packaged diagnostic collector passed against the updated installation.",
+  "GenericUpgradeOutput": "All five release ZIPs: clean contents, manifests verified, no passwords bundled.\nActual packaged one-time upgrade from v5.5.0 passed: all data/config/credential/archive/history/prior-log sentinel hashes preserved; new program installed and prior program backed up.\nStandalone packaged diagnostic collector passed against the updated installation.",
   "PrivateUpgradeOutput": "Actual private one-time upgrade passed: three scanner paths/usernames applied; archive location, department settings, credential-file sentinel, organization history, prior logs and all data hashes preserved. No network connection attempted.",
-  "InAppUpdateFrom": "5.4.0",
-  "InAppUpdateTo": "5.5.0",
+  "InAppUpdateFrom": "5.5.0",
+  "InAppUpdateTo": "5.6.0",
   "InAppPreservedSentinelFiles": 7,
-  "InAppSourceValidatorVersion": "5.4.0",
+  "InAppSourceValidatorVersion": "5.5.0",
   "InAppSourceValidatorSHA256": "262f96322d673bb4a84457b61ea61f402f31c29fe380185b48c4c7204c6a887c",
   "InAppStageCleaned": true,
   "Passed": true,
-  "CheckCount": 1729
+  "CheckCount": 1744
 }

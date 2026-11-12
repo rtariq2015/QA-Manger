@@ -1,11 +1,11 @@
 {
-  "version": "5.5.0",
+  "version": "5.6.0",
   "syntheticOnly": true,
   "browser": "Chromium via Playwright",
   "browserChannel": "msedge",
   "nativePdfPreviewActuallyRun": true,
-  "tests": 17,
-  "assertions": 681,
+  "tests": 18,
+  "assertions": 826,
   "failed": 0,
   "externalAssetRequests": 0,
   "javascriptErrors": [],
@@ -15,15 +15,19 @@
       "result": "PASS"
     },
     {
-      "name": "The seven-tab interface loads locally without external assets",
+      "name": "The eight-tab interface loads locally without external assets",
       "result": "PASS"
     },
     {
-      "name": "Light and Dark appearance apply consistently across all seven tabs and persist in saved settings",
+      "name": "Light and Dark appearance apply consistently across all eight tabs and persist in saved settings",
       "result": "PASS"
     },
     {
-      "name": "The expandable calendar shows scanner receipt and preserves an exact-day export scope",
+      "name": "The Reports calendar preserves receipt, Library filters and exact-day export scope",
+      "result": "PASS"
+    },
+    {
+      "name": "Review selection keeps the visible PDF and the only decision pair in the same scope",
       "result": "PASS"
     },
     {

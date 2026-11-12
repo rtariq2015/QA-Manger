@@ -4,8 +4,8 @@
     "Runtime":  "5.1.26100.33648",
     "WindowsPowerShell51ActuallyRun":  true,
     "SyntheticOnly":  true,
-    "Tests":  23,
-    "Assertions":  84,
+    "Tests":  27,
+    "Assertions":  116,
     "Failed":  0,
     "Results":  [
                     {
@@ -115,6 +115,26 @@
                     },
                     {
                         "Name":  "Only eligible older alignment caches wait for one capability upgrade and attempted unsupported layouts stop retrying",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Table-position methods and numbered positions remain eight separate source-linked millimetre series",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Incomplete or untrusted cached table blocks cannot publish partial method series",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Only older complete table evidence waits for a capability-four read while existing measurements remain usable",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Selected-metric coverage distinguishes absent tests from unusable evidence without counting pending or references twice",
                         "Result":  "PASS",
                         "Details":  ""
                     },

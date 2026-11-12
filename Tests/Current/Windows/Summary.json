@@ -1,14 +1,14 @@
 {
-  "Version": "5.5.0",
-  "SourceCommit": "0199b05bf0e52cc12ca03d576a2583ebe736cb9a",
-  "WorkflowRun": "https://github.com/rtariq2015/QA-Manger/actions/runs/43117160248",
+  "Version": "5.6.0",
+  "SourceCommit": "bea7a3ef62ad6db598ec1d27ee8bfc2a70b16980",
+  "WorkflowRun": "https://github.com/rtariq2015/QA-Manger/actions/runs/43135344109",
   "WorkflowStatus": "completed",
   "WorkflowConclusion": "success",
   "WorkflowCompleted": true,
   "WorkflowPassed": true,
   "Runtime": "Windows PowerShell5.1",
-  "Tests": 376,
-  "Assertions": 3654,
+  "Tests": 397,
+  "Assertions": 3970,
   "Failed": 0,
   "Suites": [
     {
@@ -19,8 +19,14 @@
     },
     {
       "Name": "Run-MeasurementTests",
-      "Tests": 31,
-      "Assertions": 121,
+      "Tests": 34,
+      "Assertions": 171,
+      "Failed": 0
+    },
+    {
+      "Name": "Run-TrendTests",
+      "Tests": 27,
+      "Assertions": 116,
       "Failed": 0
     },
     {
@@ -31,20 +37,20 @@
     },
     {
       "Name": "Run-AnalysisTests",
-      "Tests": 21,
-      "Assertions": 152,
+      "Tests": 22,
+      "Assertions": 184,
       "Failed": 0
     },
     {
       "Name": "Run-ContentIntegrationTests",
-      "Tests": 16,
-      "Assertions": 560,
+      "Tests": 17,
+      "Assertions": 648,
       "Failed": 0
     },
     {
       "Name": "Run-WebServiceTests",
-      "Tests": 53,
-      "Assertions": 435,
+      "Tests": 57,
+      "Assertions": 492,
       "Failed": 0
     },
     {
@@ -74,7 +80,7 @@
     {
       "Name": "Run-Tests",
       "Tests": 26,
-      "Assertions": 258,
+      "Assertions": 260,
       "Failed": 0
     },
     {
@@ -97,8 +103,8 @@
     },
     {
       "Name": "Run-MonthlyTests",
-      "Tests": 16,
-      "Assertions": 89,
+      "Tests": 24,
+      "Assertions": 144,
       "Failed": 0
     },
     {
@@ -112,12 +118,6 @@
       "Tests": 17,
       "Assertions": 48,
       "Failed": 0
-    },
-    {
-      "Name": "Run-TrendTests",
-      "Tests": 23,
-      "Assertions": 84,
-      "Failed": 0
     }
   ],
   "WindowsPowerShell51ActuallyRun": true,
@@ -129,58 +129,87 @@
   "ProductionPythonNonAdministratorActuallyRun": true,
   "ProductionPythonLiveCancellationActuallyRun": true,
   "StandardAccountCleanupSucceeded": true,
-  "SelfContainedWindowsHostSHA256": "c3163cca9e233bd15b020678068f299227795ecdb4ec82bee9d7045af2bce86f",
-  "PortablePythonRuntimeArtifactZipSHA256": "416397f65e1491b7b721c859f3f45937b8c64985ee07cf2473325c269c689fa7",
+  "SelfContainedWindowsHostSHA256": "c1523e7269f9c2be6d3cf27bad1e55f7de5f6f19cec4eb1c7135febb53ddd522",
   "PortablePythonIntegrityManifestSHA256": "7bb612a33fa72070b608fc7a67ab93d9de48aebafc6c3ebd1978aff3fd9f27d4",
-  "ValidationArtifactZipSHA256": "34243c8a9c1fbf191868c855a0119ab4e72e589e75a195f68e42a483e9813179",
-  "ReaderBenchmark": {
-    "Evidence": "../Reader-Benchmark-Windows.json",
-    "Tests": 3,
-    "Assertions": 80,
-    "Failed": 0,
-    "ColdReadSamples": 12,
-    "Profiles": [
-      "Basic:9pages",
-      "Extended:6pages"
-    ],
-    "WholeIsolatedReadMediansMilliseconds": {
-      "Standard": 1792.477,
-      "Python": 2534.18
-    },
-    "FasterReaderForThisFixture": "Standard",
-    "StandardMedianDividedByPythonMedian": 0.707,
-    "CachedAnalysis": {
-      "ColdAnalyzed": 2,
-      "ColdMilliseconds": 4208.741,
-      "WarmAnalyzed": 0,
-      "WarmCached": 2,
-      "WarmMilliseconds": 139.442,
-      "WarmCacheWrites": 0
-    },
-    "MemoryMeasured": false,
-    "HospitalNetworkSpeedMeasured": false
+  "PortablePythonRuntimeArtifactZipSHA256": "3d3232218a4781f388a9cacd35e3cf48682840e35745d5ee7dcfbd757e442192",
+  "ValidationArtifactZipSHA256": "9acaae9b73fb524e49072f5d05abc8fbc1d1b579dcc433d9d88f2da1ff53a92b",
+  "Browser": {
+    "Evidence": "../Browser-Web-Windows.json",
+    "Tests": 18,
+    "Assertions": 826,
+    "Failed": 0
+  },
+  "LargeLibrary": {
+    "Evidence": "../Large-Library-Windows.json",
+    "Tests": 4,
+    "Assertions": 5463,
+    "Failed": 0
+  },
+  "LargeBrowser": {
+    "Evidence": "../Browser-Large-Windows.json",
+    "Tests": 6,
+    "Assertions": 27395,
+    "Failed": 0
+  },
+  "ContentBrowser": {
+    "Evidence": "../Browser-Content-Windows.json",
+    "Tests": 9,
+    "Assertions": 290,
+    "Failed": 0
+  },
+  "PythonBrowser": {
+    "Evidence": "../Browser-Python-Windows.json",
+    "Tests": 9,
+    "Assertions": 365,
+    "Failed": 0
   },
   "BackgroundScheduler": {
     "Evidence": "../Background-Scheduler-Windows.json",
     "Passed": true,
     "CheckCount": 18,
     "SyntheticOnly": true,
-    "ExecutionPlatform": "Native Windows workflow execution",
-    "PowerShellAssertionsReported": false,
-    "Scope": "Full real-host scheduler regression: synthetic-adapter orchestration, actual production-reader control/trust-boundary checks and an unresponsive-helper/child-cleanup timeout. Separate check outcomes; no hospital throughput claim."
+    "PowerShellAssertionsReported": false
   },
   "CalendarRules": {
     "Evidence": "../Calendar-Windows.json",
     "Passed": true,
-    "UniqueRuleChecks": 7,
-    "RepeatedRuns": 1,
-    "Timezones": [
-      "process default"
-    ],
+    "CheckCount": 7,
     "SyntheticOnly": true,
-    "ExecutionPlatform": "Native Windows workflow execution",
-    "PowerShellAssertionsReported": false,
-    "Scope": "The same seven pure cached-metadata calendar rules repeated by timezone. These are not 21 distinct rules and do not read PDFs or certify clinical QA completion."
+    "PowerShellAssertionsReported": false
+  },
+  "ControllerRules": [
+    {
+      "Evidence": "../Trends-Refresh-Controller-Windows.json",
+      "Tests": 7,
+      "Assertions": 25,
+      "Failed": 0,
+      "ControllerOnly": true,
+      "ActualBrowser": false,
+      "SyntheticOnly": true,
+      "PowerShellAssertionsReported": false
+    }
+  ],
+  "ReaderBenchmark": {
+    "Evidence": "../Reader-Benchmark-Windows.json",
+    "Tests": 3,
+    "Assertions": 80,
+    "Failed": 0,
+    "ColdReadSamples": 12,
+    "WholeIsolatedReadMediansMilliseconds": {
+      "Standard": 1389.373,
+      "Python": 1832.172
+    },
+    "MemoryMeasured": false,
+    "PerformanceThresholdAsserted": false,
+    "HospitalNetworkSpeedMeasured": false,
+    "CachedAnalysis": {
+      "ColdAnalyzed": 2,
+      "ColdMilliseconds": 4309.902,
+      "WarmAnalyzed": 0,
+      "WarmCached": 2,
+      "WarmMilliseconds": 1344.835,
+      "WarmCacheWrites": 0
+    }
   },
   "Screenshots": [
     "today-light-web-demo.png",
@@ -221,37 +250,12 @@
     "grouped-review-web-demo.png",
     "folders-web-demo.png",
     "folders-light-web-demo.png",
-    "folders-dark-web-demo.png"
+    "folders-dark-web-demo.png",
+    "monthly-web-demo.png",
+    "monthly-light-web-demo.png",
+    "monthly-dark-web-demo.png",
+    "monthly-documents-web-demo.png",
+    "table-position-trends-web-demo.png"
   ],
-  "Scope": "Final completed successful workflow with generated inputs: eighteen fresh native PowerShell suites, four actual Edge workloads, large-library workload, separate calendar rules, reader comparison and scheduler controls. No private corpus data/aggregates, hospital SMB speed or workplace approval is established. Raw files/captures are unchanged.",
-  "Browser": {
-    "Evidence": "../Browser-Web-Windows.json",
-    "Tests": 17,
-    "Assertions": 681,
-    "Failed": 0
-  },
-  "LargeLibrary": {
-    "Evidence": "../Large-Library-Windows.json",
-    "Tests": 4,
-    "Assertions": 5463,
-    "Failed": 0
-  },
-  "LargeBrowser": {
-    "Evidence": "../Browser-Large-Windows.json",
-    "Tests": 6,
-    "Assertions": 27376,
-    "Failed": 0
-  },
-  "ContentBrowser": {
-    "Evidence": "../Browser-Content-Windows.json",
-    "Tests": 8,
-    "Assertions": 246,
-    "Failed": 0
-  },
-  "PythonBrowser": {
-    "Evidence": "../Browser-Python-Windows.json",
-    "Tests": 7,
-    "Assertions": 265,
-    "Failed": 0
-  }
+  "Scope": "Final completed successful source-pinned native workflow with generated data. Suite totals exclude separate browser, benchmark, scheduler and calendar checks. No workstation-policy, private corpus or hospital network claim."
 }

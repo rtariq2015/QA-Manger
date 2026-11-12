@@ -1,12 +1,12 @@
 {
   "Product": "CT QA Manager Pro",
   "Feature": "Versioned content analysis cache",
-  "TimestampUtc": "2026-11-11T22:12:09.0266111Z",
+  "TimestampUtc": "2026-11-12T00:28:36.1146895Z",
   "Runtime": "7.4.13",
   "Platform": "Unix 6.18.57.0",
   "WindowsPowerShell51ActuallyRun": false,
-  "Tests": 21,
-  "Assertions": 152,
+  "Tests": 22,
+  "Assertions": 184,
   "Failed": 0,
   "Results": [
     {
@@ -96,6 +96,11 @@
     },
     {
       "Name": "New measurement capabilities selectively refresh Daily and slice evidence once while preserving warm HU and reference caches",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "Table position revision4 upgrades only older table evidence once and keeps existing measurements and references warm",
       "Result": "PASS",
       "Details": ""
     },

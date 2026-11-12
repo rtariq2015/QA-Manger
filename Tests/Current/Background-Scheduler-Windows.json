@@ -10,10 +10,10 @@
     "cacheSkips": 0,
     "workerStarts": 30,
     "inlinePdfReads": 25,
-    "helperMilliseconds": 19776,
-    "readWorkerMilliseconds": 16816,
-    "planningMilliseconds": 1184,
-    "snapshotMilliseconds": 1777
+    "helperMilliseconds": 14206,
+    "readWorkerMilliseconds": 12168,
+    "planningMilliseconds": 822,
+    "snapshotMilliseconds": 1216
   },
   "realReaderChecks": {
     "syntheticOnly": true,
@@ -31,7 +31,7 @@
   },
   "unresponsiveReaderDeadline": {
     "limitSeconds": 90,
-    "observedAfterChildStartedSeconds": 89.468,
+    "observedAfterChildStartedSeconds": 89.578,
     "helperTreeStopped": true,
     "interruptedReportStillPending": true,
     "automaticRestartSuppressed": true

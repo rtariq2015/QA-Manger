@@ -1,6 +1,6 @@
 ﻿{
     "Product":  "CT QA Manager Pro",
-    "Version":  "5.5.0",
+    "Version":  "5.6.0",
     "Feature":  "Reader comparison",
     "Runtime":  "5.1.26100.33648",
     "NativeWindowsActuallyRun":  true,
@@ -17,15 +17,15 @@
                       "ReaderVersion":  "PdfPig 0.1.16",
                       "WholeIsolatedReadMilliseconds":  {
                                                             "Samples":  6,
-                                                            "Minimum":  1681.262,
-                                                            "Median":  1792.477,
-                                                            "Maximum":  1921.658
+                                                            "Minimum":  1208.143,
+                                                            "Median":  1389.373,
+                                                            "Maximum":  3586.279
                                                         },
                       "ReaderMilliseconds":  {
                                                  "Samples":  6,
-                                                 "Minimum":  689.014,
-                                                 "Median":  766.27,
-                                                 "Maximum":  776.013
+                                                 "Minimum":  481.628,
+                                                 "Median":  550.485,
+                                                 "Maximum":  564.008
                                              }
                   },
                   {
@@ -33,15 +33,15 @@
                       "ReaderVersion":  "Python 3.14.10 / pypdf 7.0.1",
                       "WholeIsolatedReadMilliseconds":  {
                                                             "Samples":  6,
-                                                            "Minimum":  2518.618,
-                                                            "Median":  2534.18,
-                                                            "Maximum":  2619.796
+                                                            "Minimum":  1805.501,
+                                                            "Median":  1832.172,
+                                                            "Maximum":  1895.834
                                                         },
                       "ReaderMilliseconds":  {
                                                  "Samples":  6,
-                                                 "Minimum":  1487.38,
-                                                 "Median":  1491.991,
-                                                 "Maximum":  1522.876
+                                                 "Minimum":  1061.665,
+                                                 "Median":  1077.977,
+                                                 "Maximum":  1146.056
                                              }
                   }
               ],
@@ -52,8 +52,8 @@
                         "Profile":  "Basic",
                         "Pages":  9,
                         "Iteration":  1,
-                        "WholeIsolatedReadMilliseconds":  1854.888,
-                        "ReaderMilliseconds":  765.678,
+                        "WholeIsolatedReadMilliseconds":  1412.633,
+                        "ReaderMilliseconds":  551.128,
                         "CompleteRead":  true,
                         "ClassificationAgreed":  true
                     },
@@ -63,8 +63,8 @@
                         "Profile":  "Basic",
                         "Pages":  9,
                         "Iteration":  1,
-                        "WholeIsolatedReadMilliseconds":  2536.373,
-                        "ReaderMilliseconds":  1522.876,
+                        "WholeIsolatedReadMilliseconds":  1843.927,
+                        "ReaderMilliseconds":  1097.658,
                         "CompleteRead":  true,
                         "ClassificationAgreed":  true
                     },
@@ -74,8 +74,8 @@
                         "Profile":  "Extended",
                         "Pages":  6,
                         "Iteration":  1,
-                        "WholeIsolatedReadMilliseconds":  1921.658,
-                        "ReaderMilliseconds":  752.898,
+                        "WholeIsolatedReadMilliseconds":  1474.373,
+                        "ReaderMilliseconds":  549.842,
                         "CompleteRead":  true,
                         "ClassificationAgreed":  true
                     },
@@ -85,8 +85,8 @@
                         "Profile":  "Extended",
                         "Pages":  6,
                         "Iteration":  1,
-                        "WholeIsolatedReadMilliseconds":  2619.796,
-                        "ReaderMilliseconds":  1487.38,
+                        "WholeIsolatedReadMilliseconds":  1885.53,
+                        "ReaderMilliseconds":  1061.665,
                         "CompleteRead":  true,
                         "ClassificationAgreed":  true
                     },
@@ -96,8 +96,8 @@
                         "Profile":  "Basic",
                         "Pages":  9,
                         "Iteration":  2,
-                        "WholeIsolatedReadMilliseconds":  2531.987,
-                        "ReaderMilliseconds":  1515.867,
+                        "WholeIsolatedReadMilliseconds":  1805.501,
+                        "ReaderMilliseconds":  1078.033,
                         "CompleteRead":  true,
                         "ClassificationAgreed":  true
                     },
@@ -107,8 +107,8 @@
                         "Profile":  "Basic",
                         "Pages":  9,
                         "Iteration":  2,
-                        "WholeIsolatedReadMilliseconds":  1781.087,
-                        "ReaderMilliseconds":  769.217,
+                        "WholeIsolatedReadMilliseconds":  1366.113,
+                        "ReaderMilliseconds":  564.008,
                         "CompleteRead":  true,
                         "ClassificationAgreed":  true
                     },
@@ -118,8 +118,8 @@
                         "Profile":  "Extended",
                         "Pages":  6,
                         "Iteration":  2,
-                        "WholeIsolatedReadMilliseconds":  2518.618,
-                        "ReaderMilliseconds":  1493.594,
+                        "WholeIsolatedReadMilliseconds":  1820.418,
+                        "ReaderMilliseconds":  1077.921,
                         "CompleteRead":  true,
                         "ClassificationAgreed":  true
                     },
@@ -129,8 +129,8 @@
                         "Profile":  "Extended",
                         "Pages":  6,
                         "Iteration":  2,
-                        "WholeIsolatedReadMilliseconds":  1779.479,
-                        "ReaderMilliseconds":  766.861,
+                        "WholeIsolatedReadMilliseconds":  1344.786,
+                        "ReaderMilliseconds":  546.368,
                         "CompleteRead":  true,
                         "ClassificationAgreed":  true
                     },
@@ -140,8 +140,8 @@
                         "Profile":  "Basic",
                         "Pages":  9,
                         "Iteration":  3,
-                        "WholeIsolatedReadMilliseconds":  1681.262,
-                        "ReaderMilliseconds":  689.014,
+                        "WholeIsolatedReadMilliseconds":  1208.143,
+                        "ReaderMilliseconds":  481.628,
                         "CompleteRead":  true,
                         "ClassificationAgreed":  true
                     },
@@ -151,8 +151,8 @@
                         "Profile":  "Basic",
                         "Pages":  9,
                         "Iteration":  3,
-                        "WholeIsolatedReadMilliseconds":  2541.051,
-                        "ReaderMilliseconds":  1490.388,
+                        "WholeIsolatedReadMilliseconds":  1809.049,
+                        "ReaderMilliseconds":  1069.978,
                         "CompleteRead":  true,
                         "ClassificationAgreed":  true
                     },
@@ -162,8 +162,8 @@
                         "Profile":  "Extended",
                         "Pages":  6,
                         "Iteration":  3,
-                        "WholeIsolatedReadMilliseconds":  1803.867,
-                        "ReaderMilliseconds":  776.013,
+                        "WholeIsolatedReadMilliseconds":  3586.279,
+                        "ReaderMilliseconds":  551.526,
                         "CompleteRead":  true,
                         "ClassificationAgreed":  true
                     },
@@ -173,20 +173,20 @@
                         "Profile":  "Extended",
                         "Pages":  6,
                         "Iteration":  3,
-                        "WholeIsolatedReadMilliseconds":  2529.536,
-                        "ReaderMilliseconds":  1487.669,
+                        "WholeIsolatedReadMilliseconds":  1895.834,
+                        "ReaderMilliseconds":  1146.056,
                         "CompleteRead":  true,
                         "ClassificationAgreed":  true
                     }
                 ],
-    "StandardMedianDividedByPythonMedian":  0.707,
+    "StandardMedianDividedByPythonMedian":  0.758,
     "FasterReaderForThisFixture":  "Standard",
     "CachedAnalysis":  {
                            "ColdAnalyzed":  2,
-                           "ColdMilliseconds":  4208.741,
+                           "ColdMilliseconds":  4309.902,
                            "WarmAnalyzed":  0,
                            "WarmCached":  2,
-                           "WarmMilliseconds":  139.442,
+                           "WarmMilliseconds":  1344.835,
                            "WarmCacheWrites":  0
                        },
     "MemoryMeasured":  false,

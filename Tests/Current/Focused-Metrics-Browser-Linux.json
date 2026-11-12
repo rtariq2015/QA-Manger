@@ -1,0 +1,34 @@
+{
+  "version": "5.6.0",
+  "syntheticOnly": true,
+  "focusedNewMetricsOnly": true,
+  "browserChannel": "chromium",
+  "tests": 5,
+  "assertions": 219,
+  "failed": 0,
+  "javascriptErrors": [],
+  "externalAssetRequests": 0,
+  "results": [
+    {
+      "name": "Manufacturer Daily inline measurements populate Water and Noise trends from the actual local reader",
+      "result": "PASS"
+    },
+    {
+      "name": "Slice thickness has millimetre charts and opens its exact cached source page without hidden analysis",
+      "result": "PASS"
+    },
+    {
+      "name": "Monthly alignment measurements keep separate printed millimetre series and exact source pages",
+      "result": "PASS"
+    },
+    {
+      "name": "A real table-position read refreshes the visible chart and keeps eight printed method-position series separate",
+      "result": "PASS"
+    },
+    {
+      "name": "Content-identical real snapshots do not restart an already displayed trend chart",
+      "result": "PASS"
+    }
+  ],
+  "scope": "Actual local host and Standard PDF reader; generated Daily inline HU rows, water/noise coverage, slice/alignment/table millimetre charts, semantic snapshot refresh and exact cached source-page navigation. Focused Linux/new-metric scope: bundled Windows Python and the first four full-workload scenarios are not executed. No report/API mocks or uploaded clinical documents."
+}

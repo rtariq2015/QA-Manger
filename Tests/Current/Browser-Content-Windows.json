@@ -1,10 +1,10 @@
 {
-  "version": "5.5.0",
+  "version": "5.6.0",
   "syntheticOnly": true,
   "nativeContinuousPreviewActuallyRun": true,
   "browserChannel": "msedge",
-  "tests": 8,
-  "assertions": 246,
+  "tests": 9,
+  "assertions": 290,
   "failed": 0,
   "javascriptErrors": [],
   "externalAssetRequests": 0,
@@ -35,6 +35,10 @@
     },
     {
       "name": "A single saved scanner rule lets the pending queue read compatible Flash reports and file them automatically",
+      "result": "PASS"
+    },
+    {
+      "name": "Monthly shows tests found in saved PDFs separately from reviewed clinical evidence",
       "result": "PASS"
     },
     {

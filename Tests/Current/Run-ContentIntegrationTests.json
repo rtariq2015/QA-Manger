@@ -4,8 +4,8 @@
   "Runtime": "7.4.13",
   "WindowsPowerShell51ActuallyRun": false,
   "SyntheticOnly": true,
-  "Tests": 16,
-  "Assertions": 452,
+  "Tests": 17,
+  "Assertions": 496,
   "Failed": 0,
   "Results": [
     {
@@ -70,6 +70,10 @@
     },
     {
       "Name": "Actual isolated PDF readers retain Monthly alignment metrics and separate printed axes in source-linked trends",
+      "Result": "PASS"
+    },
+    {
+      "Name": "Actual isolated readers preserve eight table-position method contexts through cached facade and trends",
       "Result": "PASS"
     }
   ],

@@ -1,10 +1,10 @@
 {
-  "version": "5.5.0",
+  "version": "5.6.0",
   "syntheticOnly": true,
   "browserChannel": "msedge",
   "records": 1367,
   "tests": 6,
-  "assertions": 27376,
+  "assertions": 27395,
   "failed": 0,
   "externalAssetRequests": 0,
   "javascriptErrors": [],

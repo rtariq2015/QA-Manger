@@ -1,8 +1,8 @@
 ﻿{
     "Version":  "5.4.0",
     "Runtime":  "5.1.26100.33648",
-    "Tests":  53,
-    "Assertions":  435,
+    "Tests":  57,
+    "Assertions":  492,
     "Failed":  0,
     "Results":  [
                     {
@@ -267,6 +267,26 @@
                     },
                     {
                         "Name":  "Alignment inspector rows share current graph capability body and explicit-context eligibility",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Monthly reads use cached scoped data without full snapshots PDF work or archive writes",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Monthly setup validates bounded values preserves network settings and versions changed checklists",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Opaque trend revisions ignore identical reordered theme and connection snapshots but follow cached data changes",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Table-position inspector rows require the complete capability-four eight-context table",
                         "Result":  "PASS",
                         "Details":  ""
                     }
