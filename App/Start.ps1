@@ -1094,7 +1094,7 @@ function Prepare-UpdatePackage {
         $script:PreparedUpdate=$plan
         Write-QaSupportEvent -AppRoot $script:AppRoot -Operation OfflineUpdate -Outcome Completed -Counts @{Files=$plan.Files}
         $script:Controls.UpdatePackagePath.Text=$Path
-        $script:Controls.UpdatePackageSummary.Text=('Current: 5.7.5 / Selected: '+$plan.Version+' / '+$plan.Files+' checked program files. Reports and saved settings stay in place.')
+        $script:Controls.UpdatePackageSummary.Text=('Current: 5.7.6 / Selected: '+$plan.Version+' / '+$plan.Files+' checked program files. Reports and saved settings stay in place.')
         $script:Controls.InstallUpdateButton.IsEnabled=$true
     }catch{$script:Controls.UpdatePackagePath.Text='The package could not be checked.';$script:Controls.UpdatePackageSummary.Text=$_.Exception.Message;Show-Note $_.Exception.Message 'Update file needs attention' $true}
 }

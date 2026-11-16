@@ -1,0 +1,329 @@
+{
+  "syntheticOnly": true,
+  "scope": "One frontend controls flow using production web assets, a synthetic snapshot, and a generated portrait PNG. Covers Monthly list controls, Today clutter, view-only PDF layout, page fitting, and return to filing review. No real backend, PDF extraction, archive, scanner, native runtime or clinical QA validation.",
+  "checks": [
+    {
+      "name": "CT Edge has one primary Monthly report-list control",
+      "result": "PASS",
+      "actual": 1
+    },
+    {
+      "name": "CT Edge Monthly card states the matching file count",
+      "result": "PASS",
+      "actual": "2"
+    },
+    {
+      "name": "CT Edge Monthly list label matches its saved files",
+      "result": "PASS",
+      "actual": "View all 2 Monthly PDFs"
+    },
+    {
+      "name": "CT Edge Monthly list availability follows its saved file count",
+      "result": "PASS",
+      "actual": true
+    },
+    {
+      "name": "CT Edge Monthly report-list control is primary",
+      "result": "PASS"
+    },
+    {
+      "name": "CT Edge has no duplicate latest/all Monthly controls",
+      "result": "PASS",
+      "actual": 0
+    },
+    {
+      "name": "CT Flash has one primary Monthly report-list control",
+      "result": "PASS",
+      "actual": 1
+    },
+    {
+      "name": "CT Flash Monthly card states the matching file count",
+      "result": "PASS",
+      "actual": "1"
+    },
+    {
+      "name": "CT Flash Monthly list label matches its saved files",
+      "result": "PASS",
+      "actual": "View 1 Monthly PDF"
+    },
+    {
+      "name": "CT Flash Monthly list availability follows its saved file count",
+      "result": "PASS",
+      "actual": true
+    },
+    {
+      "name": "CT Flash Monthly report-list control is primary",
+      "result": "PASS"
+    },
+    {
+      "name": "CT Flash has no duplicate latest/all Monthly controls",
+      "result": "PASS",
+      "actual": 0
+    },
+    {
+      "name": "CT Drive has one primary Monthly report-list control",
+      "result": "PASS",
+      "actual": 1
+    },
+    {
+      "name": "CT Drive Monthly card states the matching file count",
+      "result": "PASS",
+      "actual": "0"
+    },
+    {
+      "name": "CT Drive Monthly list label matches its saved files",
+      "result": "PASS",
+      "actual": "View Monthly reports"
+    },
+    {
+      "name": "CT Drive Monthly list availability follows its saved file count",
+      "result": "PASS",
+      "actual": false
+    },
+    {
+      "name": "CT Drive Monthly report-list control is primary",
+      "result": "PASS"
+    },
+    {
+      "name": "CT Drive has no duplicate latest/all Monthly controls",
+      "result": "PASS",
+      "actual": 0
+    },
+    {
+      "name": "Monthly received state uses the same circled green check as Daily",
+      "result": "PASS"
+    },
+    {
+      "name": "Today hides the redundant library and receipt-calendar links",
+      "result": "PASS"
+    },
+    {
+      "name": "PDF cache details live inside Today archive details",
+      "result": "PASS"
+    },
+    {
+      "name": "Primary Monthly control opens the Reports list",
+      "result": "PASS"
+    },
+    {
+      "name": "Monthly list sets the scanner filter",
+      "result": "PASS",
+      "actual": "CT_Edge"
+    },
+    {
+      "name": "Monthly list sets the year filter",
+      "result": "PASS",
+      "actual": "2026"
+    },
+    {
+      "name": "Monthly list sets the month filter",
+      "result": "PASS",
+      "actual": "11"
+    },
+    {
+      "name": "Monthly list sets the type filter",
+      "result": "PASS",
+      "actual": "monthly"
+    },
+    {
+      "name": "Monthly list sets the status filter",
+      "result": "PASS",
+      "actual": "all"
+    },
+    {
+      "name": "Monthly list includes both matching saved PDFs",
+      "result": "PASS",
+      "actual": [
+        "7f5c21568c0b2c23a3f9a4acb9d61ad483b50833b40775de41d7a833b3e66d92",
+        "e33192e7ba93297733aab4805fc1e2829f2bdef98082240d6e2d06caf041964a"
+      ]
+    },
+    {
+      "name": "Open PDF retains the selected original report identity",
+      "result": "PASS",
+      "actual": "/api/pdf/7f5c21568c0b2c23a3f9a4acb9d61ad483b50833b40775de41d7a833b3e66d92"
+    },
+    {
+      "name": "Open PDF asks the browser to fit the page",
+      "result": "PASS",
+      "actual": "#view=Fit"
+    },
+    {
+      "name": "Saved report opens in view-only mode",
+      "result": "PASS"
+    },
+    {
+      "name": "Saved PDF heading identifies the viewer",
+      "result": "PASS",
+      "actual": "PDF viewer"
+    },
+    {
+      "name": "View-only layout hides filing rail and toolbar",
+      "result": "PASS"
+    },
+    {
+      "name": "Saved PDF defaults to Fit page",
+      "result": "PASS",
+      "actual": "page"
+    },
+    {
+      "name": "Fit page option has a clear label",
+      "result": "PASS",
+      "actual": "Fit page"
+    },
+    {
+      "name": "Loaded portrait page fits the available viewer height",
+      "result": "PASS"
+    },
+    {
+      "name": "Fit page refits when the viewer height changes",
+      "result": "PASS"
+    },
+    {
+      "name": "Fit width remains available and enlarges the portrait page",
+      "result": "PASS"
+    },
+    {
+      "name": "Open PDF retains the selected original report identity",
+      "result": "PASS",
+      "actual": "/api/pdf/aeb433e613f243acfa62f0d13940550fb26775972ced368f79d2548ffc331e92"
+    },
+    {
+      "name": "Open PDF asks the browser to fit the page",
+      "result": "PASS",
+      "actual": "#view=Fit"
+    },
+    {
+      "name": "Pending report opened from Reports also starts in viewer mode",
+      "result": "PASS"
+    },
+    {
+      "name": "Pending viewer offers Review filing",
+      "result": "PASS"
+    },
+    {
+      "name": "Review filing restores pending file controls",
+      "result": "PASS"
+    },
+    {
+      "name": "Open PDF retains the selected original report identity",
+      "result": "PASS",
+      "actual": "/api/pdf/aeb433e613f243acfa62f0d13940550fb26775972ced368f79d2548ffc331e92"
+    },
+    {
+      "name": "Open PDF asks the browser to fit the page",
+      "result": "PASS",
+      "actual": "#view=Fit"
+    },
+    {
+      "name": "Restored filing rail targets the same pending PDF",
+      "result": "PASS",
+      "actual": "aeb433e613f243acfa62f0d13940550fb26775972ced368f79d2548ffc331e92"
+    },
+    {
+      "name": "Open PDF retains the selected original report identity",
+      "result": "PASS",
+      "actual": "/api/pdf/aeb433e613f243acfa62f0d13940550fb26775972ced368f79d2548ffc331e92"
+    },
+    {
+      "name": "Open PDF asks the browser to fit the page",
+      "result": "PASS",
+      "actual": "#view=Fit"
+    },
+    {
+      "name": "Sidebar Review restores the filing workspace from viewer mode",
+      "result": "PASS"
+    },
+    {
+      "name": "Open PDF retains the selected original report identity",
+      "result": "PASS",
+      "actual": "/api/pdf/aeb433e613f243acfa62f0d13940550fb26775972ced368f79d2548ffc331e92"
+    },
+    {
+      "name": "Open PDF asks the browser to fit the page",
+      "result": "PASS",
+      "actual": "#view=Fit"
+    },
+    {
+      "name": "Sidebar Review preserves the selected pending PDF",
+      "result": "PASS",
+      "actual": "aeb433e613f243acfa62f0d13940550fb26775972ced368f79d2548ffc331e92"
+    },
+    {
+      "name": "Focused controls flow finishes without an application error",
+      "result": "PASS"
+    },
+    {
+      "name": "Navigation changes neither synthetic source records nor filing decisions",
+      "result": "PASS"
+    },
+    {
+      "name": "Focused controls flow has no browser errors or external requests",
+      "result": "PASS"
+    }
+  ],
+  "errors": [],
+  "externalRequests": [],
+  "mutations": [],
+  "previewRequests": [
+    {
+      "recordId": "7f5c21568c0b2c23a3f9a4acb9d61ad483b50833b40775de41d7a833b3e66d92",
+      "pageNumber": 0
+    },
+    {
+      "recordId": "aeb433e613f243acfa62f0d13940550fb26775972ced368f79d2548ffc331e92",
+      "pageNumber": 0
+    }
+  ],
+  "screenshot": "/tmp/ctqa-reader-controls-browser/viewer-fit-page.png",
+  "status": "PASS",
+  "requests": [
+    {
+      "method": "GET",
+      "pathname": "/"
+    },
+    {
+      "method": "GET",
+      "pathname": "/app.css"
+    },
+    {
+      "method": "GET",
+      "pathname": "/trends.js"
+    },
+    {
+      "method": "GET",
+      "pathname": "/app.js"
+    },
+    {
+      "method": "POST",
+      "pathname": "/api/session"
+    },
+    {
+      "method": "POST",
+      "pathname": "/api/heartbeat"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/snapshot"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/jobs"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/preview/7f5c21568c0b2c23a3f9a4acb9d61ad483b50833b40775de41d7a833b3e66d92"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/jobs"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/preview/aeb433e613f243acfa62f0d13940550fb26775972ced368f79d2548ffc331e92"
+    }
+  ],
+  "applicationSHA256": "5fe0f905989d37e17779f55c447ff1833e24afdcd6750d4f271c6b66399fab31",
+  "stylesSHA256": "8e53416a71f794a7d5013d709a20747eddd20bd58a9f16f9cc10096bfbad8b65",
+  "markupSHA256": "7c56467a991d90319432746cc44b64824f77dd10058867af8668b776b331d019"
+}
