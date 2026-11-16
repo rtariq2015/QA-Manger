@@ -1,6 +1,6 @@
 # Changes
 
-## Unreleased — workstation engineering branch
+## 5.7.0 — workstation engineering upgrade
 
 - Add a medical imaging-console visual system across all eight workspaces: pearl/slate surfaces, navy navigation, refined controls and bundled brand-neutral CT gantry/bed illustrations. Inline vector artwork keeps the existing offline update path and adds no image downloads or dependencies.
 

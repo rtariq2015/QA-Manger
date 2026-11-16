@@ -200,7 +200,7 @@ function injectBarrier(){
   releaseBarrier();if(browser)await browser.close();if(ready)try{await api('/api/actions',{method:'POST',headers:{'Content-Type':'application/json'},body:'{"action":"Shutdown"}'});}catch{}
   if(host){await until(()=>host.exitCode!==null,'Host shutdown timed out.',15000).catch(()=>host.kill());}
   fs.writeFileSync(archiveFile,originalArchive);
-  const summary={version:'5.6.0',syntheticOnly:true,browserChannel:args['browser-channel']||'chromium',records:1367,tests:results.length,assertions,failed:results.filter(r=>r.result==='FAIL').length,externalAssetRequests:external.length,javascriptErrors:errors,results,scope:'Real local host, worker, archive loop and browser. A disposable copied Set-QaProgress checkpoint supplies a deterministic barrier; the real cooperative cancellation and production persistence run unchanged.'};
+  const summary={version:'5.7.0',syntheticOnly:true,browserChannel:args['browser-channel']||'chromium',records:1367,tests:results.length,assertions,failed:results.filter(r=>r.result==='FAIL').length,externalAssetRequests:external.length,javascriptErrors:errors,results,scope:'Real local host, worker, archive loop and browser. A disposable copied Set-QaProgress checkpoint supplies a deterministic barrier; the real cooperative cancellation and production persistence run unchanged.'};
   fs.writeFileSync(path.join(output,'large-browser-summary.json'),JSON.stringify(summary,null,2)+'\n');console.log('Result: '+(summary.tests-summary.failed)+'/'+summary.tests+' scenarios; '+assertions+' assertions.');
  }
 })();

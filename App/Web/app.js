@@ -205,7 +205,7 @@
     const month=$(prefix+'month-filter');if(month.options.length<2){for(let number=1;number<=12;number++)month.add(new Option(new Intl.DateTimeFormat(undefined,{month:'long'}).format(new Date(2026,number-1,15)),String(number).padStart(2,'0')));}
   }
   function renderSnapshot() {
-    const snapshot=state.snapshot,version=text(field(snapshot,'version'),'5.6.0');$('sidebar-version').textContent=`Version ${version}`;$('settings-version').textContent=version;
+    const snapshot=state.snapshot,version=text(field(snapshot,'version'),'5.7.0');$('sidebar-version').textContent=`Version ${version}`;$('settings-version').textContent=version;
     populateFilters('reports');populateFilters('exports');
     state.undoBatch=normalizeUndoBatch(field(snapshot,'undoBatch'));renderBatchUndo();
     const lastDecision=field(snapshot,'lastDecision');if(!state.undo&&lastDecision&&field(lastDecision,'reviewId'))state.undo={recordId:text(field(lastDecision,'recordId')),reviewId:text(field(lastDecision,'reviewId')),stamp:text(field(lastDecision,'stamp')),action:text(field(lastDecision,'action'),'')};
