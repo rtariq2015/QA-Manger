@@ -1,0 +1,20 @@
+{
+  "Runtime": "7.4.13",
+  "NativeWindowsActuallyRun": false,
+  "Scope": "Only two newly added snapshot-read-reuse regression scenarios executed in development PowerShell",
+  "Tests": 2,
+  "Assertions": 169,
+  "Failed": 0,
+  "Results": [
+    {
+      "Name": "Snapshot analysis counters reuse validated record reads without a second library scan",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "Snapshot Daily receipt reuses record rows while retaining scheduling and reference exclusions",
+      "Result": "PASS",
+      "Details": ""
+    }
+  ]
+}

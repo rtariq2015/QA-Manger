@@ -1,0 +1,386 @@
+{
+  "version": "5.7.0",
+  "sourceCommit": "6023f49ccb2a4d2a83e83249fe59e58867a7c124",
+  "windowsWorkflowRun": 43910393227,
+  "windowsWorkflowUrl": "https://github.com/rtariq2015/QA-Manger/actions/runs/43910393227",
+  "syntheticOnly": true,
+  "failed": 0,
+  "nativePowerShell": {
+    "suites": 18,
+    "tests": 411,
+    "assertions": 4151,
+    "failed": 0,
+    "results": [
+      {
+        "name": "Run-PythonReaderTests",
+        "path": "windows/Run-PythonReaderTests.json",
+        "runtime": "5.1.26100.33648",
+        "tests": 14,
+        "assertions": 544,
+        "failed": 0
+      },
+      {
+        "name": "Run-MeasurementTests",
+        "path": "windows/Run-MeasurementTests.json",
+        "runtime": "5.1.26100.33648",
+        "tests": 34,
+        "assertions": 171,
+        "failed": 0
+      },
+      {
+        "name": "Run-TrendTests",
+        "path": "windows/Run-TrendTests.json",
+        "runtime": "5.1.26100.33648",
+        "tests": 27,
+        "assertions": 116,
+        "failed": 0
+      },
+      {
+        "name": "Run-ContentTests",
+        "path": "windows/Run-ContentTests.json",
+        "runtime": "5.1.26100.33648",
+        "tests": 25,
+        "assertions": 342,
+        "failed": 0
+      },
+      {
+        "name": "Run-AnalysisTests",
+        "path": "windows/Run-AnalysisTests.json",
+        "runtime": "5.1.26100.33648",
+        "tests": 22,
+        "assertions": 184,
+        "failed": 0
+      },
+      {
+        "name": "Run-ContentIntegrationTests",
+        "path": "windows/Run-ContentIntegrationTests.json",
+        "runtime": "5.1.26100.33648",
+        "tests": 17,
+        "assertions": 648,
+        "failed": 0
+      },
+      {
+        "name": "Run-WebServiceTests",
+        "path": "windows/Run-WebServiceTests.json",
+        "runtime": "5.1.26100.33648",
+        "tests": 59,
+        "assertions": 500,
+        "failed": 0
+      },
+      {
+        "name": "Run-ReviewQueueTests",
+        "path": "windows/Run-ReviewQueueTests.json",
+        "runtime": "5.1.26100.33648",
+        "tests": 14,
+        "assertions": 83,
+        "failed": 0
+      },
+      {
+        "name": "Run-UpdateTests",
+        "path": "windows/Run-UpdateTests.json",
+        "runtime": "5.1.26100.33648",
+        "tests": 16,
+        "assertions": 101,
+        "failed": 0
+      },
+      {
+        "name": "Run-SupportTests",
+        "path": "windows/Run-SupportTests.json",
+        "runtime": "5.1.26100.33648",
+        "tests": 26,
+        "assertions": 240,
+        "failed": 0
+      },
+      {
+        "name": "Run-NetworkTests",
+        "path": "windows/Run-NetworkTests.json",
+        "runtime": "5.1.26100.33648",
+        "tests": 13,
+        "assertions": 43,
+        "failed": 0
+      },
+      {
+        "name": "Run-Tests",
+        "path": "windows/Run-Tests.json",
+        "runtime": "5.1.26100.33648",
+        "tests": 31,
+        "assertions": 370,
+        "failed": 0
+      },
+      {
+        "name": "Run-ExportTests",
+        "path": "windows/Run-ExportTests.json",
+        "runtime": "5.1.26100.33648",
+        "tests": 24,
+        "assertions": 250,
+        "failed": 0
+      },
+      {
+        "name": "Run-ConnectionTests",
+        "path": "windows/Run-ConnectionTests.json",
+        "runtime": "5.1.26100.33648",
+        "tests": 15,
+        "assertions": 181,
+        "failed": 0
+      },
+      {
+        "name": "Run-BrowseTests",
+        "path": "windows/Run-BrowseTests.json",
+        "runtime": "5.1.26100.33648",
+        "tests": 17,
+        "assertions": 117,
+        "failed": 0
+      },
+      {
+        "name": "Run-MonthlyTests",
+        "path": "windows/Run-MonthlyTests.json",
+        "runtime": "5.1.26100.33648",
+        "tests": 24,
+        "assertions": 144,
+        "failed": 0
+      },
+      {
+        "name": "Run-PdfTests",
+        "path": "windows/Run-PdfTests.json",
+        "runtime": "5.1.26100.33648",
+        "tests": 13,
+        "assertions": 44,
+        "failed": 0
+      },
+      {
+        "name": "Run-PortableTests",
+        "path": "windows/Run-PortableTests.json",
+        "runtime": "5.1.26100.33648",
+        "tests": 20,
+        "assertions": 73,
+        "failed": 0
+      }
+    ]
+  },
+  "edgeBrowser": {
+    "workloads": 5,
+    "tests": 110,
+    "assertions": 30398,
+    "failed": 0,
+    "results": [
+      {
+        "name": "Main",
+        "path": "web/browser-summary.json",
+        "tests": 18,
+        "assertions": 826,
+        "failed": 0
+      },
+      {
+        "name": "Accessibility and layout",
+        "path": "web/accessibility/accessibility-summary.json",
+        "tests": 67,
+        "assertions": 1014,
+        "failed": 0
+      },
+      {
+        "name": "Large library",
+        "path": "web/large/large-browser-summary.json",
+        "tests": 6,
+        "assertions": 27847,
+        "failed": 0
+      },
+      {
+        "name": "PDF content",
+        "path": "web/content/content-browser-summary.json",
+        "tests": 9,
+        "assertions": 290,
+        "failed": 0
+      },
+      {
+        "name": "Python and Trends",
+        "path": "web/python/python-browser-summary.json",
+        "tests": 10,
+        "assertions": 421,
+        "failed": 0
+      }
+    ]
+  },
+  "readerComparison": {
+    "tests": 3,
+    "assertions": 80,
+    "failed": 0
+  },
+  "largeLibrary": {
+    "tests": 4,
+    "assertions": 5463,
+    "failed": 0
+  },
+  "controllerOnly": {
+    "tests": 7,
+    "assertions": 25,
+    "failed": 0
+  },
+  "schedulerCheckGroups": 18,
+  "calendarCheckGroups": 7,
+  "frontendAssertions": 50,
+  "frontendRecordCounts": [
+    1367,
+    20000
+  ],
+  "classicPreviewCaptures": 6,
+  "nativeTabScreenshots": 16,
+  "packageSupplemental": {
+    "checks": 5377,
+    "scope": "Supplemental offline release-package/PE/resource/manifest/preview validation; does not execute Windows binaries or publish"
+  },
+  "updatePreservationSupplemental": {
+    "environment": "7.4.13 on Unix",
+    "scope": "Supplemental actual ZIP update installation on a synthetic workspace; not hospital-workstation execution",
+    "preservedSentinelFiles": 9
+  },
+  "hostSHA256": "62616a8407638b2e09d0aacfd5f1ecc919f445a7ccfe9099586e1536e0747f2d",
+  "pythonIntegritySHA256": "7bb612a33fa72070b608fc7a67ab93d9de48aebafc6c3ebd1978aff3fd9f27d4",
+  "evidenceFiles": [
+    {
+      "path": "python-build-info.json",
+      "sha256": "9ab03ed00550853d335caeb15c137f8e7474068237d6b302056c70cc3e2a68c6"
+    },
+    {
+      "path": "web/accessibility/accessibility-summary.json",
+      "sha256": "17138da6c89f40bddc0303ba1025a8e0b4a39e19a4f480a8f559e5598feda533"
+    },
+    {
+      "path": "web/browser-summary.json",
+      "sha256": "9e797ee964b482f751c945349ec302f3fcea5620c743108648b3eaa0e9e4df9c"
+    },
+    {
+      "path": "web/calendar-rules.json",
+      "sha256": "c99a2b44fdea3a59050173f746c32a6252f5a0e8c7a3cd00a00cf194852991f8"
+    },
+    {
+      "path": "web/content/content-browser-summary.json",
+      "sha256": "d4cab35992d2f920a808c66102e0e80db08920b458f1b242a6b4bc455e9fa83b"
+    },
+    {
+      "path": "web/large/large-browser-summary.json",
+      "sha256": "f5e27a9b559ce89d37f472fafc3dad71a597d13665131fad74aac552bc3c0832"
+    },
+    {
+      "path": "web/large/library-summary.json",
+      "sha256": "c22011b0e61ff17c2f9fab517628223112a635e14f6944056fb5f7598667f184"
+    },
+    {
+      "path": "web/library-performance.json",
+      "sha256": "449875a48ff8917696e04d3630fbb9a2a6408a558b518a3840bce6d8b60fbabd"
+    },
+    {
+      "path": "web/python/python-browser-summary.json",
+      "sha256": "b85fc4726b0ad09a9396354da74c3d90e7f8298beba418d024205400afe6a5aa"
+    },
+    {
+      "path": "web/trends-refresh/controller-summary.json",
+      "sha256": "c6ed59ef86780ecd9762477ead49c1d320d32161223ee8e7d1b97479e9856720"
+    },
+    {
+      "path": "windows/Background-Scheduler.json",
+      "sha256": "4ffdf864c7841d51db70d0fd816e2e7563eff946749a94fa35974f6190334f12"
+    },
+    {
+      "path": "windows/Reader-Benchmark.json",
+      "sha256": "3fdcb7659cec4bfe2ad1a6949d5ee55195a3c6a23a823caaf3774418cb340873"
+    },
+    {
+      "path": "windows/Run-AnalysisTests.json",
+      "sha256": "ab59751a50a1ff1fe3341b799a820bd9724f3658de537fa4c79bf7ca1ba6409f"
+    },
+    {
+      "path": "windows/Run-BrowseTests.json",
+      "sha256": "d5d8253a9d27e22f928149710bef578675732cad14b1f4a721961e5fa04aec5d"
+    },
+    {
+      "path": "windows/Run-ConnectionTests.json",
+      "sha256": "1efe428c2e4703c426665a3165c8690b51561f5a3a73507eb2aa8a0588f8647d"
+    },
+    {
+      "path": "windows/Run-ContentIntegrationTests.json",
+      "sha256": "ead58ec81f44514686492921b00925e00f9ee2e42a92adb748df19724877e80e"
+    },
+    {
+      "path": "windows/Run-ContentTests.json",
+      "sha256": "522d63fb59ef0d37643443b9f43ffae506fb89c2fabd3182309590ed6d7b3b94"
+    },
+    {
+      "path": "windows/Run-ExportTests.json",
+      "sha256": "0e2cd76b7126decc6def90e0e0269b520bf1310849fdbd9550f92632b886f201"
+    },
+    {
+      "path": "windows/Run-MeasurementTests.json",
+      "sha256": "4845d6d8d6a260b759f5753a83aa8972236a14b4b9f335a1d4e4f56c36326b6e"
+    },
+    {
+      "path": "windows/Run-MonthlyTests.json",
+      "sha256": "cebb0bae5c47a25da41b27071a14e1e9a403db786a8aa7b7be989014ed72994e"
+    },
+    {
+      "path": "windows/Run-NetworkTests.json",
+      "sha256": "a9057ed81e8958ff45a203707a44a050a00711f8bb1917d02fae600d4ba0fbc3"
+    },
+    {
+      "path": "windows/Run-PdfTests.json",
+      "sha256": "075e6ff4693b4899c7a6f0f557bf246368c47520ccabf1a04f5d5e6946028cbc"
+    },
+    {
+      "path": "windows/Run-PortableTests.json",
+      "sha256": "cfdc7a125e0c7e36cb4899092c722881805f03e4a58857ce34d2b36d57fe3f9d"
+    },
+    {
+      "path": "windows/Run-PythonReaderTests.json",
+      "sha256": "cf65982c157057db6d78d454f305bad576eb72a418e54b5f61989f765d9119af"
+    },
+    {
+      "path": "windows/Run-ReviewQueueTests.json",
+      "sha256": "477e1e4a7cc231a607bee11185722094c9529e7e23fb374b5bc99c29d67762e3"
+    },
+    {
+      "path": "windows/Run-SupportTests.json",
+      "sha256": "b63462b0a4c5370e317a6075166846821d3445ad26167962b5cbafc9d775bb13"
+    },
+    {
+      "path": "windows/Run-Tests.json",
+      "sha256": "4abbd5d92008903101d60dd60a5457470379a96b22506d7dc71ac22e3b8b5217"
+    },
+    {
+      "path": "windows/Run-TrendTests.json",
+      "sha256": "4fdd43aa100f2845c5a35bad7be7e6a1c3f41d0d089af9519da3979f04903a32"
+    },
+    {
+      "path": "windows/Run-UpdateTests.json",
+      "sha256": "7ea2c31898d321a3a26ee9d9fd90516317c2fcdd3279f74f4d3676b16315081d"
+    },
+    {
+      "path": "windows/Run-WebServiceTests.json",
+      "sha256": "05029e41c1bee74d6fe737237aafacf4ad2da1c21b0eb76856abc88082ef9539"
+    },
+    {
+      "path": "windows/Selected-Lookup-Benchmark.json",
+      "sha256": "808488ba1b2021a0de1e2fd733f4b0c5f579aa7ffde839abfca22c8673e5b687"
+    },
+    {
+      "path": "Package-Validation.json",
+      "sha256": "d7f6bf5b2371767617b0a939e8d17a635b57c4af30d74ab259e009fb6d7abc85"
+    },
+    {
+      "path": "Update-Preservation.json",
+      "sha256": "5a05f16e973917d44a1de2c2e08b7571cb8a0eef2d318e66423b8c5001273b54"
+    },
+    {
+      "path": "Version-Only-Comparison.json",
+      "sha256": "30653099587a13f224df3188069d295cc5e1b392d921963b5bf6febce3b66120"
+    }
+  ],
+  "generatorPrerequisiteChecks": 482,
+  "scope": "Fresh hosted Windows native suites and Edge/browser workloads plus separately labeled supplemental package validation. No hospital deployment, live scanner access, OS DPI or IT approval claim.",
+  "publishedAssetVerification": {
+    "url": "https://github.com/rtariq2015/QA-Manger/releases/tag/v5.7.0",
+    "publicationWorkflowRun": 43918569923,
+    "assetCount": 5,
+    "sha256Verified": true,
+    "packageChecks": 5377,
+    "preservedSentinelFiles": 9
+  }
+}

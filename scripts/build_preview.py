@@ -22,6 +22,10 @@ PAGES = (
     ("settings", "Settings", "Manage connections, archive storage, PDF reading, backups, and updates."),
 )
 DETAILS = (
+    ("review-queue/review-saving-1024x768.png", "Review while two file decisions are saving"),
+    ("review-queue/review-saving-683x384.png", "Review at a 200% effective workstation viewport"),
+    ("review-queue/review-queued-browsing.png", "Browse reports while file decisions save"),
+    ("review-queue/review-queue-settled.png", "Confirmed filing and available Undo"),
     ("support-activity-web-demo.png", "Support and activity export"),
     ("support-print-web-demo.png", "Printable diagnostic report"),
     ("automatic-filing-web-demo.png", "Automatic filing and optional scanner overrides"),
@@ -51,7 +55,7 @@ def capture(path: Path, label: str) -> str:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", required=True)
-    parser.add_argument("--version", default="5.6.0")
+    parser.add_argument("--version", default="5.7.1")
     parser.add_argument("--images-dir", type=Path, default=Path(__file__).resolve().parents[1] / "docs" / "images")
     parser.add_argument("--include-details", action="store_true", help="Include available report-content and Python-reader captures from the same validation run.")
     args = parser.parse_args()

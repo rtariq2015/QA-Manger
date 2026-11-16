@@ -1,0 +1,300 @@
+{
+  "Version": "5.4.0",
+  "Runtime": "7.4.13",
+  "Tests": 58,
+  "Assertions": 649,
+  "Failed": 0,
+  "Results": [
+    {
+      "Name": "Approve is one action without reviewer fields and leaves core clinical evidence unchanged",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "Disapprove retains the PDF under Other and stays resolved across restart and unchanged import",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "Undo after reload restores pending while preserving a separate append-only action history",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "Stale actions and changed PDFs cannot overwrite decisions",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "Classification export includes all chosen PDFs, readable folders, CSV and HTML without inventing clinical approval",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "An existing unowned readable PDF is never adopted, overwritten or retired",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "Malformed organization history is preserved rather than reset",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "Tampered organization types cannot become filesystem or ZIP paths",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "Only selected report IDs resolve to verified local PDFs",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "Opening one verified PDF avoids dashboard work and rejects changed bytes or unsafe state",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "The JSON worker supports stdin and stdout without logging request content",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "Scanner settings retain historical checklist rules and existing record ownership",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "Existing formal clinical checklist evidence remains in exported inventories",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "An inaccessible fresh workspace is not marked as successfully set up",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "The web worker records scrubbed action outcomes without retaining request secrets",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "Standard Daily and explicit Monthly document names are organized automatically without human approval",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "Saved user decisions and valid legacy reviews take precedence over automatic grouping",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "Readable-library refresh batches its ledger and reuses only verified metadata matches",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "Full verification catches edited bytes even when length and write time were restored",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "A cancelled library batch commits completed ownership and resumes without duplicate copies",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "Pre-upgrade approvals retain their decisions and Undo restores their original pending state",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "Concurrent edits cannot seed a verified source or readable-file metadata cache",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "Appearance persists across fresh snapshots without changing report evidence",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "Explicit empty or conflicting reading groups cannot expand into an archive-wide read",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "PDF reading chunk limits accept only bounded integers",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "Trend queries read cached metadata without creating PDF readings or rewriting the archive",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "Diagnostic downloads remain available when a verified cache contains malformed numeric fields",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "Diagnostic exports report unreadable organization history without treating saved decisions as absent",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "Absent and legacy blank format settings automatically file complete Basic and Extended content",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "Auto and Ask format policies round-trip while explicit scanner rules retain precedence",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "Additional test sets reuse an existing Daily or Monthly grouping without guessing an ungrouped procedure",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "Explicit document titles override inference while contradictory explicit evidence remains exceptional",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "Filing counters separate waiting-to-read files from actual reader and content exceptions",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "Saved decisions and explicit Undo remain authoritative when automatic policy is enabled",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "Reference documents file as Other and do not count as received Daily reports",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "Unknown reference evidence cannot inherit generic Daily filing or cached current measurements",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "Older unsupported format reads await one compatibility refresh while current exceptions and failures remain actionable",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "Trusted reading plans reject malformed scopes and controls without touching PDF bytes",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "A compact one-PDF checkpoint defers dashboards and folders until an explicit checked synchronization",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "A queued ID cannot bypass fresh archive membership or exact PDF-byte verification",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "Durable file decisions reuse one validated dashboard and organization while refreshing only their selected readable PDF",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "Selected grouped approvals persist one durable batch and restore together after a fresh snapshot",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "Grouped Disapprove retains all selected PDFs under Other and explicit batch categories are validated",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "Grouped selection preflight rejects stale duplicate unknown waiting and oversized selections atomically",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "Exact selected-byte checks prevent partial grouped decisions and partial grouped Undo",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "Batch processing keeps one dashboard pass one selected-library update and durable copy-failure warnings",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "Approval targets are explicit while legacy single requests remain compatible",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "Batch read handles prevent an early selected PDF changing before later validation and commit",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "Batch Undo rejects changed displayed state and corrupt grouped history without rewriting them",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "The fifty-file boundary remains selected-only and grouped Undo survives unrelated single history",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "Omitted batch overrides preserve each selected Daily or Monthly proposal independently",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "Alignment inspector rows share current graph capability body and explicit-context eligibility",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "Monthly reads use cached scoped data without full snapshots PDF work or archive writes",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "Monthly setup validates bounded values preserves network settings and versions changed checklists",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "Opaque trend revisions ignore identical reordered theme and connection snapshots but follow cached data changes",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "Table-position inspector rows require the complete capability-four eight-context table",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "Snapshot analysis counters reuse validated record reads without a second library scan",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "Snapshot Daily receipt reuses record rows while retaining scheduling and reference exclusions",
+      "Result": "PASS",
+      "Details": ""
+    }
+  ],
+  "Scope": "Synthetic PDFs, local scanner folders and controlled cached classifier observations with matching fixture-byte provenance; actual extraction is covered separately. Hands-off filing policy, inferred-label disclosure, waiting/review counters, independent file organization, no fabricated clinical review, stale/changed-file rejection, append-only Undo, readable ownership, exports and stdin/stdout JSON worker."
+}

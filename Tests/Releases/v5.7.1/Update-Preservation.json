@@ -1,0 +1,21 @@
+{
+  "Result": "PASS",
+  "Environment": "7.4.13 on Unix",
+  "Scope": "Supplemental actual ZIP update installation on a synthetic workspace; not hospital-workstation execution",
+  "SourceCommit": "3d46b34f43336349d793edc7e9ee9087a6061f0d",
+  "BaselineCommit": "54d6be55c4191af4dc022de4a2d9660a192e7f2b",
+  "PreviousVersion": "5.7.0",
+  "PackageVersion": "5.7.1",
+  "Files": 168,
+  "Bytes": 137598682,
+  "InstalledBaselineValidatorAccepted": true,
+  "CurrentValidatorAccepted": true,
+  "UpgradeInstallSucceeded": true,
+  "PreservedSentinelFiles": 9,
+  "PreviousProgramBackupVerified": true,
+  "PreviousPackageVersionVerified": true,
+  "StageCleanupVerified": true,
+  "StagingMs": 4731,
+  "InstallationMs": 4035,
+  "SyntheticOnly": true
+}

@@ -29,7 +29,7 @@ function makeSnapshot(count) {
       decision: pending ? 'Pending' : 'Automatic', filingState: pending ? 'NeedsReview' : 'Filed', filingBasis: pending ? 'Unsupported' : 'Filename',
       inferred: false, isReference: false, hasReferenceEvidence: false, approvalCategory: category, approvalNeedsCategory: false, content: {}, clinicalComponents: []};
   });
-  return {version: '5.6.0', previewMode: 'Browser', workspace: 'Synthetic workspace', archiveRoot: 'Synthetic archive', libraryRoot: 'Synthetic report library', setupComplete: true,
+  return {version: '5.7.1', previewMode: 'Browser', workspace: 'Synthetic workspace', archiveRoot: 'Synthetic archive', libraryRoot: 'Synthetic report library', setupComplete: true,
     records, scanners, today: {date: '2026-11-16', received: 0, expected: 3, headline: '0 of 3 Daily QA reports received'},
     months: scanners.map(scanner => ({scanner: scanner.id, name: scanner.name, month: '2026-11', progress: '0 / 2 items', status: 'NoConfirmedReport', timing: 'Upcoming'})),
     analysis: {total: count, cached: 0, pending: count, errors: 0, measurementUpgradePending: 0, unsupportedUpgradePending: 0, backlogPending: count},

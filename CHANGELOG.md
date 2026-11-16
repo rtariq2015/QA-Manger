@@ -1,6 +1,12 @@
 # Changes
 
-## Unreleased — workstation engineering branch
+## 5.7.1 — responsive single-file review
+
+- Let distinct single-file filing decisions queue while staff read the next PDF. Show Sending, Queued and Saving states until a durable result and fresh snapshot confirm completion; preserve the PDF currently being viewed.
+- Prevent rapid duplicate submissions, same-file overlaps and queue overflow. Keep Undo, grouped decisions and other mutations blocked while saves are unconfirmed; handle failed/cancelled jobs and jobs observed after reload conservatively.
+- Reuse each snapshot's validated analysis rows for analysis counts and use the shared scheduling predicate for Daily receipt. Remove the second whole-library analysis-cache pass and the unused current-day findings pass without changing provenance checks, filing stamps, clinical evidence or saved data formats.
+
+## 5.7.0 — workstation engineering upgrade
 
 - Add a medical imaging-console visual system across all eight workspaces: pearl/slate surfaces, navy navigation, refined controls and bundled brand-neutral CT gantry/bed illustrations. Inline vector artwork keeps the existing offline update path and adds no image downloads or dependencies.
 
@@ -10,7 +16,7 @@
 - Resolve selected PDFs from fresh validated archive records without rebuilding unrelated dashboards; keep exact path and SHA-256 checks.
 - Reject ambiguous archive identities/destinations and linked metadata without rewriting stored data. Neutralize spreadsheet formula prefixes only in the derived master CSV.
 - Harden update destination checks and failed-update rollback, validate backup ZIP members before restore, retain a single validated input archive, and align the update launcher with 64-bit PowerShell selection.
-- Add pull-request Windows validation, per-branch CI concurrency, synthetic large-library benchmarks and effective-viewport accessibility checks. No release is published by this work.
+- Add pull-request Windows validation, per-branch CI concurrency, synthetic large-library benchmarks and effective-viewport accessibility checks. Release publication is separately authorized and uses the exact Windows-tested runtime source.
 
 ## 5.6.0 — existing release baseline
 

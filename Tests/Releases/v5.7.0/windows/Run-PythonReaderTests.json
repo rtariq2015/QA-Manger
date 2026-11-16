@@ -1,0 +1,87 @@
+﻿{
+    "Product":  "CT QA Manager Pro",
+    "Version":  "5.3.0",
+    "Feature":  "Production portable Python reader",
+    "Runtime":  "5.1.26100.33648",
+    "NativeWindowsActuallyRun":  true,
+    "NonAdministratorActuallyRun":  true,
+    "LiveCancellationActuallyRun":  true,
+    "StandardAccountCleanupSucceeded":  true,
+    "SyntheticOnly":  true,
+    "Tests":  14,
+    "Assertions":  544,
+    "Failed":  0,
+    "Results":  [
+                    {
+                        "Name":  "Bundled Python reads both supported layouts with exact original-byte provenance",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Binary PDF transport is unchanged when the host console input encoding has a UTF-8 BOM",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Python and the standard reader agree on profiles, dates, pages and verified fingerprints",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Both actual readers preserve printed water/noise measurements and their explicit limits",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Page, character and byte bounds remain explicit with the Python reader",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Image-only and encrypted inputs remain separate from successful text extraction",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "An altered archived PDF is rejected before either reader can acquire new provenance",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "A damaged standard-reader component is rejected and automatic mode falls back to verified Python reading",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "An invalid Python dependency is rejected explicitly while automatic standard reading remains usable",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "A missing Python runtime allows automatic standard reading and a clear explicit-reader error",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Cancelled reads expose no text or successful provenance and do not create analysis evidence",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Current caches are reused across fresh modules and older evidence upgrades only on a selected read",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Cancelling after Python starts terminates its real child process and preserves all cached evidence",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "The complete production archive-to-Python reader runs under an actual non-administrator token",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    }
+                ],
+    "Scope":  "Actual production PDF reader against generated text, image-only and encrypted PDFs. Both engines retain indexed-byte provenance; limits, changed bytes, dependency integrity, fallback and cache preservation are explicit. No hospital network, real PDF or work-computer policy is exercised by this public suite."
+}

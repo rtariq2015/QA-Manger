@@ -1,0 +1,60 @@
+{
+  "passed": true,
+  "syntheticOnly": true,
+  "scope": "Real host scheduling with a deterministic PowerShell adapter, copied production-reader pause/export/cancel checks, and an actual 90-second helper deadline. Generated PDFs only; no reader speed claim.",
+  "syntheticAdapterJobMetrics": {
+    "planBuilds": 2,
+    "fullSnapshots": 3,
+    "librarySyncs": 3,
+    "processedReports": 25,
+    "cacheSkips": 0,
+    "workerStarts": 30,
+    "inlinePdfReads": 25,
+    "helperMilliseconds": 30001,
+    "readWorkerMilliseconds": 24667,
+    "planningMilliseconds": 1616,
+    "snapshotMilliseconds": 3718
+  },
+  "realReaderChecks": {
+    "syntheticOnly": true,
+    "checks": [
+      "The real reader yields after one verified PDF so a queued foreground Export completes while reading is paused",
+      "Cancelling an in-flight real reader preserves the first cache, all pending reports, original PDF bytes and clinical state",
+      "Request JSON cannot enable the command-line-only direct-reader optimization"
+    ],
+    "warmCacheDoesNotCountAsParsing": true,
+    "foregroundSnapshotIncludesCompletedReading": true,
+    "exactExportedPDFBytesPreserved": true,
+    "successfulReadsBeforeCancellation": 1,
+    "failedReadsBeforeCancellation": 0,
+    "originalsUnchanged": true
+  },
+  "unresponsiveReaderDeadline": {
+    "limitSeconds": 90,
+    "observedAfterChildStartedSeconds": 88.765,
+    "helperTreeStopped": true,
+    "interruptedReportStillPending": true,
+    "automaticRestartSuppressed": true
+  },
+  "checks": [
+    "Duplicate background reads are rejected without blocking foreground controls",
+    "Pause finishes the current PDF and preserves a cumulative 1/8 checkpoint",
+    "Paused reading launches no additional PDF helper",
+    "Foreground Approve completes while paused and its latest snapshot is retained",
+    "Independent Trends data and static asset routes are available during reading",
+    "A foreground action queued during a PDF runs before the archive batch completes",
+    "One-PDF requests are sanitized, mutations stay serialized, and cancel preserves cumulative work",
+    "A bulk action stops after twenty actual PDFs and reports the remaining work",
+    "A 25-PDF job reuses two plans and keeps PDF steps separate from overview checkpoints",
+    "An explicitly started backlog continues beyond twenty and synchronizes readable folders",
+    "AutoAnalyze false keeps an eligible archive manual",
+    "Stop intent persists across Refresh independently of cooldown",
+    "App reopen automatically reads eligible backlog after initial Refresh",
+    "Shutdown cancels background reading at a safe checkpoint and leaves no running helper",
+    "The real reader yields after one verified PDF so a queued foreground Export completes while reading is paused",
+    "Cancelling an in-flight real reader preserves the first cache, all pending reports, original PDF bytes and clinical state",
+    "Request JSON cannot enable the command-line-only direct-reader optimization",
+    "An unresponsive one-PDF helper is stopped at its 90-second deadline with its child tree, pending count and Stop intent preserved"
+  ],
+  "checkCount": 18
+}

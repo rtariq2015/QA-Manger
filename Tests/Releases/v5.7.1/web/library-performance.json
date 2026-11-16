@@ -1,0 +1,56 @@
+{
+  "syntheticOnly": true,
+  "baseline": false,
+  "browser": "156.0.4314.58",
+  "node": "v22.23.4",
+  "platform": "win32",
+  "architecture": "x64",
+  "assetHashes": {
+    "app.js": "7fff67d4e7cb13896562105657114e2bfaef5a1f098066900c4bdf4484815de2",
+    "index.html": "50436d05e872a3dc0cbaed32192e84d3deb5b9d2683c5d44f33075219b4f93e0",
+    "app.css": "2f39d9a9849ddc3b8e6d6985a596cd9ea3ab4a3b600bb58c36f476bb85cb4162",
+    "trends.js": "bf4c44cad7a0788a85fe7c1580fa6e413c7df9213153b91a9be13a16960be311"
+  },
+  "scope": "Production browser assets with deterministic synthetic API responses and a response-only test bridge. No PowerShell, real scanner, PDF reader, native Windows DPI or hospital throughput claim. Timings include layout and are diagnostic. JS heap excludes native DOM/browser memory.",
+  "budgetMs": 120000,
+  "assertions": 50,
+  "failed": 0,
+  "results": [
+    {
+      "count": 1367,
+      "openReportsMs": 35.0999999998603,
+      "unchangedSnapshotMs": 4.7000000001862645,
+      "rapidInputDispatchMs": 0.10000000009313226,
+      "rapidSearchSettledMs": 167.20000000018626,
+      "renderedRows": 100,
+      "totalDomNodes": 2573,
+      "unchangedSnapshotChildMutations": 0,
+      "unchangedSnapshotRetainedFirstRow": true,
+      "matching": 1367,
+      "searchRenderedRows": 100,
+      "searchListReplacements": 1,
+      "jsHeapUsedBytes": 3785144,
+      "javascriptErrors": [],
+      "externalRequests": 0,
+      "result": "PASS"
+    },
+    {
+      "count": 20000,
+      "openReportsMs": 28.9000000001397,
+      "unchangedSnapshotMs": 18.300000000046566,
+      "rapidInputDispatchMs": 0.30000000004656613,
+      "rapidSearchSettledMs": 171.10000000009313,
+      "renderedRows": 100,
+      "totalDomNodes": 2573,
+      "unchangedSnapshotChildMutations": 0,
+      "unchangedSnapshotRetainedFirstRow": true,
+      "matching": 20000,
+      "searchRenderedRows": 100,
+      "searchListReplacements": 1,
+      "jsHeapUsedBytes": 27860328,
+      "javascriptErrors": [],
+      "externalRequests": 0,
+      "result": "PASS"
+    }
+  ]
+}

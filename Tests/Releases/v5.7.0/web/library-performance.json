@@ -1,0 +1,56 @@
+{
+  "syntheticOnly": true,
+  "baseline": false,
+  "browser": "156.0.4314.58",
+  "node": "v22.23.4",
+  "platform": "win32",
+  "architecture": "x64",
+  "assetHashes": {
+    "app.js": "6ce6d70699abd01fecb8fc898142d09601b8993d1c63adedef33139aea71824e",
+    "index.html": "bf7911ae67dd7aeae2937b6da4486471093da4d34a459580edfb2a4c4f9044e1",
+    "app.css": "23f515dcc374a0b34892725e4f2e507447a789cf744ca6e729de6e4bde4b6b8d",
+    "trends.js": "bf4c44cad7a0788a85fe7c1580fa6e413c7df9213153b91a9be13a16960be311"
+  },
+  "scope": "Production browser assets with deterministic synthetic API responses and a response-only test bridge. No PowerShell, real scanner, PDF reader, native Windows DPI or hospital throughput claim. Timings include layout and are diagnostic. JS heap excludes native DOM/browser memory.",
+  "budgetMs": 120000,
+  "assertions": 50,
+  "failed": 0,
+  "results": [
+    {
+      "count": 1367,
+      "openReportsMs": 32,
+      "unchangedSnapshotMs": 4.199999999953434,
+      "rapidInputDispatchMs": 0.30000000004656613,
+      "rapidSearchSettledMs": 163.60000000009313,
+      "renderedRows": 100,
+      "totalDomNodes": 2570,
+      "unchangedSnapshotChildMutations": 0,
+      "unchangedSnapshotRetainedFirstRow": true,
+      "matching": 1367,
+      "searchRenderedRows": 100,
+      "searchListReplacements": 1,
+      "jsHeapUsedBytes": 3757248,
+      "javascriptErrors": [],
+      "externalRequests": 0,
+      "result": "PASS"
+    },
+    {
+      "count": 20000,
+      "openReportsMs": 39.89999999990687,
+      "unchangedSnapshotMs": 23.300000000046566,
+      "rapidInputDispatchMs": 0.20000000018626451,
+      "rapidSearchSettledMs": 178.4000000001397,
+      "renderedRows": 100,
+      "totalDomNodes": 2570,
+      "unchangedSnapshotChildMutations": 0,
+      "unchangedSnapshotRetainedFirstRow": true,
+      "matching": 20000,
+      "searchRenderedRows": 100,
+      "searchListReplacements": 1,
+      "jsHeapUsedBytes": 27840700,
+      "javascriptErrors": [],
+      "externalRequests": 0,
+      "result": "PASS"
+    }
+  ]
+}

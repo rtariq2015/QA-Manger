@@ -1,0 +1,50 @@
+{
+  "result": "PASS",
+  "scope": "Supplemental offline release-package/PE/resource/manifest/preview validation; does not execute Windows binaries or publish",
+  "checks": 5377,
+  "sourceCommit": "3d46b34f43336349d793edc7e9ee9087a6061f0d",
+  "version": "5.7.1",
+  "hostSHA256": "ec1ab28dab6e7e1a37ea59fa6fdcdd0cf24f60fb08beb09a22ba4d8715d7bf02",
+  "hostPEVersion": {
+    "file": [
+      5,
+      7,
+      1,
+      0
+    ],
+    "product": [
+      5,
+      7,
+      1,
+      0
+    ]
+  },
+  "readerComponents": 103,
+  "previewScreenshots": 16,
+  "packages": [
+    {
+      "kind": "Portable",
+      "filename": "CT_QA_Manager_Pro_v5.7.1_Portable.zip",
+      "bytes": 59610964,
+      "expandedBytes": 137615642,
+      "payloadFiles": 169,
+      "sha256": "90d6e7f5db3f222a7fa6379b8c6827262da0854886a6d971a1456c3e7c82c1c8"
+    },
+    {
+      "kind": "Update",
+      "filename": "CT_QA_Manager_Pro_v5.7.1_Update.zip",
+      "bytes": 59610964,
+      "expandedBytes": 137615642,
+      "payloadFiles": 169,
+      "sha256": "c952a79ce9c77dfcff459ed074e1d2fbc26386bb12b02c3b4f79b9664145c3c9"
+    },
+    {
+      "kind": "Upgrade",
+      "filename": "CT_QA_Manager_Pro_v5.7.1_Upgrade.zip",
+      "bytes": 59612319,
+      "expandedBytes": 137617261,
+      "payloadFiles": 169,
+      "sha256": "c256488f1babe638b282c6637cfafbd498f244c661e0856ea0cb060508001af1"
+    }
+  ]
+}

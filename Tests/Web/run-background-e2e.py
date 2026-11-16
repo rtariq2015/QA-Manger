@@ -16,6 +16,7 @@ import shutil
 import subprocess
 import tempfile
 import time
+import traceback
 import urllib.error
 import urllib.request
 
@@ -99,6 +100,24 @@ def process_alive(pid):
         return True
 
 
+def read_ready_json(path, expected_pid=None):
+    """Observe a completed readiness record, within the caller's existing timeout.
+
+    Windows creates the private ready file before applying its ACL and writing
+    JSON. Existence alone therefore cannot establish that startup is ready.
+    The copied reader barrier has the same write-completion boundary.
+    """
+    try:
+        value = json.loads(path.read_text(encoding='utf-8-sig'))
+    except (FileNotFoundError, PermissionError, json.JSONDecodeError):
+        return None
+    if not isinstance(value, dict):
+        return None
+    if expected_pid is not None and value.get('pid') != expected_pid:
+        return None
+    return value
+
+
 def run_real_reader_checks(args):
     """A copied production reader pauses after fresh membership/hash validation.
 
@@ -150,8 +169,7 @@ def run_real_reader_checks(args):
                 time.sleep(.05)
             raise AssertionError('The real-reader checkpoint did not complete')
         ready_path = root / 'Data/web-ready.json'
-        until(lambda: ready_path.exists() and json.loads(ready_path.read_text(encoding='utf-8-sig'))['pid'] == process.pid)
-        config = json.loads(ready_path.read_text(encoding='utf-8-sig'))
+        config = until(lambda: read_ready_json(ready_path, process.pid))
         def call(path, body=None, binary=False):
             request = urllib.request.Request(config['url'] + path, json.dumps(body).encode() if body is not None else None, headers={'X-Qa-Session': config['token'], 'Content-Type': 'application/json'})
             with urllib.request.urlopen(request, timeout=20) as response:
@@ -173,8 +191,8 @@ def run_real_reader_checks(args):
         reached = root / 'Data/reader-reached.json'
         hold.write_text('synthetic reader checkpoint')
         identity = call('/api/actions', {'action': 'AnalyzeBacklog', 'scope': 'all'})['id']
-        until(reached.exists)
-        assert json.loads(reached.read_text())['inline'] is True
+        marker = until(lambda: read_ready_json(reached))
+        assert marker['inline'] is True
         call('/api/jobs/' + identity + '/pause', {'paused': True})
         export_id = call('/api/actions', {'action': 'Export', 'ids': [first['records'][0]['id']]})['id']
         hold.unlink()
@@ -228,6 +246,8 @@ def run_real_reader_checks(args):
         payload = {'action': 'Analyze', 'id': unread['id'], 'IsolatedPdfRead': True, 'ReaderProcessIsolated': True}
         cli = [args.powershell, '-NoLogo', '-NoProfile', '-File', str(root / 'App/WebWorker.ps1'), '-AppRoot', str(root), '-InputPath', 'stdin', '-OutputPath', 'stdout', '-ProgressPath', str(channel / 'progress.json'), '-CancelPath', str(channel / 'cancel')]
         spoof = subprocess.run(cli, input=json.dumps(payload).encode(), stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=100)
+        if not spoof.stdout.strip():
+            raise AssertionError('The synthetic spoof transport returned empty JSON; exit=' + str(spoof.returncode) + '; stderr=' + spoof.stderr.decode('utf-8-sig', errors='replace')[-1000:])
         envelope = json.loads(spoof.stdout.decode('utf-8-sig'))
         assert spoof.returncode == 0 and envelope['success']
         performance = envelope['value']['result']['Performance']
@@ -276,8 +296,7 @@ def main():
                 time.sleep(.05)
             raise AssertionError('Timed out waiting for a scheduler checkpoint')
 
-        until(lambda: (base / 'Data/web-ready.json').exists())
-        config = json.loads((base / 'Data/web-ready.json').read_text(encoding='utf-8-sig'))
+        config = until(lambda: read_ready_json(base / 'Data/web-ready.json', process.pid))
 
         def call(path, data=None):
             request = urllib.request.Request(config['url'] + path,
@@ -408,8 +427,7 @@ def main():
         (base / 'Data/sim.json').write_text(json.dumps({'count': 0, 'revision': 0, 'limit': 3, 'delayMs': 300, 'setupComplete': True, 'autoAnalyze': True, 'autoUpdateOnOpen': True}), encoding='utf-8')
         event_start = len((base / 'events.jsonl').read_text(encoding='utf-8').splitlines())
         process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        until(lambda: (base / 'Data/web-ready.json').exists())
-        config = json.loads((base / 'Data/web-ready.json').read_text(encoding='utf-8-sig'))
+        config = until(lambda: read_ready_json(base / 'Data/web-ready.json', process.pid))
         startup = until(lambda: next((x for x in call('/api/jobs')['jobs'] if x['automatic'] and x['action'] == 'AnalyzeBacklog'), None))
         startup_done = until(lambda: terminal(startup['id']))
         assert startup_done['status'] == 'completed' and startup_done['completed'] == 3, startup_done
@@ -430,8 +448,7 @@ def main():
         checks.extend(real['checks'])
         (base / 'Data/sim.json').write_text(json.dumps({'count': 0, 'revision': 0, 'limit': 1, 'delayMs': 180000, 'freezeRead': True}), encoding='utf-8')
         process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        until(lambda: (base / 'Data/web-ready.json').exists() and json.loads((base / 'Data/web-ready.json').read_text(encoding='utf-8-sig'))['pid'] == process.pid)
-        config = json.loads((base / 'Data/web-ready.json').read_text(encoding='utf-8-sig'))
+        config = until(lambda: read_ready_json(base / 'Data/web-ready.json', process.pid))
         until(saved)
         frozen = call('/api/actions', {'action': 'Analyze'})['id']
         child_file = base / 'Data/unresponsive-child.pid'
@@ -455,6 +472,8 @@ def main():
         summary['passed'] = True
     except Exception as error:
         summary['error'] = str(error)
+        summary['errorType'] = type(error).__name__
+        summary['errorTrace'] = traceback.format_exc()
     finally:
         if child_pid is not None and process_alive(child_pid):
             if os.name == 'nt':

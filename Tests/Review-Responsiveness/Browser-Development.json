@@ -1,0 +1,45 @@
+{
+  "version": "5.7.0",
+  "syntheticOnly": true,
+  "platform": "linux",
+  "browserChannel": "chromium",
+  "actualBrowser": true,
+  "actualHost": true,
+  "tests": 5,
+  "assertions": 284,
+  "failed": 0,
+  "results": [
+    {
+      "name": "A delayed submit cannot duplicate a decision or claim it is saved; distinct decisions queue without interrupting browsing",
+      "result": "PASS"
+    },
+    {
+      "name": "Reload discovers unknown in-flight work and blocks duplicate filing until the durable result is available",
+      "result": "PASS"
+    },
+    {
+      "name": "A stale captured filing stamp rejects the queued decision, clears Saving, and remains available for explicit retry",
+      "result": "PASS"
+    },
+    {
+      "name": "Queued cancellation remains pending and a completed filing retains real Undo",
+      "result": "PASS"
+    },
+    {
+      "name": "A committed decision stays guarded during a failed snapshot read and confirms only after recovery",
+      "result": "PASS"
+    }
+  ],
+  "externalAssetRequests": 0,
+  "javascriptErrors": [],
+  "testedFiles": {
+    "App/Web/app.js": "8E0803A2ECA54A413A8A3E49D60BA4548D50A0CDA19931C81BFB9EAD344714AF",
+    "App/Web/app.css": "2F39D9A9849DDC3B8E6D6985A596CD9EA3AB4A3B600BB58C36F476BB85CB4162",
+    "App/Web/index.html": "4625003F66A1062AB35CE7741F0E408653EEE60E857296A951B9E958B23938D9",
+    "App/WebService.psm1": "C408B7A34B1E90F387519D728BE2D0112F0651E043055BE800587B5FD292ADB9",
+    "App/Insights.psm1": "F3756AD306BAEA0422584E2CA1AC372B2C39484761A13847F741E23E1290762D",
+    "Host/Program.cs": "1412EFCE48C4E2B1488D7B1FC35BB4AA264A84165D0682B3AFA06758E7D23A6E"
+  },
+  "hostSHA256": "CD16070ABE3EE1FB60C77090284415A7DFD7F93EA8A9559AAAC15CD7C45DD722",
+  "scope": "Actual local host, PowerShell adapter and generated PDFs. A bounded gate is inserted only in the copied fixture before durable preflight, with a separate delayed POST. Checks queued distinct filing, duplicate prevention, truthful saving state, browsing, true reload with the first job-list response held, stale failure, cancellation, Undo, snapshot-read failure/recovery and protected source/clinical/cache bytes. Includes 1024×768 and 683×384 effective-viewport geometry with actual filing progress and a forced synthetic connection notice; this is not actual Windows DPI testing. Does not measure hospital workstation speed or establish Windows execution when run on Linux."
+}

@@ -1,0 +1,135 @@
+﻿{
+    "Product":  "CT QA Manager Pro",
+    "Suite":  "Reviewed Monthly QA component coverage",
+    "TimestampUtc":  "2026-11-16T19:07:32.2337255Z",
+    "Runtime":  "5.1.26100.33648",
+    "Platform":  "Microsoft Windows NT 10.0.26100.0",
+    "WindowsPowerShell51ActuallyRun":  true,
+    "Tests":  24,
+    "Assertions":  144,
+    "Passed":  24,
+    "Failed":  0,
+    "Results":  [
+                    {
+                        "Name":  "Separate reviewed PDFs contribute a component union only within the same scanner and month",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "A single reviewed PDF can confirm every configured monthly component",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Pending filenames and text hints cannot count as confirmed component evidence",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Confirmed labels with no configured checklist never imply monthly completeness",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "No report and pending report states remain distinct for configured checklists",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Unknown components and components attached to a non-Monthly decision are rejected",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Component review canonicalizes configured names without inventing extra evidence",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Component evidence cannot cross scanner or calendar-month boundaries",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "A changed source revision cannot inherit reviewed components for earlier bytes",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "A corrupted archived PDF cannot acquire component confirmation",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Interrupted review commit recovers exact reviewed components and their audit evidence",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Monthly attention presents one combined missing-component item for each scanner-month",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Configured fourth scanners have independent monthly checklist coverage",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Coverage calculations are read-only and reject malformed month identifiers",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Repairing saved bytes from an unchanged source preserves exact-hash reviewed components",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Reclassification away from Monthly clears component evidence for monthly coverage",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Cached Monthly receipt and printed components remain distinct from recorded reviewed evidence",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Daily reference pending and unavailable reports cannot supply Monthly receipt or detected coverage",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Exact checklist aliases are bounded and custom department text is never fuzzy-matched",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Only actual complete current body evidence can populate the printed component checklist",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Selected-month checklist history is preserved and the next editable effective month is explicit",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Future off-schedule and pre-activation months have neutral requirements while receipts remain visible",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Printed failures are documentary warnings and bounded lists retain truthful total receipt counts",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Setup history cannot forward nested objects or invalid labels from an unselected future rule",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    }
+                ],
+    "FixturesKept":  false
+}
