@@ -22,6 +22,10 @@ PAGES = (
     ("settings", "Settings", "Manage connections, archive storage, PDF reading, backups, and updates."),
 )
 DETAILS = (
+    ("review-queue/review-saving-1024x768.png", "Review while two file decisions are saving"),
+    ("review-queue/review-saving-683x384.png", "Review at a 200% effective workstation viewport"),
+    ("review-queue/review-queued-browsing.png", "Browse reports while file decisions save"),
+    ("review-queue/review-queue-settled.png", "Confirmed filing and available Undo"),
     ("support-activity-web-demo.png", "Support and activity export"),
     ("support-print-web-demo.png", "Printable diagnostic report"),
     ("automatic-filing-web-demo.png", "Automatic filing and optional scanner overrides"),

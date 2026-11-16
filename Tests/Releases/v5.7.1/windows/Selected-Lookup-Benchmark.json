@@ -1,0 +1,26 @@
+{
+    "syntheticOnly":  true,
+    "scope":  "Actual Invoke-QaWebRequest Pdf resolves one real verified synthetic PDF in a synthetic metadata index. Same-process warm-up then measured iterations; no native rendering, PDF extraction, whole-library physical I/O or hospital throughput claim.",
+    "platform":  "Win32NT",
+    "powershell":  "5.1.26100.33648",
+    "iterations":  1,
+    "results":  [
+                    {
+                        "records":  1367,
+                        "samplesMs":  [
+                                          2253.299
+                                      ],
+                        "medianMs":  2253.299,
+                        "protectedBytesUnchanged":  true
+                    },
+                    {
+                        "records":  20000,
+                        "samplesMs":  [
+                                          33815.66
+                                      ],
+                        "medianMs":  33815.66,
+                        "protectedBytesUnchanged":  true
+                    }
+                ],
+    "passed":  true
+}

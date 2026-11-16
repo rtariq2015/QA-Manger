@@ -1,0 +1,141 @@
+﻿{
+    "Version":  "5.4.0",
+    "Runtime":  "5.1.26100.33648",
+    "WindowsPowerShell51ActuallyRun":  true,
+    "Tests":  26,
+    "Assertions":  240,
+    "Failed":  0,
+    "Results":  [
+                    {
+                        "Name":  "Hundreds of date checks are grouped without deleting or changing a review item",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Information can be filtered separately and all original details remain accessible",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Shareable diagnostics exclude free text, identifiers, names, paths and secrets",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Unrecognized status and settings values cannot inject sensitive text into diagnostics",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "PDF analysis diagnostics retain counts without copying extracted evidence",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Diagnostic exports are atomic new JSON files and protect existing application files",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Safe operation history excludes arbitrary old log content and injected fields",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Support events rotate, expire and keep legacy raw files separate",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Standalone diagnostics work against an installation with an active application lock",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Pending verification includes provisional daily files and clears only on actual confirmation",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "A scrubbed ZIP includes all retained activity and strips injected fields from every entry",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Earlier activity contributes only recognized dates, operations and numeric counts",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Error descriptions become safe categories rather than raw strings",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Concurrent program workers keep every structured event without overwriting each other",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "A failed PDF read stays cached until the destination changes",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Detailed report diagnoses keep independent reasons and opaque bundle references without private data",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Unknown diagnostic and event fields cannot inject text or spreadsheet formulas",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Printable diagnostics cap readable sections honestly while machine files retain every report and event",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Standalone HTML exports protect files and sanitize even direct printable-report input",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Classic diagnostics inspect cached versions without opening or changing PDF content",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Additional and Daily metadata, Drive models and the third filing rule remain safely diagnosable",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Real connection-result handling avoids repeated prompts and remembers only accepted sign-ins",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Filing basis and reading state remain separate scrubbed facts across machine and print diagnostics",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Batch decisions and Undo export bounded counts and timings without selections or private history",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Pending review groups export only controlled reasons and exclude opaque local grouping keys",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    },
+                    {
+                        "Name":  "Performance telemetry retains only bounded numeric stage counters in print and machine exports",
+                        "Result":  "PASS",
+                        "Details":  ""
+                    }
+                ],
+    "Scope":  "Synthetic review grouping, strict diagnostic privacy, per-report reason categories, printable HTML limits, complete machine exports, protected destinations, cached-only classic fallback, safe events and active application lock. Production diagnostic CMD runs on Windows."
+}

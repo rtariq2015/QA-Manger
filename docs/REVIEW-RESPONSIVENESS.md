@@ -1,6 +1,6 @@
 # Responsive filing decisions — development follow-up
 
-This follow-up is separate from the published 5.7.0 downloads. It changes the browser Review workflow and avoids redundant read-only snapshot work. It does not change source PDFs, clinical review, filing rules, saved schemas, archive locks, batch limits, reader timeouts or the host's 32-job bound. The Classic clinical-review workflow remains unchanged.
+This follow-up is included in 5.7.1; the earlier 5.7.0 download does not include it. It changes the browser Review workflow and avoids redundant read-only snapshot work. It does not change source PDFs, clinical review, filing rules, saved schemas, archive locks, batch limits, reader timeouts or the host's 32-job bound. The Classic clinical-review workflow remains unchanged.
 
 ## Why one click takes time
 
@@ -26,3 +26,5 @@ The [actual before](../Tests/Review-Responsiveness/Decision-Before-1367.json), [
 Observed median request times were 21.59 and 14.06 seconds, but the first after-change request was slower than its baseline counterpart. Other development tests were active, and diagnostic wrappers add overhead. These individual observations are **not a controlled percentage speed claim** and do not promise workplace latency. The queue is the principal interaction improvement; saving is still serialized and can take time.
 
 The [actual-host browser regression](../Tests/Review-Responsiveness/Browser-Development.json) passed **5 scenarios / 284 assertions**, with zero JavaScript errors or external asset requests. It checks delayed submission, two distinct queued decisions, duplicate prevention, browsing/focus, real reloads with the first jobs response held, stale rejection, cancellation, Undo, HTTP 503 snapshot recovery and protected bytes. Both filing buttons remained accessible at 1024×768 and 683×384 effective viewports with a real filing-progress indicator and a forced synthetic connection notice. Source fingerprints stayed unchanged throughout execution. Initial harness attempts were corrected to perform actual document reloads, settle asynchronous Undo before a new scenario, and complete intercepted routes safely; the final report comes from a complete fresh fixture run. Linux execution does not establish Windows PowerShell 5.1, actual Windows display scaling or hospital IT approval.
+
+The final [validation record](TESTING.md) distinguishes the successful Windows Review/application checks, the failed startup-probe step, its corrected focused Linux check, and the full repeat cancelled at the user's direction. No complete native scheduler pass is claimed.

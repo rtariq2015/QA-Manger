@@ -1,0 +1,23 @@
+{
+  "version": "5.7.1",
+  "initialRun": 43929342040,
+  "sourceCommit": "3d46b34f43336349d793edc7e9ee9087a6061f0d",
+  "overallResult": "FAIL",
+  "passedStages": [
+    "source",
+    "host",
+    "python",
+    "six browser workloads",
+    "reader comparison",
+    "18 Windows PowerShell suites",
+    "selected-PDF lookup",
+    "Classic layout/captures"
+  ],
+  "failedStage": "Background scheduler readiness observation",
+  "completedSchedulerGroups": 14,
+  "error": "Expecting value: line 1 column 1 (char 0)",
+  "remainingRealReaderAndDeadlineGroupsNotClaimed": true,
+  "testCorrectionCommit": "ef937a397afdba45871af2ea002271e19956bf38",
+  "correction": "Bounded readiness probes wait for complete JSON and matching PID; all outcome assertions, test timeouts and the real helper deadline retained. Application and host source unchanged.",
+  "finalValidationRunPending": 43938032793
+}

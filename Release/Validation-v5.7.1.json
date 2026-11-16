@@ -1,0 +1,46 @@
+{
+  "version": "5.7.1",
+  "runtimeSourceCommit": "3d46b34f43336349d793edc7e9ee9087a6061f0d",
+  "testCorrectionCommit": "ef937a397afdba45871af2ea002271e19956bf38",
+  "applicationSourceUnchangedByTestCorrection": true,
+  "windowsRun": 43929342040,
+  "windowsOverallResult": "FAIL - scheduler readiness probe",
+  "windowsPowerShell": {
+    "suites": 18,
+    "tests": 413,
+    "assertions": 4320,
+    "failed": 0
+  },
+  "windowsBrowser": {
+    "workloads": 6,
+    "tests": 115,
+    "assertions": 30682,
+    "failed": 0
+  },
+  "reviewQueue": {
+    "tests": 5,
+    "assertions": 284,
+    "failed": 0
+  },
+  "nativeScheduler": {
+    "completedCheckGroups": 14,
+    "result": "FAIL",
+    "error": "Expecting value: line 1 column 1 (char 0)",
+    "remainingRealReaderAndDeadlineNotClaimed": true
+  },
+  "focusedCorrectedScheduler": {
+    "platform": "Linux",
+    "passed": true,
+    "checkGroups": 18,
+    "actual90SecondHelperCleanupPassed": true
+  },
+  "fullRerun": {
+    "id": 43938032793,
+    "status": "cancelled at user request",
+    "notAPassingRun": true
+  },
+  "hostSHA256": "ec1ab28dab6e7e1a37ea59fa6fdcdd0cf24f60fb08beb09a22ba4d8715d7bf02",
+  "packageChecks": 5377,
+  "preservedSyntheticFiles": 9,
+  "scope": "Synthetic data only. Successful native application/browser evidence plus explicitly separate failed startup-probe result and focused Linux correction. No full-native-success, hospital workstation, IT approval or OS DPI claim."
+}

@@ -1,0 +1,36 @@
+{
+  "passed": false,
+  "syntheticOnly": true,
+  "scope": "Real host scheduling with a deterministic PowerShell adapter, copied production-reader pause/export/cancel checks, and an actual 90-second helper deadline. Generated PDFs only; no reader speed claim.",
+  "syntheticAdapterJobMetrics": {
+    "planBuilds": 2,
+    "fullSnapshots": 3,
+    "librarySyncs": 3,
+    "processedReports": 25,
+    "cacheSkips": 0,
+    "workerStarts": 30,
+    "inlinePdfReads": 25,
+    "helperMilliseconds": 15191,
+    "readWorkerMilliseconds": 12992,
+    "planningMilliseconds": 887,
+    "snapshotMilliseconds": 1312
+  },
+  "error": "Expecting value: line 1 column 1 (char 0)",
+  "checks": [
+    "Duplicate background reads are rejected without blocking foreground controls",
+    "Pause finishes the current PDF and preserves a cumulative 1/8 checkpoint",
+    "Paused reading launches no additional PDF helper",
+    "Foreground Approve completes while paused and its latest snapshot is retained",
+    "Independent Trends data and static asset routes are available during reading",
+    "A foreground action queued during a PDF runs before the archive batch completes",
+    "One-PDF requests are sanitized, mutations stay serialized, and cancel preserves cumulative work",
+    "A bulk action stops after twenty actual PDFs and reports the remaining work",
+    "A 25-PDF job reuses two plans and keeps PDF steps separate from overview checkpoints",
+    "An explicitly started backlog continues beyond twenty and synchronizes readable folders",
+    "AutoAnalyze false keeps an eligible archive manual",
+    "Stop intent persists across Refresh independently of cooldown",
+    "App reopen automatically reads eligible backlog after initial Refresh",
+    "Shutdown cancels background reading at a safe checkpoint and leaves no running helper"
+  ],
+  "checkCount": 14
+}

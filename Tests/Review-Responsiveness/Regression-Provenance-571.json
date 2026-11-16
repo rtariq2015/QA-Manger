@@ -1,0 +1,32 @@
+{
+  "sourceCommit": "3d46b34f43336349d793edc7e9ee9087a6061f0d",
+  "sourceFiles": {
+    "App/Web/app.js": "7fff67d4e7cb13896562105657114e2bfaef5a1f098066900c4bdf4484815de2",
+    "App/Web/app.css": "2f39d9a9849ddc3b8e6d6985a596cd9ea3ab4a3b600bb58c36f476bb85cb4162",
+    "App/Web/index.html": "50436d05e872a3dc0cbaed32192e84d3deb5b9d2683c5d44f33075219b4f93e0",
+    "App/WebService.psm1": "7500a64fdaf2b8af01716a09d944c3f9ba518bcb4858e9503a96e5fde3cd79a6",
+    "App/Insights.psm1": "f3756ad306baea0422584e2ca1ac372b2c39484761a13847f741e23e1290762d",
+    "Host/Program.cs": "3a9cf95e79de2a6a4db7df5765cca043e5029a667facd8cfe8f63bab0f237da0",
+    "Host/CTQa.Host.csproj": "5773a203e29be1e4c1b5635605db746f6edfbb93f82d522ee53e4b3524bc7b25",
+    "Tests/Web/run-e2e.cjs": "131f082afdb45322ce252588a75e1e87955f0ec553661ca7e4d41dfe0a57ab8d",
+    "Tests/Web/run-large-e2e.cjs": "88f36a572291790e46af81a25804c0c60c7ebd0b395d689df737cd3f7e0a1c36"
+  },
+  "hostSHA256": "688b3db4ff5f72c9ae37938efc90bfc8869f6657aa8f343928a1929db844920d",
+  "productionAndExistingTestBytesUnchanged": true,
+  "scope": "Actual Linux host and Chromium, independently executed existing Main and Large suites. No Windows or workplace execution claim. Main and Large ran concurrently; observed job timings are not a matched performance benchmark.",
+  "main": {
+    "tests": 18,
+    "assertions": 817,
+    "failed": 0
+  },
+  "large": {
+    "tests": 6,
+    "assertions": 27847,
+    "failed": 0
+  },
+  "largeCore": {
+    "tests": 4,
+    "assertions": 5463,
+    "failed": 0
+  }
+}

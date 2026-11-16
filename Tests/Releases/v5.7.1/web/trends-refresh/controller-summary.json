@@ -1,0 +1,40 @@
+{
+  "tests": 7,
+  "assertions": 25,
+  "failed": 0,
+  "syntheticOnly": true,
+  "controllerOnly": true,
+  "actualBrowser": false,
+  "sourceSHA256": "bf4c44cad7a0788a85fe7c1580fa6e413c7df9213153b91a9be13a16960be311",
+  "results": [
+    {
+      "name": "Identical validated snapshots issue one request and settle while new object instances keep arriving",
+      "result": "PASS"
+    },
+    {
+      "name": "Changes during one in-flight request coalesce into one follow-up for the latest revision",
+      "result": "PASS"
+    },
+    {
+      "name": "Legacy helpers use stable graph semantics rather than object or record order",
+      "result": "PASS"
+    },
+    {
+      "name": "Scanner changes abort stale requests and cannot overwrite the new selected scanner",
+      "result": "PASS"
+    },
+    {
+      "name": "Unchanged snapshots do not turn one request failure into an automatic retry loop",
+      "result": "PASS"
+    },
+    {
+      "name": "Hidden Trends coalesces changes until it is opened",
+      "result": "PASS"
+    },
+    {
+      "name": "Table position retains millimetres and the explicitly selected movement context",
+      "result": "PASS"
+    }
+  ],
+  "scope": "Actual App/Web/trends.js refresh/load/query/normalization functions with controlled asynchronous responses; DOM chart and read-button rendering are stubbed. No browser, PDF, network, hospital access or reader-speed claim. The separate actual-host browser workload covers rendered behavior."
+}
