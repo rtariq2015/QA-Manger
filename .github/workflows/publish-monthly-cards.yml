@@ -1,0 +1,103 @@
+name: Publish requested Monthly card layout 5.7.4
+on:
+  push:
+    branches: [fix/monthly-scanner-cards]
+    paths:
+      - 'App/Web/app.js'
+      - '.github/workflows/publish-monthly-cards.yml'
+permissions:
+  contents: write
+  actions: read
+concurrency:
+  group: ctqa-release
+  cancel-in-progress: false
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.404'
+      - name: Check focused Monthly layout and navigation evidence
+        run: |
+          node --check App/Web/app.js
+          python3 - <<'PY'
+          import hashlib,json,pathlib,subprocess
+          root=pathlib.Path.cwd()
+          evidence=json.loads((root/'Tests/Monthly-Cards/Chromium.json').read_text())
+          assert evidence['status']=='PASS' and len(evidence['checks'])==139
+          assert evidence['applicationSHA256']==hashlib.sha256((root/'App/Web/app.js').read_bytes()).hexdigest()
+          assert evidence['stylesSHA256']==hashlib.sha256((root/'App/Web/app.css').read_bytes()).hexdigest()
+          assert evidence['markupSHA256']==hashlib.sha256((root/'App/Web/index.html').read_bytes()).hexdigest()
+          paths=subprocess.check_output(['git','diff','--name-only','v5.7.3','HEAD','--','App','Host','Config','Start CT QA Manager.cmd','User Guide.html']).decode().splitlines()
+          for name in paths:
+              if name in ('App/Web/app.js','App/Web/app.css','App/Web/index.html'): continue
+              original=subprocess.check_output(['git','show','v5.7.3:'+name])
+              assert (root/name).read_bytes()==original.replace(b'5.7.3',b'5.7.4'),name
+          PY
+      - name: Build versioned self-contained Windows host
+        run: |
+          dotnet publish Host/CTQa.Host.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:DebugType=None -o App/Host
+          python3 - <<'PY'
+          import pathlib,shutil
+          out=pathlib.Path('App/Host')
+          for p in out.iterdir():
+              if p.is_file() and p.name!='CTQa.Host.exe': p.unlink()
+          for package,prefix in [('microsoft.netcore.app.runtime.win-x64','DOTNET'),('microsoft.aspnetcore.app.runtime.win-x64','ASPNETCORE')]:
+              versions=list((pathlib.Path.home()/'.nuget/packages'/package).iterdir())
+              latest=max(versions,key=lambda p:tuple(map(int,p.name.split('.'))))
+              items=[p for p in latest.iterdir() if p.is_file() and ('LICENSE' in p.name.upper() or 'THIRD-PARTY-NOTICES' in p.name.upper())]
+              assert len(items)==2
+              for p in items: shutil.copyfile(p,out/(prefix+'-'+p.name))
+          PY
+      - name: Reuse pinned reader and build checked packages
+        run: |
+          gh api repos/rtariq2015/QA-Manger/actions/artifacts/14262175207/zip > /tmp/reader.zip
+          python3 - <<'PY'
+          import hashlib,pathlib,zipfile
+          path=pathlib.Path('/tmp/reader.zip')
+          assert hashlib.sha256(path.read_bytes()).hexdigest()=='184dc09643783b2cbefc82155c58ca6b0cc72ca754662ff9624e746912a530a0'
+          with zipfile.ZipFile(path) as z: z.extractall('App/Python')
+          PY
+          python3 scripts/build_release.py --version 5.7.4 --output-dir artifacts/monthly-cards
+          python3 - <<'PY'
+          import hashlib,json,pathlib,zipfile
+          root=pathlib.Path('artifacts/monthly-cards'); lines=[]
+          for p in sorted(root.glob('*.zip')):
+              with zipfile.ZipFile(p) as z:
+                  assert z.testzip() is None
+                  prefix='CT_QA_Manager_Pro/'
+                  assert json.loads(z.read(prefix+'Package.json'))['Version']=='5.7.4'
+                  for line in z.read(prefix+'Package-SHA256SUMS.txt').decode().splitlines():
+                      sha,name=line.split('  ',1); assert hashlib.sha256(z.read(prefix+name)).hexdigest()==sha
+                  assert z.read(prefix+'App/Web/app.js')==pathlib.Path('App/Web/app.js').read_bytes()
+              lines.append(hashlib.sha256(p.read_bytes()).hexdigest()+'  '+p.name+'\n')
+          assert len(lines)==3
+          (root/'SHA256SUMS.txt').write_text(''.join(lines))
+          PY
+      - name: Upload and verify release files
+        run: |
+          gh release create v5.7.4 --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --draft --title 'CT QA Manager Pro v5.7.4 — Monthly scanner cards' --notes-file Release/Notes-v5.7.4.md
+          gh release upload v5.7.4 --repo "$GITHUB_REPOSITORY" 'artifacts/monthly-cards/CT_QA_Manager_Pro_v5.7.4_Update.zip#Update ZIP - use the app Updates tab' 'artifacts/monthly-cards/CT_QA_Manager_Pro_v5.7.4_Portable.zip#Full portable program - new installation' 'artifacts/monthly-cards/CT_QA_Manager_Pro_v5.7.4_Upgrade.zip#One-time upgrade - older versions' 'artifacts/monthly-cards/SHA256SUMS.txt#SHA-256 checksums'
+          gh api "repos/$GITHUB_REPOSITORY/releases" --jq 'first(.[] | select(.tag_name=="v5.7.4"))' > /tmp/release.json
+          python3 - <<'PY'
+          import hashlib,json,pathlib
+          release=json.loads(pathlib.Path('/tmp/release.json').read_text()); assert release['draft']
+          assert len(release['assets'])==4
+          for item in release['assets']:
+              p=pathlib.Path('artifacts/monthly-cards')/item['name']
+              assert p.stat().st_size==item['size'] and item['digest']=='sha256:'+hashlib.sha256(p.read_bytes()).hexdigest()
+          PY
+          gh release edit v5.7.4 --repo "$GITHUB_REPOSITORY" --draft=false --latest
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: monthly-cards-574-downloads
+          path: artifacts/monthly-cards/
+          if-no-files-found: ignore

@@ -1,0 +1,659 @@
+{
+  "syntheticOnly": true,
+  "scope": "Synthetic HTTP snapshot/Monthly API and minimal sample PDF with production frontend assets. Checks cover browser navigation, card labels/counts and selected original IDs only; no live backend, archive, scanner, PDF extraction, native runtime or clinical QA validation.",
+  "checks": [
+    {
+      "name": "#today-monthly-cards has all three scanner cards for 2026-11",
+      "result": "PASS"
+    },
+    {
+      "name": "CT Edge card keeps its scanner label in 2026-11",
+      "result": "PASS"
+    },
+    {
+      "name": "CT Edge latest-PDF availability in 2026-11",
+      "result": "PASS"
+    },
+    {
+      "name": "CT Flash card keeps its scanner label in 2026-11",
+      "result": "PASS"
+    },
+    {
+      "name": "CT Flash latest-PDF availability in 2026-11",
+      "result": "PASS"
+    },
+    {
+      "name": "CT Drive card keeps its scanner label in 2026-11",
+      "result": "PASS"
+    },
+    {
+      "name": "CT Drive latest-PDF availability in 2026-11",
+      "result": "PASS"
+    },
+    {
+      "name": "CT Drive explicitly labels the empty month 2026-11",
+      "result": "PASS"
+    },
+    {
+      "name": "Today retains all three existing Daily scanner cards",
+      "result": "PASS"
+    },
+    {
+      "name": "Today retains the Daily shortcut controls",
+      "result": "PASS"
+    },
+    {
+      "name": "Today has one separate Monthly row without duplicate Monthly shortcuts inside Daily cards",
+      "result": "PASS"
+    },
+    {
+      "name": "Today Monthly cards form a separate row below the Daily scanner cards",
+      "result": "PASS"
+    },
+    {
+      "name": "Reports places Receipt calendar before Report library",
+      "result": "PASS"
+    },
+    {
+      "name": "Reports sidebar opens Receipt calendar",
+      "result": "PASS"
+    },
+    {
+      "name": "Report library tab still opens the list",
+      "result": "PASS"
+    },
+    {
+      "name": "Reports sidebar returns to Receipt calendar after a Library selection",
+      "result": "PASS"
+    },
+    {
+      "name": "#monthly-evidence-list has all three scanner cards for 2026-11",
+      "result": "PASS"
+    },
+    {
+      "name": "CT Edge card keeps its scanner label in 2026-11",
+      "result": "PASS"
+    },
+    {
+      "name": "CT Edge card coverage uses the selected API month 2026-11",
+      "result": "PASS"
+    },
+    {
+      "name": "CT Edge latest-PDF availability in 2026-11",
+      "result": "PASS"
+    },
+    {
+      "name": "CT Flash card keeps its scanner label in 2026-11",
+      "result": "PASS"
+    },
+    {
+      "name": "CT Flash card coverage uses the selected API month 2026-11",
+      "result": "PASS"
+    },
+    {
+      "name": "CT Flash latest-PDF availability in 2026-11",
+      "result": "PASS"
+    },
+    {
+      "name": "CT Drive card keeps its scanner label in 2026-11",
+      "result": "PASS"
+    },
+    {
+      "name": "CT Drive card coverage uses the selected API month 2026-11",
+      "result": "PASS"
+    },
+    {
+      "name": "CT Drive latest-PDF availability in 2026-11",
+      "result": "PASS"
+    },
+    {
+      "name": "CT Drive explicitly labels the empty month 2026-11",
+      "result": "PASS"
+    },
+    {
+      "name": "Monthly report details start collapsed",
+      "result": "PASS"
+    },
+    {
+      "name": "View all expands the existing report details",
+      "result": "PASS"
+    },
+    {
+      "name": "Expanded details retain all saved/pending/unavailable report rows",
+      "result": "PASS"
+    },
+    {
+      "name": "Expanded details preserve filing exceptions and unavailable evidence",
+      "result": "PASS"
+    },
+    {
+      "name": "#monthly-reviewed-details remains in its collapsed section",
+      "result": "PASS"
+    },
+    {
+      "name": "#monthly-reviewed-details still expands",
+      "result": "PASS"
+    },
+    {
+      "name": "#monthly-setup-panel remains in its collapsed section",
+      "result": "PASS"
+    },
+    {
+      "name": "#monthly-setup-panel still expands",
+      "result": "PASS"
+    },
+    {
+      "name": "Existing reviewed report evidence is retained separately",
+      "result": "PASS"
+    },
+    {
+      "name": "Monthly latest eligible report opens the existing Review workspace",
+      "result": "PASS"
+    },
+    {
+      "name": "Monthly latest eligible report targets the original synthetic PDF ID",
+      "result": "PASS"
+    },
+    {
+      "name": "Monthly latest eligible report agrees with Open PDF link",
+      "result": "PASS"
+    },
+    {
+      "name": "Latest target excludes newer pending, reference and unavailable synthetic decoys",
+      "result": "PASS"
+    },
+    {
+      "name": "2026-12 loads through the read-only Monthly API",
+      "result": "PASS"
+    },
+    {
+      "name": "Month picker agrees with requested month 2026-12",
+      "result": "PASS"
+    },
+    {
+      "name": "#monthly-evidence-list has all three scanner cards for 2026-12",
+      "result": "PASS"
+    },
+    {
+      "name": "CT Edge card keeps its scanner label in 2026-12",
+      "result": "PASS"
+    },
+    {
+      "name": "CT Edge card coverage uses the selected API month 2026-12",
+      "result": "PASS"
+    },
+    {
+      "name": "CT Edge latest-PDF availability in 2026-12",
+      "result": "PASS"
+    },
+    {
+      "name": "CT Flash card keeps its scanner label in 2026-12",
+      "result": "PASS"
+    },
+    {
+      "name": "CT Flash card coverage uses the selected API month 2026-12",
+      "result": "PASS"
+    },
+    {
+      "name": "CT Flash latest-PDF availability in 2026-12",
+      "result": "PASS"
+    },
+    {
+      "name": "CT Drive card keeps its scanner label in 2026-12",
+      "result": "PASS"
+    },
+    {
+      "name": "CT Drive card coverage uses the selected API month 2026-12",
+      "result": "PASS"
+    },
+    {
+      "name": "CT Drive latest-PDF availability in 2026-12",
+      "result": "PASS"
+    },
+    {
+      "name": "2027-01 loads through the read-only Monthly API",
+      "result": "PASS"
+    },
+    {
+      "name": "Month picker agrees with requested month 2027-01",
+      "result": "PASS"
+    },
+    {
+      "name": "#monthly-evidence-list has all three scanner cards for 2027-01",
+      "result": "PASS"
+    },
+    {
+      "name": "CT Edge card keeps its scanner label in 2027-01",
+      "result": "PASS"
+    },
+    {
+      "name": "CT Edge card coverage uses the selected API month 2027-01",
+      "result": "PASS"
+    },
+    {
+      "name": "CT Edge latest-PDF availability in 2027-01",
+      "result": "PASS"
+    },
+    {
+      "name": "CT Edge explicitly labels the empty month 2027-01",
+      "result": "PASS"
+    },
+    {
+      "name": "CT Flash card keeps its scanner label in 2027-01",
+      "result": "PASS"
+    },
+    {
+      "name": "CT Flash card coverage uses the selected API month 2027-01",
+      "result": "PASS"
+    },
+    {
+      "name": "CT Flash latest-PDF availability in 2027-01",
+      "result": "PASS"
+    },
+    {
+      "name": "CT Flash explicitly labels the empty month 2027-01",
+      "result": "PASS"
+    },
+    {
+      "name": "CT Drive card keeps its scanner label in 2027-01",
+      "result": "PASS"
+    },
+    {
+      "name": "CT Drive card coverage uses the selected API month 2027-01",
+      "result": "PASS"
+    },
+    {
+      "name": "CT Drive latest-PDF availability in 2027-01",
+      "result": "PASS"
+    },
+    {
+      "name": "CT Drive explicitly labels the empty month 2027-01",
+      "result": "PASS"
+    },
+    {
+      "name": "2026-12 loads through the read-only Monthly API",
+      "result": "PASS"
+    },
+    {
+      "name": "Month picker agrees with requested month 2026-12",
+      "result": "PASS"
+    },
+    {
+      "name": "#monthly-evidence-list has all three scanner cards for 2026-12",
+      "result": "PASS"
+    },
+    {
+      "name": "CT Edge card keeps its scanner label in 2026-12",
+      "result": "PASS"
+    },
+    {
+      "name": "CT Edge card coverage uses the selected API month 2026-12",
+      "result": "PASS"
+    },
+    {
+      "name": "CT Edge latest-PDF availability in 2026-12",
+      "result": "PASS"
+    },
+    {
+      "name": "CT Flash card keeps its scanner label in 2026-12",
+      "result": "PASS"
+    },
+    {
+      "name": "CT Flash card coverage uses the selected API month 2026-12",
+      "result": "PASS"
+    },
+    {
+      "name": "CT Flash latest-PDF availability in 2026-12",
+      "result": "PASS"
+    },
+    {
+      "name": "CT Drive card keeps its scanner label in 2026-12",
+      "result": "PASS"
+    },
+    {
+      "name": "CT Drive card coverage uses the selected API month 2026-12",
+      "result": "PASS"
+    },
+    {
+      "name": "CT Drive latest-PDF availability in 2026-12",
+      "result": "PASS"
+    },
+    {
+      "name": "2025-08 loads through the read-only Monthly API",
+      "result": "PASS"
+    },
+    {
+      "name": "Month picker agrees with requested month 2025-08",
+      "result": "PASS"
+    },
+    {
+      "name": "#monthly-evidence-list has all three scanner cards for 2025-08",
+      "result": "PASS"
+    },
+    {
+      "name": "CT Edge card keeps its scanner label in 2025-08",
+      "result": "PASS"
+    },
+    {
+      "name": "CT Edge card coverage uses the selected API month 2025-08",
+      "result": "PASS"
+    },
+    {
+      "name": "CT Edge latest-PDF availability in 2025-08",
+      "result": "PASS"
+    },
+    {
+      "name": "CT Flash card keeps its scanner label in 2025-08",
+      "result": "PASS"
+    },
+    {
+      "name": "CT Flash card coverage uses the selected API month 2025-08",
+      "result": "PASS"
+    },
+    {
+      "name": "CT Flash latest-PDF availability in 2025-08",
+      "result": "PASS"
+    },
+    {
+      "name": "CT Flash explicitly labels the empty month 2025-08",
+      "result": "PASS"
+    },
+    {
+      "name": "CT Drive card keeps its scanner label in 2025-08",
+      "result": "PASS"
+    },
+    {
+      "name": "CT Drive card coverage uses the selected API month 2025-08",
+      "result": "PASS"
+    },
+    {
+      "name": "CT Drive latest-PDF availability in 2025-08",
+      "result": "PASS"
+    },
+    {
+      "name": "Historical Monthly latest report opens the existing Review workspace",
+      "result": "PASS"
+    },
+    {
+      "name": "Historical Monthly latest report targets the original synthetic PDF ID",
+      "result": "PASS"
+    },
+    {
+      "name": "Historical Monthly latest report agrees with Open PDF link",
+      "result": "PASS"
+    },
+    {
+      "name": "#today-monthly-cards has all three scanner cards for 2026-11",
+      "result": "PASS"
+    },
+    {
+      "name": "CT Edge card keeps its scanner label in 2026-11",
+      "result": "PASS"
+    },
+    {
+      "name": "CT Edge latest-PDF availability in 2026-11",
+      "result": "PASS"
+    },
+    {
+      "name": "CT Flash card keeps its scanner label in 2026-11",
+      "result": "PASS"
+    },
+    {
+      "name": "CT Flash latest-PDF availability in 2026-11",
+      "result": "PASS"
+    },
+    {
+      "name": "CT Drive card keeps its scanner label in 2026-11",
+      "result": "PASS"
+    },
+    {
+      "name": "CT Drive latest-PDF availability in 2026-11",
+      "result": "PASS"
+    },
+    {
+      "name": "CT Drive explicitly labels the empty month 2026-11",
+      "result": "PASS"
+    },
+    {
+      "name": "Today Monthly View all opens the existing Reports Library",
+      "result": "PASS"
+    },
+    {
+      "name": "Today Monthly View all selects current-month scanner filter",
+      "result": "PASS"
+    },
+    {
+      "name": "Today Monthly View all selects current-month year filter",
+      "result": "PASS"
+    },
+    {
+      "name": "Today Monthly View all selects current-month month filter",
+      "result": "PASS"
+    },
+    {
+      "name": "Today Monthly View all selects current-month type filter",
+      "result": "PASS"
+    },
+    {
+      "name": "Today Monthly View all selects current-month status filter",
+      "result": "PASS"
+    },
+    {
+      "name": "Today Monthly View all lists every original current-month PDF for the chosen scanner",
+      "result": "PASS"
+    },
+    {
+      "name": "Today Monthly View all displays the Reports Library list",
+      "result": "PASS"
+    },
+    {
+      "name": "#today-monthly-cards has all three scanner cards for 2026-11",
+      "result": "PASS"
+    },
+    {
+      "name": "CT Edge card keeps its scanner label in 2026-11",
+      "result": "PASS"
+    },
+    {
+      "name": "CT Edge latest-PDF availability in 2026-11",
+      "result": "PASS"
+    },
+    {
+      "name": "CT Flash card keeps its scanner label in 2026-11",
+      "result": "PASS"
+    },
+    {
+      "name": "CT Flash latest-PDF availability in 2026-11",
+      "result": "PASS"
+    },
+    {
+      "name": "CT Drive card keeps its scanner label in 2026-11",
+      "result": "PASS"
+    },
+    {
+      "name": "CT Drive latest-PDF availability in 2026-11",
+      "result": "PASS"
+    },
+    {
+      "name": "CT Drive explicitly labels the empty month 2026-11",
+      "result": "PASS"
+    },
+    {
+      "name": "Today current-month Monthly report after historical browsing opens the existing Review workspace",
+      "result": "PASS"
+    },
+    {
+      "name": "Today current-month Monthly report after historical browsing targets the original synthetic PDF ID",
+      "result": "PASS"
+    },
+    {
+      "name": "Today current-month Monthly report after historical browsing agrees with Open PDF link",
+      "result": "PASS"
+    },
+    {
+      "name": "Monthly tab retains its browsed historical month independently of Today",
+      "result": "PASS"
+    },
+    {
+      "name": "#monthly-evidence-list has all three scanner cards for 2025-08",
+      "result": "PASS"
+    },
+    {
+      "name": "CT Edge card keeps its scanner label in 2025-08",
+      "result": "PASS"
+    },
+    {
+      "name": "CT Edge card coverage uses the selected API month 2025-08",
+      "result": "PASS"
+    },
+    {
+      "name": "CT Edge latest-PDF availability in 2025-08",
+      "result": "PASS"
+    },
+    {
+      "name": "CT Flash card keeps its scanner label in 2025-08",
+      "result": "PASS"
+    },
+    {
+      "name": "CT Flash card coverage uses the selected API month 2025-08",
+      "result": "PASS"
+    },
+    {
+      "name": "CT Flash latest-PDF availability in 2025-08",
+      "result": "PASS"
+    },
+    {
+      "name": "CT Flash explicitly labels the empty month 2025-08",
+      "result": "PASS"
+    },
+    {
+      "name": "CT Drive card keeps its scanner label in 2025-08",
+      "result": "PASS"
+    },
+    {
+      "name": "CT Drive card coverage uses the selected API month 2025-08",
+      "result": "PASS"
+    },
+    {
+      "name": "CT Drive latest-PDF availability in 2025-08",
+      "result": "PASS"
+    },
+    {
+      "name": "Monthly navigation finishes without an application error",
+      "result": "PASS"
+    },
+    {
+      "name": "Monthly/Today navigation and existing PDF opening send no mutation actions",
+      "result": "PASS"
+    },
+    {
+      "name": "Synthetic source identities, categories and evidence remain unchanged",
+      "result": "PASS"
+    },
+    {
+      "name": "No JavaScript or browser console errors",
+      "result": "PASS"
+    },
+    {
+      "name": "No external asset requests",
+      "result": "PASS"
+    }
+  ],
+  "errors": [],
+  "externalRequests": [],
+  "mutations": [],
+  "pdfRequests": [
+    "370135b94462bf4ce300d3f725a3c1ab060ea3db966239fc1bbc8f29f0dcccf2",
+    "fea9d91aadef8ec6782d58100f4d31ea1fc3e741a44a82600901f4c419fed6f7",
+    "370135b94462bf4ce300d3f725a3c1ab060ea3db966239fc1bbc8f29f0dcccf2"
+  ],
+  "screenshot": "/tmp/ctqa-monthly-cards-browser/monthly-scanner-cards.png",
+  "status": "PASS",
+  "requests": [
+    {
+      "method": "GET",
+      "pathname": "/"
+    },
+    {
+      "method": "GET",
+      "pathname": "/app.css"
+    },
+    {
+      "method": "GET",
+      "pathname": "/trends.js"
+    },
+    {
+      "method": "GET",
+      "pathname": "/app.js"
+    },
+    {
+      "method": "POST",
+      "pathname": "/api/session"
+    },
+    {
+      "method": "POST",
+      "pathname": "/api/heartbeat"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/snapshot"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/jobs"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/monthly",
+      "month": "2026-11"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/jobs"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/pdf/370135b94462bf4ce300d3f725a3c1ab060ea3db966239fc1bbc8f29f0dcccf2"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/monthly",
+      "month": "2026-12"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/monthly",
+      "month": "2027-01"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/monthly",
+      "month": "2026-12"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/monthly",
+      "month": "2025-08"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/monthly",
+      "month": "2025-08"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/jobs"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/pdf/fea9d91aadef8ec6782d58100f4d31ea1fc3e741a44a82600901f4c419fed6f7"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/pdf/370135b94462bf4ce300d3f725a3c1ab060ea3db966239fc1bbc8f29f0dcccf2"
+    }
+  ],
+  "applicationSHA256": "11e136905925093c02e987bf94e933681feda5a88a7796ace06ae045132e2275",
+  "stylesSHA256": "6b61cab8cc02786bbdcec355f8d763082140ddb0e0708ec972076fa3821ccc0a",
+  "markupSHA256": "0b6d5f987b0461c03c8f852fda8b9f7591435ca5ff7c79084ac3da7a85f7d0a0"
+}

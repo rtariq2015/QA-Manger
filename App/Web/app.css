@@ -403,3 +403,44 @@ h1 { letter-spacing: -.75px; }
 
 /* Today: separate Daily and Monthly PDF shortcuts within each scanner card. */
 .scanner-daily-link,.scanner-monthly-link{font:inherit;color:inherit;background:transparent;border:0;width:100%;text-align:left;cursor:pointer}.scanner-daily-link{display:block;padding:0;border-radius:5px}.scanner-daily-link:focus-visible,.scanner-monthly-link:focus-visible{outline:3px solid var(--scanner-color,var(--teal));outline-offset:3px}.scanner-daily-link:disabled,.scanner-monthly-link:disabled{cursor:default;opacity:1}.scanner-monthly-link{display:flex;align-items:center;gap:10px;border-top:1px solid var(--line);margin-top:13px;padding:13px 0 0}.scanner-monthly-mark{display:grid;place-items:center;width:22px;height:22px;flex:none;border-radius:50%;color:var(--amber);background:var(--surface-soft);font-weight:700}.scanner-monthly-link.received .scanner-monthly-mark{color:var(--teal);background:var(--teal-light)}.scanner-monthly-link strong,.scanner-monthly-link small{display:block}.scanner-monthly-link strong{font-size:var(--text-small)}.scanner-monthly-link small{font-size:var(--text-caption);color:var(--muted);margin-top:3px}
+
+/* Shared Monthly scanner cards: current month on Today, selected month in Monthly. */
+.monthly-scanner-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px;align-items:start;margin:18px 0}
+.monthly-scanner-card{min-width:0;padding:20px;background:var(--white);border:1px solid var(--line);border-top:3px solid var(--scanner-color,var(--teal));border-radius:12px;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:16px}
+.monthly-card-main{display:flex;flex-direction:column;gap:13px;color:inherit;text-align:left;min-width:0}
+button.monthly-card-main{font:inherit;border:0;background:transparent;width:100%;padding:0;cursor:pointer;border-radius:5px}
+.monthly-card-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;min-width:0}
+.monthly-card-heading h3{font-size:17px;line-height:1.4;margin:0;overflow-wrap:anywhere}
+.monthly-card-icon{width:70px;height:50px;flex:none;display:block;background:var(--scanner-soft,var(--teal-light));border-radius:8px;color:var(--scanner-color,var(--teal))}
+.monthly-card-icon svg{display:block;width:100%;height:100%;stroke:none;fill:none;--art-accent:var(--scanner-color,var(--teal))}
+.monthly-card-count{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+.monthly-card-count strong{font-size:30px;line-height:1.25;font-variant-numeric:tabular-nums}
+.monthly-card-count span{font-size:var(--text-small);color:var(--muted)}
+.monthly-card-status{display:flex;align-items:center;gap:7px;color:var(--muted);font-size:var(--text-control)}
+.monthly-card-status.received{color:var(--teal)}
+.monthly-card-status svg{width:18px;height:18px;flex:none}
+.monthly-card-date,.monthly-card-coverage{font-size:var(--text-small);color:var(--muted);line-height:1.6;margin:0}
+.monthly-open-latest{width:100%;justify-content:center;min-height:42px;font-size:var(--text-control)}
+.monthly-card-all{align-self:flex-start;font-size:var(--text-small);padding-top:12px;border-top:1px solid var(--line);width:100%;text-align:left}
+.monthly-scanner-card .monthly-report-details{border:0;border-top:1px solid var(--line);border-radius:0;margin:0;padding:0;background:transparent}
+.monthly-scanner-card .monthly-report-details>summary{padding:12px 0 0;gap:6px;align-items:flex-start;flex-direction:column;font-size:var(--text-small)}
+.monthly-scanner-card .monthly-scanner-counts{font-size:var(--text-caption);font-weight:400}
+.monthly-scanner-card .monthly-scanner-body{padding:12px 0 0;min-width:0}
+.monthly-scanner-card .monthly-item{display:flex;flex-direction:column;align-items:flex-start;gap:7px;padding:12px 0}
+.monthly-scanner-card .monthly-report-row{display:flex;flex-direction:column;align-items:flex-start;gap:7px;padding:12px 0;min-width:0}
+.monthly-scanner-card .monthly-report-row .text-button,.monthly-scanner-card .monthly-source-links .text-button{white-space:normal;overflow-wrap:anywhere;text-align:left;max-width:100%;font-size:var(--text-small)}
+.monthly-scanner-card .monthly-report-list{min-width:0}
+.today-monthly-section{margin-top:26px;padding-top:23px;border-top:1px solid var(--line)}
+.monthly-month-navigation{display:flex;align-items:flex-end;gap:8px}
+.monthly-month-navigation>label{display:block;font-size:var(--text-small);color:var(--muted);min-width:0}
+.monthly-month-navigation input{margin-top:6px;min-height:38px;width:175px}
+.monthly-month-navigation>.button{min-height:38px;min-width:38px;padding:3px 10px;font-size:24px;line-height:1}
+#page-monthly .monthly-receipt-cards{display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:20px;padding:0 0 16px;border-bottom:1px solid var(--line);margin-bottom:0}
+#page-monthly .monthly-receipt-cards .monthly-stat-card{padding:0;border:0;box-shadow:none;background:transparent;display:flex;align-items:center;flex-wrap:wrap;gap:8px 12px;max-width:100%}
+#page-monthly .monthly-receipt-cards h2{font-size:var(--text-small);margin:0}
+#page-monthly .monthly-receipt-cards strong{font-size:20px;line-height:1.4;margin:0}
+#page-monthly .monthly-receipt-cards p{font-size:var(--text-caption);line-height:1.5;margin:0;max-width:360px}
+#page-monthly .monthly-receipt-cards .text-button{font-size:var(--text-small)}
+.monthly-view-all:focus-visible{outline:3px solid var(--scanner-color,var(--teal));outline-offset:4px}
+@media(max-width:1100px){.monthly-scanner-grid{grid-template-columns:repeat(auto-fit,minmax(min(100%,230px),1fr))}.monthly-scanner-card{padding:17px}.monthly-card-icon{width:60px;height:44px}}
+@media(max-width:600px){.monthly-scanner-grid{grid-template-columns:1fr}.monthly-month-navigation{width:100%}.monthly-month-navigation>label{flex:1}.monthly-month-navigation input{width:100%}.today-monthly-section .section-heading{flex-wrap:wrap;gap:10px}}
