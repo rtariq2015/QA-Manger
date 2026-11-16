@@ -122,6 +122,11 @@ const primary = {
           check(await page.locator('.main-nav [data-page="' + name + '"]').getAttribute('aria-current') === 'page', 'Selected navigation is announced.');
           check((await page.locator('#page-title').innerText()).trim().length > 0, 'The workspace has a readable heading.');
           for (const selector of primary[name]) await reachable(selector);
+          if (name === 'today') {
+            check(await page.locator('#daily-received-count').isVisible() && await page.locator('#report-total').isVisible(), 'Daily receipt and preserved-PDF totals remain visible at every effective scale.');
+            const art = await page.locator('#scanner-cards svg.scanner-illustration').evaluateAll(nodes => nodes.map(svg => { const box = svg.getBBox(); return box.width > 40 && box.height > 30; }));
+            check(art.length === initial.scanners.length && art.every(Boolean), 'Every scanner card renders its bundled CT illustration without remote images.');
+          }
           const width = await page.evaluate(() => ({ content: document.documentElement.scrollWidth, viewport: document.documentElement.clientWidth }));
           check(width.content <= width.viewport + 2, 'The document has no horizontal page overflow.');
           observations.push({ theme, effectiveScalePercent: scale, page: name, viewport, horizontalOverflow: width.content - width.viewport });

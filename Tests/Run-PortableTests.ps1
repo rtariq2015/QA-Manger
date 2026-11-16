@@ -123,11 +123,16 @@ function New-SyntheticBackupZip {
     param([string]$Path,[string[]]$Names,[switch]$Link,[switch]$Duplicate)
     $bytes=[Text.Encoding]::UTF8.GetBytes('Synthetic backup contents only')
     $sha=[Security.Cryptography.SHA256]::Create();try{$hash=([BitConverter]::ToString($sha.ComputeHash($bytes))).Replace('-','')}finally{$sha.Dispose()}
-    $files=New-Object 'Collections.Generic.List[object]'
+    $files=New-Object 'Collections.Generic.List[object]';$namePatches=New-Object 'Collections.Generic.List[object]'
     $stream=[IO.File]::Open($Path,[IO.FileMode]::CreateNew);$zip=New-Object IO.Compression.ZipArchive($stream,[IO.Compression.ZipArchiveMode]::Create,$false)
     try{
         foreach($name in $Names){
-            $entry=$zip.CreateEntry($name);if($Link){$entry.ExternalAttributes=[int](-1577123840)}
+            # .NET Framework rejects some malicious ZIP names in CreateEntry.
+            # Insert equal-length filename bytes into both headers after closing
+            # the synthetic archive so the production validator still sees them.
+            $entryName=$name
+            if($name -match '[\x00-\x1f<>:"|?*]'){$entryName=('fixture_'+('x'*([Text.Encoding]::UTF8.GetByteCount($name)-8)));[void]$namePatches.Add([pscustomobject]@{Safe=$entryName;Original=$name})}
+            $entry=$zip.CreateEntry($entryName);if($Link){$entry.ExternalAttributes=[int](-1577123840)}
             $output=$entry.Open();try{$output.Write($bytes,0,$bytes.Length)}finally{$output.Dispose()}
             [void]$files.Add([pscustomobject]@{Path=$name;Length=$bytes.Length;SHA256=$hash})
         }
@@ -135,6 +140,14 @@ function New-SyntheticBackupZip {
         $entry=$zip.CreateEntry('Backup-Manifest.json');$writer=New-Object IO.StreamWriter($entry.Open())
         try{$writer.Write(([pscustomobject]@{Format='CTQA-Backup';Version=1;Files=@($files.ToArray())}|ConvertTo-Json -Depth 6))}finally{$writer.Dispose()}
     }finally{$zip.Dispose();$stream.Dispose()}
+    if($namePatches.Count){
+        $latin=[Text.Encoding]::GetEncoding(28591);$binary=$latin.GetString([IO.File]::ReadAllBytes($Path))
+        foreach($patch in $namePatches){
+            if([regex]::Matches($binary,[regex]::Escape($patch.Safe)).Count -ne 2){throw 'The synthetic ZIP must contain exactly two filename headers.'}
+            $binary=$binary.Replace($patch.Safe,$latin.GetString([Text.Encoding]::UTF8.GetBytes($patch.Original)))
+        }
+        [IO.File]::WriteAllBytes($Path,$latin.GetBytes($binary))
+    }
 }
 Scenario 'Backup restore rejects Windows path aliases, linked members and duplicate ZIP entries before publication' {
     $names=@('Data/CON.txt','Data/trailing./report.pdf','Data/folder /report.pdf','Data/file.pdf:stream','Data/../escape.pdf','Data/back\slash.pdf',('/Data/absolute.pdf'),('Data/bad'+[char]1+'.pdf'),'Data/wild?name.pdf')

@@ -36,7 +36,10 @@ permissions:
 jobs:
   windows:
     runs-on: windows-latest
-    timeout-minutes: 60
+    # Expanded native/browser coverage needs headroom: the first measured run
+    # took 48 minutes despite stopping browser workloads early on a failure.
+    # This CI budget does not change any shipped operation or resource limit.
+    timeout-minutes: 90
     steps:
       - uses: actions/checkout@v4
       - name: Check portable source structure
