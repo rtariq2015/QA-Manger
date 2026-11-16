@@ -44,6 +44,15 @@ const pythonFixture = fixture + '-python';
 const pythonOutput = path.join(output, 'python');
 const accessibilityFixture = fixture + '-accessibility';
 const accessibilityOutput = path.join(output, 'accessibility');
+const reviewQueueFixture = fixture + '-review-queue';
+if (finalStatus === 0) {
+  const reviewQueueArgs = [path.join(__dirname, 'run-review-queue-e2e.cjs'), '--root', reviewQueueFixture, '--product-root', product, '--host', host, '--powershell', powershell, '--output-dir', path.join(output, 'review-queue')];
+  if (dotnet) reviewQueueArgs.push('--dotnet', dotnet);
+  if (args.chromium) reviewQueueArgs.push('--chromium', args.chromium); else if (isWindows) reviewQueueArgs.push('--browser-channel', 'msedge');
+  const reviewQueue = spawnSync(process.execPath, reviewQueueArgs, { cwd: product, stdio: 'inherit', windowsHide: true, timeout: 900000 });
+  if (reviewQueue.error) process.stderr.write(reviewQueue.error.message + '\n');
+  finalStatus = reviewQueue.status || (reviewQueue.error ? 1 : 0);
+}
 if (finalStatus === 0) {
   fs.mkdirSync(accessibilityOutput, { recursive: true });
   const createAccessibility = spawnSync(powershell, ['-NoProfile', '-File', path.join(__dirname, 'New-WebFixture.ps1'), '-FixtureRoot', accessibilityFixture, '-ProductRoot', product], { cwd: product, stdio: 'inherit', windowsHide: true, timeout: 180000 });
@@ -109,6 +118,7 @@ if (finalStatus === 0 && !args['keep-fixture']) {
   fs.rmSync(largeFixture, { recursive: true, force: true });
   fs.rmSync(contentFixture, { recursive: true, force: true });
   fs.rmSync(accessibilityFixture, { recursive: true, force: true });
+  fs.rmSync(reviewQueueFixture, { recursive: true, force: true });
   if (isWindows) fs.rmSync(pythonFixture, { recursive: true, force: true });
-} else fs.writeFileSync(path.join(output, 'synthetic-fixture-location.txt'), fixture + '\n' + largeFixture + '\n' + contentFixture + '\n' + accessibilityFixture + '\n');
+} else fs.writeFileSync(path.join(output, 'synthetic-fixture-location.txt'), fixture + '\n' + largeFixture + '\n' + contentFixture + '\n' + accessibilityFixture + '\n' + reviewQueueFixture + '\n');
 process.exit(finalStatus);

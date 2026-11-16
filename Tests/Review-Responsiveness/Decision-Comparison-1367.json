@@ -1,0 +1,35 @@
+{
+  "Result": "PASS",
+  "Records": 1367,
+  "SyntheticOnly": true,
+  "BeforeSourceCommit": "54d6be55c4191af4dc022de4a2d9660a192e7f2b",
+  "BeforeHashes": {
+    "WebService": "C8875AC2D7711F8F7E6AF3A91D8DC24879ADFB4111D8DADECA4ACC79DB9A0E0B",
+    "Insights": "C6EAC69A3CA545CCC52BBE9672DC5CCF559119B2F82B6EA320EBFF67EF79BFA6"
+  },
+  "AfterHashes": {
+    "WebService": "C408B7A34B1E90F387519D728BE2D0112F0651E043055BE800587B5FD292ADB9",
+    "Insights": "F3756AD306BAEA0422584E2CA1AC372B2C39484761A13847F741E23E1290762D"
+  },
+  "SourceAndClinicalStateUnchanged": true,
+  "CacheReadsPerDecisionBefore": 4103,
+  "CacheReadsPerDecisionAfter": 1369,
+  "AvoidedRedundantReads": 2734,
+  "BeforeMedianMs": 21589.6755,
+  "AfterMedianMs": 14061.306499999999,
+  "BeforeSnapshotMedianMs": 18594.716,
+  "AfterSnapshotMedianMs": 11594.377,
+  "BeforeSamplesMs": [
+    24801.719,
+    28890.367,
+    18377.632,
+    17539.976
+  ],
+  "AfterSamplesMs": [
+    33909.965,
+    14039.204,
+    14083.409,
+    13466.551
+  ],
+  "Scope": "Four actual public filing requests per version on the same1367physicaluniquePDF and populated synthetic cache fixture, initialderivedlibrary/org reset beforeeachcohort; eachcohorthad onefullsnapshotwarmup. Diagnosticwrappersaddoverhead, otherlocaltestsactive, firstafterApprovewasworse. Theseareindividualdevelopmentobservations,notstatistical/hospital/wholeapp/jobqueue/browserperformanceclaims."
+}

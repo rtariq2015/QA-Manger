@@ -873,6 +873,122 @@ Scenario 'Table-position inspector rows require the complete capability-four eig
     }
 }
 
+Scenario 'Snapshot analysis counters reuse validated record reads without a second library scan' {
+    $module=Get-Module WebService
+    $originals=&$module {[pscustomobject]@{Saved=(Get-Command Get-QaSavedAnalysis).ScriptBlock;Progress=(Get-Command Get-QaAnalysisProgress).ScriptBlock}}
+    $probe=[pscustomobject]@{SavedCalls=0;ProgressCalls=0}
+    $keys=@('total','cached','pending','errors','measurementUpgradePending','unsupportedUpgradePending','backlogPending')
+    $cases=@(
+        [pscustomobject]@{Name='Current';Cached=1;New=0;Errors=0;Measurement=0;Unsupported=0},
+        [pscustomobject]@{Name='Missing';Cached=0;New=1;Errors=0;Measurement=0;Unsupported=0},
+        [pscustomobject]@{Name='StaleClassifier';Cached=0;New=1;Errors=0;Measurement=0;Unsupported=0},
+        [pscustomobject]@{Name='WrongRecord';Cached=0;New=1;Errors=0;Measurement=0;Unsupported=0},
+        [pscustomobject]@{Name='ReadError';Cached=1;New=0;Errors=1;Measurement=0;Unsupported=0},
+        [pscustomobject]@{Name='StaleReadError';Cached=0;New=1;Errors=0;Measurement=0;Unsupported=0},
+        [pscustomobject]@{Name='MeasurementUpgrade';Cached=1;New=0;Errors=0;Measurement=1;Unsupported=0},
+        [pscustomobject]@{Name='UnsupportedUpgrade';Cached=1;New=0;Errors=0;Measurement=0;Unsupported=1},
+        [pscustomobject]@{Name='Reference';Cached=1;New=0;Errors=0;Measurement=0;Unsupported=0},
+        [pscustomobject]@{Name='Corrupt';Cached=0;New=1;Errors=0;Measurement=0;Unsupported=0},
+        [pscustomobject]@{Name='SharedBytes';Cached=2;New=0;Errors=0;Measurement=0;Unsupported=0},
+        [pscustomobject]@{Name='SharedBytesStaleSecond';Cached=1;New=1;Errors=0;Measurement=0;Unsupported=0}
+    )
+    try {
+        &$module {
+            param($Probe,$Originals)
+            $script:SnapshotAnalysisReuseProbe=$Probe;$script:SnapshotAnalysisReuseOriginals=$Originals
+            function script:Get-QaSavedAnalysis {param($Config,$Record);$script:SnapshotAnalysisReuseProbe.SavedCalls++;return &$script:SnapshotAnalysisReuseOriginals.Saved @PSBoundParameters}
+            function script:Get-QaAnalysisProgress {param($Config,[object[]]$Records=@());$script:SnapshotAnalysisReuseProbe.ProgressCalls++;throw 'The snapshot must reuse its validated per-record analysis status instead of reading all caches again.'}
+        } $probe $originals
+        foreach($case in $cases){
+            $f=New-WebFixture ('SnapshotAnalysis'+$case.Name);$path=Set-WebFilingCache $f;$cache=Get-Content $path -Raw|ConvertFrom-Json
+            switch($case.Name){
+                'StaleClassifier'{$cache.DocumentClassifierVersion=0}
+                'WrongRecord'{$cache.RecordId='F'*64}
+                'ReadError'{$cache.Status='ReadError';$cache.DocumentClassifierVersion=0}
+                'StaleReadError'{$cache.Status='ReadError';$cache.SavedWriteTicks=0}
+                'MeasurementUpgrade'{$cache.MeasurementsDocument.MeasurementVersion=0}
+                'UnsupportedUpgrade'{$cache.ContentSupportRevision=0;$cache.DocumentClassification.ProfileId='';$cache.DocumentClassification.Status='NeedsReview';$cache.DocumentClassification.ReasonCode='UnknownTemplate';$cache.MeasurementsDocument.MeasurementVersion=0}
+                'Reference'{$cache.DocumentClassification.ProfileId='siemens-iec-reference-v1';$cache.DocumentClassification.IsReference=$true;$cache.MeasurementsDocument.MeasurementVersion=0}
+            }
+            if($case.Name -like 'SharedBytes*'){
+                $record=$f.Record|Select-Object *;$record.Id=('A'*63)+'1';$record.SourcePath=Join-Path $f.Config.Sources[0].Path 'Synthetic_Shared_Report.pdf';$record.SourceKey=&(Get-Module Archive){param($s,$p)Get-QaSourceKey $s $p} $record.Scanner $record.SourcePath
+                $record.RelativePath='SyntheticShared/second.pdf';$record.DestinationPath=Join-Path (Join-Path $f.Config.ArchiveRoot 'Reports') $record.RelativePath
+                [void][IO.Directory]::CreateDirectory((Split-Path -Parent $record.DestinationPath));[IO.File]::Copy($f.Record.DestinationPath,$record.DestinationPath);[IO.File]::Copy($f.Source,$record.SourcePath)
+                $state=Get-Content $f.StatePath -Raw|ConvertFrom-Json;$state.Records=@($state.Records)+@($record);[IO.File]::WriteAllText($f.StatePath,($state|ConvertTo-Json -Depth 20),(New-Object Text.UTF8Encoding $true))
+                $other=$cache|Select-Object *;$other.RecordId=$record.Id;$other.VerifiedWriteTicks=(Get-Item $record.DestinationPath).LastWriteTimeUtc.Ticks;$other.SavedWriteTicks=$other.VerifiedWriteTicks
+                if($case.Name -ceq 'SharedBytesStaleSecond'){$other.VerifiedWriteTicks=0}
+                $cache|Add-Member OtherRecords @($other) -Force
+            }
+            if($case.Name -ceq 'Missing'){Remove-Item -LiteralPath $path}elseif($case.Name -ceq 'Corrupt'){[IO.File]::WriteAllText($path,'{ malformed synthetic cache')}else{[IO.File]::WriteAllText($path,($cache|ConvertTo-Json -Depth 20),(New-Object Text.UTF8Encoding $true))}
+            $cfg=Read-QaConfig $f.AppRoot;$dashboard=Get-QaDashboard $cfg;$before=(Get-FileHash $f.StatePath).Hash;$pdfBefore=(Get-FileHash $f.Record.DestinationPath).Hash;$cacheBefore=if([IO.File]::Exists($path)){(Get-FileHash $path).Hash}else{''}
+            # The oracle executes the public independent work-plan projection. It
+            # intentionally rechecks every record rather than sharing the snapshot.
+            $oracle=&$module {param($Original,$Config,$Records)&$Original -Config $Config -Records $Records} $originals.Progress $cfg @($dashboard.Records)
+            $probe.SavedCalls=0;$probe.ProgressCalls=0;$snapshot=Get-Web $f
+            Check ($probe.SavedCalls -eq $dashboard.Records.Count -and $probe.ProgressCalls -eq 0) ('One accepted-or-rejected saved-analysis read per snapshot record: '+$case.Name)
+            Check ((@($snapshot.analysis.PSObject.Properties.Name|Sort-Object)-join '|') -ceq (@($keys|Sort-Object)-join '|')) 'The public analysis counter property set stays unchanged'
+            foreach($key in $keys){Check ([long]$snapshot.analysis.$key -eq [long]$oracle.$key) ('Snapshot counters match independently revalidated analysis progress for '+$case.Name+' / '+$key)}
+            Check ($snapshot.analysis.total -eq $dashboard.Records.Count -and $snapshot.analysis.cached -eq $case.Cached -and $snapshot.analysis.pending -eq $case.New -and $snapshot.analysis.errors -eq $case.Errors -and $snapshot.analysis.measurementUpgradePending -eq $case.Measurement -and $snapshot.analysis.unsupportedUpgradePending -eq $case.Unsupported -and $snapshot.analysis.backlogPending -eq ($case.New+$case.Measurement+$case.Unsupported)) ('Explicit missing/error/upgrade/reference/provenance expectations hold: '+$case.Name)
+            Check ((Get-FileHash $f.StatePath).Hash -ceq $before -and (Get-FileHash $f.Record.DestinationPath).Hash -ceq $pdfBefore -and (Get-FileHash $f.Source).Hash -ceq $f.SourceHash) 'Read-status reuse does not alter core clinical state or either original PDF'
+            Check ($(if([IO.File]::Exists($path)){(Get-FileHash $path).Hash}else{''}) -ceq $cacheBefore) 'Valid, stale and corrupt caches remain byte-for-byte unchanged by snapshot reading'
+        }
+    } finally {
+        &$module {param($Originals);Set-Item Function:script:Get-QaSavedAnalysis $Originals.Saved;Set-Item Function:script:Get-QaAnalysisProgress $Originals.Progress;Remove-Variable SnapshotAnalysisReuseProbe,SnapshotAnalysisReuseOriginals -Scope Script -ErrorAction SilentlyContinue} $originals
+    }
+}
+
+Scenario 'Snapshot Daily receipt reuses record rows while retaining scheduling and reference exclusions' {
+    $module=Get-Module WebService
+    $scheduleCases=@(
+        [pscustomobject]@{Mode='AllDays';Day='2026-11-14';Active='';Excluded=@();Required=$true},
+        [pscustomobject]@{Mode='Weekdays';Day='2026-11-14';Active='';Excluded=@();Required=$false},
+        [pscustomobject]@{Mode='Weekdays';Day='2026-11-16';Active='';Excluded=@();Required=$true},
+        [pscustomobject]@{Mode='Off';Day='2026-11-16';Active='';Excluded=@();Required=$false},
+        [pscustomobject]@{Mode='AllDays';Day='2026-11-16';Active='2026-11-17';Excluded=@();Required=$false},
+        [pscustomobject]@{Mode='AllDays';Day='2026-11-16';Active='2026-11-16';Excluded=@();Required=$true},
+        [pscustomobject]@{Mode='AllDays';Day='2026-11-16';Active='2026-11-15';Excluded=@('2026-11-16');Required=$false},
+        [pscustomobject]@{Mode='Weekdays';Day='2026-11-16';Active='2026-11-15';Excluded=@('2026-11-14');Required=$true}
+    )
+    foreach($case in $scheduleCases){
+        $f=New-WebFixture ('DailyRequired'+$case.Mode+$case.Day+$case.Active+(@($case.Excluded).Count));$cfg=Read-QaConfig $f.AppRoot
+        foreach($source in $cfg.Sources){$source.DailySchedule='Off';$source.ActiveFrom='';$source|Add-Member ExcludedDates @() -Force}
+        $cfg.Sources[0].DailySchedule=$case.Mode;$cfg.Sources[0].ActiveFrom=$case.Active;$cfg.Sources[0].ExcludedDates=@($case.Excluded)
+        $date=[datetime]::ParseExact($case.Day,'yyyy-MM-dd',[Globalization.CultureInfo]::InvariantCulture);$dashboard=Get-QaDashboard $cfg
+        $oracle=&$module {param($Config,$Dashboard,$Date)Get-QaTodayOverview -Config $Config -Dashboard $Dashboard -Date $Date} $cfg $dashboard $date
+        $actual=&$module {param($Source,$Date)Test-QaDailyRequired -Source $Source -Date $Date} $cfg.Sources[0] $date
+        Check ($actual -eq $case.Required -and $oracle.Scanners[0].Required -eq $case.Required -and $oracle.Expected -eq [int]$case.Required) 'Explicit weekday/weekend, activation boundary and exclusion schedules retain their required status'
+    }
+    foreach($kind in @('Received','Off','Weekdays','NotActive','Excluded','SavedDailyReference')){
+        $f=New-WebFixture ('DailySnapshot'+$kind);$path=Set-WebFilingCache $f;$cfg=Read-QaConfig $f.AppRoot
+        foreach($source in $cfg.Sources){$source.DailySchedule='Off';$source.ActiveFrom='';$source|Add-Member ExcludedDates @() -Force}
+        $cfg.Sources[0].DailySchedule=if($kind -ceq 'Off'){'Off'}elseif($kind -ceq 'Weekdays'){'Weekdays'}else{'AllDays'}
+        if($kind -ceq 'NotActive'){$cfg.Sources[0].ActiveFrom=(Get-Date).Date.AddDays(1).ToString('yyyy-MM-dd')}
+        if($kind -ceq 'Excluded'){$cfg.Sources[0].ExcludedDates=@((Get-Date).ToString('yyyy-MM-dd'))}
+        [void](Save-QaConfig $f.AppRoot $cfg)
+        if($kind -ceq 'SavedDailyReference'){
+            Set-WebFilingRule $f 'siemens-iec-basic-v1' 'Ask';$first=Get-Web $f
+            [void](Invoke-QaWebRequest $f.AppRoot ([pscustomobject]@{action='Approve';id=$first.records[0].id;stamp=$first.records[0].stamp;category='Daily'}))
+            $cache=Get-Content $path -Raw|ConvertFrom-Json;$cache.DocumentClassification.ProfileId='siemens-iec-reference-v1';$cache.DocumentClassification.IsReference=$true
+            [IO.File]::WriteAllText($path,($cache|ConvertTo-Json -Depth 20),(New-Object Text.UTF8Encoding $true));$cfg=Read-QaConfig $f.AppRoot
+        }
+        $dashboard=Get-QaDashboard $cfg;$before=(Get-FileHash $f.StatePath).Hash;$cacheBefore=(Get-FileHash $path).Hash
+        $oracle=&$module {param($Config,$Dashboard)Get-QaTodayOverview -Config $Config -Dashboard $Dashboard} $cfg $dashboard
+        $original=&$module {(Get-Command Get-QaTodayOverview).ScriptBlock}
+        try{
+            &$module {function script:Get-QaTodayOverview {throw 'Web snapshots must use their already validated rows rather than rereading Daily findings.'}}
+            $snapshot=Get-Web $f
+        }finally{&$module {param($Original)Set-Item Function:script:Get-QaTodayOverview $Original} $original}
+        $expected=@($oracle.Scanners|Where-Object Required).Count;$received=0;$day=(Get-Date).ToString('yyyy-MM-dd')
+        foreach($source in $oracle.Scanners){if($source.Required -and @($snapshot.records|Where-Object{$_.scanner -ceq $source.Scanner -and $_.date -ceq $day -and $_.category -ceq 'Daily' -and -not $_.pending -and -not $_.isReference -and -not $_.hasReferenceEvidence}).Count){$received++}}
+        $headline=if(-not $expected){'No Daily QA reports scheduled today'}elseif($received -eq $expected){'All required Daily QA reports received'}else{"$received of $expected Daily QA reports received"}
+        Check ($snapshot.today.expected -eq $expected -and $snapshot.today.received -eq $received -and $snapshot.today.headline -ceq $headline -and $snapshot.today.date -ceq $day) ('Daily receipt/headline matches the existing schedule and filed-record rules: '+$kind)
+        if($kind -ceq 'Received'){Check ($expected -eq 1 -and $received -eq 1) 'An inferred Daily report can satisfy receipt without a clinical approval'}
+        if($kind -cin @('Off','NotActive','Excluded')){Check ($expected -eq 0 -and $received -eq 0) 'Unschedulable dates remain neutral even when a Daily PDF exists'}
+        if($kind -ceq 'SavedDailyReference'){Check ($snapshot.records[0].decision -ceq 'Approved' -and $snapshot.records[0].category -ceq 'Daily' -and $snapshot.records[0].isReference -and $expected -eq 1 -and $received -eq 0) 'A previously saved Daily filing decision cannot make a reference PDF satisfy current receipt'}
+        Check ((Get-FileHash $f.StatePath).Hash -ceq $before -and (Get-FileHash $path).Hash -ceq $cacheBefore -and (Get-FileHash $f.Source).Hash -ceq $f.SourceHash) 'Daily summary reuse changes no clinical, cache or source bytes'
+    }
+}
+
 $failed=@($script:Results|Where-Object Result -eq 'FAIL').Count
 $report=[pscustomobject]@{Version='5.4.0';Runtime=$PSVersionTable.PSVersion.ToString();Tests=$script:Results.Count;Assertions=$script:Assertions;Failed=$failed;Results=@($script:Results.ToArray());Scope='Synthetic PDFs, local scanner folders and controlled cached classifier observations with matching fixture-byte provenance; actual extraction is covered separately. Hands-off filing policy, inferred-label disclosure, waiting/review counters, independent file organization, no fabricated clinical review, stale/changed-file rejection, append-only Undo, readable ownership, exports and stdin/stdout JSON worker.'}
 if($OutputPath){$report|ConvertTo-Json -Depth 12|Set-Content $OutputPath -Encoding UTF8}

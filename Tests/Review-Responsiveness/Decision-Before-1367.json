@@ -1,0 +1,196 @@
+{
+  "Result": "PASS",
+  "Records": 1367,
+  "CachedAnalysisFiles": 1367,
+  "Runtime": "7.4.13",
+  "Platform": "Unix",
+  "SyntheticOnly": true,
+  "ProductRoot": "/tmp/ctqa-review-before-product",
+  "FixtureRoot": "/tmp/ctqa-review-benchmark-before-1367",
+  "SourceHashes": {
+    "WebService": "C8875AC2D7711F8F7E6AF3A91D8DC24879ADFB4111D8DADECA4ACC79DB9A0E0B",
+    "Insights": "C6EAC69A3CA545CCC52BBE9672DC5CCF559119B2F82B6EA320EBFF67EF79BFA6"
+  },
+  "Requests": [
+    {
+      "Action": "Approve",
+      "TotalMs": 24801.719,
+      "DurableDecisionMs": 3555.528,
+      "PhaseMs": {
+        "Get-QaWebContentContext": 10159.326,
+        "Get-QaWebOrganization": 2.518,
+        "Assert-QaWebPdf": 36.425,
+        "Get-QaDashboard": 3397.577,
+        "Write-QaWebAtomic": 20.589,
+        "Insights.Get-QaSavedAnalysis": 4304.204,
+        "Get-QaSavedAnalysis": 2295.837,
+        "Update-QaWebLibrary": 244.542,
+        "Get-QaWebSnapshot": 20980.612
+      },
+      "Calls": {
+        "Get-QaWebContentContext": 1369,
+        "Get-QaWebOrganization": 1,
+        "Assert-QaWebPdf": 1,
+        "Get-QaDashboard": 1,
+        "Write-QaWebAtomic": 2,
+        "Insights.Get-QaSavedAnalysis": 2734,
+        "Get-QaSavedAnalysis": 1369,
+        "Update-QaWebLibrary": 1,
+        "Get-QaWebSnapshot": 1
+      },
+      "LibraryMetrics": {
+        "libraryRoot": "/tmp/ctqa-review-benchmark-before-1367/ReviewFixture/Archive/Report Library",
+        "copied": 1,
+        "unchanged": 0,
+        "total": 1,
+        "completed": 1,
+        "hashedFiles": 2,
+        "manifestWrites": 1,
+        "retired": 0,
+        "failed": 0,
+        "cancelled": false,
+        "metadataFastPath": true
+      },
+      "SavedAnalysisHits": 4103,
+      "SavedAnalysisMisses": 0,
+      "FullSnapshotRecords": 1367,
+      "SourceAndClinicalStateUnchanged": true
+    },
+    {
+      "Action": "Undo",
+      "TotalMs": 28890.367,
+      "DurableDecisionMs": 4404.558,
+      "PhaseMs": {
+        "Get-QaWebContentContext": 12330.516,
+        "Get-QaWebOrganization": 21.661,
+        "Assert-QaWebPdf": 0.535,
+        "Get-QaDashboard": 4351.1,
+        "Write-QaWebAtomic": 8.442,
+        "Insights.Get-QaSavedAnalysis": 3836.338,
+        "Get-QaSavedAnalysis": 2631.582,
+        "Update-QaWebLibrary": 67.438,
+        "Get-QaWebSnapshot": 24416.99
+      },
+      "Calls": {
+        "Get-QaWebContentContext": 1369,
+        "Get-QaWebOrganization": 1,
+        "Assert-QaWebPdf": 1,
+        "Get-QaDashboard": 1,
+        "Write-QaWebAtomic": 2,
+        "Insights.Get-QaSavedAnalysis": 2734,
+        "Get-QaSavedAnalysis": 1369,
+        "Update-QaWebLibrary": 1,
+        "Get-QaWebSnapshot": 1
+      },
+      "LibraryMetrics": {
+        "libraryRoot": "/tmp/ctqa-review-benchmark-before-1367/ReviewFixture/Archive/Report Library",
+        "copied": 1,
+        "unchanged": 0,
+        "total": 1,
+        "completed": 1,
+        "hashedFiles": 3,
+        "manifestWrites": 1,
+        "retired": 1,
+        "failed": 0,
+        "cancelled": false,
+        "metadataFastPath": true
+      },
+      "SavedAnalysisHits": 4103,
+      "SavedAnalysisMisses": 0,
+      "FullSnapshotRecords": 1367,
+      "SourceAndClinicalStateUnchanged": true
+    },
+    {
+      "Action": "Disapprove",
+      "TotalMs": 18377.632,
+      "DurableDecisionMs": 2135.85,
+      "PhaseMs": {
+        "Get-QaWebContentContext": 7327.95,
+        "Get-QaWebOrganization": 1.439,
+        "Assert-QaWebPdf": 0.94,
+        "Get-QaDashboard": 2107.999,
+        "Write-QaWebAtomic": 3.356,
+        "Insights.Get-QaSavedAnalysis": 3660.369,
+        "Get-QaSavedAnalysis": 1788.311,
+        "Update-QaWebLibrary": 29.744,
+        "Get-QaWebSnapshot": 16208.82
+      },
+      "Calls": {
+        "Get-QaWebContentContext": 1369,
+        "Get-QaWebOrganization": 1,
+        "Assert-QaWebPdf": 1,
+        "Get-QaDashboard": 1,
+        "Write-QaWebAtomic": 2,
+        "Insights.Get-QaSavedAnalysis": 2734,
+        "Get-QaSavedAnalysis": 1369,
+        "Update-QaWebLibrary": 1,
+        "Get-QaWebSnapshot": 1
+      },
+      "LibraryMetrics": {
+        "libraryRoot": "/tmp/ctqa-review-benchmark-before-1367/ReviewFixture/Archive/Report Library",
+        "copied": 1,
+        "unchanged": 0,
+        "total": 1,
+        "completed": 1,
+        "hashedFiles": 3,
+        "manifestWrites": 1,
+        "retired": 1,
+        "failed": 0,
+        "cancelled": false,
+        "metadataFastPath": true
+      },
+      "SavedAnalysisHits": 4103,
+      "SavedAnalysisMisses": 0,
+      "FullSnapshotRecords": 1367,
+      "SourceAndClinicalStateUnchanged": true
+    },
+    {
+      "Action": "Undo",
+      "TotalMs": 17539.976,
+      "DurableDecisionMs": 2138.374,
+      "PhaseMs": {
+        "Get-QaWebContentContext": 7088.252,
+        "Get-QaWebOrganization": 1.737,
+        "Assert-QaWebPdf": 0.636,
+        "Get-QaDashboard": 2119.374,
+        "Write-QaWebAtomic": 2.387,
+        "Insights.Get-QaSavedAnalysis": 3314.755,
+        "Get-QaSavedAnalysis": 1547.697,
+        "Update-QaWebLibrary": 21.049,
+        "Get-QaWebSnapshot": 15379.183
+      },
+      "Calls": {
+        "Get-QaWebContentContext": 1369,
+        "Get-QaWebOrganization": 1,
+        "Assert-QaWebPdf": 1,
+        "Get-QaDashboard": 1,
+        "Write-QaWebAtomic": 2,
+        "Insights.Get-QaSavedAnalysis": 2734,
+        "Get-QaSavedAnalysis": 1369,
+        "Update-QaWebLibrary": 1,
+        "Get-QaWebSnapshot": 1
+      },
+      "LibraryMetrics": {
+        "libraryRoot": "/tmp/ctqa-review-benchmark-before-1367/ReviewFixture/Archive/Report Library",
+        "copied": 1,
+        "unchanged": 0,
+        "total": 1,
+        "completed": 1,
+        "hashedFiles": 3,
+        "manifestWrites": 1,
+        "retired": 1,
+        "failed": 0,
+        "cancelled": false,
+        "metadataFastPath": true
+      },
+      "SavedAnalysisHits": 4103,
+      "SavedAnalysisMisses": 0,
+      "FullSnapshotRecords": 1367,
+      "SourceAndClinicalStateUnchanged": true
+    }
+  ],
+  "Scope": "Actual in-process public Invoke-QaWebRequest Approve/Undo/Disapprove on1367physicaluniquePDFs and populated synthetic analysis fixtures; phase timings inclusive/nested, no PDF extraction or host/browser/jobqueue. One snapshot warmup then four requests. No timing threshold or hospital throughput claim.",
+  "Instrumentation": "Temporary module-scoped timing wrappers; nested phase timings are inclusive and add diagnostic overhead. Original functions restored in finally.",
+  "EnvironmentLoad": "Shared development environment with other application tests active; not a controlled quiet performance experiment.",
+  "SourceCommitBefore": "54d6be55c4191af4dc022de4a2d9660a192e7f2b"
+}

@@ -1,0 +1,96 @@
+{
+  "version": "5.7.1",
+  "scope": "Version-only changes after the source-pinned development browser execution; native validation must execute the resulting candidate separately.",
+  "files": [
+    {
+      "file": "Host/CTQa.Host.csproj",
+      "beforeSHA256": "9f745a5ad58091d68f10dbe847232ffe86c5864dbe89d8ab30bc25ce0cbcb667",
+      "afterSHA256": "5773a203e29be1e4c1b5635605db746f6edfbb93f82d522ee53e4b3524bc7b25",
+      "change": "Only release-version strings 5.7.0 to 5.7.1 after successful development execution"
+    },
+    {
+      "file": "Host/Program.cs",
+      "beforeSHA256": "1412efce48c4e2b1488d7b1fc35bb4aa264a84165d0682b3afa06758e7d23a6e",
+      "afterSHA256": "3a9cf95e79de2a6a4db7df5765cca043e5029a667facd8cfe8f63bab0f237da0",
+      "change": "Only release-version strings 5.7.0 to 5.7.1 after successful development execution"
+    },
+    {
+      "file": "App/WebService.psm1",
+      "beforeSHA256": "c408b7a34b1e90f387519d728be2d0112f0651e043055be800587b5fd292adb9",
+      "afterSHA256": "7500a64fdaf2b8af01716a09d944c3f9ba518bcb4858e9503a96e5fde3cd79a6",
+      "change": "Only release-version strings 5.7.0 to 5.7.1 after successful development execution"
+    },
+    {
+      "file": "App/Support.psm1",
+      "beforeSHA256": "9840b4d1568f1e0021fba891c67b6ef1643a7b61c6432427a186404dc2a55e6b",
+      "afterSHA256": "a46a4150fdff33096347d0ba1ec39c8b81591f88516be82107c5d7d185dc75d0",
+      "change": "Only release-version strings 5.7.0 to 5.7.1 after successful development execution"
+    },
+    {
+      "file": "App/Start.ps1",
+      "beforeSHA256": "f4c2f96cde82625e5f2d7687d488ebedc52bfda205de2c03558420ee9e72e32c",
+      "afterSHA256": "a85147e8611489dd9f10366743a3948708b3c77ad1d8077e466ad2a9a6d5fb5c",
+      "change": "Only release-version strings 5.7.0 to 5.7.1 after successful development execution"
+    },
+    {
+      "file": "App/MainWindow.xaml",
+      "beforeSHA256": "c657ac422010c76ff5863ed656b435fa044dfd4a6e78d82c31f91dbabf0635df",
+      "afterSHA256": "519aed3c669b94b3049ed9a715a1b501ec6a66cd7ad9195b1294ad29cb52772f",
+      "change": "Only release-version strings 5.7.0 to 5.7.1 after successful development execution"
+    },
+    {
+      "file": "App/Web/index.html",
+      "beforeSHA256": "4625003f66a1062ab35ce7741f0e408653eee60e857296a951b9e958b23938d9",
+      "afterSHA256": "50436d05e872a3dc0cbaed32192e84d3deb5b9d2683c5d44f33075219b4f93e0",
+      "change": "Only release-version strings 5.7.0 to 5.7.1 after successful development execution"
+    },
+    {
+      "file": "App/Web/app.js",
+      "beforeSHA256": "8e0803a2eca54a413a8a3e49d60ba4548d50a0cda19931c81bfb9ead344714af",
+      "afterSHA256": "7fff67d4e7cb13896562105657114e2bfaef5a1f098066900c4bdf4484815de2",
+      "change": "Only release-version strings 5.7.0 to 5.7.1 after successful development execution"
+    },
+    {
+      "file": "User Guide.html",
+      "beforeSHA256": "4f44ee19526374fb11d78af6978705c39b04f58f6ffb516675b1fdcdb71487b1",
+      "afterSHA256": "5362d7e44b7d00ffaafc30735d6713096bc01a199a58f7cd99e98f451c096536",
+      "change": "Only release-version strings 5.7.0 to 5.7.1 after successful development execution"
+    },
+    {
+      "file": "scripts/build_release.py",
+      "beforeSHA256": "641f538a1f8eb4a642ad095bc01d837604032c3013c1cbbe12161cb33f4b5a8f",
+      "afterSHA256": "95f7b97fbe96a4eed25069b1a0287112f325706f5e15383223033c004e008c5c",
+      "change": "Only release-version strings 5.7.0 to 5.7.1 after successful development execution"
+    },
+    {
+      "file": "scripts/build_preview.py",
+      "beforeSHA256": "6588ee991d3236a9f3a828e537ed2a6799131052b716b3984920bf5ad19b687f",
+      "afterSHA256": "3b3b47dc52e099febab5fe8610a4939f68b3ee51922d32d3fab909ea933be042",
+      "change": "Only release-version strings 5.7.0 to 5.7.1 after successful development execution"
+    },
+    {
+      "file": "Tests/Run-ReaderBenchmark.ps1",
+      "beforeSHA256": "4bdf5822a9fb7bfa79daf917826a3aeea70fd09f55099b9d2894e35879203744",
+      "afterSHA256": "32ecc40d9b13af10a907319f556e60ef6387911bee6d8d46cb933b2229fcb8b3",
+      "change": "Only release-version strings 5.7.0 to 5.7.1 after successful development execution"
+    },
+    {
+      "file": "Tests/Web/run-e2e.cjs",
+      "beforeSHA256": "15688d747a0364e800d730cac6b70ed821c406280034548c41fb1f5c4191adea",
+      "afterSHA256": "131f082afdb45322ce252588a75e1e87955f0ec553661ca7e4d41dfe0a57ab8d",
+      "change": "Only release-version strings 5.7.0 to 5.7.1 after successful development execution"
+    },
+    {
+      "file": "Tests/Web/run-large-e2e.cjs",
+      "beforeSHA256": "353c71c06847b733af98dd622f8291c5057225e58b1302d4825c4df26c98821d",
+      "afterSHA256": "88f36a572291790e46af81a25804c0c60c7ebd0b395d689df737cd3f7e0a1c36",
+      "change": "Only release-version strings 5.7.0 to 5.7.1 after successful development execution"
+    },
+    {
+      "file": "Tests/Web/run-library-performance.cjs",
+      "beforeSHA256": "f35de90dd4a103687d17027bbf1269c18c2f8fda19b60ae4bddd93af321d1189",
+      "afterSHA256": "8e68cdd0029f6b89275162511e0fdd220c91944ee07b0c5d4457ce506313b482",
+      "change": "Only release-version strings 5.7.0 to 5.7.1 after successful development execution"
+    }
+  ]
+}
