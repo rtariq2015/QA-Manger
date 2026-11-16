@@ -137,7 +137,7 @@ function New-SyntheticBackupZip {
     }finally{$zip.Dispose();$stream.Dispose()}
 }
 Scenario 'Backup restore rejects Windows path aliases, linked members and duplicate ZIP entries before publication' {
-    $names=@('Data/CON.txt','Data/trailing./report.pdf','Data/folder /report.pdf','Data/file.pdf:stream','Data/../escape.pdf','Data/back\slash.pdf',('/Data/absolute.pdf'),('Data/bad'+[char]1+'.pdf'),'Data/wild?.pdf')
+    $names=@('Data/CON.txt','Data/trailing./report.pdf','Data/folder /report.pdf','Data/file.pdf:stream','Data/../escape.pdf','Data/back\slash.pdf',('/Data/absolute.pdf'),('Data/bad'+[char]1+'.pdf'),'Data/wild?name.pdf')
     foreach($name in $names){
         $bad=Join-Path $TestRoot ([guid]::NewGuid().ToString('N')+'.zip');New-SyntheticBackupZip -Path $bad -Names @($name)
         $destination=Join-Path $TestRoot ([guid]::NewGuid().ToString('N'));$caught=$false
