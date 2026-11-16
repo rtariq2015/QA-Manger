@@ -61,6 +61,14 @@ function Get-QaAnalysisEligibility {
     }
     return ''
 }
+function Get-QaAnalysisReadStatus {
+    param($Saved,[switch]$UpgradeMeasurements,[switch]$RefreshUnsupported)
+    # Pure projection of an already validated saved row. Do not read files or
+    # retain this status between requests: provenance stays with Get-QaSavedAnalysis.
+    $cached=0;$errors=0
+    if($null -ne $Saved){$cached=1;if([string](Get-QaInsightValue $Saved Status '') -eq 'ReadError'){$errors=1}}
+    return [pscustomobject]@{Cached=$cached;Errors=$errors;Reason=(Get-QaAnalysisEligibility -Saved $Saved -UpgradeMeasurements:$UpgradeMeasurements -RefreshUnsupported:$RefreshUnsupported)}
+}
 function Select-QaAnalysisRecords {
     param([object[]]$Records=@(),[AllowEmptyCollection()][string[]]$RecordIds=@())
     if(-not $PSBoundParameters.ContainsKey('RecordIds')){return @($Records)}
@@ -84,8 +92,8 @@ function Get-QaAnalysisWorkPlan {
     $next=New-Object 'Collections.Generic.List[string]';$cached=0;$errors=0;$new=0;$measurements=0;$unsupported=0
     foreach($record in $ordered){
         $saved=Get-QaSavedAnalysis $Config $record
-        if($null -ne $saved){$cached++;if([string](Get-QaInsightValue $saved Status '') -eq 'ReadError'){$errors++}}
-        $reason=Get-QaAnalysisEligibility -Saved $saved -UpgradeMeasurements:$UpgradeMeasurements -RefreshUnsupported:$RefreshUnsupported
+        $status=Get-QaAnalysisReadStatus -Saved $saved -UpgradeMeasurements:$UpgradeMeasurements -RefreshUnsupported:$RefreshUnsupported
+        $cached+=$status.Cached;$errors+=$status.Errors;$reason=$status.Reason
         switch($reason){'New'{$new++}'MeasurementUpgrade'{$measurements++}'UnsupportedUpgrade'{$unsupported++}}
         if($reason -and $next.Count -lt $Limit){[void]$next.Add([string]$record.Id)}
     }
@@ -274,13 +282,19 @@ function Get-QaAnalysisProgress {
     $plan=Get-QaAnalysisWorkPlan -Config $Config -Records $Records -UpgradeMeasurements -RefreshUnsupported
     return [pscustomobject]@{Total=$plan.Total;Cached=$plan.Cached;Pending=$plan.NewPending;Errors=$plan.Errors;Saved=$plan.Saved;NewPending=$plan.NewPending;MeasurementUpgradePending=$plan.MeasurementUpgradePending;UnsupportedUpgradePending=$plan.UnsupportedUpgradePending;BacklogPending=$plan.Pending}
 }
+function Test-QaDailyRequired {
+    param($Source,[datetime]$Date=(Get-Date))
+    $day=$Date.Date;$key=$day.ToString('yyyy-MM-dd')
+    $required=($Source.DailySchedule -eq 'AllDays' -or ($Source.DailySchedule -eq 'Weekdays' -and $day.DayOfWeek -notin @('Saturday','Sunday')))
+    if($Source.ActiveFrom -and $key -lt [string]$Source.ActiveFrom){$required=$false}
+    if(@(Get-QaInsightValue $Source 'ExcludedDates' @()) -contains $key){$required=$false}
+    return [bool]$required
+}
 function Get-QaTodayOverview {
     [CmdletBinding()]param($Config,$Dashboard,[datetime]$Date=(Get-Date))
     $day=$Date.Date;$key=$day.ToString('yyyy-MM-dd');$rows=New-Object 'System.Collections.Generic.List[object]'
     foreach($source in $Config.Sources) {
-        $required=($source.DailySchedule -eq 'AllDays' -or ($source.DailySchedule -eq 'Weekdays' -and $day.DayOfWeek -notin @('Saturday','Sunday')))
-        if($source.ActiveFrom -and $key -lt [string]$source.ActiveFrom){$required=$false}
-        if(@(Get-QaInsightValue $source 'ExcludedDates' @()) -contains $key){$required=$false}
+        $required=Test-QaDailyRequired -Source $source -Date $day
         $records=@($Dashboard.Records|Where-Object{$_.Scanner -eq $source.Scanner -and $_.ReportDate -eq $key -and $_.Category -eq 'Daily_QA'})
         $provisional=@($records|Where-Object{[string](Get-QaInsightValue $_ 'ClassificationBasis' '') -like 'Provisional*' -and -not (Get-QaInsightValue $_ 'ConfirmedBy' '')})
         $records=@($records|Where-Object{[string](Get-QaInsightValue $_ 'ClassificationBasis' '') -notlike 'Provisional*' -or (Get-QaInsightValue $_ 'ConfirmedBy' '')})
@@ -325,4 +339,4 @@ function Invoke-QaSourceAudit {
     }
     return [pscustomobject]@{Mode='SourceAudit';Rows=@($rows.ToArray());Summary=[pscustomobject]@{Description='Scanner source fingerprints checked read-only. Archive labels were not changed.';Cancelled=($null -ne $Progress -and [bool]$Progress.Cancel)}}
 }
-Export-ModuleMember -Function Get-QaAnalysisWorkPlan,Get-QaAnalysisReaderMode,Test-QaAnalysisSelectedRefresh,Get-QaDocumentClassificationVersion,ConvertFrom-QaReportText,Get-QaSavedAnalysis,Invoke-QaAnalysis,Get-QaTodayOverview,Get-QaAnalysisProgress,Get-QaMonthOverview,Invoke-QaSourceAudit
+Export-ModuleMember -Function Test-QaDailyRequired,Get-QaAnalysisReadStatus,Get-QaAnalysisWorkPlan,Get-QaAnalysisReaderMode,Test-QaAnalysisSelectedRefresh,Get-QaDocumentClassificationVersion,ConvertFrom-QaReportText,Get-QaSavedAnalysis,Invoke-QaAnalysis,Get-QaTodayOverview,Get-QaAnalysisProgress,Get-QaMonthOverview,Invoke-QaSourceAudit
