@@ -1,0 +1,48 @@
+{
+  "source": "6023f49ccb2a4d2a83e83249fe59e58867a7c124",
+  "previousWindowsTestedSource": "0af7c31b0b4f422b1919281f60ced3b1cf51a421",
+  "productionFilesCompared": 8,
+  "productionLogicUnchanged": true,
+  "files": [
+    {
+      "file": "App/MainWindow.xaml",
+      "onlyChange": "Version 5.6.0 to 5.7.0",
+      "SHA256": "c657ac422010c76ff5863ed656b435fa044dfd4a6e78d82c31f91dbabf0635df"
+    },
+    {
+      "file": "App/Start.ps1",
+      "onlyChange": "Version 5.6.0 to 5.7.0",
+      "SHA256": "f4c2f96cde82625e5f2d7687d488ebedc52bfda205de2c03558420ee9e72e32c"
+    },
+    {
+      "file": "App/Support.psm1",
+      "onlyChange": "Version 5.6.0 to 5.7.0",
+      "SHA256": "9840b4d1568f1e0021fba891c67b6ef1643a7b61c6432427a186404dc2a55e6b"
+    },
+    {
+      "file": "App/Web/app.js",
+      "onlyChange": "Version 5.6.0 to 5.7.0",
+      "SHA256": "6ce6d70699abd01fecb8fc898142d09601b8993d1c63adedef33139aea71824e"
+    },
+    {
+      "file": "App/Web/index.html",
+      "onlyChange": "Version 5.6.0 to 5.7.0",
+      "SHA256": "bf7911ae67dd7aeae2937b6da4486471093da4d34a459580edfb2a4c4f9044e1"
+    },
+    {
+      "file": "App/WebService.psm1",
+      "onlyChange": "Version 5.6.0 to 5.7.0",
+      "SHA256": "c8875ac2d7711f8f7e6af3a91d8dc24879adfb4111d8dadeca4acc79db9a0e0b"
+    },
+    {
+      "file": "Host/CTQa.Host.csproj",
+      "onlyChange": "Version 5.6.0 to 5.7.0",
+      "SHA256": "9f745a5ad58091d68f10dbe847232ffe86c5864dbe89d8ab30bc25ce0cbcb667"
+    },
+    {
+      "file": "Host/Program.cs",
+      "onlyChange": "Version 5.6.0 to 5.7.0",
+      "SHA256": "1412efce48c4e2b1488d7b1fc35bb4aa264a84165d0682b3afa06758e7d23a6e"
+    }
+  ]
+}

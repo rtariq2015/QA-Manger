@@ -10,7 +10,7 @@
 - Resolve selected PDFs from fresh validated archive records without rebuilding unrelated dashboards; keep exact path and SHA-256 checks.
 - Reject ambiguous archive identities/destinations and linked metadata without rewriting stored data. Neutralize spreadsheet formula prefixes only in the derived master CSV.
 - Harden update destination checks and failed-update rollback, validate backup ZIP members before restore, retain a single validated input archive, and align the update launcher with 64-bit PowerShell selection.
-- Add pull-request Windows validation, per-branch CI concurrency, synthetic large-library benchmarks and effective-viewport accessibility checks. No release is published by this work.
+- Add pull-request Windows validation, per-branch CI concurrency, synthetic large-library benchmarks and effective-viewport accessibility checks. Release publication is separately authorized and uses the exact Windows-tested runtime source.
 
 ## 5.6.0 — existing release baseline
 

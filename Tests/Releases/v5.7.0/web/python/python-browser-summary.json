@@ -1,0 +1,569 @@
+{
+  "version": "5.7.0",
+  "syntheticOnly": true,
+  "focusedNewMetricsOnly": false,
+  "readabilityObservations": [
+    {
+      "theme": "light",
+      "effectiveScalePercent": 100,
+      "viewport": {
+        "width": 1366,
+        "height": 768
+      },
+      "svgWidth": 1038,
+      "containerWidth": 1038,
+      "localOverflow": 0,
+      "documentOverflow": 0,
+      "labels": [
+        {
+          "label": "-2.17",
+          "renderedFont": 14.05625,
+          "withinChart": true
+        },
+        {
+          "label": "-1.085",
+          "renderedFont": 14.05625,
+          "withinChart": true
+        },
+        {
+          "label": "0",
+          "renderedFont": 14.05625,
+          "withinChart": true
+        },
+        {
+          "label": "1.085",
+          "renderedFont": 14.05625,
+          "withinChart": true
+        },
+        {
+          "label": "2.17",
+          "renderedFont": 14.05625,
+          "withinChart": true
+        },
+        {
+          "label": "Millimetres (mm)",
+          "renderedFont": 14.05625,
+          "withinChart": true
+        },
+        {
+          "label": "Feb 3, 2025",
+          "renderedFont": 14.05625,
+          "withinChart": true
+        },
+        {
+          "label": "Printed report date",
+          "renderedFont": 14.05625,
+          "withinChart": true
+        },
+        {
+          "label": "Lower printed: -1.75 mm",
+          "renderedFont": 14.05625,
+          "withinChart": true
+        },
+        {
+          "label": "Upper printed: 1.75 mm",
+          "renderedFont": 14.05625,
+          "withinChart": true
+        }
+      ]
+    },
+    {
+      "theme": "light",
+      "effectiveScalePercent": 125,
+      "viewport": {
+        "width": 1092,
+        "height": 614
+      },
+      "svgWidth": 960,
+      "containerWidth": 810,
+      "localOverflow": 150,
+      "documentOverflow": 0,
+      "labels": [
+        {
+          "label": "-2.17",
+          "renderedFont": 13,
+          "withinChart": true
+        },
+        {
+          "label": "-1.085",
+          "renderedFont": 13,
+          "withinChart": true
+        },
+        {
+          "label": "0",
+          "renderedFont": 13,
+          "withinChart": true
+        },
+        {
+          "label": "1.085",
+          "renderedFont": 13,
+          "withinChart": true
+        },
+        {
+          "label": "2.17",
+          "renderedFont": 13,
+          "withinChart": true
+        },
+        {
+          "label": "Millimetres (mm)",
+          "renderedFont": 13,
+          "withinChart": true
+        },
+        {
+          "label": "Feb 3, 2025",
+          "renderedFont": 13,
+          "withinChart": true
+        },
+        {
+          "label": "Printed report date",
+          "renderedFont": 13,
+          "withinChart": true
+        },
+        {
+          "label": "Lower printed: -1.75 mm",
+          "renderedFont": 13,
+          "withinChart": true
+        },
+        {
+          "label": "Upper printed: 1.75 mm",
+          "renderedFont": 13,
+          "withinChart": true
+        }
+      ]
+    },
+    {
+      "theme": "light",
+      "effectiveScalePercent": 150,
+      "viewport": {
+        "width": 910,
+        "height": 512
+      },
+      "svgWidth": 960,
+      "containerWidth": 638,
+      "localOverflow": 322,
+      "documentOverflow": 0,
+      "labels": [
+        {
+          "label": "-2.17",
+          "renderedFont": 13,
+          "withinChart": true
+        },
+        {
+          "label": "-1.085",
+          "renderedFont": 13,
+          "withinChart": true
+        },
+        {
+          "label": "0",
+          "renderedFont": 13,
+          "withinChart": true
+        },
+        {
+          "label": "1.085",
+          "renderedFont": 13,
+          "withinChart": true
+        },
+        {
+          "label": "2.17",
+          "renderedFont": 13,
+          "withinChart": true
+        },
+        {
+          "label": "Millimetres (mm)",
+          "renderedFont": 13,
+          "withinChart": true
+        },
+        {
+          "label": "Feb 3, 2025",
+          "renderedFont": 13,
+          "withinChart": true
+        },
+        {
+          "label": "Printed report date",
+          "renderedFont": 13,
+          "withinChart": true
+        },
+        {
+          "label": "Lower printed: -1.75 mm",
+          "renderedFont": 13,
+          "withinChart": true
+        },
+        {
+          "label": "Upper printed: 1.75 mm",
+          "renderedFont": 13,
+          "withinChart": true
+        }
+      ]
+    },
+    {
+      "theme": "light",
+      "effectiveScalePercent": 200,
+      "viewport": {
+        "width": 683,
+        "height": 384
+      },
+      "svgWidth": 960,
+      "containerWidth": 529,
+      "localOverflow": 431,
+      "documentOverflow": 0,
+      "labels": [
+        {
+          "label": "-2.17",
+          "renderedFont": 13,
+          "withinChart": true
+        },
+        {
+          "label": "-1.085",
+          "renderedFont": 13,
+          "withinChart": true
+        },
+        {
+          "label": "0",
+          "renderedFont": 13,
+          "withinChart": true
+        },
+        {
+          "label": "1.085",
+          "renderedFont": 13,
+          "withinChart": true
+        },
+        {
+          "label": "2.17",
+          "renderedFont": 13,
+          "withinChart": true
+        },
+        {
+          "label": "Millimetres (mm)",
+          "renderedFont": 13,
+          "withinChart": true
+        },
+        {
+          "label": "Feb 3, 2025",
+          "renderedFont": 13,
+          "withinChart": true
+        },
+        {
+          "label": "Printed report date",
+          "renderedFont": 13,
+          "withinChart": true
+        },
+        {
+          "label": "Lower printed: -1.75 mm",
+          "renderedFont": 13,
+          "withinChart": true
+        },
+        {
+          "label": "Upper printed: 1.75 mm",
+          "renderedFont": 13,
+          "withinChart": true
+        }
+      ]
+    },
+    {
+      "theme": "dark",
+      "effectiveScalePercent": 100,
+      "viewport": {
+        "width": 1366,
+        "height": 768
+      },
+      "svgWidth": 1038,
+      "containerWidth": 1038,
+      "localOverflow": 0,
+      "documentOverflow": 0,
+      "labels": [
+        {
+          "label": "-2.17",
+          "renderedFont": 14.05625,
+          "withinChart": true
+        },
+        {
+          "label": "-1.085",
+          "renderedFont": 14.05625,
+          "withinChart": true
+        },
+        {
+          "label": "0",
+          "renderedFont": 14.05625,
+          "withinChart": true
+        },
+        {
+          "label": "1.085",
+          "renderedFont": 14.05625,
+          "withinChart": true
+        },
+        {
+          "label": "2.17",
+          "renderedFont": 14.05625,
+          "withinChart": true
+        },
+        {
+          "label": "Millimetres (mm)",
+          "renderedFont": 14.05625,
+          "withinChart": true
+        },
+        {
+          "label": "Feb 3, 2025",
+          "renderedFont": 14.05625,
+          "withinChart": true
+        },
+        {
+          "label": "Printed report date",
+          "renderedFont": 14.05625,
+          "withinChart": true
+        },
+        {
+          "label": "Lower printed: -1.75 mm",
+          "renderedFont": 14.05625,
+          "withinChart": true
+        },
+        {
+          "label": "Upper printed: 1.75 mm",
+          "renderedFont": 14.05625,
+          "withinChart": true
+        }
+      ]
+    },
+    {
+      "theme": "dark",
+      "effectiveScalePercent": 125,
+      "viewport": {
+        "width": 1092,
+        "height": 614
+      },
+      "svgWidth": 960,
+      "containerWidth": 810,
+      "localOverflow": 150,
+      "documentOverflow": 0,
+      "labels": [
+        {
+          "label": "-2.17",
+          "renderedFont": 13,
+          "withinChart": true
+        },
+        {
+          "label": "-1.085",
+          "renderedFont": 13,
+          "withinChart": true
+        },
+        {
+          "label": "0",
+          "renderedFont": 13,
+          "withinChart": true
+        },
+        {
+          "label": "1.085",
+          "renderedFont": 13,
+          "withinChart": true
+        },
+        {
+          "label": "2.17",
+          "renderedFont": 13,
+          "withinChart": true
+        },
+        {
+          "label": "Millimetres (mm)",
+          "renderedFont": 13,
+          "withinChart": true
+        },
+        {
+          "label": "Feb 3, 2025",
+          "renderedFont": 13,
+          "withinChart": true
+        },
+        {
+          "label": "Printed report date",
+          "renderedFont": 13,
+          "withinChart": true
+        },
+        {
+          "label": "Lower printed: -1.75 mm",
+          "renderedFont": 13,
+          "withinChart": true
+        },
+        {
+          "label": "Upper printed: 1.75 mm",
+          "renderedFont": 13,
+          "withinChart": true
+        }
+      ]
+    },
+    {
+      "theme": "dark",
+      "effectiveScalePercent": 150,
+      "viewport": {
+        "width": 910,
+        "height": 512
+      },
+      "svgWidth": 960,
+      "containerWidth": 638,
+      "localOverflow": 322,
+      "documentOverflow": 0,
+      "labels": [
+        {
+          "label": "-2.17",
+          "renderedFont": 13,
+          "withinChart": true
+        },
+        {
+          "label": "-1.085",
+          "renderedFont": 13,
+          "withinChart": true
+        },
+        {
+          "label": "0",
+          "renderedFont": 13,
+          "withinChart": true
+        },
+        {
+          "label": "1.085",
+          "renderedFont": 13,
+          "withinChart": true
+        },
+        {
+          "label": "2.17",
+          "renderedFont": 13,
+          "withinChart": true
+        },
+        {
+          "label": "Millimetres (mm)",
+          "renderedFont": 13,
+          "withinChart": true
+        },
+        {
+          "label": "Feb 3, 2025",
+          "renderedFont": 13,
+          "withinChart": true
+        },
+        {
+          "label": "Printed report date",
+          "renderedFont": 13,
+          "withinChart": true
+        },
+        {
+          "label": "Lower printed: -1.75 mm",
+          "renderedFont": 13,
+          "withinChart": true
+        },
+        {
+          "label": "Upper printed: 1.75 mm",
+          "renderedFont": 13,
+          "withinChart": true
+        }
+      ]
+    },
+    {
+      "theme": "dark",
+      "effectiveScalePercent": 200,
+      "viewport": {
+        "width": 683,
+        "height": 384
+      },
+      "svgWidth": 960,
+      "containerWidth": 529,
+      "localOverflow": 431,
+      "documentOverflow": 0,
+      "labels": [
+        {
+          "label": "-2.17",
+          "renderedFont": 13,
+          "withinChart": true
+        },
+        {
+          "label": "-1.085",
+          "renderedFont": 13,
+          "withinChart": true
+        },
+        {
+          "label": "0",
+          "renderedFont": 13,
+          "withinChart": true
+        },
+        {
+          "label": "1.085",
+          "renderedFont": 13,
+          "withinChart": true
+        },
+        {
+          "label": "2.17",
+          "renderedFont": 13,
+          "withinChart": true
+        },
+        {
+          "label": "Millimetres (mm)",
+          "renderedFont": 13,
+          "withinChart": true
+        },
+        {
+          "label": "Feb 3, 2025",
+          "renderedFont": 13,
+          "withinChart": true
+        },
+        {
+          "label": "Printed report date",
+          "renderedFont": 13,
+          "withinChart": true
+        },
+        {
+          "label": "Lower printed: -1.75 mm",
+          "renderedFont": 13,
+          "withinChart": true
+        },
+        {
+          "label": "Upper printed: 1.75 mm",
+          "renderedFont": 13,
+          "withinChart": true
+        }
+      ]
+    }
+  ],
+  "nativeWindowsDpiActuallyRun": false,
+  "browserChannel": "msedge",
+  "tests": 10,
+  "assertions": 421,
+  "failed": 0,
+  "javascriptErrors": [],
+  "externalAssetRequests": 0,
+  "results": [
+    {
+      "name": "The reader preference defaults to Automatic and unsaved edits survive a real background snapshot",
+      "result": "PASS"
+    },
+    {
+      "name": "The selected PDF is read by the portable Python engine and its printed measurements are shown without clinical inference",
+      "result": "PASS"
+    },
+    {
+      "name": "No-name filing, Undo and reader switching preserve decisions and cache the current result",
+      "result": "PASS"
+    },
+    {
+      "name": "Trends displays cached printed values and opens the exact source report page without reparsing",
+      "result": "PASS"
+    },
+    {
+      "name": "Manufacturer Daily inline measurements populate Water and Noise trends from the actual local reader",
+      "result": "PASS"
+    },
+    {
+      "name": "Slice thickness has millimetre charts and opens its exact cached source page without hidden analysis",
+      "result": "PASS"
+    },
+    {
+      "name": "Monthly alignment measurements keep separate printed millimetre series and exact source pages",
+      "result": "PASS"
+    },
+    {
+      "name": "A real table-position read refreshes the visible chart and keeps eight printed method-position series separate",
+      "result": "PASS"
+    },
+    {
+      "name": "Content-identical real snapshots do not restart an already displayed trend chart",
+      "result": "PASS"
+    },
+    {
+      "name": "Nonempty measurement charts retain readable axes and source evidence at common effective display scales",
+      "result": "PASS"
+    }
+  ],
+  "scope": "Actual local host, reader preferences and background snapshot, selected bundled Python PDF reading, conservative printed measurement values/limits, small-window review, no-name filing, Undo and Standard reader cache, saved-value trends and exact source-page navigation without hidden parsing. Generated three-page Basic, manufacturer Daily, slice-thickness, Monthly alignment and table-position PDFs only; no uploaded report, private text or credentials are included."
+}

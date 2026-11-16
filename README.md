@@ -6,7 +6,7 @@ A portable, offline browser workspace for scanner QA reports. Extract the comple
 
 [Versioned downloads and visual previews](https://github.com/rtariq2015/QA-Manger/releases/latest) · [Quick guide](User%20Guide.html) · [Validation details](docs/TESTING.md)
 
-![Today in the Windows browser interface, with synthetic demonstration data](docs/images/engineering/today-light.png)
+![Today in the Windows browser interface, with synthetic demonstration data](docs/images/v5.7.0/today-light-web-demo.png)
 
 ## A simpler workflow
 

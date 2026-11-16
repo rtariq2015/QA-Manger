@@ -1,0 +1,151 @@
+﻿{
+    "Product":  "CT QA Manager Pro",
+    "Feature":  "Printed measurement extraction",
+    "MeasurementVersion":  1,
+    "MeasurementSupportRevision":  4,
+    "Runtime":  "5.1.26100.33648",
+    "WindowsPowerShell51ActuallyRun":  true,
+    "SyntheticOnly":  true,
+    "Tests":  34,
+    "Assertions":  171,
+    "Failed":  0,
+    "Results":  [
+                    {
+                        "Name":  "The two explicit HU tables yield current measurements, printed limits and fixed provenance",
+                        "Result":  "PASS"
+                    },
+                    {
+                        "Name":  "Decimal-comma, nonbreaking spaces and Unicode minus are normalized independently of locale",
+                        "Result":  "PASS"
+                    },
+                    {
+                        "Name":  "Each test mode and source system keeps its own slice rows",
+                        "Result":  "PASS"
+                    },
+                    {
+                        "Name":  "Reference values, scan parameters, multicolumn tables and other test sections are not current HU measurements",
+                        "Result":  "PASS"
+                    },
+                    {
+                        "Name":  "Missing or unsupported row structure is visible for review without inventing limits",
+                        "Result":  "PASS"
+                    },
+                    {
+                        "Name":  "Conflicting duplicate identity is omitted instead of selecting a convenient current value",
+                        "Result":  "PASS"
+                    },
+                    {
+                        "Name":  "Reversed printed bounds retain only the unambiguous value and require review",
+                        "Result":  "PASS"
+                    },
+                    {
+                        "Name":  "Mixed printed outcomes stay separate from numeric reading and cannot turn into clinical PASS",
+                        "Result":  "PASS"
+                    },
+                    {
+                        "Name":  "Incomplete and OCR-only input cannot claim a complete successful measurement read",
+                        "Result":  "PASS"
+                    },
+                    {
+                        "Name":  "Conflicting report dates flag the numeric evidence without accepting a clinical result",
+                        "Result":  "PASS"
+                    },
+                    {
+                        "Name":  "Unknown templates, extra sections and unbound text cannot supply measurements",
+                        "Result":  "PASS"
+                    },
+                    {
+                        "Name":  "Measurement count is bounded and clipping remains visible",
+                        "Result":  "PASS"
+                    },
+                    {
+                        "Name":  "Ambiguous thousands grouping and mismatched units are rejected",
+                        "Result":  "PASS"
+                    },
+                    {
+                        "Name":  "Wrapped numbered headings and split mode labels keep fixed document context",
+                        "Result":  "PASS"
+                    },
+                    {
+                        "Name":  "Manufacturer Daily inline tables supply separate head and body readings with one printed range per table",
+                        "Result":  "PASS"
+                    },
+                    {
+                        "Name":  "Dual-source Daily columns and unsupported acquisition names cannot merge with single-system body readings",
+                        "Result":  "PASS"
+                    },
+                    {
+                        "Name":  "Daily inline rows require their own complete unit-matched range and preserve malformed evidence as an issue",
+                        "Result":  "PASS"
+                    },
+                    {
+                        "Name":  "Repeated Daily table context is withheld and incomplete Daily reads remain warned",
+                        "Result":  "PASS"
+                    },
+                    {
+                        "Name":  "Slice-thickness results use current millimetres and skip acquisition parameters and parenthesized references",
+                        "Result":  "PASS"
+                    },
+                    {
+                        "Name":  "Historical reference documents cannot supply current measurements even when they contain readable-looking values",
+                        "Result":  "PASS"
+                    },
+                    {
+                        "Name":  "Monthly scalar alignment tables retain printed units and avoid invented acquisition identities",
+                        "Result":  "PASS"
+                    },
+                    {
+                        "Name":  "Standalone page-two component titles and wrapped numbered titles use classified body evidence",
+                        "Result":  "PASS"
+                    },
+                    {
+                        "Name":  "Generic page headers do not consume the following real numbered alignment heading",
+                        "Result":  "PASS"
+                    },
+                    {
+                        "Name":  "Separate monthly sections stay distinct and nearby historical comparisons are not current values",
+                        "Result":  "PASS"
+                    },
+                    {
+                        "Name":  "Scalar alignment rejects malformed, detached, ambiguous and mismatched-unit tables",
+                        "Result":  "PASS"
+                    },
+                    {
+                        "Name":  "Scalar alignment tables cannot borrow across page boundaries or override incomplete date evidence",
+                        "Result":  "PASS"
+                    },
+                    {
+                        "Name":  "Alignment requires actual body evidence rather than a plausible table of contents or empty Extended section",
+                        "Result":  "PASS"
+                    },
+                    {
+                        "Name":  "Alignment normalization retains current values but uncertain bounds remain explicit",
+                        "Result":  "PASS"
+                    },
+                    {
+                        "Name":  "Historical and suspected reference alignment bodies never supply current measurements",
+                        "Result":  "PASS"
+                    },
+                    {
+                        "Name":  "Explicit sagittal and coronal header columns retain their separate printed axis values",
+                        "Result":  "PASS"
+                    },
+                    {
+                        "Name":  "Axis alignment rejects reordered headers, missing pairs and extra numeric columns",
+                        "Result":  "PASS"
+                    },
+                    {
+                        "Name":  "Complete table-position results retain eight distinct movement and position contexts",
+                        "Result":  "PASS"
+                    },
+                    {
+                        "Name":  "Malformed table-position blocks are withheld as a whole while older metrics remain usable",
+                        "Result":  "PASS"
+                    },
+                    {
+                        "Name":  "Table-position context requires evidenced current body and one complete result page",
+                        "Result":  "PASS"
+                    }
+                ],
+    "Scope":  "Synthetic IEC water/noise/slice-thickness tables, manufacturer Daily inline single-system HU tables, bounded Monthly alignment tables and complete eight-context table-position results. Explicit current HU values and printed bounds are kept separate from parenthesized references, scan parameters, other tables and clinical approval. Unknown, incomplete, conflicting, ambiguous and clipped evidence remains marked for review."
+}
