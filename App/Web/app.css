@@ -223,3 +223,7 @@ body[data-page="review"] .review-document{padding-bottom:0}.preview-header-actio
   .settings-navigation { grid-template-columns: 1fr; }
   .monthly-scanner-counts { width: calc(100% - 28px); order: 1; }
 }
+
+/* The 960-unit evidence chart keeps readable axes when the effective window narrows. */
+.trend-chart { overflow-x: auto; overscroll-behavior-x: contain; }
+.trend-chart > svg { min-width: 960px; min-height: 410px; }
