@@ -1,0 +1,229 @@
+{
+  "syntheticOnly": true,
+  "scope": "Development appearance check: production frontend with static synthetic snapshot/Monthly/jobs responses and a minimal sample PDF. Desktop light/dark, one narrow viewport and three existing navigation targets only. No live backend, archive, scanner, PDF extraction, native runtime or clinical QA validation.",
+  "checks": [
+    {
+      "name": "Today keeps three Daily shortcuts",
+      "result": "PASS"
+    },
+    {
+      "name": "Daily receipt labels remain",
+      "result": "PASS"
+    },
+    {
+      "name": "Today keeps Monthly directly inside each scanner card",
+      "result": "PASS"
+    },
+    {
+      "name": "CT Edge has one shared scanner name",
+      "result": "PASS"
+    },
+    {
+      "name": "CT Edge has one shared scanner image",
+      "result": "PASS"
+    },
+    {
+      "name": "CT Edge Monthly block does not repeat the scanner heading",
+      "result": "PASS"
+    },
+    {
+      "name": "CT Edge Monthly block follows Daily vertically",
+      "result": "PASS"
+    },
+    {
+      "name": "CT Edge Monthly count",
+      "result": "PASS"
+    },
+    {
+      "name": "CT Edge Monthly latest PDF remains available",
+      "result": "PASS"
+    },
+    {
+      "name": "CT Flash has one shared scanner name",
+      "result": "PASS"
+    },
+    {
+      "name": "CT Flash has one shared scanner image",
+      "result": "PASS"
+    },
+    {
+      "name": "CT Flash Monthly block does not repeat the scanner heading",
+      "result": "PASS"
+    },
+    {
+      "name": "CT Flash Monthly block follows Daily vertically",
+      "result": "PASS"
+    },
+    {
+      "name": "CT Flash Monthly count",
+      "result": "PASS"
+    },
+    {
+      "name": "CT Flash Monthly latest PDF remains available",
+      "result": "PASS"
+    },
+    {
+      "name": "CT Drive has one shared scanner name",
+      "result": "PASS"
+    },
+    {
+      "name": "CT Drive has one shared scanner image",
+      "result": "PASS"
+    },
+    {
+      "name": "CT Drive Monthly block does not repeat the scanner heading",
+      "result": "PASS"
+    },
+    {
+      "name": "CT Drive Monthly block follows Daily vertically",
+      "result": "PASS"
+    },
+    {
+      "name": "CT Drive Monthly count",
+      "result": "PASS"
+    },
+    {
+      "name": "CT Drive Monthly latest PDF remains available",
+      "result": "PASS"
+    },
+    {
+      "name": "Cached reading status remains visible",
+      "result": "PASS"
+    },
+    {
+      "name": "Light appearance loads",
+      "result": "PASS"
+    },
+    {
+      "name": "Dark appearance loads",
+      "result": "PASS"
+    },
+    {
+      "name": "Today has no horizontal overflow at 1024px",
+      "result": "PASS"
+    },
+    {
+      "name": "#refresh-button is visible and enabled at 1024px",
+      "result": "PASS"
+    },
+    {
+      "name": "#refresh-button is keyboard focusable and inside the narrow viewport",
+      "result": "PASS"
+    },
+    {
+      "name": "#today-library-button is visible and enabled at 1024px",
+      "result": "PASS"
+    },
+    {
+      "name": "#today-library-button is keyboard focusable and inside the narrow viewport",
+      "result": "PASS"
+    },
+    {
+      "name": "#today-calendar-button is visible and enabled at 1024px",
+      "result": "PASS"
+    },
+    {
+      "name": "#today-calendar-button is keyboard focusable and inside the narrow viewport",
+      "result": "PASS"
+    },
+    {
+      "name": "#today-monthly-library is visible and enabled at 1024px",
+      "result": "PASS"
+    },
+    {
+      "name": "#today-monthly-library is keyboard focusable and inside the narrow viewport",
+      "result": "PASS"
+    },
+    {
+      "name": "#scanner-cards .scanner-daily-link >> nth=0 is visible and enabled at 1024px",
+      "result": "PASS"
+    },
+    {
+      "name": "#scanner-cards .scanner-daily-link >> nth=0 is keyboard focusable and inside the narrow viewport",
+      "result": "PASS"
+    },
+    {
+      "name": "#scanner-cards .today-monthly-block .monthly-open-latest >> nth=0 is visible and enabled at 1024px",
+      "result": "PASS"
+    },
+    {
+      "name": "#scanner-cards .today-monthly-block .monthly-open-latest >> nth=0 is keyboard focusable and inside the narrow viewport",
+      "result": "PASS"
+    },
+    {
+      "name": "Open library still opens the PDF list",
+      "result": "PASS"
+    },
+    {
+      "name": "Open library keeps Daily filter",
+      "result": "PASS"
+    },
+    {
+      "name": "Open library lists three synthetic Daily PDFs",
+      "result": "PASS"
+    },
+    {
+      "name": "Today Monthly View all opens the PDF list",
+      "result": "PASS"
+    },
+    {
+      "name": "Monthly View all keeps scanner filter",
+      "result": "PASS"
+    },
+    {
+      "name": "Monthly View all keeps year filter",
+      "result": "PASS"
+    },
+    {
+      "name": "Monthly View all keeps month filter",
+      "result": "PASS"
+    },
+    {
+      "name": "Monthly View all keeps type filter",
+      "result": "PASS"
+    },
+    {
+      "name": "Monthly View all keeps status filter",
+      "result": "PASS"
+    },
+    {
+      "name": "Monthly View all lists all three scanner PDFs",
+      "result": "PASS"
+    },
+    {
+      "name": "Daily latest still targets its original synthetic PDF",
+      "result": "PASS"
+    },
+    {
+      "name": "No application error banner",
+      "result": "PASS"
+    },
+    {
+      "name": "Appearance/navigation checks send no mutations",
+      "result": "PASS"
+    },
+    {
+      "name": "No browser or JavaScript errors",
+      "result": "PASS"
+    },
+    {
+      "name": "No external asset requests",
+      "result": "PASS"
+    }
+  ],
+  "errors": [],
+  "externalRequests": [],
+  "mutationRequests": [],
+  "pdfRequests": [
+    "6a71633d2ff7246ed9c185038625b058f3e85187701970810c833c81cccd976e"
+  ],
+  "screenshots": [
+    "/tmp/ctqa-today-appearance/today-light-1440.png",
+    "/tmp/ctqa-today-appearance/today-dark-1440.png",
+    "/tmp/ctqa-today-appearance/today-dark-1024.png"
+  ],
+  "status": "PASS",
+  "applicationSHA256": "25c7e2b4fe28da558a948d6ed7cb2d9c04d78bdc3751dc9ca479858fa809e379",
+  "stylesSHA256": "6a03a5d89355682ddb50f270d3ebe136dd1d8e2785bd7acd37f4bfc272b51a83",
+  "markupSHA256": "349d986708bf4d21b125dd4fbaa3e83db7ee9e7cdaee563b0e0b2e2e04df8add"
+}

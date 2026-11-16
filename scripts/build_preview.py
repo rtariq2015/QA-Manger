@@ -55,7 +55,7 @@ def capture(path: Path, label: str) -> str:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", required=True)
-    parser.add_argument("--version", default="5.7.4")
+    parser.add_argument("--version", default="5.7.5")
     parser.add_argument("--images-dir", type=Path, default=Path(__file__).resolve().parents[1] / "docs" / "images")
     parser.add_argument("--include-details", action="store_true", help="Include available report-content and Python-reader captures from the same validation run.")
     args = parser.parse_args()
