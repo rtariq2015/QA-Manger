@@ -233,28 +233,53 @@ function Assert-QaNoReparse { param([string]$Path,[string]$StopAt='',$DirectoryC
 }
 function New-QaState { return [pscustomobject]@{Version=4;SetupComplete=$false;UpdatedUtc='';Records=@();Scanners=@();Issues=@();Reviews=@()} }
 function Read-QaState { param($Paths)
+    Assert-QaNoReparse $Paths.State
     if (-not [IO.File]::Exists($Paths.State)) { return New-QaState }
     try { $state=[IO.File]::ReadAllText($Paths.State) | ConvertFrom-Json }
     catch { throw 'The archive state could not be read. It has not been replaced. Keep the archive and contact IT; a previous state is in .ctqa/state.json.bak.' }
     if ([int]$state.Version -ne 4) { throw 'This archive uses an unsupported state version. No archive data was changed.' }
     $pathComparer=if([Environment]::OSVersion.Platform -eq [PlatformID]::Win32NT){[StringComparer]::OrdinalIgnoreCase}else{[StringComparer]::Ordinal}
     $directoryCache=New-Object 'Collections.Generic.HashSet[string]' $pathComparer
+    $recordIds=New-Object 'Collections.Generic.HashSet[string]' ([StringComparer]::OrdinalIgnoreCase)
+    $destinations=New-Object 'Collections.Generic.HashSet[string]' $pathComparer
     foreach($record in @($state.Records)) {
         if ([string]$record.Hash -notmatch '^[0-9A-Fa-f]{64}$' -or [string]$record.Id -notmatch '^[0-9A-Fa-f]{64}$' -or -not $record.SourcePath -or [string]$record.Scanner -notmatch '^[A-Za-z][A-Za-z0-9_]{0,31}$' -or @($Paths.ScannerIds) -cnotcontains [string]$record.Scanner -or $record.Category -notin $script:QaCategories) { throw 'The archive state contains an incomplete report record; no updates were made.' }
+        if (-not $recordIds.Add([string]$record.Id)) { throw 'The archive state contains a repeated report identity. It was preserved; ask IT to review the index before updating.' }
         $relative=[string]$record.RelativePath
         if (-not $relative -or [IO.Path]::IsPathRooted($relative)) { throw 'An archive record has an unsafe relative path.' }
         $dst=Join-Path $Paths.Reports $relative
         if (-not (Test-QaChildPath $dst $Paths.Reports)) { throw 'An archive record points outside Reports; no updates were made.' }
+        if (-not $destinations.Add([IO.Path]::GetFullPath($dst))) { throw 'Two archive records point to the same saved PDF. The state was preserved; ask IT to review the index before updating.' }
         Assert-QaNoReparse $dst $Paths.Root -DirectoryCache $directoryCache
         Set-QaValue $record 'DestinationPath' $dst
         Set-QaValue $record 'ConfirmedComponents' ([object[]]@(Get-QaComponentLabels (Get-QaValue $record 'ConfirmedComponents' $null) 'Reviewed report items'))
     }
     return $state
 }
+function Get-QaArchiveRecords {
+    [CmdletBinding()]param([Parameter(Mandatory=$true)]$Config)
+    # Fresh, validated archive membership without building coverage, attention,
+    # scanner summaries or reading any PDF contents. Viewing never creates data.
+    Assert-QaConfig $Config
+    $state=Read-QaState (Get-QaPaths $Config)
+    return @($state.Records)
+}
+function ConvertTo-QaIndexCsvRow {
+    param($Record)
+    # The CSV is a spreadsheet-facing projection. Preserve the authoritative
+    # JSON values, numeric cells, property order and all report identities.
+    $cells=[ordered]@{}
+    foreach($property in $Record.PSObject.Properties) {
+        $value=$property.Value
+        if($value -is [string] -and $value -match '^[=+@\-\t\r\n]'){$value="'"+$value}
+        $cells[$property.Name]=$value
+    }
+    return [pscustomobject]$cells
+}
 function Save-QaState { param($State,$Paths)
     $State.UpdatedUtc=[datetime]::UtcNow.ToString('o')
     Write-QaAtomicText $Paths.State ($State | ConvertTo-Json -Depth 12)
-    $csv=if(@($State.Records).Count -gt 0) { @($State.Records) | Select-Object Id,Scanner,ReportDate,ReportTime,Category,ClassificationBasis,OriginalFileName,SourcePath,Hash,Length,RelativePath,DestinationPath,FirstArchived,ConfirmedBy,ConfirmedAt,ReviewDecision,LastReviewId,@{Name='ConfirmedComponents';Expression={@(Get-QaValue $_ 'ConfirmedComponents' $null) -join '; '}},PdfPagesHint | ConvertTo-Csv -NoTypeInformation } else { @('"Id","Scanner","ReportDate","ReportTime","Category","ClassificationBasis","OriginalFileName","SourcePath","Hash","Length","RelativePath","DestinationPath","FirstArchived","ConfirmedBy","ConfirmedAt","ReviewDecision","LastReviewId","ConfirmedComponents","PdfPagesHint"') }
+    $csv=if(@($State.Records).Count -gt 0) { @($State.Records) | Select-Object Id,Scanner,ReportDate,ReportTime,Category,ClassificationBasis,OriginalFileName,SourcePath,Hash,Length,RelativePath,DestinationPath,FirstArchived,ConfirmedBy,ConfirmedAt,ReviewDecision,LastReviewId,@{Name='ConfirmedComponents';Expression={@(Get-QaValue $_ 'ConfirmedComponents' $null) -join '; '}},PdfPagesHint | ForEach-Object { ConvertTo-QaIndexCsvRow $_ } | ConvertTo-Csv -NoTypeInformation } else { @('"Id","Scanner","ReportDate","ReportTime","Category","ClassificationBasis","OriginalFileName","SourcePath","Hash","Length","RelativePath","DestinationPath","FirstArchived","ConfirmedBy","ConfirmedAt","ReviewDecision","LastReviewId","ConfirmedComponents","PdfPagesHint"') }
     Write-QaAtomicText $Paths.Index ($csv -join "`r`n")
     if ([IO.Directory]::Exists($Paths.Transactions)) {
         foreach($f in [IO.Directory]::GetFiles($Paths.Transactions,'*.json')) {
@@ -991,4 +1016,4 @@ function Invoke-QaOperation {
         return [pscustomobject]@{Mode=$Mode;Summary=$summary;Scanners=@($state.Scanners);Attention=@(Get-QaAttention $Config $state $paths);Records=@($state.Records);MonthlyCoverage=@(Get-QaMonthlyCoverage -Config $Config -Records @($state.Records));SetupComplete=[bool]$state.SetupComplete}
     } finally { if($null -ne $lock){$lock.Dispose()} }
 }
-Export-ModuleMember -Function Get-QaDefaultConfig,Read-QaConfig,Save-QaConfig,Get-QaDashboard,Invoke-QaOperation,Get-QaMonthlyCoverage,Get-QaChecklistForMonth,Get-QaRecordReviewStamp
+Export-ModuleMember -Function Get-QaDefaultConfig,Read-QaConfig,Save-QaConfig,Get-QaDashboard,Get-QaArchiveRecords,Invoke-QaOperation,Get-QaMonthlyCoverage,Get-QaChecklistForMonth,Get-QaRecordReviewStamp
