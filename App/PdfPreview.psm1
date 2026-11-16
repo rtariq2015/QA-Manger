@@ -12,7 +12,9 @@ function Get-QaPdfPreviewPage {
     if([Environment]::OSVersion.Platform -ne [PlatformID]::Win32NT){throw 'The in-app PDF preview requires the Windows PDF renderer. Open the saved PDF in its normal viewer instead.'}
     Import-Module (Join-Path $PSScriptRoot 'Archive.psm1')
     Import-Module (Join-Path $PSScriptRoot 'PdfReader.psm1')
-    $records=@((Get-QaDashboard $Config).Records|Where-Object Id -ceq $RecordId)
+    # Resolve from freshly validated archive state. A page preview does not need
+    # to rebuild monthly coverage, scanner summaries or historical attention.
+    $records=@(Get-QaArchiveRecords -Config $Config|Where-Object Id -ceq $RecordId)
     if($records.Count -ne 1){throw 'Select one saved report for preview.'};$record=$records[0]
     $path=[IO.Path]::GetFullPath([string]$record.DestinationPath)
     & (Get-Module PdfReader) {param($p) Assert-QaReaderDirectPath $p} $path

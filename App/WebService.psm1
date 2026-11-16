@@ -642,12 +642,9 @@ function Get-QaWebMonthlyWorkspace {
 
 function Get-QaWebAnalysisRecords {
     param($Config)
-    $path=[IO.Path]::GetFullPath((Join-Path $PSScriptRoot 'Archive.psm1'))
-    $modules=@(Get-Module Archive -All|Where-Object{$_.Path -and [string]::Equals([IO.Path]::GetFullPath($_.Path),$path,[StringComparison]::OrdinalIgnoreCase)})
-    if(-not $modules.Count){throw 'The archive reader is unavailable.'}
-    # Validate current core records without building coverage/attention dashboards.
-    # Read-QaReportText independently revalidates membership and exact PDF bytes under its lock.
-    return @(& $modules[0] {param($Cfg) Assert-QaConfig $Cfg;$state=Read-QaState (Get-QaPaths $Cfg);return @($state.Records)} $Config)
+    # The archive owns core validation; cached views do not build dashboard
+    # projections. PDF reading independently verifies membership and exact bytes.
+    return @(Get-QaArchiveRecords -Config $Config)
 }
 function Get-QaWebAnalysisRevision {
     param($Config)
@@ -699,7 +696,13 @@ function Invoke-QaWebRequest {
             return Get-QaTrendData -Config $config -Scanner $filters.scanner -Metric $metric -Mode $filters.mode -SourceSystem $filters.system -Slice $(if($filters.slice){[int]$filters.slice}else{0}) -StartDateISO $filters.start -EndDateISO $filters.end -SeriesKey $filters.series
         }
         'PreviewPdf'{return Get-QaPdfPreviewPage -Config $config -RecordId ([string](Get-QaWebValue $Request id '')) -PageNumber ([int](Get-QaWebValue $Request page 0))}
-        'Pdf'{$record=Get-QaWebRecord (Get-QaDashboard $config) ([string](Get-QaWebValue $Request id ''));return [pscustomobject]@{path=(Assert-QaWebPdf $config $record);filename=[string]$record.OriginalFileName}}
+        'Pdf'{
+            # Fresh core validation and exact PDF hashing remain mandatory. The
+            # unrelated dashboard projections are unnecessary for this lookup.
+            $saved=[pscustomobject]@{Records=@(Get-QaArchiveRecords -Config $config)}
+            $record=Get-QaWebRecord $saved ([string](Get-QaWebValue $Request id ''))
+            return [pscustomobject]@{path=(Assert-QaWebPdf $config $record);filename=[string]$record.OriginalFileName}
+        }
         {$_ -in @('Approve','Disapprove','Undo')}{
             $decisionContext=$null;$decision=Invoke-QaWebOrganization -Config $config -Request $Request -Progress $Progress -OperationContext ([ref]$decisionContext)
             if($null -ne $decisionContext){$snapshotDashboard=$decisionContext.Dashboard;$snapshotOrganization=$decisionContext.Organization}
