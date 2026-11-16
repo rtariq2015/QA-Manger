@@ -1,5 +1,7 @@
 # Validation — CT QA Manager Pro 5.6.0
 
+> This page records the published 5.6.0 baseline. Unreleased engineering changes have a separate [branch validation report](ENGINEERING-VALIDATION.md); fresh native branch outcomes are attached to the pull request checks. Historical results below are not new branch test runs.
+
 Final source: `bea7a3ef62ad6db598ec1d27ee8bfc2a70b16980`. Completed successful native workflow: [https://github.com/rtariq2015/QA-Manger/actions/runs/43135344109](https://github.com/rtariq2015/QA-Manger/actions/runs/43135344109).
 
 Public evidence uses generated reports, synthetic scanner folders and synthetic identities. No actual workstation support logs, private PDFs, extracted private text, credentials, network profiles, corpus aggregates or workplace photographs are included. Raw reports and screenshots retain their original bytes.

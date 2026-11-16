@@ -1,0 +1,56 @@
+{
+  "syntheticOnly": true,
+  "baseline": false,
+  "browser": "156.0.8078.79",
+  "node": "v24.22.1",
+  "platform": "linux",
+  "architecture": "x64",
+  "assetHashes": {
+    "app.js": "554aa10ff67940ac315b62204b8e135e63a66f3e8ed456844304b354d221b4f7",
+    "index.html": "ef243cd038f88c31d61816f5c32fe97703715a579901c6f17862d9e18f718dc8",
+    "app.css": "bd966310c83503a3cc96ff89ecca5503d72ef620691dcb3793166a38b85f579e",
+    "trends.js": "bf4c44cad7a0788a85fe7c1580fa6e413c7df9213153b91a9be13a16960be311"
+  },
+  "scope": "Production browser assets with deterministic synthetic API responses and a response-only test bridge. No PowerShell, real scanner, PDF reader, native Windows DPI or hospital throughput claim. Timings include layout and are diagnostic. JS heap excludes native DOM/browser memory.",
+  "budgetMs": 120000,
+  "assertions": 50,
+  "failed": 0,
+  "results": [
+    {
+      "count": 1367,
+      "openReportsMs": 90.5999999998603,
+      "unchangedSnapshotMs": 13.100000000093132,
+      "rapidInputDispatchMs": 0.30000000004656613,
+      "rapidSearchSettledMs": 194.80000000004657,
+      "renderedRows": 100,
+      "totalDomNodes": 2530,
+      "unchangedSnapshotChildMutations": 0,
+      "unchangedSnapshotRetainedFirstRow": true,
+      "matching": 1367,
+      "searchRenderedRows": 100,
+      "searchListReplacements": 1,
+      "jsHeapUsedBytes": 3723788,
+      "javascriptErrors": [],
+      "externalRequests": 0,
+      "result": "PASS"
+    },
+    {
+      "count": 20000,
+      "openReportsMs": 74.80000000004657,
+      "unchangedSnapshotMs": 24,
+      "rapidInputDispatchMs": 0.4000000001396984,
+      "rapidSearchSettledMs": 314.69999999995343,
+      "renderedRows": 100,
+      "totalDomNodes": 2530,
+      "unchangedSnapshotChildMutations": 0,
+      "unchangedSnapshotRetainedFirstRow": true,
+      "matching": 20000,
+      "searchRenderedRows": 100,
+      "searchListReplacements": 1,
+      "jsHeapUsedBytes": 27828708,
+      "javascriptErrors": [],
+      "externalRequests": 0,
+      "result": "PASS"
+    }
+  ]
+}

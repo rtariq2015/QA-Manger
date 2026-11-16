@@ -1,0 +1,50 @@
+{
+  "baselineCommit": "6b51f4c3223b9cbe051dd9c9e502c10954f8e603",
+  "baselineCopiedTrackedFilesVerified": 62,
+  "baselineMismatchCount": 0,
+  "candidateHead": "68b82607f7e916a21225c963093993e3ba2f3d74",
+  "candidateAppHashes": {
+    "App/Archive.psm1": "674218b3248d14c3afe91e77b9b6e1d8463e836b66a19764a60e0a9174b2bdff",
+    "App/MainWindow.xaml": "32105d826e112a8b1b2858ead646b9b6b9ddea1b0bfe36401277b3905bd95601",
+    "App/Maintenance.psm1": "99776bdae77c9ccc2e3f6bf2f41dfddc56fb99873fd8accce39de0dc069d9576",
+    "App/PdfPreview.psm1": "a727d7e3101fdf00aeb01e8c3fe2fbf0262c658d27b566ae8c3d0e03b2574c99",
+    "App/Start.ps1": "823b111977a19577779c64d8b8ff11011ebbf3ff6fa17b46ba0f2e8085d09789",
+    "App/Upgrade.ps1": "dfdeb78ef6ab768d110f1ce419fa785c2c550d22d49db31444f6e931b61245db",
+    "App/Web/app.css": "bd966310c83503a3cc96ff89ecca5503d72ef620691dcb3793166a38b85f579e",
+    "App/Web/app.js": "554aa10ff67940ac315b62204b8e135e63a66f3e8ed456844304b354d221b4f7",
+    "App/Web/index.html": "ef243cd038f88c31d61816f5c32fe97703715a579901c6f17862d9e18f718dc8",
+    "App/WebService.psm1": "5f2ae1071f032aaa48fcae58d91c99e22e466fe312d7c78ddf3fc0a0e3596c96"
+  },
+  "benchmarkScriptSHA256": "7f3f7f7f66435dd3eaf96419a14d16193e16fb1797275a1fa9169ccd906f6055",
+  "execution": "Linux PowerShell 7.4.13 on shared cloud developer machine after frontend/browser work stopped; not Windows or hospital hardware.",
+  "startedUtc": "2026-11-16T13:40:30Z",
+  "outerCommandTimeoutSeconds": 600,
+  "runs": [
+    {
+      "label": "before",
+      "exitCode": 0,
+      "elapsedSeconds": 204.71,
+      "timedOut": false
+    },
+    {
+      "label": "after",
+      "exitCode": 0,
+      "elapsedSeconds": 135.573,
+      "timedOut": false
+    }
+  ],
+  "completedUtc": "2026-11-16T13:46:10Z",
+  "candidateAppHashesUnchangedDuringRun": false,
+  "filesChangedDuringMeasurement": [
+    {
+      "path": "App/Web/index.html",
+      "beforeSHA256": "ef243cd038f88c31d61816f5c32fe97703715a579901c6f17862d9e18f718dc8",
+      "afterSHA256": "c588e2b65b807e7abe394f2ab827163efbee7a333ed4976cc32e78607861c7ff"
+    }
+  ],
+  "measuredPowerShellSourcesUnchangedDuringRun": true,
+  "logicalProcessors": 5,
+  "architecture": "x86_64",
+  "cgroupCpuMax": "400000 100000",
+  "otherTeamTestsPausedForMeasurement": true
+}

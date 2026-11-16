@@ -1,0 +1,56 @@
+{
+  "syntheticOnly": true,
+  "baseline": true,
+  "browser": "156.0.8078.79",
+  "node": "v24.22.1",
+  "platform": "linux",
+  "architecture": "x64",
+  "assetHashes": {
+    "app.js": "d323a591b30859b531742413224eda45d4749509a06db09d1c74c20dd83ee950",
+    "index.html": "f3b2f332453696dee450d42fd93093be9d69b0972a8908ba9b395634f9e55d8d",
+    "app.css": "393c0711ca1f02c40f448de501d757aa61ff72530cd5f71336a0c10ecd2a24f0",
+    "trends.js": "bf4c44cad7a0788a85fe7c1580fa6e413c7df9213153b91a9be13a16960be311"
+  },
+  "scope": "Production browser assets with deterministic synthetic API responses and a response-only test bridge. No PowerShell, real scanner, PDF reader, native Windows DPI or hospital throughput claim. Timings include layout and are diagnostic. JS heap excludes native DOM/browser memory.",
+  "budgetMs": 120000,
+  "assertions": 4,
+  "failed": 0,
+  "results": [
+    {
+      "count": 1367,
+      "openReportsMs": 1143.5,
+      "unchangedSnapshotMs": 1062.5,
+      "rapidInputDispatchMs": 6039.299999999814,
+      "rapidSearchSettledMs": 6039.699999999953,
+      "renderedRows": 1367,
+      "totalDomNodes": 21523,
+      "unchangedSnapshotChildMutations": 2734,
+      "unchangedSnapshotRetainedFirstRow": false,
+      "matching": 1367,
+      "searchRenderedRows": 1367,
+      "searchListReplacements": 6,
+      "jsHeapUsedBytes": 3131208,
+      "javascriptErrors": [],
+      "externalRequests": 0,
+      "result": "PASS"
+    },
+    {
+      "count": 20000,
+      "openReportsMs": 12196.09999999986,
+      "unchangedSnapshotMs": 16701.59999999986,
+      "rapidInputDispatchMs": 81256.69999999995,
+      "rapidSearchSettledMs": 81257.6000000001,
+      "renderedRows": 20000,
+      "totalDomNodes": 301018,
+      "unchangedSnapshotChildMutations": 40000,
+      "unchangedSnapshotRetainedFirstRow": false,
+      "matching": 20000,
+      "searchRenderedRows": 20000,
+      "searchListReplacements": 6,
+      "jsHeapUsedBytes": 13409852,
+      "javascriptErrors": [],
+      "externalRequests": 0,
+      "result": "PASS"
+    }
+  ]
+}

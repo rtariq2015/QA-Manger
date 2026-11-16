@@ -1,5 +1,22 @@
 # Changes
 
+## Unreleased — workstation engineering branch
+
+- Bound the Reports list to 100 visible rows with keyboard-aware page navigation, debounced searches, reused metadata sorting and unchanged-view reuse. Exports continue to include every matching report.
+- Increase readable text sizes and contrast, add Comfortable/Compact display density, improve narrow/short-window Review layouts, and add named dialogs, keyboard-accessible PDF scrolling and complete Settings tab semantics. Preserve Light/Dark modes and scanner accents.
+- Make file-label confirmation explicit; keep clinical results and formal reviewed evidence separate. Compact expandable Monthly scanner details retain existing calculations and checklist history.
+- Resolve selected PDFs from fresh validated archive records without rebuilding unrelated dashboards; keep exact path and SHA-256 checks.
+- Reject ambiguous archive identities/destinations and linked metadata without rewriting stored data. Neutralize spreadsheet formula prefixes only in the derived master CSV.
+- Harden update destination checks and failed-update rollback, validate backup ZIP members before restore, retain a single validated input archive, and align the update launcher with 64-bit PowerShell selection.
+- Add pull-request Windows validation, per-branch CI concurrency, synthetic large-library benchmarks and effective-viewport accessibility checks. No release is published by this work.
+
+## 5.6.0 — existing release baseline
+
+- Separate Monthly document receipt, detected cached sections and previously reviewed checklist evidence in a dedicated workspace; preserve checklist effective history.
+- Consolidate Review filing actions, retain batch Undo and preserve keyboard focus across background snapshots. Move the Daily receipt calendar into Reports.
+- Add eight source-context table-position series, targeted cache upgrades and stable Trends refresh revisions. Keep Classic Windows available.
+- Preserve portable offline operation, bundled readers, protected scanner credentials and checked update/backup paths. See the existing versioned validation report for executed baseline tests.
+
 ## 4.3.0
 
 - Move scanner status to the top and group historical review items in their own Archive review tab without removing details.
