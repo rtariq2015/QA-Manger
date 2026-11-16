@@ -374,5 +374,13 @@
     }
   ],
   "generatorPrerequisiteChecks": 482,
-  "scope": "Fresh hosted Windows native suites and Edge/browser workloads plus separately labeled supplemental package validation. No hospital deployment, live scanner access, OS DPI or IT approval claim."
+  "scope": "Fresh hosted Windows native suites and Edge/browser workloads plus separately labeled supplemental package validation. No hospital deployment, live scanner access, OS DPI or IT approval claim.",
+  "publishedAssetVerification": {
+    "url": "https://github.com/rtariq2015/QA-Manger/releases/tag/v5.7.0",
+    "publicationWorkflowRun": 43918569923,
+    "assetCount": 5,
+    "sha256Verified": true,
+    "packageChecks": 5377,
+    "preservedSentinelFiles": 9
+  }
 }

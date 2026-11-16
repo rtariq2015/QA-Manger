@@ -31,6 +31,8 @@ The [frontend workload](../Tests/Releases/v5.7.0/web/library-performance.json) p
 
 ### Actual downloadable package verification
 
+All five published assets were downloaded back from GitHub and matched its stored SHA-256 digests. The [published ZIP checks](../Tests/Releases/v5.7.0/Published-Package-Validation.json) and [published Update installation](../Tests/Releases/v5.7.0/Published-Update-Preservation.json) passed separately, including all nine preserved sentinels. See [asset URLs and digests](../Tests/Releases/v5.7.0/Published-Asset-Verification.json). Earlier prepublication ZIP checks below cover an independent local composition from the same source/artifacts; ZIP timestamps make its outer archive digests different, while every inner payload file matches.
+
 [Package checks](../Tests/Releases/v5.7.0/Package-Validation.json) passed **5,377 supplemental assertions**, checking the three complete release ZIPs, exact source and Windows host bytes, the PE file/product version, all 103 reader components, licenses, complete SHA-256 manifests, update limits and 16 actual native preview images.
 
 The [5.6.0 → 5.7.0 installation simulation](../Tests/Releases/v5.7.0/Update-Preservation.json) executed using **7.4.13 on Unix**. Both the installed 5.6.0 validator and the new validator accepted the actual Update ZIP. Installation retained all **9 synthetic settings, profile, credential-placeholder, report, decision, cache and log files** byte for byte; the previous App and version metadata were backed up, installed payload hashes matched, and staging was cleaned. These Linux package checks are supplemental; they are separate from actual hosted Windows execution and do not establish hospital-workstation behavior.
