@@ -20,8 +20,16 @@ subprocess.run(['gh','run','download',str(run_id),'--repo',repo,'--name','portab
 assert not (root/'Config/NetworkProfile.local.json').exists(),'Private profiles must never enter a release build.'
 out=root/'artifacts/release';out.mkdir(parents=True,exist_ok=True)
 subprocess.run(['python3','scripts/build_release.py','--version',version,'--output-dir',str(out)],cwd=root,check=True)
+# The release gallery must use the same validated run as its executable, rather
+# than tracked screenshots from an earlier release.
+preview_artifacts=root/'artifacts/validated-preview'
+subprocess.run(['gh','run','download',str(run_id),'--repo',repo,'--name','windows-validation','--dir',str(preview_artifacts)],check=True)
+preview_images=preview_artifacts/'web'
+for page in ('today','monthly','reports','review','exports','folders','trends','settings'):
+    for theme in ('light','dark'):
+        assert (preview_images/f'{page}-{theme}-web-demo.png').is_file(), 'The validated release gallery is missing an application capture.'
 preview=out/f'CT_QA_Manager_Pro_v{version}_Preview.html'
-subprocess.run(['python3','scripts/build_preview.py','--version',version,'--include-details','--output',str(preview)],cwd=root,check=True)
+subprocess.run(['python3','scripts/build_preview.py','--version',version,'--images-dir',str(preview_images),'--include-details','--output',str(preview)],cwd=root,check=True)
 files=[out/f'CT_QA_Manager_Pro_v{version}_{kind}.zip' for kind in ['Portable','Update','Upgrade']]+[preview]
 assert all(p.is_file() for p in files)
 checks=out/'SHA256SUMS.txt';checks.write_text(''.join(hashlib.sha256(p.read_bytes()).hexdigest()+'  '+p.name+'\n' for p in files));files.append(checks)
@@ -35,14 +43,15 @@ notes.write_text(f'''Choose the download for your task:
 - **[Visual preview]({base}{preview.name})**: Actual offline browser screens using synthetic demonstration data.
 - **[SHA-256 checksums]({base}SHA256SUMS.txt)**.
 
-Version 5.6.0 simplifies the workflow across **Today, Monthly, Reports, Review, Exports, Folders, Trends and Settings**.
+Version {version} refreshes **Today, Monthly, Reports, Review, Exports, Folders, Trends and Settings**, with a clearer imaging-console design and improvements to large-library browsing and archive reliability.
 
-- **Review has one decision area.** It explicitly targets the Current PDF or Selected reports. A checkbox also previews its report; opening an unselected report clears the batch with a notice. Approve names Daily, Monthly or Other. Up to 50 selected files and durable Undo batch remain supported. Original PDFs and clinical review history are preserved.
-- **Monthly has its own workspace.** See filed Monthly reports, checklist items found in recognized cached contents, and existing reviewed evidence separately. Set the department checklist and due day directly, with effective-month history and retained unsaved drafts. Printed warnings, unmatched custom labels, future periods and activation dates remain explicit. No new clinical sign-off is created.
-- **Today is shorter.** It focuses on today's Daily receipt and a compact Monthly link. The Daily receipt calendar lives under Reports, with a Today shortcut and matching date-filtered exports.
-- **Folders is simpler.** Open the ordinary scanner/year/month/Daily-Monthly-Other tree directly; full-library export and full backup are secondary tools. Filtered Exports retains its separate selection.
-- **Trends adds table position.** Eight metric families are supported. Continuous and stepwise movement stay separate for each of four printed positions, with millimetre values, printed limits and source pages. Only a fully validated current table emits readings; reference material remains excluded. Existing supported measurements are retained.
-- **Graph refreshes settle.** Content-identical background snapshots no longer restart the same request. Real measurement changes invalidate the graph, and in-flight updates coalesce. Coverage distinguishes read PDFs from availability of a selected test/context. Opening Monthly or Trends reads cached metadata and starts no hidden PDF parsing.
+- **A refreshed imaging workspace.** A pearl, slate and navy interface includes local, brand-neutral CT scanner artwork, preserved scanner accent colors and Light/Dark appearances. Comfortable and Compact display options adjust spacing without changing reports or clinical evidence.
+- **Faster large-library browsing.** Reports shows up to 100 rows per page with visible totals and page controls. Search waits briefly while typing; cached sorting, lookups and date formatting reduce repeated work. Unchanged Reports and Review lists reuse their existing controls during background refreshes.
+- **Clearer report review.** Daily, Monthly and Other filing labels stay explicit, with larger text and improved keyboard focus. The current PDF, selected reports, existing decisions, Undo and batch Undo remain available. Filing a document does not approve its clinical QA measurements.
+- **Monthly evidence is easier to read.** Compact scanner summaries expand for detail and separate received PDFs, detected test sections and previously reviewed evidence. Department checklist requirements still come from local configuration; detected content creates no new clinical sign-off.
+- **Readable charts and smaller-screen controls.** Chart labels retain their size with local horizontal scrolling when necessary. Focus indicators, contrast, screen-reader labels and Review action placement improve at common workstation sizes and effective display scales. Original measurement contexts, printed limits, units and source-page links remain intact.
+- **Safer archive, backup and update handling.** Duplicate record identities and conflicting archive ownership are rejected. Spreadsheet exports protect formula-like text without altering the saved records. Backup restore rejects unsafe ZIP paths, while updates check linked destinations, retain the previous program and restore prior files if a later installation step fails.
+- **Less repeated work when opening a PDF.** Selected-report lookup avoids reconstructing the complete dashboard while retaining archive membership and SHA-256 checks. Source scanner PDFs remain read-only; original filenames, duplicate sessions, saved filing decisions and cached analysis are preserved.
 
 The local app remains offline and portable. Standard is the Automatic default PDF reader; bundled Python is an alternate. No work-computer installation, pip, online AI service or administrator launch is required. Unsupported or conflicting PDFs can still need occasional review. Department checklist policy and clinical review remain separate from file organization and detected sections.
 
