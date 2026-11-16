@@ -66,6 +66,27 @@ check('Duplicate records do not multiply report links and the snapshot stays unc
   assert.deepEqual(result.days[3].reportIds,[id(31)]); assert.equal(result.days[3].scanners[0].count,1);
   result.days[3].reportIds.length=0; assert.equal(JSON.stringify(data),before);
 });
+check('Same-day Monthly PDFs are linked without inventing Daily receipt', () => {
+  const data = fixture();
+  data.records = [daily(50,'A','2024-03-04',{category:'Monthly'}),daily(51,'A','2024-03-04',{category:'Monthly'}),daily(52,'B','2024-03-04')];
+  const before=JSON.stringify(data), result=build(data,'2024-03'), day=result.days[3];
+  assert.deepEqual(day.monthlyReportIds,[id(50),id(51)]);
+  assert.deepEqual(day.scanners[0].monthlyReportIds,[id(50),id(51)]);
+  assert.equal(day.scanners[0].received,false); assert.equal(day.received,1);
+  assert.equal(day.monthlyAvailable,1); assert.equal(result.summary.monthlyAvailable,1);
+  assert.deepEqual(day.reportIds,[id(52)]); assert.equal(JSON.stringify(data),before);
+  const selected=build(data,'2024-03','B'); assert.deepEqual(selected.days[3].monthlyReportIds,[]);
+  data.records.push(daily(53,'A','2024-03-04'));
+  assert.equal(build(data,'2024-03','A').summary.monthlyAvailable,0);
+});
+check('Monthly links exclude pending, reference, duplicate, other-day and other-scanner PDFs', () => {
+  const data=fixture(); const monthly=(n,extra={})=>daily(n,'A','2024-03-04',{category:'Monthly',...extra});
+  data.records=[monthly(60),monthly(60),monthly(61,{pending:true}),monthly(62,{isReference:true}),monthly(63,{hasReferenceEvidence:true}),monthly(64,{category:'Other'}),monthly(65,{date:'2024-03-03'}),monthly(66,{scanner:'Unknown'})];
+  const result=build(data,'2024-03','A'); assert.deepEqual(result.days[3].monthlyReportIds,[id(60)]);
+  assert.deepEqual(result.days[2].monthlyReportIds,[id(65)]); assert.equal(result.days[3].received,0);
+  data.records=[monthly(67,{date:'2024-03-05'})];
+  const future=build(data,'2024-03','A'); assert.equal(future.days[4].status,'Future'); assert.equal(future.summary.monthlyAvailable,0);
+});
 const result = { passed: true, checkCount: checks.length, checks, syntheticOnly: true, scope: 'Pure cached metadata calendar rules. Does not read PDFs, contact scanners or establish clinical test completion.', timezone: process.env.TZ || 'process default' };
 const outputIndex = process.argv.indexOf('--output');
 if (outputIndex >= 0) { const output=path.resolve(process.argv[outputIndex+1]); fs.mkdirSync(path.dirname(output),{recursive:true}); fs.writeFileSync(output,JSON.stringify(result,null,2)+'\n'); }

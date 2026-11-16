@@ -5,7 +5,7 @@
     <Nullable>enable</Nullable>
     <AssemblyName>CTQa.Host</AssemblyName>
     <RootNamespace>CTQa.Host</RootNamespace>
-    <Version>5.7.1</Version>
+    <Version>5.7.2</Version>
     <PublishSingleFile>true</PublishSingleFile>
     <SelfContained>true</SelfContained>
     <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>

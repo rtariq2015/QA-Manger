@@ -1,0 +1,18 @@
+{
+  "passed": true,
+  "checkCount": 9,
+  "checks": [
+    "Month boundaries, leap years and weekday identity remain timezone independent",
+    "Schedules, exclusions and active dates count expected archive receipts only",
+    "Pending, reference, suspected reference and Monthly files cannot supply Daily receipt",
+    "Future dates stay neutral and do not increase receipt or missing counts",
+    "Off-schedule saved reports stay visible without creating an expected test",
+    "Calendar selection isolates scanners and rejects unknown or invalid dates",
+    "Duplicate records do not multiply report links and the snapshot stays unchanged",
+    "Same-day Monthly PDFs are linked without inventing Daily receipt",
+    "Monthly links exclude pending, reference, duplicate, other-day and other-scanner PDFs"
+  ],
+  "syntheticOnly": true,
+  "scope": "Pure cached metadata calendar rules. Does not read PDFs, contact scanners or establish clinical test completion.",
+  "timezone": "process default"
+}
