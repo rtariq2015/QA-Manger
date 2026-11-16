@@ -2,6 +2,8 @@
 
 ## Unreleased — workstation engineering branch
 
+- Add a medical imaging-console visual system across all eight workspaces: pearl/slate surfaces, navy navigation, refined controls and bundled brand-neutral CT gantry/bed illustrations. Inline vector artwork keeps the existing offline update path and adds no image downloads or dependencies.
+
 - Bound the Reports list to 100 visible rows with keyboard-aware page navigation, debounced searches, reused metadata sorting and unchanged-view reuse. Exports continue to include every matching report.
 - Increase readable text sizes and contrast, add Comfortable/Compact display density, improve narrow/short-window Review layouts, and add named dialogs, keyboard-accessible PDF scrolling and complete Settings tab semantics. Preserve Light/Dark modes and scanner accents.
 - Make file-label confirmation explicit; keep clinical results and formal reviewed evidence separate. Compact expandable Monthly scanner details retain existing calculations and checklist history.

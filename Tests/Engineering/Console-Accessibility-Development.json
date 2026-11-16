@@ -1,0 +1,937 @@
+{
+  "startedAtUtc": "2026-11-16T15:17:09.760Z",
+  "platform": "linux",
+  "testedFiles": {
+    "App/Web/app.js": "22B0577820A2065F6458D8189E453CB2D28BD7905D612BF9BE99CEEE9E6DDD1E",
+    "App/Web/app.css": "23F515DCC374A0B34892725E4F2E507447A789CF744CA6E729DE6E4BDE4B6B8D",
+    "App/Web/index.html": "91C893F90A14F9086223936F412658365F363098336289532A6872B34CA1DB37",
+    "App/Web/trends.js": "BF4C44CAD7A0788A85FE7C1580FA6E413C7DF9213153B91A9BE13A16960BE311",
+    "App/WebService.psm1": "5F2AE1071F032AAA48FCAE58D91C99E22E466FE312D7C78DDF3FC0A0E3596C96",
+    "App/Archive.psm1": "674218B3248D14C3AFE91E77B9B6E1D8463E836B66A19764A60E0A9174B2BDFF",
+    "App/WebWorker.ps1": "4AD385BBC8F4307F275ACADDD406DB6BBEC284414E946A4E5D05D0B9DA55F99A"
+  },
+  "hostSha256": "8B7AB63161BC65B9F709AB00D730F317AE0AA6B56E0B2046EF7E7A2E58ABA888",
+  "syntheticOnly": true,
+  "actualBrowser": true,
+  "actualHost": true,
+  "browserChannel": "chromium",
+  "nativeWindowsDpiActuallyRun": false,
+  "tests": 67,
+  "assertions": 1014,
+  "failed": 0,
+  "javascriptErrors": [],
+  "externalAssetRequests": 0,
+  "observations": [
+    {
+      "theme": "light",
+      "effectiveScalePercent": 100,
+      "page": "today",
+      "viewport": {
+        "width": 1366,
+        "height": 768
+      },
+      "horizontalOverflow": 0
+    },
+    {
+      "theme": "light",
+      "effectiveScalePercent": 100,
+      "page": "monthly",
+      "viewport": {
+        "width": 1366,
+        "height": 768
+      },
+      "horizontalOverflow": 0
+    },
+    {
+      "theme": "light",
+      "effectiveScalePercent": 100,
+      "page": "reports",
+      "viewport": {
+        "width": 1366,
+        "height": 768
+      },
+      "horizontalOverflow": 0
+    },
+    {
+      "theme": "light",
+      "effectiveScalePercent": 100,
+      "page": "review",
+      "viewport": {
+        "width": 1366,
+        "height": 768
+      },
+      "horizontalOverflow": 0
+    },
+    {
+      "theme": "light",
+      "effectiveScalePercent": 100,
+      "page": "exports",
+      "viewport": {
+        "width": 1366,
+        "height": 768
+      },
+      "horizontalOverflow": 0
+    },
+    {
+      "theme": "light",
+      "effectiveScalePercent": 100,
+      "page": "folders",
+      "viewport": {
+        "width": 1366,
+        "height": 768
+      },
+      "horizontalOverflow": 0
+    },
+    {
+      "theme": "light",
+      "effectiveScalePercent": 100,
+      "page": "trends",
+      "viewport": {
+        "width": 1366,
+        "height": 768
+      },
+      "horizontalOverflow": 0
+    },
+    {
+      "theme": "light",
+      "effectiveScalePercent": 100,
+      "page": "settings",
+      "viewport": {
+        "width": 1366,
+        "height": 768
+      },
+      "horizontalOverflow": 0
+    },
+    {
+      "theme": "light",
+      "effectiveScalePercent": 125,
+      "page": "today",
+      "viewport": {
+        "width": 1092,
+        "height": 614
+      },
+      "horizontalOverflow": 0
+    },
+    {
+      "theme": "light",
+      "effectiveScalePercent": 125,
+      "page": "monthly",
+      "viewport": {
+        "width": 1092,
+        "height": 614
+      },
+      "horizontalOverflow": 0
+    },
+    {
+      "theme": "light",
+      "effectiveScalePercent": 125,
+      "page": "reports",
+      "viewport": {
+        "width": 1092,
+        "height": 614
+      },
+      "horizontalOverflow": 0
+    },
+    {
+      "theme": "light",
+      "effectiveScalePercent": 125,
+      "page": "review",
+      "viewport": {
+        "width": 1092,
+        "height": 614
+      },
+      "horizontalOverflow": 0
+    },
+    {
+      "theme": "light",
+      "effectiveScalePercent": 125,
+      "page": "exports",
+      "viewport": {
+        "width": 1092,
+        "height": 614
+      },
+      "horizontalOverflow": 0
+    },
+    {
+      "theme": "light",
+      "effectiveScalePercent": 125,
+      "page": "folders",
+      "viewport": {
+        "width": 1092,
+        "height": 614
+      },
+      "horizontalOverflow": 0
+    },
+    {
+      "theme": "light",
+      "effectiveScalePercent": 125,
+      "page": "trends",
+      "viewport": {
+        "width": 1092,
+        "height": 614
+      },
+      "horizontalOverflow": 0
+    },
+    {
+      "theme": "light",
+      "effectiveScalePercent": 125,
+      "page": "settings",
+      "viewport": {
+        "width": 1092,
+        "height": 614
+      },
+      "horizontalOverflow": 0
+    },
+    {
+      "theme": "light",
+      "effectiveScalePercent": 150,
+      "page": "today",
+      "viewport": {
+        "width": 910,
+        "height": 512
+      },
+      "horizontalOverflow": 0
+    },
+    {
+      "theme": "light",
+      "effectiveScalePercent": 150,
+      "page": "monthly",
+      "viewport": {
+        "width": 910,
+        "height": 512
+      },
+      "horizontalOverflow": 0
+    },
+    {
+      "theme": "light",
+      "effectiveScalePercent": 150,
+      "page": "reports",
+      "viewport": {
+        "width": 910,
+        "height": 512
+      },
+      "horizontalOverflow": 0
+    },
+    {
+      "theme": "light",
+      "effectiveScalePercent": 150,
+      "page": "review",
+      "viewport": {
+        "width": 910,
+        "height": 512
+      },
+      "horizontalOverflow": 0
+    },
+    {
+      "theme": "light",
+      "effectiveScalePercent": 150,
+      "page": "exports",
+      "viewport": {
+        "width": 910,
+        "height": 512
+      },
+      "horizontalOverflow": 0
+    },
+    {
+      "theme": "light",
+      "effectiveScalePercent": 150,
+      "page": "folders",
+      "viewport": {
+        "width": 910,
+        "height": 512
+      },
+      "horizontalOverflow": 0
+    },
+    {
+      "theme": "light",
+      "effectiveScalePercent": 150,
+      "page": "trends",
+      "viewport": {
+        "width": 910,
+        "height": 512
+      },
+      "horizontalOverflow": 0
+    },
+    {
+      "theme": "light",
+      "effectiveScalePercent": 150,
+      "page": "settings",
+      "viewport": {
+        "width": 910,
+        "height": 512
+      },
+      "horizontalOverflow": 0
+    },
+    {
+      "theme": "light",
+      "effectiveScalePercent": 200,
+      "page": "today",
+      "viewport": {
+        "width": 683,
+        "height": 384
+      },
+      "horizontalOverflow": 0
+    },
+    {
+      "theme": "light",
+      "effectiveScalePercent": 200,
+      "page": "monthly",
+      "viewport": {
+        "width": 683,
+        "height": 384
+      },
+      "horizontalOverflow": 0
+    },
+    {
+      "theme": "light",
+      "effectiveScalePercent": 200,
+      "page": "reports",
+      "viewport": {
+        "width": 683,
+        "height": 384
+      },
+      "horizontalOverflow": 0
+    },
+    {
+      "theme": "light",
+      "effectiveScalePercent": 200,
+      "page": "review",
+      "viewport": {
+        "width": 683,
+        "height": 384
+      },
+      "horizontalOverflow": 0
+    },
+    {
+      "theme": "light",
+      "effectiveScalePercent": 200,
+      "page": "exports",
+      "viewport": {
+        "width": 683,
+        "height": 384
+      },
+      "horizontalOverflow": 0
+    },
+    {
+      "theme": "light",
+      "effectiveScalePercent": 200,
+      "page": "folders",
+      "viewport": {
+        "width": 683,
+        "height": 384
+      },
+      "horizontalOverflow": 0
+    },
+    {
+      "theme": "light",
+      "effectiveScalePercent": 200,
+      "page": "trends",
+      "viewport": {
+        "width": 683,
+        "height": 384
+      },
+      "horizontalOverflow": 0
+    },
+    {
+      "theme": "light",
+      "effectiveScalePercent": 200,
+      "page": "settings",
+      "viewport": {
+        "width": 683,
+        "height": 384
+      },
+      "horizontalOverflow": 0
+    },
+    {
+      "theme": "dark",
+      "effectiveScalePercent": 100,
+      "page": "today",
+      "viewport": {
+        "width": 1366,
+        "height": 768
+      },
+      "horizontalOverflow": 0
+    },
+    {
+      "theme": "dark",
+      "effectiveScalePercent": 100,
+      "page": "monthly",
+      "viewport": {
+        "width": 1366,
+        "height": 768
+      },
+      "horizontalOverflow": 0
+    },
+    {
+      "theme": "dark",
+      "effectiveScalePercent": 100,
+      "page": "reports",
+      "viewport": {
+        "width": 1366,
+        "height": 768
+      },
+      "horizontalOverflow": 0
+    },
+    {
+      "theme": "dark",
+      "effectiveScalePercent": 100,
+      "page": "review",
+      "viewport": {
+        "width": 1366,
+        "height": 768
+      },
+      "horizontalOverflow": 0
+    },
+    {
+      "theme": "dark",
+      "effectiveScalePercent": 100,
+      "page": "exports",
+      "viewport": {
+        "width": 1366,
+        "height": 768
+      },
+      "horizontalOverflow": 0
+    },
+    {
+      "theme": "dark",
+      "effectiveScalePercent": 100,
+      "page": "folders",
+      "viewport": {
+        "width": 1366,
+        "height": 768
+      },
+      "horizontalOverflow": 0
+    },
+    {
+      "theme": "dark",
+      "effectiveScalePercent": 100,
+      "page": "trends",
+      "viewport": {
+        "width": 1366,
+        "height": 768
+      },
+      "horizontalOverflow": 0
+    },
+    {
+      "theme": "dark",
+      "effectiveScalePercent": 100,
+      "page": "settings",
+      "viewport": {
+        "width": 1366,
+        "height": 768
+      },
+      "horizontalOverflow": 0
+    },
+    {
+      "theme": "dark",
+      "effectiveScalePercent": 125,
+      "page": "today",
+      "viewport": {
+        "width": 1092,
+        "height": 614
+      },
+      "horizontalOverflow": 0
+    },
+    {
+      "theme": "dark",
+      "effectiveScalePercent": 125,
+      "page": "monthly",
+      "viewport": {
+        "width": 1092,
+        "height": 614
+      },
+      "horizontalOverflow": 0
+    },
+    {
+      "theme": "dark",
+      "effectiveScalePercent": 125,
+      "page": "reports",
+      "viewport": {
+        "width": 1092,
+        "height": 614
+      },
+      "horizontalOverflow": 0
+    },
+    {
+      "theme": "dark",
+      "effectiveScalePercent": 125,
+      "page": "review",
+      "viewport": {
+        "width": 1092,
+        "height": 614
+      },
+      "horizontalOverflow": 0
+    },
+    {
+      "theme": "dark",
+      "effectiveScalePercent": 125,
+      "page": "exports",
+      "viewport": {
+        "width": 1092,
+        "height": 614
+      },
+      "horizontalOverflow": 0
+    },
+    {
+      "theme": "dark",
+      "effectiveScalePercent": 125,
+      "page": "folders",
+      "viewport": {
+        "width": 1092,
+        "height": 614
+      },
+      "horizontalOverflow": 0
+    },
+    {
+      "theme": "dark",
+      "effectiveScalePercent": 125,
+      "page": "trends",
+      "viewport": {
+        "width": 1092,
+        "height": 614
+      },
+      "horizontalOverflow": 0
+    },
+    {
+      "theme": "dark",
+      "effectiveScalePercent": 125,
+      "page": "settings",
+      "viewport": {
+        "width": 1092,
+        "height": 614
+      },
+      "horizontalOverflow": 0
+    },
+    {
+      "theme": "dark",
+      "effectiveScalePercent": 150,
+      "page": "today",
+      "viewport": {
+        "width": 910,
+        "height": 512
+      },
+      "horizontalOverflow": 0
+    },
+    {
+      "theme": "dark",
+      "effectiveScalePercent": 150,
+      "page": "monthly",
+      "viewport": {
+        "width": 910,
+        "height": 512
+      },
+      "horizontalOverflow": 0
+    },
+    {
+      "theme": "dark",
+      "effectiveScalePercent": 150,
+      "page": "reports",
+      "viewport": {
+        "width": 910,
+        "height": 512
+      },
+      "horizontalOverflow": 0
+    },
+    {
+      "theme": "dark",
+      "effectiveScalePercent": 150,
+      "page": "review",
+      "viewport": {
+        "width": 910,
+        "height": 512
+      },
+      "horizontalOverflow": 0
+    },
+    {
+      "theme": "dark",
+      "effectiveScalePercent": 150,
+      "page": "exports",
+      "viewport": {
+        "width": 910,
+        "height": 512
+      },
+      "horizontalOverflow": 0
+    },
+    {
+      "theme": "dark",
+      "effectiveScalePercent": 150,
+      "page": "folders",
+      "viewport": {
+        "width": 910,
+        "height": 512
+      },
+      "horizontalOverflow": 0
+    },
+    {
+      "theme": "dark",
+      "effectiveScalePercent": 150,
+      "page": "trends",
+      "viewport": {
+        "width": 910,
+        "height": 512
+      },
+      "horizontalOverflow": 0
+    },
+    {
+      "theme": "dark",
+      "effectiveScalePercent": 150,
+      "page": "settings",
+      "viewport": {
+        "width": 910,
+        "height": 512
+      },
+      "horizontalOverflow": 0
+    },
+    {
+      "theme": "dark",
+      "effectiveScalePercent": 200,
+      "page": "today",
+      "viewport": {
+        "width": 683,
+        "height": 384
+      },
+      "horizontalOverflow": 0
+    },
+    {
+      "theme": "dark",
+      "effectiveScalePercent": 200,
+      "page": "monthly",
+      "viewport": {
+        "width": 683,
+        "height": 384
+      },
+      "horizontalOverflow": 0
+    },
+    {
+      "theme": "dark",
+      "effectiveScalePercent": 200,
+      "page": "reports",
+      "viewport": {
+        "width": 683,
+        "height": 384
+      },
+      "horizontalOverflow": 0
+    },
+    {
+      "theme": "dark",
+      "effectiveScalePercent": 200,
+      "page": "review",
+      "viewport": {
+        "width": 683,
+        "height": 384
+      },
+      "horizontalOverflow": 0
+    },
+    {
+      "theme": "dark",
+      "effectiveScalePercent": 200,
+      "page": "exports",
+      "viewport": {
+        "width": 683,
+        "height": 384
+      },
+      "horizontalOverflow": 0
+    },
+    {
+      "theme": "dark",
+      "effectiveScalePercent": 200,
+      "page": "folders",
+      "viewport": {
+        "width": 683,
+        "height": 384
+      },
+      "horizontalOverflow": 0
+    },
+    {
+      "theme": "dark",
+      "effectiveScalePercent": 200,
+      "page": "trends",
+      "viewport": {
+        "width": 683,
+        "height": 384
+      },
+      "horizontalOverflow": 0
+    },
+    {
+      "theme": "dark",
+      "effectiveScalePercent": 200,
+      "page": "settings",
+      "viewport": {
+        "width": 683,
+        "height": 384
+      },
+      "horizontalOverflow": 0
+    }
+  ],
+  "results": [
+    {
+      "name": "light / 100% effective viewport / today",
+      "result": "PASS"
+    },
+    {
+      "name": "light / 100% effective viewport / monthly",
+      "result": "PASS"
+    },
+    {
+      "name": "light / 100% effective viewport / reports",
+      "result": "PASS"
+    },
+    {
+      "name": "light / 100% effective viewport / review",
+      "result": "PASS"
+    },
+    {
+      "name": "light / 100% effective viewport / exports",
+      "result": "PASS"
+    },
+    {
+      "name": "light / 100% effective viewport / folders",
+      "result": "PASS"
+    },
+    {
+      "name": "light / 100% effective viewport / trends",
+      "result": "PASS"
+    },
+    {
+      "name": "light / 100% effective viewport / settings",
+      "result": "PASS"
+    },
+    {
+      "name": "light / 125% effective viewport / today",
+      "result": "PASS"
+    },
+    {
+      "name": "light / 125% effective viewport / monthly",
+      "result": "PASS"
+    },
+    {
+      "name": "light / 125% effective viewport / reports",
+      "result": "PASS"
+    },
+    {
+      "name": "light / 125% effective viewport / review",
+      "result": "PASS"
+    },
+    {
+      "name": "light / 125% effective viewport / exports",
+      "result": "PASS"
+    },
+    {
+      "name": "light / 125% effective viewport / folders",
+      "result": "PASS"
+    },
+    {
+      "name": "light / 125% effective viewport / trends",
+      "result": "PASS"
+    },
+    {
+      "name": "light / 125% effective viewport / settings",
+      "result": "PASS"
+    },
+    {
+      "name": "light / 150% effective viewport / today",
+      "result": "PASS"
+    },
+    {
+      "name": "light / 150% effective viewport / monthly",
+      "result": "PASS"
+    },
+    {
+      "name": "light / 150% effective viewport / reports",
+      "result": "PASS"
+    },
+    {
+      "name": "light / 150% effective viewport / review",
+      "result": "PASS"
+    },
+    {
+      "name": "light / 150% effective viewport / exports",
+      "result": "PASS"
+    },
+    {
+      "name": "light / 150% effective viewport / folders",
+      "result": "PASS"
+    },
+    {
+      "name": "light / 150% effective viewport / trends",
+      "result": "PASS"
+    },
+    {
+      "name": "light / 150% effective viewport / settings",
+      "result": "PASS"
+    },
+    {
+      "name": "light / 200% effective viewport / today",
+      "result": "PASS"
+    },
+    {
+      "name": "light / 200% effective viewport / monthly",
+      "result": "PASS"
+    },
+    {
+      "name": "light / 200% effective viewport / reports",
+      "result": "PASS"
+    },
+    {
+      "name": "light / 200% effective viewport / review",
+      "result": "PASS"
+    },
+    {
+      "name": "light / 200% effective viewport / exports",
+      "result": "PASS"
+    },
+    {
+      "name": "light / 200% effective viewport / folders",
+      "result": "PASS"
+    },
+    {
+      "name": "light / 200% effective viewport / trends",
+      "result": "PASS"
+    },
+    {
+      "name": "light / 200% effective viewport / settings",
+      "result": "PASS"
+    },
+    {
+      "name": "dark / 100% effective viewport / today",
+      "result": "PASS"
+    },
+    {
+      "name": "dark / 100% effective viewport / monthly",
+      "result": "PASS"
+    },
+    {
+      "name": "dark / 100% effective viewport / reports",
+      "result": "PASS"
+    },
+    {
+      "name": "dark / 100% effective viewport / review",
+      "result": "PASS"
+    },
+    {
+      "name": "dark / 100% effective viewport / exports",
+      "result": "PASS"
+    },
+    {
+      "name": "dark / 100% effective viewport / folders",
+      "result": "PASS"
+    },
+    {
+      "name": "dark / 100% effective viewport / trends",
+      "result": "PASS"
+    },
+    {
+      "name": "dark / 100% effective viewport / settings",
+      "result": "PASS"
+    },
+    {
+      "name": "dark / 125% effective viewport / today",
+      "result": "PASS"
+    },
+    {
+      "name": "dark / 125% effective viewport / monthly",
+      "result": "PASS"
+    },
+    {
+      "name": "dark / 125% effective viewport / reports",
+      "result": "PASS"
+    },
+    {
+      "name": "dark / 125% effective viewport / review",
+      "result": "PASS"
+    },
+    {
+      "name": "dark / 125% effective viewport / exports",
+      "result": "PASS"
+    },
+    {
+      "name": "dark / 125% effective viewport / folders",
+      "result": "PASS"
+    },
+    {
+      "name": "dark / 125% effective viewport / trends",
+      "result": "PASS"
+    },
+    {
+      "name": "dark / 125% effective viewport / settings",
+      "result": "PASS"
+    },
+    {
+      "name": "dark / 150% effective viewport / today",
+      "result": "PASS"
+    },
+    {
+      "name": "dark / 150% effective viewport / monthly",
+      "result": "PASS"
+    },
+    {
+      "name": "dark / 150% effective viewport / reports",
+      "result": "PASS"
+    },
+    {
+      "name": "dark / 150% effective viewport / review",
+      "result": "PASS"
+    },
+    {
+      "name": "dark / 150% effective viewport / exports",
+      "result": "PASS"
+    },
+    {
+      "name": "dark / 150% effective viewport / folders",
+      "result": "PASS"
+    },
+    {
+      "name": "dark / 150% effective viewport / trends",
+      "result": "PASS"
+    },
+    {
+      "name": "dark / 150% effective viewport / settings",
+      "result": "PASS"
+    },
+    {
+      "name": "dark / 200% effective viewport / today",
+      "result": "PASS"
+    },
+    {
+      "name": "dark / 200% effective viewport / monthly",
+      "result": "PASS"
+    },
+    {
+      "name": "dark / 200% effective viewport / reports",
+      "result": "PASS"
+    },
+    {
+      "name": "dark / 200% effective viewport / review",
+      "result": "PASS"
+    },
+    {
+      "name": "dark / 200% effective viewport / exports",
+      "result": "PASS"
+    },
+    {
+      "name": "dark / 200% effective viewport / folders",
+      "result": "PASS"
+    },
+    {
+      "name": "dark / 200% effective viewport / trends",
+      "result": "PASS"
+    },
+    {
+      "name": "dark / 200% effective viewport / settings",
+      "result": "PASS"
+    },
+    {
+      "name": "Keyboard navigation, Settings semantics and stable editable fields",
+      "result": "PASS"
+    },
+    {
+      "name": "Review retains one decision scope and keyboard access to PDF evidence",
+      "result": "PASS"
+    },
+    {
+      "name": "Offline assets and original source bytes stay intact",
+      "result": "PASS"
+    }
+  ],
+  "scope": "Actual offline host, PowerShell adapter and generated PDFs. CSS viewports model the effective space of a 1366x768 display at 100/125/150/200%; this is not native Windows display-DPI, screen-reader or hospital workstation validation. Tests assert reachability, semantics, input focus, decision scope, local assets and unchanged scanner-source bytes."
+}

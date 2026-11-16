@@ -1,6 +1,6 @@
 # Engineering interface previews
 
-These are actual Linux Chromium captures of the local host with generated demonstration PDFs, not hospital photographs or design mockups. They show the unreleased engineering interface in both themes. Some captures retain real progress notifications. Linux uses its browser PDF fallback; native Windows viewer captures and final-source outcomes are provided by the pull request’s Windows validation artifacts. These images do not establish actual Windows DPI or workplace approval.
+These are actual Linux Chromium captures of the local host with generated demonstration PDFs, not hospital photographs or design mockups. They show the unreleased imaging-console interface in both themes, with brand-neutral CT gantry artwork embedded as local SVG. Some captures retain real progress notifications. Linux uses its browser PDF fallback; native Windows viewer captures and final-source outcomes are provided by the pull request’s Windows validation artifacts. These images do not establish actual Windows DPI or workplace approval.
 
 | Workspace | Light | Dark |
 | --- | --- | --- |

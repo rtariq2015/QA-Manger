@@ -1,0 +1,38 @@
+{
+  "version": "5.6.0",
+  "syntheticOnly": true,
+  "browserChannel": "chromium",
+  "records": 1367,
+  "tests": 6,
+  "assertions": 27847,
+  "failed": 0,
+  "externalAssetRequests": 0,
+  "javascriptErrors": [],
+  "results": [
+    {
+      "name": "The full library separates unread filing work from actual review exceptions",
+      "result": "PASS"
+    },
+    {
+      "name": "An active Refresh reports real progress, merges duplicate requests and permits offline browsing after reload",
+      "result": "PASS"
+    },
+    {
+      "name": "Cancel stops the real import cooperatively without continuing into library generation or losing evidence",
+      "result": "PASS"
+    },
+    {
+      "name": "A subsequent unchanged Refresh finishes after reload and reuses cached readable PDFs",
+      "result": "PASS"
+    },
+    {
+      "name": "Reading one unsupported synthetic PDF creates one genuine review exception",
+      "result": "PASS"
+    },
+    {
+      "name": "Reason groups support atomic selected decisions, stale protection and durable batch Undo",
+      "result": "PASS"
+    }
+  ],
+  "scope": "Real local host, worker, archive loop and browser. A disposable copied Set-QaProgress checkpoint supplies a deterministic barrier; the real cooperative cancellation and production persistence run unchanged."
+}
