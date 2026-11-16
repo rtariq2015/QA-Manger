@@ -1,0 +1,37 @@
+name: Deliver exact checked 5.7.1 downloads
+on:
+  push:
+    branches: [release/v5.7.1-publication]
+    paths:
+      - 'Release/Delivery-v5.7.1.json'
+      - 'scripts/deliver_verified_571.py'
+      - '.github/workflows/deliver-verified-571.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+  actions: read
+concurrency:
+  group: ctqa-release
+  cancel-in-progress: false
+jobs:
+  deliver:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verify exact checked files and upload existing release draft
+        run: python scripts/deliver_verified_571.py --artifact-dir .delivery/artifacts --output-dir .delivery/packages --publish
+      - name: Retain delivery files
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: checked-571-delivery
+          path: .delivery/packages/
+          if-no-files-found: ignore
