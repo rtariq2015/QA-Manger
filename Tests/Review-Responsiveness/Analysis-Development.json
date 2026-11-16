@@ -1,0 +1,124 @@
+{
+  "Product": "CT QA Manager Pro",
+  "Feature": "Versioned content analysis cache",
+  "TimestampUtc": "2026-11-16T18:10:24.0794747Z",
+  "Runtime": "7.4.13",
+  "Platform": "Unix 6.18.57.0",
+  "WindowsPowerShell51ActuallyRun": false,
+  "Tests": 22,
+  "Assertions": 184,
+  "Failed": 0,
+  "Results": [
+    {
+      "Name": "A real verified PDF is classified once and reused without changing review state",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "A disposable one-PDF worker reads directly without a nested process while retaining verified cache and controlled timings",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "Direct worker reads independently reload archive membership and verify bytes even when supplied records and old metadata look valid",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "Legacy successful cache receives one bounded classifier upgrade",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "Legacy failed reads stay cached until manual force or file change",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "Selected analysis never reads newer unselected reports or invalid identities",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "Stored provenance invalidates changed bytes, lengths, timestamps, and classifier contents",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "Reader provenance mismatches and post-read mutation cannot create successful classification",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "Cancellation neither writes partial classification nor replaces a prior cache",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "Unknown image and truncated reads are cached once without auto approval",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "Equal-content destinations retain separate valid metadata without cache ping-pong",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "Cache stores bounded evidence fields without the full PDF text or private reader error",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "Linked analysis directories cannot supply trusted document classifications",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "A metadata-only work plan distinguishes unread files, measurement upgrades, format upgrades and cached errors",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "An older unknown Flash template is refreshed once and then reused with the same protected PDF provenance",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "Explicit measurement backlog upgrades an older successful cache once without reprocessing current or failed readings",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "Equal-content destinations retain independent one-time format support revisions",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "New measurement capabilities selectively refresh Daily and slice evidence once while preserving warm HU and reference caches",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "Table position revision4 upgrades only older table evidence once and keeps existing measurements and references warm",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "Monthly revision3 upgrades only newly supported alignment tables and keeps current Daily slice HU and reference evidence warm",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "Equal-content destinations retain independent one-time measurement capability revisions",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "Trusted supplied records avoid dashboard reconstruction without weakening exact selection or provenance",
+      "Result": "PASS",
+      "Details": ""
+    }
+  ],
+  "Notes": "Synthetic PDFs and controlled reader responses only. The first scenario invokes the real isolated verified PDF reader."
+}

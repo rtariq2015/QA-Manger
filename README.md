@@ -1,8 +1,10 @@
-# CT QA Manager Pro 5.7.0
+# CT QA Manager Pro 5.7.1
 
 A portable, offline browser workspace for scanner QA reports. Extract the complete program folder and run **Start CT QA Manager.cmd**. The Windows x64 helper and PDF readers are included; the work computer needs no separate runtime installation or administrator launch. Its application policy must permit the included program and local browser connection.
 
-> **Version 5.7.0:** a refreshed medical imaging-console design with bundled CT artwork, faster large-library browsing, improved readability and keyboard access, and stronger archive/update/restore validation. See the [source audit](docs/ENGINEERING-AUDIT.md), [release validation](docs/TESTING.md) and [developer guide](docs/DEVELOPMENT.md).
+> **5.7.1 release candidate:** responsive single-file filing and fewer redundant overview reads; see [review workflow and validation](docs/REVIEW-RESPONSIVENESS.md). Published downloads remain 5.7.0 until the candidate passes native Windows validation and publication.
+
+> **Version 5.7.0 baseline:** a refreshed medical imaging-console design with bundled CT artwork, faster large-library browsing, improved readability and keyboard access, and stronger archive/update/restore validation. See the [source audit](docs/ENGINEERING-AUDIT.md), [release validation](docs/TESTING.md) and [developer guide](docs/DEVELOPMENT.md).
 
 [Versioned downloads and visual previews](https://github.com/rtariq2015/QA-Manger/releases/latest) · [Quick guide](User%20Guide.html) · [Validation details](docs/TESTING.md)
 
@@ -16,7 +18,7 @@ The eight workspaces are **Today, Monthly, Reports, Review, Exports, Folders, Tr
 
 **Monthly** separates three things: filed Monthly PDFs received, required test sections found in recognized cached PDF contents, and existing reviewed evidence. Choose a scanner and month, then configure the department checklist and due day directly. Checklist effective dates preserve historical versions, and unsaved setup edits survive background updates. Source links open the relevant report. Custom unmatched checklist labels, unread files and printed warnings remain visible. The view reads cached metadata and does not create clinical sign-off or start hidden PDF analysis.
 
-**Review** has one visible decision area on the left and a large continuously scrolling PDF. Its heading identifies the Current PDF or Selected reports. Checking a report also previews it; opening an unselected report clears the batch with a notice. Approve explicitly names Daily, Monthly or Other, and an uncertain target requires a choice. Select up to **50** reports, inspect the type breakdown, keep individual suggestions or choose one explicit type. Stale or changed members reject the batch before saving. **Undo** and durable **Undo batch** remain available. Optional Report details holds cached observations and the Read contents button.
+**Review** has one visible decision area on the left and a large continuously scrolling PDF. In the current development branch, distinct single-file decisions can queue while you read the next PDF. Sending, Queued and Saving indicators describe work still in progress; success and Undo follow the saved result and refreshed library. Failed or cancelled files remain available for review. This queue improvement is not included in the published 5.7.0 downloads. Its heading identifies the Current PDF or Selected reports. Checking a report also previews it; opening an unselected report clears the batch with a notice. Approve explicitly names Daily, Monthly or Other, and an uncertain target requires a choice. Select up to **50** reports, inspect the type breakdown, keep individual suggestions or choose one explicit type. Stale or changed members reject the batch before saving. **Undo** and durable **Undo batch** remain available. Optional Report details holds cached observations and the Read contents button.
 
 Routine filing remains automatic for supported complete layouts: Basic IEC uses inferred Daily, Extended IEC uses inferred Monthly, and individual/combined IEC reports retain an available Daily/Monthly grouping. Saved decisions, explicit titles, scanner overrides, Undo and conflicts retain priority. These are document labels, separate from reviewed clinical evidence. Unsupported or conflicting PDFs can still need occasional review.
 

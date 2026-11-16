@@ -1,5 +1,11 @@
 # Changes
 
+## 5.7.1 — responsive single-file review
+
+- Let distinct single-file filing decisions queue while staff read the next PDF. Show Sending, Queued and Saving states until a durable result and fresh snapshot confirm completion; preserve the PDF currently being viewed.
+- Prevent rapid duplicate submissions, same-file overlaps and queue overflow. Keep Undo, grouped decisions and other mutations blocked while saves are unconfirmed; handle failed/cancelled jobs and jobs observed after reload conservatively.
+- Reuse each snapshot's validated analysis rows for analysis counts and use the shared scheduling predicate for Daily receipt. Remove the second whole-library analysis-cache pass and the unused current-day findings pass without changing provenance checks, filing stamps, clinical evidence or saved data formats.
+
 ## 5.7.0 — workstation engineering upgrade
 
 - Add a medical imaging-console visual system across all eight workspaces: pearl/slate surfaces, navy navigation, refined controls and bundled brand-neutral CT gantry/bed illustrations. Inline vector artwork keeps the existing offline update path and adds no image downloads or dependencies.
