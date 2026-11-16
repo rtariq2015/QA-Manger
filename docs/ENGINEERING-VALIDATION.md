@@ -50,14 +50,19 @@ The scheduler workload passed **18 check groups**, including real-reader foregro
 
 ## Component execution and fresh native checks
 
-The implementation's development checks actually executed Linux PowerShell 7 component suites, an actual local host/Chromium accessibility workload, and targeted JavaScript checks. Their scope differs from Windows PowerShell 5.1, native PDF rendering and WPF. A shared-tree initial diagnostic loop is not an immutable baseline or final-source whole-suite result.
+A fresh complete applicable Linux PowerShell 7.4.13 run passed **17 suites / 390 scenarios / 3,356 assertions**, with zero failed scenarios or processes. All application PowerShell and suite-file hashes stayed unchanged throughout the run; the [summary and 17 raw reports](../Tests/Engineering/PowerShell-Development/Summary.json) pin those bytes. The completion static checker passed 972 checks; later evidence-only additions can increase that file-count-dependent total. The bundled production Windows Python reader, DPAPI and WPF were not executed locally.
+
+The development checks also executed an actual local host/Chromium accessibility workload and targeted JavaScript checks. Their scope differs from Windows PowerShell 5.1, native PDF rendering and WPF. A shared-tree initial diagnostic loop is not an immutable baseline or final-source whole-suite result.
 
 The pull request's **Windows validation and visual preview** check builds the self-contained Windows host and pinned reader, then runs the existing native suites and browser workloads plus new accessibility/large-library checks. Fresh native outcome totals and artifact links belong in the PR validation record once the run completes. A queued, skipped, cancelled or failed check is not a passing test. Independent suites now retain their own outcomes even if another workload fails.
 
 Hosted Windows checks do not establish actual hospital IT approval, live scanner connectivity, workstation CPU/storage throughput, arbitrary Windows DPI configurations or screen-reader usability. Use [Windows-Smoke.md](../Tests/Windows-Smoke.md) for authorized workstation checks. No test changes execution policy or endpoint security.
 
+The complete main browser workload exposed one small-screen regression: connection and foreground progress banners could push the filing buttons below the visible rail. A focused actual-job reproduction now verifies both buttons fit at 1024×768 with both banners present, while retaining progress and cancellation details. The existing whole-workflow visibility assertions remain unchanged. [Focused geometry](../Tests/Engineering/Review-Progress-Layout-Development.json).
+
 ## Compatibility, limitations and rollback
 
+- Classic retains its existing minimum windows (760×520 DIPs; Review 860×580 DIPs). A 1366×768 physical screen at 200% can have less logical space than those minima. Browser scaling tests do not establish Classic high-DPI fit; targeted native Classic scaling work remains a limitation.
 - The release version remains 5.6.0; this branch is unreleased. No installed runtime, module, cloud service, telemetry or external UI asset is added. Classic remains available, with corrected version labels.
 - Saved schemas and public action names remain compatible. Filing confirmation is separate from clinical evidence. No parser values, units, contexts, printed limits, PDF caps, batch limits, cancellation controls or timeouts are relaxed.
 - Unsupported/conflicting PDFs still need filing review; automatic recognition cannot honestly cover every possible document. Initial confirmed Import retains its all-or-none stale-preview contract. Normal Update retains per-scanner/item failure isolation.

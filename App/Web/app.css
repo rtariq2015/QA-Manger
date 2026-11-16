@@ -227,3 +227,13 @@ body[data-page="review"] .review-document{padding-bottom:0}.preview-header-actio
 /* The 960-unit evidence chart keeps readable axes when the effective window narrows. */
 .trend-chart { overflow-x: auto; overscroll-behavior-x: contain; }
 .trend-chart > svg { min-width: 960px; min-height: 410px; }
+
+/* Keep Review progress beside its summary on ordinary workstation widths. */
+@media (min-width: 761px) and (max-width: 1200px) {
+  body[data-page="review"] .workspace > .job-toast .job-progress {
+    flex: 0 1 50%;
+    max-width: 50%;
+    margin-top: 0;
+    margin-left: auto;
+  }
+}
