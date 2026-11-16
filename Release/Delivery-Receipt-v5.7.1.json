@@ -1,0 +1,43 @@
+{
+  "version": "5.7.1",
+  "publishedAt": "2026-11-16T19:58:01Z",
+  "releaseUrl": "https://github.com/rtariq2015/QA-Manger/releases/tag/v5.7.1",
+  "deliveryRun": 43944602338,
+  "deliveryResult": "success",
+  "deliverySourceCommit": "dc7ed0209c7d5ed4e2580f1033e9ab66acd7704e",
+  "runtimeSourceCommit": "3d46b34f43336349d793edc7e9ee9087a6061f0d",
+  "scope": "Delivery only: byte-exact reconstruction and upload of already-checked packages. Application tests were not rerun. Original scoped Windows validation limitations remain documented in Validation-v5.7.1.json. No merge or workplace deployment by this delivery.",
+  "allUploadedSizesAndSHA256MatchCheckedLocalFiles": true,
+  "assets": [
+    {
+      "name": "CT_QA_Manager_Pro_v5.7.1_Portable.zip",
+      "size": 59610964,
+      "digest": "sha256:90d6e7f5db3f222a7fa6379b8c6827262da0854886a6d971a1456c3e7c82c1c8",
+      "browser_download_url": "https://github.com/rtariq2015/QA-Manger/releases/download/v5.7.1/CT_QA_Manager_Pro_v5.7.1_Portable.zip"
+    },
+    {
+      "name": "CT_QA_Manager_Pro_v5.7.1_Preview.html",
+      "size": 5407896,
+      "digest": "sha256:e7986237f2831dd5bf62411c86929c08999e926ab00af2ea8944e937a4a1d5f7",
+      "browser_download_url": "https://github.com/rtariq2015/QA-Manger/releases/download/v5.7.1/CT_QA_Manager_Pro_v5.7.1_Preview.html"
+    },
+    {
+      "name": "CT_QA_Manager_Pro_v5.7.1_Update.zip",
+      "size": 59610964,
+      "digest": "sha256:c952a79ce9c77dfcff459ed074e1d2fbc26386bb12b02c3b4f79b9664145c3c9",
+      "browser_download_url": "https://github.com/rtariq2015/QA-Manger/releases/download/v5.7.1/CT_QA_Manager_Pro_v5.7.1_Update.zip"
+    },
+    {
+      "name": "CT_QA_Manager_Pro_v5.7.1_Upgrade.zip",
+      "size": 59612319,
+      "digest": "sha256:c256488f1babe638b282c6637cfafbd498f244c661e0856ea0cb060508001af1",
+      "browser_download_url": "https://github.com/rtariq2015/QA-Manger/releases/download/v5.7.1/CT_QA_Manager_Pro_v5.7.1_Upgrade.zip"
+    },
+    {
+      "name": "SHA256SUMS.txt",
+      "size": 413,
+      "digest": "sha256:d8e8b5bddbc5d6a20e16dc8728b37f39043f304f77971b7497d238bcc3d1376d",
+      "browser_download_url": "https://github.com/rtariq2015/QA-Manger/releases/download/v5.7.1/SHA256SUMS.txt"
+    }
+  ]
+}
