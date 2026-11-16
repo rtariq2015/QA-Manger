@@ -101,6 +101,40 @@ Scenario 'Only selected report IDs resolve to verified local PDFs' {
     $caught=$false;try{Invoke-QaWebRequest $f.AppRoot ([pscustomobject]@{action='Pdf';id='../Config/Settings.json'})|Out-Null}catch{$caught=$true};Check $caught 'Client paths cannot be used as record identities'
     $caught=$false;try{Invoke-QaWebRequest $f.AppRoot ([pscustomobject]@{action='RunPowerShell';command='Get-Process'})|Out-Null}catch{$caught=$true};Check $caught 'Arbitrary shell operations are not allowed'
 }
+Scenario 'Opening one verified PDF avoids dashboard work and rejects changed bytes or unsafe state' {
+    $f=New-WebFixture 'PdfLookupGuards';$module=Get-Module WebService
+    $sourceHash=(Get-FileHash $f.Source).Hash
+    & $module {function script:Get-QaDashboard {throw 'A selected PDF lookup must not rebuild the dashboard.'}}
+    try{
+        $response=Invoke-QaWebRequest $f.AppRoot ([pscustomobject]@{action='Pdf';id=$f.Record.Id})
+        Check ($response.path -ceq $f.Record.DestinationPath -and $response.filename -ceq $f.Record.OriginalFileName) 'Fresh core lookup returns the selected original filename and verified PDF without a dashboard call'
+        $bytes=[IO.File]::ReadAllBytes($f.Record.DestinationPath);$time=(Get-Item $f.Record.DestinationPath).LastWriteTimeUtc
+        try{
+            $changed=[byte[]]$bytes.Clone();$changed[100]=$changed[100] -bxor 1;[IO.File]::WriteAllBytes($f.Record.DestinationPath,$changed);(Get-Item $f.Record.DestinationPath).LastWriteTimeUtc=$time
+            $caught=$false;try{Invoke-QaWebRequest $f.AppRoot ([pscustomobject]@{action='Pdf';id=$f.Record.Id})|Out-Null}catch{$caught=$_.Exception.Message -like '*missing or has changed*'}
+            Check $caught 'An altered PDF is refused even when its byte count and write timestamp match the index'
+        }finally{[IO.File]::WriteAllBytes($f.Record.DestinationPath,$bytes);(Get-Item $f.Record.DestinationPath).LastWriteTimeUtc=$time}
+        $state=[IO.File]::ReadAllText($f.StatePath)|ConvertFrom-Json;$other=$state.Records[0]|Select-Object *;$other.Id=('B'*64);$other.SourcePath=[string]$other.SourcePath+'.other';$other.RelativePath='../outside.pdf';$state.Records=@($state.Records)+@($other)
+        [IO.File]::WriteAllText($f.StatePath,($state|ConvertTo-Json -Depth 20),(New-Object Text.UTF8Encoding $true));$unsafeHash=(Get-FileHash $f.StatePath).Hash
+        $caught=$false;try{Invoke-QaWebRequest $f.AppRoot ([pscustomobject]@{action='Pdf';id=$f.Record.Id})|Out-Null}catch{$caught=$_.Exception.Message -match 'outside Reports|unsafe relative path'}
+        Check $caught 'Fresh core validation rejects an unsafe unrelated record before serving the selected PDF'
+        Check ((Get-FileHash $f.StatePath).Hash -ceq $unsafeHash) 'A malformed state is preserved for diagnosis'
+        Check ((Get-FileHash $f.Source).Hash -ceq $sourceHash -and (Get-FileHash $f.Record.DestinationPath).Hash -ceq $f.Record.Hash) 'Source and archived PDF bytes remain unchanged'
+    }finally{& $module {Remove-Item Function:Get-QaDashboard -ErrorAction SilentlyContinue}}
+}
+if([Environment]::OSVersion.Platform -eq [PlatformID]::Win32NT){
+    Scenario 'Native PDF preview resolves a fresh verified record without rebuilding dashboard projections' {
+        $f=New-WebFixture 'PreviewLookup';Import-Module (Join-Path $ProductRoot 'App/PdfPreview.psm1') -Force -DisableNameChecking -WarningAction SilentlyContinue;$module=Get-Module PdfPreview
+        $archiveModule=Get-Module Archive;$originalDashboard=& $archiveModule {(Get-Command Get-QaDashboard).ScriptBlock}
+        & $archiveModule {function script:Get-QaDashboard {throw 'A rendered page must not rebuild the dashboard.'}}
+        try{
+            $before=(Get-FileHash $f.StatePath).Hash;$page=Get-QaPdfPreviewPage -Config $f.Config -RecordId $f.Record.Id -PageNumber 0
+            Check ($page.RecordId -ceq $f.Record.Id -and $page.Hash -ceq $f.Record.Hash -and $page.PageNumber -eq 0 -and $page.PageCount -ge 1) 'Windows renders the requested exact indexed PDF and source page'
+            $png=[Convert]::FromBase64String($page.PngBase64);Check ($png.Length -gt 8 -and $png[0] -eq 137 -and $png[1] -eq 80) 'Actual Windows renderer returns a PNG page'
+            Check ((Get-FileHash $f.StatePath).Hash -ceq $before -and (Get-FileHash $f.Source).Hash -ceq $f.SourceHash) 'Page rendering preserves archive metadata and scanner bytes'
+        }finally{& $archiveModule {param($Original) Set-Item Function:script:Get-QaDashboard $Original} $originalDashboard}
+    }
+}
 Scenario 'The JSON worker supports stdin and stdout without logging request content' {
     $f=New-WebFixture 'Worker';$info=New-Object Diagnostics.ProcessStartInfo;$info.FileName=(Get-Process -Id $PID).Path;$info.Arguments='-NoProfile -File "'+(Join-Path $ProductRoot 'App/WebWorker.ps1')+'" -AppRoot "'+$f.AppRoot+'" -InputPath stdin -OutputPath stdout';$info.UseShellExecute=$false;$info.RedirectStandardInput=$true;$info.RedirectStandardOutput=$true;$info.RedirectStandardError=$true;$info.CreateNoWindow=$true
     $process=[Diagnostics.Process]::Start($info)

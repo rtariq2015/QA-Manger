@@ -1,0 +1,62 @@
+{
+  "viewport": {
+    "width": 1024,
+    "height": 768
+  },
+  "geometry": [
+    {
+      "id": "connection-banner",
+      "hidden": false,
+      "x": 100,
+      "y": 124.4375,
+      "width": 900,
+      "height": 49.4375,
+      "bottom": 173.875
+    },
+    {
+      "id": "job-toast",
+      "hidden": false,
+      "x": 100,
+      "y": 189.875,
+      "width": 900,
+      "height": 85.984375,
+      "bottom": 275.859375
+    },
+    {
+      "id": "job-progress",
+      "hidden": false,
+      "x": 550,
+      "y": 201.875,
+      "width": 435,
+      "height": 61.984375,
+      "bottom": 263.859375
+    },
+    {
+      "id": "review-control-rail",
+      "hidden": false,
+      "x": 100,
+      "y": 341.640625,
+      "width": 240,
+      "height": 384.359375,
+      "bottom": 726
+    },
+    {
+      "id": "approve-button",
+      "hidden": false,
+      "x": 114,
+      "y": 650.15625,
+      "width": 102.5,
+      "height": 56.375,
+      "bottom": 706.53125
+    },
+    {
+      "id": "disapprove-button",
+      "hidden": false,
+      "x": 223.5,
+      "y": 650.15625,
+      "width": 102.5,
+      "height": 56.375,
+      "bottom": 706.53125
+    }
+  ]
+}

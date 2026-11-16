@@ -179,6 +179,70 @@ if([Environment]::OSVersion.Platform -eq [PlatformID]::Win32NT){
     }
 }
 
+Scenario 'A late update failure restores prior files and removes newly introduced root files' {
+    $lateSource=Join-Path $testRoot 'Late Failure Package';Copy-Item -LiteralPath $source -Destination $lateSource -Recurse
+    foreach($name in @('Update CT QA Manager.cmd','Export CT QA Diagnostics.cmd')){[IO.File]::WriteAllText((Join-Path $lateSource $name),'Synthetic new launcher bytes only')}
+    Save-Manifest $lateSource
+    $lateTarget=Join-Path $testRoot 'Late Failure Existing Program'
+    foreach($folder in @('App','Config','Data')){[void][IO.Directory]::CreateDirectory((Join-Path $lateTarget $folder))}
+    Copy-Item -LiteralPath (Join-Path $root 'Config/Settings.json') -Destination (Join-Path $lateTarget 'Config/Settings.json')
+    $sentinels=@('Start CT QA Manager.cmd','User Guide.html','App/PreviousProgram.txt','Config/Settings.local.json','Data/report-sentinel.txt')
+    foreach($name in $sentinels){$text=if($name -eq 'Config/Settings.local.json'){[IO.File]::ReadAllText((Join-Path $target $name))}else{'Synthetic prior bytes: '+$name};[IO.File]::WriteAllText((Join-Path $lateTarget $name),$text)}
+    $before=@{};foreach($name in $sentinels){$before[$name]=(Get-FileHash -LiteralPath (Join-Path $lateTarget $name)).Hash}
+    # Occupying the final metadata name forces a real commit failure after App,
+    # replacement launchers and newly introduced metadata have already moved.
+    [void][IO.Directory]::CreateDirectory((Join-Path $lateTarget 'Package-SHA256SUMS.txt'))
+    $priorPreference=$ErrorActionPreference
+    try{$ErrorActionPreference='Continue';& (Get-Process -Id $PID).Path -NoProfile -File (Join-Path $lateSource 'App/Upgrade.ps1') -SourceFolder $lateSource -TargetFolder $lateTarget > (Join-Path $testRoot 'late-failure.log') 2>&1}finally{$ErrorActionPreference=$priorPreference}
+    Check ($LASTEXITCODE -ne 0) 'Actual later publication error rejects the update'
+    foreach($name in $sentinels){Check ((Get-FileHash -LiteralPath (Join-Path $lateTarget $name)).Hash -eq $before[$name]) ('Prior bytes restored: '+$name)}
+    foreach($name in @('Update CT QA Manager.cmd','Export CT QA Diagnostics.cmd','Package.json')){Check (-not [IO.File]::Exists((Join-Path $lateTarget $name))) ('Introduced file removed on rollback: '+$name)}
+    Check ([IO.Directory]::Exists((Join-Path $lateTarget 'Package-SHA256SUMS.txt'))) 'Unrelated blocking directory retained'
+    Check (@(Get-ChildItem -LiteralPath $lateTarget -Directory -Filter '.update-*').Count -eq 0) 'Failed commit cleans its temporary stage'
+}
+Scenario 'Trailing separators cannot make the installed program its own update source' {
+    $before=(Get-FileHash -LiteralPath (Join-Path $target 'App/Upgrade.ps1')).Hash
+    $backups=@(Get-ChildItem -LiteralPath (Join-Path $target 'Backups') -Directory).Count
+    $priorPreference=$ErrorActionPreference
+    try{$ErrorActionPreference='Continue';& (Get-Process -Id $PID).Path -NoProfile -File (Join-Path $target 'App/Upgrade.ps1') -SourceFolder ($target+[IO.Path]::DirectorySeparatorChar) -TargetFolder $target > (Join-Path $testRoot 'same-target.log') 2>&1}finally{$ErrorActionPreference=$priorPreference}
+    Check ($LASTEXITCODE -ne 0) 'Self update alias rejected'
+    Check ((Get-FileHash -LiteralPath (Join-Path $target 'App/Upgrade.ps1')).Hash -eq $before) 'Installed bytes unchanged'
+    Check (@(Get-ChildItem -LiteralPath (Join-Path $target 'Backups') -Directory).Count -eq $backups) 'No self-copy backup created'
+}
+Scenario 'A destination inside the source App tree is rejected before recursive staging can begin' {
+    $nestedSource=Join-Path $testRoot 'Nested Target Package';Copy-Item -LiteralPath $source -Destination $nestedSource -Recurse
+    $nestedTarget=Join-Path $nestedSource 'App/Nested Existing Program'
+    foreach($folder in @('App','Config','Data')){[void][IO.Directory]::CreateDirectory((Join-Path $nestedTarget $folder))}
+    foreach($name in @('Start CT QA Manager.cmd','User Guide.html')){[IO.File]::WriteAllText((Join-Path $nestedTarget $name),'Synthetic old root bytes')}
+    [IO.File]::WriteAllText((Join-Path $nestedTarget 'App/PreviousProgram.txt'),'Synthetic previous App bytes')
+    [IO.File]::WriteAllText((Join-Path $nestedTarget 'Data/report-sentinel.txt'),'Synthetic saved report')
+    Copy-Item -LiteralPath (Join-Path $root 'Config/Settings.json') -Destination (Join-Path $nestedTarget 'Config/Settings.json')
+    Save-Manifest $nestedSource
+    $before=@{};foreach($file in Get-ChildItem -LiteralPath $nestedSource -Recurse -File){$before[$file.FullName]=(Get-FileHash -LiteralPath $file.FullName).Hash}
+    $priorPreference=$ErrorActionPreference
+    try{$ErrorActionPreference='Continue';& (Get-Process -Id $PID).Path -NoProfile -File (Join-Path $nestedSource 'App/Upgrade.ps1') -SourceFolder $nestedSource -TargetFolder $nestedTarget > (Join-Path $testRoot 'nested-target.log') 2>&1}finally{$ErrorActionPreference=$priorPreference}
+    Check ($LASTEXITCODE -ne 0) 'Destination inside copied source tree rejected'
+    Check ([IO.File]::ReadAllText((Join-Path $testRoot 'nested-target.log')) -like '*outside the new release App folder*') 'Narrow overlap validation rejects before staging, rather than a downstream copy failure'
+    $after=@(Get-ChildItem -LiteralPath $nestedSource -Recurse -File)
+    Check ($after.Count -eq $before.Count) 'No settings, staging or backup files created inside the source'
+    foreach($file in $after){Check ($before.ContainsKey($file.FullName) -and (Get-FileHash -LiteralPath $file.FullName).Hash -eq $before[$file.FullName]) 'Every source and existing-target byte preserved'}
+    Check (-not [IO.Directory]::Exists((Join-Path $nestedTarget 'Backups'))) 'Recursive backup/staging never begins'
+}
+Scenario 'An installed program reached through a link is rejected before any target mutation' {
+    $link=Join-Path $testRoot 'Linked Existing Program'
+    $kind=if([Environment]::OSVersion.Platform -eq [PlatformID]::Win32NT){'Junction'}else{'SymbolicLink'}
+    [void](New-Item -ItemType $kind -Path $link -Target $target)
+    $before=(Get-FileHash -LiteralPath (Join-Path $target 'App/Upgrade.ps1')).Hash
+    $backups=@(Get-ChildItem -LiteralPath (Join-Path $target 'Backups') -Directory).Count
+    try{
+        $priorPreference=$ErrorActionPreference
+        try{$ErrorActionPreference='Continue';& (Get-Process -Id $PID).Path -NoProfile -File (Join-Path $source 'App/Upgrade.ps1') -SourceFolder $source -TargetFolder $link > (Join-Path $testRoot 'linked-target.log') 2>&1}finally{$ErrorActionPreference=$priorPreference}
+        Check ($LASTEXITCODE -ne 0) 'Linked target rejected'
+        Check ((Get-FileHash -LiteralPath (Join-Path $target 'App/Upgrade.ps1')).Hash -eq $before) 'Installed program unchanged'
+        Check (@(Get-ChildItem -LiteralPath (Join-Path $target 'Backups') -Directory).Count -eq $backups) 'No backup or staged update created through the link'
+        Check ([IO.File]::ReadAllText((Join-Path $target 'Data/preserved-report.txt')) -eq 'Synthetic saved report') 'Saved report unchanged'
+    }finally{[IO.Directory]::Delete($link)}
+}
 $failed=@($script:Results|Where-Object Result -eq 'FAIL').Count
 $report=[pscustomobject]@{Version='4.3.0';Runtime=$PSVersionTable.PSVersion.ToString();WindowsPowerShell51ActuallyRun=($PSVersionTable.PSVersion.Major -eq 5);Tests=$script:Results.Count;Assertions=$script:Assertions;Failed=$failed;Results=@($script:Results.ToArray());Scope='Offline package validation, isolated staging, lock waits, report and settings preservation, rollback copy, corruption, traversal, duplicate paths, link entries, narrow Python payload admission and cleanup safeguards. The Python staging fixtures contain dummy bytes and are never executed. No downloaded code executed.'}
 if($OutputPath){$report|ConvertTo-Json -Depth 12|Set-Content -LiteralPath $OutputPath -Encoding UTF8}

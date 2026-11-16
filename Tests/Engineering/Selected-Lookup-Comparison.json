@@ -1,0 +1,64 @@
+{
+  "syntheticOnly": true,
+  "baselineCommit": "6b51f4c3223b9cbe051dd9c9e502c10954f8e603",
+  "candidateHeadAtStart": "68b82607f7e916a21225c963093993e3ba2f3d74",
+  "measuredPowerShellSourcesUnchangedDuringRun": true,
+  "filesChangedDuringMeasurement": [
+    {
+      "path": "App/Web/index.html",
+      "beforeSHA256": "ef243cd038f88c31d61816f5c32fe97703715a579901c6f17862d9e18f718dc8",
+      "afterSHA256": "c588e2b65b807e7abe394f2ab827163efbee7a333ed4976cc32e78607861c7ff"
+    }
+  ],
+  "scope": "Actual Invoke-QaWebRequest Pdf resolves one real verified synthetic PDF in a synthetic metadata index. Same-process warm-up then measured iterations; no native rendering, PDF extraction, whole-library physical I/O or hospital throughput claim.",
+  "execution": "Linux PowerShell 7.4.13 on shared cloud developer machine after frontend/browser work stopped; not Windows or hospital hardware.",
+  "runs": [
+    {
+      "label": "before",
+      "exitCode": 0,
+      "elapsedSeconds": 204.71,
+      "timedOut": false
+    },
+    {
+      "label": "after",
+      "exitCode": 0,
+      "elapsedSeconds": 135.573,
+      "timedOut": false
+    }
+  ],
+  "comparison": [
+    {
+      "records": 1367,
+      "beforeMedianMs": 2301.336,
+      "afterMedianMs": 1811.462,
+      "medianReductionPercent": 21.29,
+      "beforeSamplesMs": [
+        4166.044,
+        2174.648,
+        2301.336
+      ],
+      "afterSamplesMs": [
+        3311.269,
+        1811.462,
+        1800.985
+      ]
+    },
+    {
+      "records": 20000,
+      "beforeMedianMs": 48328.085,
+      "afterMedianMs": 29454.928,
+      "medianReductionPercent": 39.05,
+      "beforeSamplesMs": [
+        48328.085,
+        57874.813,
+        36851.146
+      ],
+      "afterSamplesMs": [
+        29454.928,
+        26962.703,
+        30062.034
+      ]
+    }
+  ],
+  "claimLimit": "Diagnostic same-process warm metadata resolution; not Windows native rendering, parsing throughput, complete host/API startup, or hospital performance. Unselected metadata paths need not contain physical PDFs."
+}

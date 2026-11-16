@@ -119,6 +119,78 @@ Scenario 'Corrupted backups are rejected before any restore folder is published'
     try{Restore-QaBackup $broken $destination|Out-Null}catch{$caught=$true}
     Check ($caught -and -not [IO.Directory]::Exists($destination)) 'Tampered backup did not publish files'
 }
+function New-SyntheticBackupZip {
+    param([string]$Path,[string[]]$Names,[switch]$Link,[switch]$Duplicate)
+    $bytes=[Text.Encoding]::UTF8.GetBytes('Synthetic backup contents only')
+    $sha=[Security.Cryptography.SHA256]::Create();try{$hash=([BitConverter]::ToString($sha.ComputeHash($bytes))).Replace('-','')}finally{$sha.Dispose()}
+    $files=New-Object 'Collections.Generic.List[object]';$namePatches=New-Object 'Collections.Generic.List[object]'
+    $stream=[IO.File]::Open($Path,[IO.FileMode]::CreateNew);$zip=New-Object IO.Compression.ZipArchive($stream,[IO.Compression.ZipArchiveMode]::Create,$false)
+    try{
+        foreach($name in $Names){
+            # .NET Framework rejects some malicious ZIP names in CreateEntry.
+            # Insert equal-length filename bytes into both headers after closing
+            # the synthetic archive so the production validator still sees them.
+            $entryName=$name
+            if($name -match '[\x00-\x1f<>:"|?*]'){$entryName=('fixture_'+('x'*([Text.Encoding]::UTF8.GetByteCount($name)-8)));[void]$namePatches.Add([pscustomobject]@{Safe=$entryName;Original=$name})}
+            $entry=$zip.CreateEntry($entryName);if($Link){$entry.ExternalAttributes=[int](-1577123840)}
+            $output=$entry.Open();try{$output.Write($bytes,0,$bytes.Length)}finally{$output.Dispose()}
+            [void]$files.Add([pscustomobject]@{Path=$name;Length=$bytes.Length;SHA256=$hash})
+        }
+        if($Duplicate){$entry=$zip.CreateEntry($Names[0].ToUpperInvariant());$output=$entry.Open();try{$output.Write($bytes,0,$bytes.Length)}finally{$output.Dispose()}}
+        $entry=$zip.CreateEntry('Backup-Manifest.json');$writer=New-Object IO.StreamWriter($entry.Open())
+        try{$writer.Write(([pscustomobject]@{Format='CTQA-Backup';Version=1;Files=@($files.ToArray())}|ConvertTo-Json -Depth 6))}finally{$writer.Dispose()}
+    }finally{$zip.Dispose();$stream.Dispose()}
+    if($namePatches.Count){
+        $latin=[Text.Encoding]::GetEncoding(28591);$binary=$latin.GetString([IO.File]::ReadAllBytes($Path))
+        foreach($patch in $namePatches){
+            if([regex]::Matches($binary,[regex]::Escape($patch.Safe)).Count -ne 2){throw 'The synthetic ZIP must contain exactly two filename headers.'}
+            $binary=$binary.Replace($patch.Safe,$latin.GetString([Text.Encoding]::UTF8.GetBytes($patch.Original)))
+        }
+        [IO.File]::WriteAllBytes($Path,$latin.GetBytes($binary))
+    }
+}
+Scenario 'Backup restore rejects Windows path aliases, linked members and duplicate ZIP entries before publication' {
+    $names=@('Data/CON.txt','Data/trailing./report.pdf','Data/folder /report.pdf','Data/file.pdf:stream','Data/../escape.pdf','Data/back\slash.pdf',('/Data/absolute.pdf'),('Data/bad'+[char]1+'.pdf'),'Data/wild?name.pdf')
+    foreach($name in $names){
+        $bad=Join-Path $TestRoot ([guid]::NewGuid().ToString('N')+'.zip');New-SyntheticBackupZip -Path $bad -Names @($name)
+        $destination=Join-Path $TestRoot ([guid]::NewGuid().ToString('N'));$caught=$false
+        try{Restore-QaBackup -Path $bad -DestinationFolder $destination|Out-Null}catch{$caught=$true}
+        Check ($caught -and -not [IO.Directory]::Exists($destination)) 'Unsafe backup name rejected without a published restore'
+        Check (@(Get-ChildItem -LiteralPath $TestRoot -Directory -Filter ((Split-Path -Leaf $destination)+'.*.partial')).Count -eq 0) 'Unsafe backup leaves no partial restore'
+    }
+    foreach($kind in @('Link','Duplicate')){
+        $bad=Join-Path $TestRoot ($kind+'-backup.zip')
+        if($kind -eq 'Link'){New-SyntheticBackupZip -Path $bad -Names @('Data/report.pdf') -Link}else{New-SyntheticBackupZip -Path $bad -Names @('Data/report.pdf') -Duplicate}
+        $destination=Join-Path $TestRoot ($kind+' rejected restore');$caught=$false
+        try{Restore-QaBackup -Path $bad -DestinationFolder $destination|Out-Null}catch{$caught=$true}
+        Check ($caught -and -not [IO.Directory]::Exists($destination)) 'Linked or duplicate backup member rejected before publication'
+    }
+}
+Scenario 'Strict backup validation preserves ordinary Unicode names and verifies every restored byte' {
+    $path=Join-Path $TestRoot 'Unicode synthetic backup.zip';$destination=Join-Path $TestRoot 'Unicode restored workspace'
+    $names=@('Data/Reports/Synthetic café.pdf','App/Example.psm1')
+    New-SyntheticBackupZip -Path $path -Names $names
+    $checked=Test-QaBackup -Path $path
+    Check ($checked.Files.Count -eq 2) 'Ordinary spaces and Unicode paths accepted'
+    [void](Restore-QaBackup -Path $path -DestinationFolder $destination)
+    foreach($name in $names){Check ([IO.File]::ReadAllText((Join-Path $destination $name)) -ceq 'Synthetic backup contents only') 'Restored bytes match the checked member'}
+}
+if([Environment]::OSVersion.Platform -eq [PlatformID]::Win32NT){
+    Scenario 'Windows restore holds the source backup read-only across verification and copying' {
+        $heldBackupPath=Join-Path $TestRoot 'Held source backup.zip'
+        New-SyntheticBackupZip -Path $heldBackupPath -Names @('Data/report.pdf','App/Example.psm1')
+        $progress=[pscustomobject]@{ArchivePath=$heldBackupPath;WriteProbes=0;WriteBlocked=0}
+        $progress|Add-Member -MemberType ScriptProperty -Name Cancel -Value {
+            $this.WriteProbes++;$probe=$null
+            try{$probe=[IO.File]::Open($this.ArchivePath,[IO.FileMode]::Open,[IO.FileAccess]::Write,[IO.FileShare]::None)}catch{$this.WriteBlocked++}finally{if($null -ne $probe){$probe.Dispose()}}
+            return $false
+        }
+        $destination=Join-Path $TestRoot 'Held source restored workspace';[void](Restore-QaBackup -Path $heldBackupPath -DestinationFolder $destination -Progress $progress)
+        Check ($progress.WriteProbes -ge 4 -and $progress.WriteBlocked -eq $progress.WriteProbes) 'Source denies writes during both validation and copy checkpoints'
+        Check ([IO.File]::ReadAllText((Join-Path $destination 'Data/report.pdf')) -ceq 'Synthetic backup contents only') 'Source evidence restored unchanged'
+    }
+}
+
 Scenario 'New workspaces preserve baseline settings and move without absolute archive paths' {
     $workspace=Join-Path $TestRoot 'New Workspace';[void][IO.Directory]::CreateDirectory((Join-Path $workspace 'Config'))
     Copy-Item -LiteralPath (Join-Path $ProductRoot 'Config/Settings.json') -Destination (Join-Path $workspace 'Config/Settings.json')

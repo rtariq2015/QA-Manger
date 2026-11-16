@@ -1,6 +1,13 @@
 ﻿[CmdletBinding()]param([string]$SourceFolder,[string]$TargetFolder,[switch]$WaitForApp,[switch]$LaunchAfter,[string]$StageRoot,[ValidateRange(1,300)][int]$WaitSeconds=90)
 Set-StrictMode -Version 2.0
 $ErrorActionPreference='Stop'
+function Assert-QaUpgradeDirectPath([string]$Path) {
+    $ancestor=[IO.Path]::GetFullPath($Path)
+    while($ancestor){
+        if(([IO.File]::Exists($ancestor) -or [IO.Directory]::Exists($ancestor)) -and (([IO.File]::GetAttributes($ancestor) -band [IO.FileAttributes]::ReparsePoint) -ne 0)){throw 'Use direct program and backup folders without links or junctions for an update.'}
+        $ancestor=[IO.Path]::GetDirectoryName($ancestor)
+    }
+}
 try {
     # Resolve this only after Windows PowerShell has entered the script body.
     if([string]::IsNullOrWhiteSpace($TargetFolder)){$TargetFolder=Split-Path -Parent $PSScriptRoot}
@@ -10,8 +17,14 @@ try {
         if($picker.ShowDialog() -ne [Windows.Forms.DialogResult]::OK){exit 0};$SourceFolder=$picker.SelectedPath
     }
     $source=[IO.Path]::GetFullPath($SourceFolder);$target=[IO.Path]::GetFullPath($TargetFolder)
-    if($source.Equals($target,[StringComparison]::OrdinalIgnoreCase)){throw 'Choose a separate extracted release folder.'}
+    if($source.TrimEnd('\','/').Equals($target.TrimEnd('\','/'),[StringComparison]::OrdinalIgnoreCase)){throw 'Choose a separate extracted release folder.'}
+    $sourceApp=[IO.Path]::GetFullPath((Join-Path $source 'App')).TrimEnd('\','/')
+    $targetCanonical=$target.TrimEnd('\','/')
+    if($targetCanonical.Equals($sourceApp,[StringComparison]::OrdinalIgnoreCase) -or $targetCanonical.StartsWith($sourceApp+[IO.Path]::DirectorySeparatorChar,[StringComparison]::OrdinalIgnoreCase)){throw 'Choose an existing program folder outside the new release App folder.'}
     if(-not [IO.File]::Exists((Join-Path $target 'Start CT QA Manager.cmd'))){throw 'Choose your existing CT QA Manager program folder.'}
+    # Check destinations before opening a lock, initializing settings, or moving code.
+    # Source validation alone cannot protect a linked installed App or Backups folder.
+    foreach($path in @($source,$target,(Join-Path $target 'App'),(Join-Path $target 'Backups'),(Join-Path $target 'Config/Settings.local.json'),(Join-Path $target 'Config/Settings.json'),(Join-Path $target 'Config/NetworkProfile.local.json'),(Join-Path $target 'Logs'),(Join-Path $target 'Data/application.lock'))){Assert-QaUpgradeDirectPath $path}
     $session=Join-Path $target 'Data/application.lock';$guard=$null
     if([IO.File]::Exists($session)){
         $deadline=[datetime]::UtcNow.AddSeconds($WaitSeconds)
@@ -29,7 +42,7 @@ try {
     $rootNames=@('Start CT QA Manager.cmd','User Guide.html')
     foreach($optional in @('Update CT QA Manager.cmd','Export CT QA Diagnostics.cmd','Package.json','Package-SHA256SUMS.txt')){if([IO.File]::Exists((Join-Path $source $optional))){$rootNames+=@($optional)}}
     if([IO.File]::Exists((Join-Path $source 'Package-SHA256SUMS.txt'))){$hashes['Package-SHA256SUMS.txt']=(Get-FileHash -LiteralPath (Join-Path $source 'Package-SHA256SUMS.txt') -Algorithm SHA256).Hash}
-    foreach($name in $rootNames){$files+=@(Get-Item -LiteralPath (Join-Path $source $name))}
+    foreach($name in $rootNames){Assert-QaUpgradeDirectPath (Join-Path $target $name);$files+=@(Get-Item -LiteralPath (Join-Path $source $name))}
     foreach($file in $files) {
         $relative=$file.FullName.Substring($source.TrimEnd('\','/').Length+1).Replace('\','/')
         $ancestor=$file.FullName
@@ -42,7 +55,9 @@ try {
     [void](Initialize-QaWorkspace $target)
     $stage=Join-Path $target ('.update-'+[guid]::NewGuid().ToString('N'))
     $backup=Join-Path (Join-Path $target 'Backups') ('Program-'+(Get-Date).ToString('yyyyMMdd-HHmmss')+'-'+[guid]::NewGuid().ToString('N').Substring(0,6))
+    Assert-QaUpgradeDirectPath $stage;Assert-QaUpgradeDirectPath $backup
     [void][IO.Directory]::CreateDirectory($stage);[void][IO.Directory]::CreateDirectory($backup)
+    $introducedRootFiles=New-Object 'System.Collections.Generic.List[string]'
     try {
         Copy-Item -LiteralPath (Join-Path $source 'App') -Destination (Join-Path $stage 'App') -Recurse
         foreach($name in $rootNames){Copy-Item -LiteralPath (Join-Path $source $name) -Destination (Join-Path $stage $name)}
@@ -52,16 +67,20 @@ try {
             [IO.Directory]::Move((Join-Path $stage 'App'),(Join-Path $target 'App'))
             foreach($name in $rootNames){
                 $live=Join-Path $target $name;$saved=Join-Path $backup $name
-                if([IO.File]::Exists($live)){[IO.File]::Replace((Join-Path $stage $name),$live,$saved)}else{[IO.File]::Move((Join-Path $stage $name),$live)}
+                Assert-QaUpgradeDirectPath $live;Assert-QaUpgradeDirectPath $saved
+                if([IO.File]::Exists($live)){[IO.File]::Replace((Join-Path $stage $name),$live,$saved)}else{[IO.File]::Move((Join-Path $stage $name),$live);[void]$introducedRootFiles.Add($name)}
             }
         } catch {
             if([IO.Directory]::Exists((Join-Path $target 'App'))){Remove-Item -LiteralPath (Join-Path $target 'App') -Recurse -Force}
             [IO.Directory]::Move((Join-Path $backup 'App'),(Join-Path $target 'App'))
             foreach($name in $rootNames){$saved=Join-Path $backup $name;if([IO.File]::Exists($saved)){Copy-Item -LiteralPath $saved -Destination (Join-Path $target $name) -Force}}
+            # A failed first upgrade can have published new launchers/metadata before
+            # a later file fails. They have no previous backup and must not remain.
+            foreach($name in $introducedRootFiles){$live=Join-Path $target $name;Assert-QaUpgradeDirectPath $live;if([IO.File]::Exists($live)){[IO.File]::Delete($live)}}
             throw
         }
         Write-Output ('Program updated. Settings, credentials, data and logs were preserved. Previous App folder: '+$backup)
-        Write-Output 'Open the normal launcher. To roll back, close the app and restore the previous App folder.'
+        Write-Output 'Open the normal launcher. To roll back, close the app and restore the previous App folder plus the backed-up launchers and package metadata. Keep Config, Data and Logs in place.'
         if(Get-Command Write-QaSupportEvent -ErrorAction SilentlyContinue){Write-QaSupportEvent -AppRoot $target -Operation OfflineUpdate -Outcome Completed -DurationMs $upgradeClock.ElapsedMilliseconds -Counts @{Files=$files.Count}}
         if($null -ne $guard){$guard.Dispose();$guard=$null}
         if($LaunchAfter){Start-Process -FilePath (Join-Path $target 'Start CT QA Manager.cmd') -WorkingDirectory $target|Out-Null}

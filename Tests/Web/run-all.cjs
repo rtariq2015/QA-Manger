@@ -42,6 +42,20 @@ const contentFixture = fixture + '-content';
 const contentOutput = path.join(output, 'content');
 const pythonFixture = fixture + '-python';
 const pythonOutput = path.join(output, 'python');
+const accessibilityFixture = fixture + '-accessibility';
+const accessibilityOutput = path.join(output, 'accessibility');
+if (finalStatus === 0) {
+  fs.mkdirSync(accessibilityOutput, { recursive: true });
+  const createAccessibility = spawnSync(powershell, ['-NoProfile', '-File', path.join(__dirname, 'New-WebFixture.ps1'), '-FixtureRoot', accessibilityFixture, '-ProductRoot', product], { cwd: product, stdio: 'inherit', windowsHide: true, timeout: 180000 });
+  finalStatus = createAccessibility.status || (createAccessibility.error ? 1 : 0);
+  if (finalStatus === 0) {
+    const accessibilityArgs = [path.join(__dirname, 'run-accessibility-e2e.cjs'), '--root', accessibilityFixture, '--host', host, '--powershell', powershell, '--output-dir', accessibilityOutput];
+    if (dotnet) accessibilityArgs.push('--dotnet', dotnet);
+    if (args.chromium) accessibilityArgs.push('--chromium', args.chromium); else if (isWindows) accessibilityArgs.push('--browser-channel', 'msedge');
+    const accessibility = spawnSync(process.execPath, accessibilityArgs, { cwd: product, stdio: 'inherit', windowsHide: true, timeout: 900000 });
+    finalStatus = accessibility.status || (accessibility.error ? 1 : 0);
+  }
+}
 if (finalStatus === 0) {
   fs.mkdirSync(largeOutput, { recursive: true });
   const createLarge = spawnSync(powershell, ['-NoProfile', '-File', path.join(__dirname, 'New-LargeWebFixture.ps1'), '-FixtureRoot', largeFixture, '-ProductRoot', product], { cwd: product, encoding: 'utf8', windowsHide: true, timeout: 300000 });
@@ -84,10 +98,17 @@ if (finalStatus === 0 && isWindows) {
     finalStatus = integration.status || (integration.error ? 1 : 0);
   }
 }
+if (finalStatus === 0) {
+  const performanceArgs = [path.join(__dirname, 'run-library-performance.cjs'), '--output', path.join(output, 'library-performance.json')];
+  if (args.chromium) performanceArgs.push('--chromium', args.chromium); else if (isWindows) performanceArgs.push('--browser-channel', 'msedge');
+  const performance = spawnSync(process.execPath, performanceArgs, { cwd: product, stdio: 'inherit', windowsHide: true, timeout: 300000 });
+  finalStatus = performance.status || (performance.error ? 1 : 0);
+}
 if (finalStatus === 0 && !args['keep-fixture']) {
   fs.rmSync(fixture, { recursive: true, force: true });
   fs.rmSync(largeFixture, { recursive: true, force: true });
   fs.rmSync(contentFixture, { recursive: true, force: true });
+  fs.rmSync(accessibilityFixture, { recursive: true, force: true });
   if (isWindows) fs.rmSync(pythonFixture, { recursive: true, force: true });
-} else fs.writeFileSync(path.join(output, 'synthetic-fixture-location.txt'), fixture + '\n' + largeFixture + '\n' + contentFixture + '\n');
+} else fs.writeFileSync(path.join(output, 'synthetic-fixture-location.txt'), fixture + '\n' + largeFixture + '\n' + contentFixture + '\n' + accessibilityFixture + '\n');
 process.exit(finalStatus);

@@ -96,38 +96,60 @@ function New-QaBackup {
         return [pscustomobject]@{Mode='Backup';DestinationPath=$destination;Summary=[pscustomobject]@{Description='Full backup created and verified. Saved sign-ins are excluded; re-enter them after moving computers.';Cancelled=$false}}
     }finally{if($null -ne $zip){$zip.Dispose()};if($null -ne $stream){$stream.Dispose()};if($null -ne $lock){$lock.Dispose()};if([IO.File]::Exists($stage)){[IO.File]::Delete($stage)};Remove-Item -LiteralPath $scratch -Recurse -Force -ErrorAction SilentlyContinue}
 }
+function Test-QaBackupEntryName {
+    param([string]$Name)
+    if(-not $Name -or $Name.StartsWith('/') -or $Name -match '[\\\x00-\x1f<>:"|?*]'){return $false}
+    foreach($part in $Name.Split('/')){
+        if(-not $part -or $part -in @('.','..') -or $part.EndsWith('.') -or $part.EndsWith(' ') -or $part -match '^(?i:CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])(?:\.|$)'){return $false}
+    }
+    return $true
+}
+function Read-QaBackupArchive {
+    param($Zip,$Progress=$null)
+    # Inspect ZIP names and attributes before reading contents, and reject
+    # duplicate or Windows-aliased members explicitly as well as in the manifest.
+    $entries=@{}
+    foreach($entry in $Zip.Entries){
+        $name=[string]$entry.FullName
+        if(-not (Test-QaBackupEntryName $name) -or $entries.ContainsKey($name)){throw 'Unsafe or duplicate backup ZIP entry.'}
+        if((([long]$entry.ExternalAttributes -shr 16) -band 61440) -eq 40960 -or (([long]$entry.ExternalAttributes -band 1024) -ne 0)){throw 'Linked backup entries are unsupported.'}
+        $entries[$name]=$entry
+    }
+    $entry=$Zip.GetEntry('Backup-Manifest.json');if($null -eq $entry -or $entry.Length -gt 16777216){throw 'Backup manifest is missing or too large.'}
+    $reader=New-Object IO.StreamReader($entry.Open());try{$manifest=$reader.ReadToEnd()|ConvertFrom-Json}finally{$reader.Dispose()}
+    if($manifest.Format -ne 'CTQA-Backup' -or $manifest.Version -ne 1){throw 'Unsupported backup format.'}
+    $seen=@{};$total=0L
+    foreach($file in @($manifest.Files)) {
+        $name=[string]$file.Path
+        if(-not (Test-QaBackupEntryName $name) -or $name -notmatch '^(App/|Config/Settings(?:\.local)?\.json$|Data/|Start CT QA Manager\.cmd$|User Guide\.html$)' -or $seen.ContainsKey($name) -or $file.SHA256 -notmatch '^[0-9A-Fa-f]{64}$' -or [long]$file.Length -lt 0){throw 'Unsafe or duplicate backup entry.'}
+        $seen[$name]=$true;$entry=$null;if($entries.ContainsKey($name)){$entry=$entries[$name]}
+        if($null -eq $entry -or $entry.FullName -cne $name -or $entry.Length -ne [long]$file.Length){throw 'Backup size or file list differs from its manifest.'}
+        if($null -ne $Progress -and $Progress.Cancel){throw [OperationCanceledException]::new('Backup verification cancelled.')}
+        $input=$entry.Open();$sha=[Security.Cryptography.SHA256]::Create()
+        try{$hash=([BitConverter]::ToString($sha.ComputeHash($input))).Replace('-','')}finally{$input.Dispose();$sha.Dispose()}
+        if($hash -ne $file.SHA256){throw 'Backup checksum mismatch.'};$total+=[long]$file.Length
+    }
+    if($Zip.Entries.Count -ne ($seen.Count+1)){throw 'Backup contains unexpected entries.'}
+    return [pscustomobject]@{Files=@($manifest.Files);TotalBytes=$total}
+}
 function Test-QaBackup {
     [CmdletBinding()]param([string]$Path,$Progress=$null)
     Add-Type -AssemblyName System.IO.Compression,System.IO.Compression.FileSystem
     Assert-QaMaintenanceDirect $Path;$zip=[IO.Compression.ZipFile]::OpenRead($Path)
-    try {
-        $entry=$zip.GetEntry('Backup-Manifest.json');if($null -eq $entry -or $entry.Length -gt 16777216){throw 'Backup manifest is missing or too large.'}
-        $reader=New-Object IO.StreamReader($entry.Open());try{$manifest=$reader.ReadToEnd()|ConvertFrom-Json}finally{$reader.Dispose()}
-        if($manifest.Format -ne 'CTQA-Backup' -or $manifest.Version -ne 1){throw 'Unsupported backup format.'}
-        $seen=@{};$total=0L
-        foreach($file in @($manifest.Files)) {
-            $name=[string]$file.Path
-            if($name -match '(^/|\\|:|(^|/)\.\.?(/|$))' -or $name -notmatch '^(App/|Config/Settings(?:\.local)?\.json$|Data/|Start CT QA Manager\.cmd$|User Guide\.html$)' -or $seen.ContainsKey($name) -or $file.SHA256 -notmatch '^[0-9A-Fa-f]{64}$' -or [long]$file.Length -lt 0){throw 'Unsafe or duplicate backup entry.'}
-            $seen[$name]=$true;$entry=$zip.GetEntry($name)
-            if($null -eq $entry -or $entry.Length -ne [long]$file.Length){throw 'Backup size or file list differs from its manifest.'}
-            if($null -ne $Progress -and $Progress.Cancel){throw [OperationCanceledException]::new('Backup verification cancelled.')}
-            $input=$entry.Open();$sha=[Security.Cryptography.SHA256]::Create()
-            try{$hash=([BitConverter]::ToString($sha.ComputeHash($input))).Replace('-','')}finally{$input.Dispose();$sha.Dispose()}
-            if($hash -ne $file.SHA256){throw 'Backup checksum mismatch.'};$total+=[long]$file.Length
-        }
-        if($zip.Entries.Count -ne ($seen.Count+1)){throw 'Backup contains unexpected entries.'}
-        return [pscustomobject]@{Files=@($manifest.Files);TotalBytes=$total}
-    }finally{$zip.Dispose()}
+    try {return (Read-QaBackupArchive -Zip $zip -Progress $Progress)}finally{$zip.Dispose()}
 }
 function Restore-QaBackup {
     [CmdletBinding()]param([string]$Path,[string]$DestinationFolder,$Progress=$null)
     $destination=[IO.Path]::GetFullPath($DestinationFolder);Assert-QaMaintenanceDirect $destination
     if([IO.Directory]::Exists($destination) -or [IO.File]::Exists($destination)){throw 'Restore requires a new folder. Existing files are never replaced.'}
-    $checked=Test-QaBackup $Path -Progress $Progress
-    if(-not (Get-QaStorage $destination $checked.TotalBytes).Enough){throw 'Not enough storage to restore this backup.'}
-    $stage=$destination+'.'+[guid]::NewGuid().ToString('N')+'.partial';[void][IO.Directory]::CreateDirectory($stage)
-    $zip=[IO.Compression.ZipFile]::OpenRead($Path)
+    Add-Type -AssemblyName System.IO.Compression,System.IO.Compression.FileSystem
+    Assert-QaMaintenanceDirect $Path;$zip=[IO.Compression.ZipFile]::OpenRead($Path);$stage=''
     try {
+        # Keep one read-only archive open from validation through copying. On Windows
+        # its read sharing also prevents source replacement while restore is active.
+        $checked=Read-QaBackupArchive -Zip $zip -Progress $Progress
+        if(-not (Get-QaStorage $destination $checked.TotalBytes).Enough){throw 'Not enough storage to restore this backup.'}
+        $stage=$destination+'.'+[guid]::NewGuid().ToString('N')+'.partial';[void][IO.Directory]::CreateDirectory($stage)
         foreach($file in $checked.Files){
             if($null -ne $Progress -and $Progress.Cancel){throw [OperationCanceledException]::new('Restore cancelled.')}
             $target=[IO.Path]::GetFullPath((Join-Path $stage $file.Path))
@@ -139,6 +161,6 @@ function Restore-QaBackup {
         }
         [IO.Directory]::Move($stage,$destination)
         return [pscustomobject]@{Mode='Restore';DestinationPath=$destination;Summary=[pscustomobject]@{Description='Backup restored to a separate portable folder. Open its launcher; re-enter saved sign-ins as needed.';Cancelled=$false}}
-    }finally{$zip.Dispose();if([IO.Directory]::Exists($stage)){Remove-Item -LiteralPath $stage -Recurse -Force}}
+    }finally{$zip.Dispose();if($stage -and [IO.Directory]::Exists($stage)){Remove-Item -LiteralPath $stage -Recurse -Force}}
 }
 Export-ModuleMember -Function Get-QaStorage,Get-QaCompatibility,New-QaBackup,Test-QaBackup,Restore-QaBackup

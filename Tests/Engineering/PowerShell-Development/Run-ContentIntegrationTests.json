@@ -1,0 +1,81 @@
+{
+  "Product": "CT QA Manager Pro",
+  "Feature": "Offline content classification integration",
+  "Runtime": "7.4.13",
+  "WindowsPowerShell51ActuallyRun": false,
+  "SyntheticOnly": true,
+  "Tests": 17,
+  "Assertions": 496,
+  "Failed": 0,
+  "Results": [
+    {
+      "Name": "Explicit Ask keeps real body readings available while manual filing is requested",
+      "Result": "PASS"
+    },
+    {
+      "Name": "An Extended profile is identified by all ten body sections even when its PDF is shorter than Basic",
+      "Result": "PASS"
+    },
+    {
+      "Name": "Conflicting or missing footer dates remain unresolved and a disagreeing filename keeps its original date",
+      "Result": "PASS"
+    },
+    {
+      "Name": "Approve accepts one content suggestion without teaching all files and saved decisions override later profile mappings",
+      "Result": "PASS"
+    },
+    {
+      "Name": "Derived dates and mapped categories drive readable folders and exported ZIP paths without rewriting core fields",
+      "Result": "PASS"
+    },
+    {
+      "Name": "Undo restores pending despite a mapping and Disapprove remains authoritative on cached reanalysis",
+      "Result": "PASS"
+    },
+    {
+      "Name": "Warm selected reads reuse the current classifier cache and stale legacy entries trigger one bounded upgrade read",
+      "Result": "PASS"
+    },
+    {
+      "Name": "Changed archived bytes cannot reuse content evidence or create a successful new analysis",
+      "Result": "PASS"
+    },
+    {
+      "Name": "Conflicting footer dates cannot bypass review through an explicit Monthly filename and matching profile rule",
+      "Result": "PASS"
+    },
+    {
+      "Name": "An explicit Daily document title conflicts with a saved Monthly profile rule even when the filename is generic",
+      "Result": "PASS"
+    },
+    {
+      "Name": "A compatible Flash PDF upgrades a prior unknown-template cache and follows one saved scanner filing rule",
+      "Result": "PASS"
+    },
+    {
+      "Name": "Real Drive Additional and manufacturer Daily PDFs retain separate filing rules and protected original evidence",
+      "Result": "PASS"
+    },
+    {
+      "Name": "Automatic filing uses already-read Basic and Extended profiles without approvals or new reads",
+      "Result": "PASS"
+    },
+    {
+      "Name": "Actual isolated PDF readers collect manufacturer Daily inline measurements and source-linked cached trends",
+      "Result": "PASS"
+    },
+    {
+      "Name": "Actual isolated PDF readers keep current slice-thickness millimetres separate from existing HU trends",
+      "Result": "PASS"
+    },
+    {
+      "Name": "Actual isolated PDF readers retain Monthly alignment metrics and separate printed axes in source-linked trends",
+      "Result": "PASS"
+    },
+    {
+      "Name": "Actual isolated readers preserve eight table-position method contexts through cached facade and trends",
+      "Result": "PASS"
+    }
+  ],
+  "Scope": "Actual PDF reader, isolated analysis worker, content classifier, per-scanner settings, durable file decisions, readable library and ZIP export. Generated PDFs only; page count is deliberately decoupled from body profile. Core clinical state and original files are preserved."
+}

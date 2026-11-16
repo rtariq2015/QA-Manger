@@ -13,23 +13,45 @@ on:
       - 'Start CT QA Manager.cmd'
       - 'Apply CT QA Network Update.cmd'
       - 'Export CT QA Diagnostics.cmd'
-      - 'Update CT QA Manager.cmd' 
+      - 'Update CT QA Manager.cmd'
+  pull_request:
+    paths:
+      - 'App/**'
+      - 'Host/**'
+      - 'Tests/Web/**'
+      - 'Config/**'
+      - 'Tests/**/*.ps1'
+      - 'Tests/Verify-Package.py'
+      - '.github/workflows/**'
+      - 'Start CT QA Manager.cmd'
+      - 'Apply CT QA Network Update.cmd'
+      - 'Export CT QA Diagnostics.cmd'
+      - 'Update CT QA Manager.cmd'
   workflow_dispatch:
 concurrency:
-  group: ctqa-windows-validation
+  group: ctqa-windows-validation-${{ github.head_ref || github.ref_name }}
   cancel-in-progress: true
 permissions:
   contents: read
 jobs:
   windows:
     runs-on: windows-latest
-    timeout-minutes: 60
+    # Expanded native/browser coverage needs headroom: the first measured run
+    # took 48 minutes despite stopping browser workloads early on a failure.
+    # This CI budget does not change any shipped operation or resource limit.
+    timeout-minutes: 90
     steps:
       - uses: actions/checkout@v4
+      - name: Check portable source structure
+        shell: powershell
+        run: |
+          python Tests/Verify-Package.py
+          if ($LASTEXITCODE -ne 0) { exit 1 }
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '10.0.x'
       - name: Build self-contained offline host
+        id: build_host
         shell: powershell
         run: |
           dotnet publish Host/CTQa.Host.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:DebugType=None -o App/Host
@@ -42,6 +64,7 @@ jobs:
             foreach ($item in @(Get-ChildItem $version.FullName -File | Where-Object Name -match 'LICENSE|THIRD-PARTY-NOTICES')) { Copy-Item $item.FullName (Join-Path 'App/Host' ($runtime.Prefix+'-'+$item.Name)) }
           }
       - name: Build the pinned portable Python PDF reader
+        id: build_python
         shell: powershell
         run: |
           python scripts/build_app_python.py --output-dir App/Python --build-info artifacts/python-build-info.json
@@ -57,26 +80,37 @@ jobs:
           node Tests/Web/run-all.cjs --windows --output artifacts/web
           if ($LASTEXITCODE -ne 0) { exit 1 }
       - name: Compare both PDF readers on identical saved PDFs
+        if: ${{ !cancelled() && steps.build_host.outcome == 'success' && steps.build_python.outcome == 'success' }}
         shell: powershell
         run: |
           & powershell.exe -NoProfile -File .\Tests\Run-ReaderBenchmark.ps1 -OutputPath .\artifacts\windows\Reader-Benchmark.json
           if ($LASTEXITCODE -ne 0) { exit 1 }
       - name: Save reader comparison
+        if: ${{ !cancelled() && steps.build_host.outcome == 'success' && steps.build_python.outcome == 'success' }}
         uses: actions/upload-artifact@v4
         with:
           name: reader-benchmark
           path: artifacts/windows/Reader-Benchmark.json
       - name: Synthetic suites on Windows PowerShell 5.1
+        if: ${{ !cancelled() && steps.build_host.outcome == 'success' && steps.build_python.outcome == 'success' }}
         shell: powershell
         run: |
           New-Item -ItemType Directory -Path artifacts/windows -Force | Out-Null
           $failed = $false
           foreach ($name in @('Run-PythonReaderTests','Run-MeasurementTests','Run-TrendTests','Run-ContentTests','Run-AnalysisTests','Run-ContentIntegrationTests','Run-WebServiceTests','Run-ReviewQueueTests','Run-UpdateTests','Run-SupportTests','Run-NetworkTests','Run-Tests','Run-ExportTests','Run-ConnectionTests','Run-BrowseTests','Run-MonthlyTests','Run-PdfTests','Run-PortableTests')) {
             & powershell.exe -NoProfile -File ".\Tests\$name.ps1" -OutputPath ".\artifacts\windows\$name.json"
-            if ($LASTEXITCODE -ne 0) { $failed = $true; break }
+            if ($LASTEXITCODE -ne 0) { $failed = $true }
           }
           if ($failed) { exit 1 }
+      - name: Benchmark selected-PDF lookup on generated libraries
+        timeout-minutes: 5
+        if: ${{ !cancelled() && steps.build_host.outcome == 'success' && steps.build_python.outcome == 'success' }}
+        shell: powershell
+        run: |
+          & powershell.exe -NoProfile -File .\Tests\Run-SelectedLookupBenchmark.ps1 -OutputPath .\artifacts\windows\Selected-Lookup-Benchmark.json -Iterations 1
+          if ($LASTEXITCODE -ne 0) { exit 1 }
       - name: Background reading scheduler and pause checkpoints
+        if: ${{ !cancelled() && steps.build_host.outcome == 'success' && steps.build_python.outcome == 'success' }}
         shell: powershell
         run: |
           python Tests/Web/run-background-e2e.py --host App/Host/CTQa.Host.exe --output artifacts/windows/Background-Scheduler.json
@@ -101,11 +135,13 @@ jobs:
           & powershell.exe -NoProfile -STA -File .\App\Start.ps1 -DemoPreview -PreviewPage Queue -ScreenshotPath .\artifacts\windows\queue-native-demo.png
           if ($LASTEXITCODE -ne 0) { exit 1 }
       - name: Save tested portable host
+        if: ${{ !cancelled() && steps.build_host.outcome == 'success' }}
         uses: actions/upload-artifact@v4
         with:
           name: portable-web-host
           path: App/Host/
       - name: Save tested portable Python runtime
+        if: ${{ !cancelled() && steps.build_python.outcome == 'success' }}
         uses: actions/upload-artifact@v4
         with:
           name: portable-python-runtime

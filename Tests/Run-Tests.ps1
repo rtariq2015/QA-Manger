@@ -569,6 +569,96 @@ if([Environment]::OSVersion.Platform -ne [PlatformID]::Win32NT){
     }
 }
 
+Run-Test 'Validated archive records read no PDFs and create no workspace files' {
+    $empty=New-TestConfig 'RawRecordsEmpty'
+    Assert-Equal 0 @(Get-QaArchiveRecords -Config $empty).Count 'An uninitialized archive has no records'
+    Assert-True (-not [IO.Directory]::Exists($empty.ArchiveRoot)) 'Reading membership never creates the archive'
+    $cfg=New-TestConfig 'RawRecordsDuplicates'
+    $name='Quality_Daily_'+$Yesterday+'_06-00-00.pdf'
+    $a=New-TestPdf -Path (Join-Path (Join-Path $cfg.Sources[0].Path 'First') $name)
+    $b=New-TestPdf -Path (Join-Path (Join-Path $cfg.Sources[0].Path 'Second') $name)
+    [void](Import-Fixture $cfg)
+    $before=@{};foreach($file in @(Get-ChildItem -LiteralPath $cfg.ArchiveRoot -File -Recurse -Force)){$before[$file.FullName]=(Get-FileHash -LiteralPath $file.FullName).Hash}
+    $rows=@(Get-QaArchiveRecords -Config $cfg)
+    Assert-Equal 2 $rows.Count 'Legitimate same-name and equal-content reports at separate destinations remain distinct'
+    Assert-Equal 1 @($rows.Hash|Select-Object -Unique).Count 'Equal hashes alone are not treated as duplicate identities'
+    Assert-Equal 2 @($rows.Id|Select-Object -Unique).Count 'Independent scanner source locations retain their own identity'
+    Assert-Equal 2 @($rows.DestinationPath|Select-Object -Unique).Count 'Both separately owned destinations remain available'
+    $after=@(Get-ChildItem -LiteralPath $cfg.ArchiveRoot -File -Recurse -Force)
+    Assert-Equal $before.Count $after.Count 'Read-only membership creates no metadata, analysis cache, or output files'
+    foreach($file in $after){Assert-Equal $before[$file.FullName] (Get-FileHash -LiteralPath $file.FullName).Hash 'Every archived PDF and metadata file retains its exact bytes'}
+    Assert-Equal (Get-FileHash -LiteralPath $a).Hash (Get-FileHash -LiteralPath $b).Hash 'The source originals remain equal and unmodified'
+}
+Run-Test 'Repeated report identities are rejected centrally before reads or mutations' {
+    $cfg=New-TestConfig 'RepeatedStateIdentity'
+    [void](Add-Report $cfg 'CT_Edge' 'Quality_Daily' $Yesterday '06-00-00');[void](Add-Report $cfg 'CT_Edge' 'Quality_Daily' $Yesterday '07-00-00');[void](Import-Fixture $cfg)
+    $statePath=Join-Path $cfg.ArchiveRoot '.ctqa/state.json';$state=[IO.File]::ReadAllText($statePath)|ConvertFrom-Json
+    $state.Records[1].Id=([string]$state.Records[0].Id).ToLowerInvariant()
+    [IO.File]::WriteAllText($statePath,($state|ConvertTo-Json -Depth 15),(New-Object Text.UTF8Encoding($true)))
+    $before=(Get-FileHash -LiteralPath $statePath).Hash;$indexPath=Join-Path $cfg.ArchiveRoot 'QA_Master_Index.csv';$indexBefore=(Get-FileHash -LiteralPath $indexPath).Hash
+    foreach($read in @({Get-QaArchiveRecords -Config $cfg},{Get-QaDashboard -Config $cfg},{Invoke-QaOperation -Config $cfg -Mode Audit})){
+        $caught=$false;try{& $read|Out-Null}catch{$caught=$_.Exception.Message -like '*repeated report identity*'}
+        Assert-True $caught 'Raw membership, dashboard, and operations reject the same ambiguous identity with actionable guidance'
+        Assert-Equal $before (Get-FileHash -LiteralPath $statePath).Hash 'Rejected state remains byte-for-byte preserved for investigation'
+        Assert-Equal $indexBefore (Get-FileHash -LiteralPath $indexPath).Hash 'Rejection never rewrites the CSV index'
+    }
+    foreach($record in $state.Records){Assert-Equal $record.Hash (Get-FileHash -LiteralPath $record.DestinationPath).Hash 'All saved PDF bytes remain preserved'}
+}
+Run-Test 'Distinct record IDs cannot claim one normalized archive destination' {
+    $cfg=New-TestConfig 'RepeatedStateDestination'
+    [void](Add-Report $cfg 'CT_Edge' 'Quality_Daily' $Yesterday '06-00-00');[void](Add-Report $cfg 'CT_Edge' 'Quality_Daily' $Yesterday '07-00-00');[void](Import-Fixture $cfg)
+    $statePath=Join-Path $cfg.ArchiveRoot '.ctqa/state.json';$state=[IO.File]::ReadAllText($statePath)|ConvertFrom-Json
+    $original=@($state.Records|ForEach-Object{[pscustomobject]@{Path=$_.DestinationPath;Hash=$_.Hash}})
+    $first=[string]$state.Records[0].RelativePath
+    $state.Records[1].RelativePath=Join-Path (Join-Path ([IO.Path]::GetDirectoryName($first)) 'unused/..') ([IO.Path]::GetFileName($first))
+    [IO.File]::WriteAllText($statePath,($state|ConvertTo-Json -Depth 15),(New-Object Text.UTF8Encoding($true)))
+    $before=(Get-FileHash -LiteralPath $statePath).Hash
+    foreach($read in @({Get-QaArchiveRecords -Config $cfg},{Get-QaDashboard -Config $cfg},{Invoke-QaOperation -Config $cfg -Mode Audit})){
+        $caught=$false;try{& $read|Out-Null}catch{$caught=$_.Exception.Message -like '*same saved PDF*'}
+        Assert-True $caught 'Destination aliases are normalized before checking exclusive ownership'
+        Assert-Equal $before (Get-FileHash -LiteralPath $statePath).Hash 'Ambiguous destination state remains unchanged'
+    }
+    foreach($record in $original){Assert-Equal $record.Hash (Get-FileHash -LiteralPath $record.Path).Hash 'Neither existing saved PDF is changed or removed'}
+}
+Run-Test 'Read-only membership rejects a newly linked metadata directory' {
+    $cfg=New-TestConfig 'RawRecordsMetadataLink';[void](Add-Report $cfg 'CT_Edge' 'Quality_Daily' $Yesterday);[void](Import-Fixture $cfg)
+    $meta=Join-Path $cfg.ArchiveRoot '.ctqa';$saved=$meta+'.kept';$statePath=Join-Path $meta 'state.json';$before=(Get-FileHash -LiteralPath $statePath).Hash
+    [IO.Directory]::Move($meta,$saved)
+    $kind=if([Environment]::OSVersion.Platform -eq [PlatformID]::Win32NT){'Junction'}else{'SymbolicLink'}
+    try{
+        New-Item -ItemType $kind -Path $meta -Value $saved -ErrorAction Stop|Out-Null
+        $caught=$false;try{Get-QaArchiveRecords -Config $cfg|Out-Null}catch{$caught=$_.Exception.Message -like '*symbolic link or junction*'}
+        Assert-True $caught 'Fresh state reading checks its own metadata path before opening linked state'
+        Assert-Equal $before (Get-FileHash -LiteralPath (Join-Path $saved 'state.json')).Hash 'Linked metadata is never rewritten'
+    }finally{if([IO.Directory]::Exists($meta)){[IO.Directory]::Delete($meta)};[IO.Directory]::Move($saved,$meta)}
+    Assert-Equal 1 @(Get-QaArchiveRecords -Config $cfg).Count 'Restoring the direct metadata path permits fresh validated membership'
+}
+
+Run-Test 'Master CSV escapes spreadsheet formulas without changing authoritative report values' {
+    $cfg=New-TestConfig 'SpreadsheetIndex'
+    $names=@('=2+3.pdf','+2+3.pdf','@SUM.pdf','-2+3.pdf','ordinary-synthetic-report.pdf')
+    $sources=@{};foreach($name in $names){$path=New-TestPdf -Path (Join-Path $cfg.Sources[0].Path $name);$sources[$path]=(Get-FileHash -LiteralPath $path).Hash}
+    [void](Import-Fixture $cfg)
+    $rows=@(Get-QaArchiveRecords -Config $cfg)
+    $decisions=@($rows|ForEach-Object{[pscustomobject]@{RecordId=$_.Id;Category='Daily_QA';Reviewer=$(if($_.OriginalFileName -eq 'ordinary-synthetic-report.pdf'){'Synthetic reviewer'}else{'=1+1'});Reason='Synthetic spreadsheet projection test'}})
+    [void](Invoke-QaOperation -Config $cfg -Mode Reclassify -Decisions $decisions)
+    $raw=@(Get-QaArchiveRecords -Config $cfg);$csv=@(Import-Csv -LiteralPath (Join-Path $cfg.ArchiveRoot 'QA_Master_Index.csv'))
+    Assert-Equal $names.Count $csv.Count 'The master CSV retains every report'
+    $expectedColumns='Id,Scanner,ReportDate,ReportTime,Category,ClassificationBasis,OriginalFileName,SourcePath,Hash,Length,RelativePath,DestinationPath,FirstArchived,ConfirmedBy,ConfirmedAt,ReviewDecision,LastReviewId,ConfirmedComponents,PdfPagesHint'
+    Assert-Equal $expectedColumns (($csv[0].PSObject.Properties.Name)-join ',') 'The existing CSV schema and column order are unchanged'
+    foreach($record in $raw){
+        $exported=@($csv|Where-Object Id -ceq $record.Id)[0]
+        $formula=([string]$record.OriginalFileName -ne 'ordinary-synthetic-report.pdf')
+        Assert-True ($names -ccontains [string]$record.OriginalFileName) 'Authoritative JSON keeps the exact original filename'
+        Assert-Equal $(if($formula){"'"+$record.OriginalFileName}else{$record.OriginalFileName}) $exported.OriginalFileName 'Only formula-leading spreadsheet filename cells receive an apostrophe'
+        Assert-Equal $(if($formula){'=1+1'}else{'Synthetic reviewer'}) $record.ConfirmedBy 'The saved reviewer identity is never escaped or otherwise changed'
+        Assert-Equal $(if($formula){"'=1+1"}else{'Synthetic reviewer'}) $exported.ConfirmedBy 'Formula-leading reviewer cells are escaped only in the spreadsheet projection'
+        foreach($field in @('Id','Hash','Scanner','Length','RelativePath','DestinationPath','Category','ClassificationBasis')){Assert-Equal $record.$field $exported.$field 'Ordinary identity, paths, numeric values and classification data retain their original value'}
+        Assert-Equal $record.Hash (Get-FileHash -LiteralPath $record.DestinationPath).Hash 'Saved PDFs remain byte-for-byte unchanged by CSV sanitization'
+    }
+    foreach($path in $sources.Keys){Assert-Equal $sources[$path] (Get-FileHash -LiteralPath $path).Hash 'Scanner source originals remain unchanged'}
+}
+
 $failed=@($script:Results | Where-Object { $_.Result -eq 'FAIL' }).Count
 $report=[pscustomobject]@{
     Product='CT QA Manager Pro'; TimestampUtc=[datetime]::UtcNow.ToString('o');
