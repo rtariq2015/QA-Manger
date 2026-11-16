@@ -2,7 +2,7 @@
 
 A portable, offline browser workspace for scanner QA reports. Extract the complete program folder and run **Start CT QA Manager.cmd**. The Windows x64 helper and PDF readers are included; the work computer needs no separate runtime installation or administrator launch. Its application policy must permit the included program and local browser connection.
 
-> **Version 5.7.2:** responsive single-file filing and fewer redundant overview reads. See the [Review workflow](docs/REVIEW-RESPONSIVENESS.md) and [validation scope and known test limitation](docs/TESTING.md).
+> **Version 5.7.3:** responsive single-file filing and fewer redundant overview reads. See the [Review workflow](docs/REVIEW-RESPONSIVENESS.md) and [validation scope and known test limitation](docs/TESTING.md).
 
 > **Version 5.7.0 baseline:** a refreshed medical imaging-console design with bundled CT artwork, faster large-library browsing, improved readability and keyboard access, and stronger archive/update/restore validation. See the [source audit](docs/ENGINEERING-AUDIT.md), [release validation](docs/TESTING.md) and [developer guide](docs/DEVELOPMENT.md).
 

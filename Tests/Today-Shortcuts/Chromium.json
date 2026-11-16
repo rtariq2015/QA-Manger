@@ -1,0 +1,306 @@
+{
+  "syntheticOnly": true,
+  "scope": "Production frontend assets with synthetic snapshot/jobs/Monthly API and a minimal synthetic PDF. Checks establish frontend navigation and selected report identities only; no real backend, archive, scanner, PDF reading or clinical QA validation.",
+  "checks": [
+    {
+      "name": "Synthetic Today snapshot loads without an application error",
+      "result": "PASS"
+    },
+    {
+      "name": "Daily card clearly dates its previous-day fallback",
+      "result": "PASS"
+    },
+    {
+      "name": "Current snapshot-month Monthly receipt is an enabled link",
+      "result": "PASS"
+    },
+    {
+      "name": "Received Monthly PDF is labelled as a file receipt",
+      "result": "PASS"
+    },
+    {
+      "name": "CT_Flash Monthly link remains disabled for missing or prior/pending/reference-only evidence",
+      "result": "PASS"
+    },
+    {
+      "name": "CT_Flash missing Monthly state has a cross and the snapshot month",
+      "result": "PASS"
+    },
+    {
+      "name": "CT_Drive Monthly link remains disabled for missing or prior/pending/reference-only evidence",
+      "result": "PASS"
+    },
+    {
+      "name": "CT_Drive missing Monthly state has a cross and the snapshot month",
+      "result": "PASS"
+    },
+    {
+      "name": "Open library always opens the list and closes the receipt calendar",
+      "result": "PASS"
+    },
+    {
+      "name": "Open library selects Daily reports",
+      "result": "PASS",
+      "actual": "daily"
+    },
+    {
+      "name": "Open library resets the stale scanner filter",
+      "result": "PASS",
+      "actual": "all"
+    },
+    {
+      "name": "Open library resets the stale year filter",
+      "result": "PASS",
+      "actual": "all"
+    },
+    {
+      "name": "Open library resets the stale month filter",
+      "result": "PASS",
+      "actual": "all"
+    },
+    {
+      "name": "Open library resets the stale status filter",
+      "result": "PASS",
+      "actual": "all"
+    },
+    {
+      "name": "Open library clears stale search text",
+      "result": "PASS",
+      "actual": ""
+    },
+    {
+      "name": "Latest Daily date filter is visible",
+      "result": "PASS"
+    },
+    {
+      "name": "Latest eligible global Daily date replaces the calendar receipt scope",
+      "result": "PASS"
+    },
+    {
+      "name": "Latest Daily date is listed newest first across scanners",
+      "result": "PASS",
+      "actual": [
+        "e4fd05d6adbfbef9484c933a9f3ce70c58aad372493898777cbe96ce574d8256",
+        "d78bb6c69cbfacda9568a81c4b9dca4f4bccff198febfd6852c82077ef57014c",
+        "995eddfcff87eadc8c8b14e24760ff9567822e1c2a396c1ab0c124f59896dace"
+      ]
+    },
+    {
+      "name": "Fixture establishes a real stale calendar-day filter",
+      "result": "PASS"
+    },
+    {
+      "name": "Open library always opens the list and closes the receipt calendar",
+      "result": "PASS"
+    },
+    {
+      "name": "Open library selects Daily reports",
+      "result": "PASS",
+      "actual": "daily"
+    },
+    {
+      "name": "Open library resets the stale scanner filter",
+      "result": "PASS",
+      "actual": "all"
+    },
+    {
+      "name": "Open library resets the stale year filter",
+      "result": "PASS",
+      "actual": "all"
+    },
+    {
+      "name": "Open library resets the stale month filter",
+      "result": "PASS",
+      "actual": "all"
+    },
+    {
+      "name": "Open library resets the stale status filter",
+      "result": "PASS",
+      "actual": "all"
+    },
+    {
+      "name": "Open library clears stale search text",
+      "result": "PASS",
+      "actual": ""
+    },
+    {
+      "name": "Latest Daily date filter is visible",
+      "result": "PASS"
+    },
+    {
+      "name": "Latest eligible global Daily date replaces the calendar receipt scope",
+      "result": "PASS"
+    },
+    {
+      "name": "Latest Daily date is listed newest first across scanners",
+      "result": "PASS",
+      "actual": [
+        "e4fd05d6adbfbef9484c933a9f3ce70c58aad372493898777cbe96ce574d8256",
+        "d78bb6c69cbfacda9568a81c4b9dca4f4bccff198febfd6852c82077ef57014c",
+        "995eddfcff87eadc8c8b14e24760ff9567822e1c2a396c1ab0c124f59896dace"
+      ]
+    },
+    {
+      "name": "Shortcut opens the existing report preview",
+      "result": "PASS",
+      "actual": "review"
+    },
+    {
+      "name": "Preview targets the expected original synthetic report ID",
+      "result": "PASS",
+      "actual": "/api/pdf/e4fd05d6adbfbef9484c933a9f3ce70c58aad372493898777cbe96ce574d8256"
+    },
+    {
+      "name": "Open PDF link agrees with the selected report",
+      "result": "PASS",
+      "actual": "/api/pdf/e4fd05d6adbfbef9484c933a9f3ce70c58aad372493898777cbe96ce574d8256"
+    },
+    {
+      "name": "Shortcut opens the existing report preview",
+      "result": "PASS",
+      "actual": "review"
+    },
+    {
+      "name": "Preview targets the expected original synthetic report ID",
+      "result": "PASS",
+      "actual": "/api/pdf/ab46fac12015d68fedbec3c613b0d369d0dd899bc9b23267bf009a8644d6ac0d"
+    },
+    {
+      "name": "Open PDF link agrees with the selected report",
+      "result": "PASS",
+      "actual": "/api/pdf/ab46fac12015d68fedbec3c613b0d369d0dd899bc9b23267bf009a8644d6ac0d"
+    },
+    {
+      "name": "Shortcut opens the existing report preview",
+      "result": "PASS",
+      "actual": "review"
+    },
+    {
+      "name": "Preview targets the expected original synthetic report ID",
+      "result": "PASS",
+      "actual": "/api/pdf/d78bb6c69cbfacda9568a81c4b9dca4f4bccff198febfd6852c82077ef57014c"
+    },
+    {
+      "name": "Open PDF link agrees with the selected report",
+      "result": "PASS",
+      "actual": "/api/pdf/d78bb6c69cbfacda9568a81c4b9dca4f4bccff198febfd6852c82077ef57014c"
+    },
+    {
+      "name": "Shortcut opens the existing report preview",
+      "result": "PASS",
+      "actual": "review"
+    },
+    {
+      "name": "Preview targets the expected original synthetic report ID",
+      "result": "PASS",
+      "actual": "/api/pdf/3999da6f75d6799b4ce10633af43b8e6ce074333e5b572bae2c330123a98323c"
+    },
+    {
+      "name": "Open PDF link agrees with the selected report",
+      "result": "PASS",
+      "actual": "/api/pdf/3999da6f75d6799b4ce10633af43b8e6ce074333e5b572bae2c330123a98323c"
+    },
+    {
+      "name": "Monthly activation opens Monthly without triggering the Daily shortcut",
+      "result": "PASS"
+    },
+    {
+      "name": "The main Monthly tab remains available",
+      "result": "PASS"
+    },
+    {
+      "name": "Shortcut navigation finishes without an application error",
+      "result": "PASS"
+    },
+    {
+      "name": "Shortcut navigation sends no mutation action requests",
+      "result": "PASS"
+    },
+    {
+      "name": "Synthetic original report identities and file types remain unchanged",
+      "result": "PASS"
+    },
+    {
+      "name": "No JavaScript or browser console errors",
+      "result": "PASS"
+    },
+    {
+      "name": "No external asset requests",
+      "result": "PASS"
+    }
+  ],
+  "errors": [],
+  "externalRequests": [],
+  "mutationRequests": [],
+  "pdfRequests": [
+    "e4fd05d6adbfbef9484c933a9f3ce70c58aad372493898777cbe96ce574d8256",
+    "ab46fac12015d68fedbec3c613b0d369d0dd899bc9b23267bf009a8644d6ac0d",
+    "d78bb6c69cbfacda9568a81c4b9dca4f4bccff198febfd6852c82077ef57014c",
+    "3999da6f75d6799b4ce10633af43b8e6ce074333e5b572bae2c330123a98323c"
+  ],
+  "screenshot": "/tmp/ctqa-today-shortcuts-browser/today-shortcuts.png",
+  "status": "PASS",
+  "requests": [
+    {
+      "method": "GET",
+      "pathname": "/"
+    },
+    {
+      "method": "GET",
+      "pathname": "/app.css"
+    },
+    {
+      "method": "GET",
+      "pathname": "/trends.js"
+    },
+    {
+      "method": "GET",
+      "pathname": "/app.js"
+    },
+    {
+      "method": "POST",
+      "pathname": "/api/session"
+    },
+    {
+      "method": "POST",
+      "pathname": "/api/heartbeat"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/snapshot"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/jobs"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/jobs"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/pdf/e4fd05d6adbfbef9484c933a9f3ce70c58aad372493898777cbe96ce574d8256"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/pdf/ab46fac12015d68fedbec3c613b0d369d0dd899bc9b23267bf009a8644d6ac0d"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/pdf/d78bb6c69cbfacda9568a81c4b9dca4f4bccff198febfd6852c82077ef57014c"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/jobs"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/pdf/3999da6f75d6799b4ce10633af43b8e6ce074333e5b572bae2c330123a98323c"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/monthly"
+    }
+  ],
+  "applicationSHA256": "26a7dfa4b49e3e0ac49ab236b21a9ba205ee3018f1d2f4ffebffffe370d5dd57"
+}

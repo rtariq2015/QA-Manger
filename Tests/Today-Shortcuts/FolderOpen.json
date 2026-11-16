@@ -1,0 +1,24 @@
+{
+  "Runtime": "7.4.13",
+  "Tests": 3,
+  "Assertions": 13,
+  "Failed": 0,
+  "Results": [
+    {
+      "Name": "Missing readable library uses the original creation and snapshot flow",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "Repeated saved-folder opening avoids library and snapshot rebuilds",
+      "Result": "PASS",
+      "Details": ""
+    },
+    {
+      "Name": "Saved-folder fast opening still rejects linked folders",
+      "Result": "PASS",
+      "Details": ""
+    }
+  ],
+  "Scope": "Synthetic saved readable-library creation, repeated opening without library/snapshot rebuilds, and direct-path rejection; Explorer is stubbed."
+}

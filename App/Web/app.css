@@ -400,3 +400,6 @@ h1 { letter-spacing: -.75px; }
   .review-workspace-heading { flex-wrap: wrap; gap: 7px; }
   .review-save-status { max-width: none; width: 100%; text-align: left; }
 }
+
+/* Today: separate Daily and Monthly PDF shortcuts within each scanner card. */
+.scanner-daily-link,.scanner-monthly-link{font:inherit;color:inherit;background:transparent;border:0;width:100%;text-align:left;cursor:pointer}.scanner-daily-link{display:block;padding:0;border-radius:5px}.scanner-daily-link:focus-visible,.scanner-monthly-link:focus-visible{outline:3px solid var(--scanner-color,var(--teal));outline-offset:3px}.scanner-daily-link:disabled,.scanner-monthly-link:disabled{cursor:default;opacity:1}.scanner-monthly-link{display:flex;align-items:center;gap:10px;border-top:1px solid var(--line);margin-top:13px;padding:13px 0 0}.scanner-monthly-mark{display:grid;place-items:center;width:22px;height:22px;flex:none;border-radius:50%;color:var(--amber);background:var(--surface-soft);font-weight:700}.scanner-monthly-link.received .scanner-monthly-mark{color:var(--teal);background:var(--teal-light)}.scanner-monthly-link strong,.scanner-monthly-link small{display:block}.scanner-monthly-link strong{font-size:var(--text-small)}.scanner-monthly-link small{font-size:var(--text-caption);color:var(--muted);margin-top:3px}
