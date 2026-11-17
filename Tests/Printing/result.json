@@ -1,0 +1,111 @@
+{
+  "scope": "One narrow synthetic Chromium print-controls check using production frontend assets and an existing calendar fixture. window.print is stubbed; calendar output is Chromium-generated PDF. Original-PDF print link is checked by identity and options only. No physical printer, hospital workstation, Windows native preview, backend PDF integrity or real report processing is tested.",
+  "syntheticOnly": true,
+  "checks": [
+    {
+      "name": "Print calendar invokes the current selected month and scanner in scoped print mode",
+      "result": "PASS"
+    },
+    {
+      "name": "Calendar printing restores the application title and screen mode",
+      "result": "PASS"
+    },
+    {
+      "name": "Print stylesheet excludes sidebar, app header and calendar controls",
+      "result": "PASS"
+    },
+    {
+      "name": "Printed calendar retains scanner heading and wraps day text without cell clipping",
+      "result": "PASS"
+    },
+    {
+      "name": "Selected monthly receipt calendar fits one landscape PDF page",
+      "result": "PASS"
+    },
+    {
+      "name": "Generated PDF includes selected month, scanner, receipt totals, final days and clinical distinction",
+      "result": "PASS"
+    },
+    {
+      "name": "Generated PDF excludes application controls and navigation",
+      "result": "PASS"
+    },
+    {
+      "name": "Print PDF links to the complete selected original in a protected new tab with100% and its toolbar enabled",
+      "result": "PASS"
+    },
+    {
+      "name": "Print PDF label and tooltip explain the native browser print controls",
+      "result": "PASS"
+    },
+    {
+      "name": "Print UI sends no processing mutations and introduces no browser errors or external requests",
+      "result": "PASS"
+    }
+  ],
+  "errors": [],
+  "externalRequests": [],
+  "calendarPrint": {
+    "captured": {
+      "mode": "calendar",
+      "title": "CT QA — Receipt calendar — September 2026",
+      "month": "2026-09",
+      "scanner": "CT_Flash",
+      "scope": "Scanner: CT Flash"
+    },
+    "pdf": "/tmp/ctqa-print-controls/receipt-calendar.pdf",
+    "image": "/tmp/ctqa-print-controls/receipt-calendar.png",
+    "info": "Title:           CT QA Manager Pro\nCreator:         Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/156.0.0.0 Safari/537.36\nProducer:        Skia/PDF m156\nCreationDate:    Tue Nov 17 15:33:57 2026 UTC\nModDate:         Tue Nov 17 15:33:57 2026 UTC\nCustom Metadata: no\nMetadata Stream: no\nTagged:          no\nUserProperties:  no\nSuspects:        no\nForm:            none\nJavaScript:      no\nPages:           1\nEncrypted:       no\nPage size:       842.88 x 595.92 pts (A4)\nPage rot:        0\nFile size:       59590 bytes\nOptimized:       no\nPDF version:     1.4\n"
+  },
+  "pdfPrint": {
+    "selectedId": "135ec375409fc0e7b5adaea5c7d2607ae6e5f1f9f7d353f80949d771212c5c8e",
+    "href": "/api/pdf/135ec375409fc0e7b5adaea5c7d2607ae6e5f1f9f7d353f80949d771212c5c8e#zoom=100&toolbar=1",
+    "target": "_blank",
+    "title": "Opens the complete original PDF. Use its printer icon or Ctrl+P."
+  },
+  "testedFiles": {
+    "App/Web/app.js": "0fa2a3b2122450eedef445087ed099869856b4a44520f836ac9e9c5b9e776b25",
+    "App/Web/app.css": "034c0df333feee4de161b139db48fe893542073cd5268b2f465fc7a38922d1c5",
+    "App/Web/index.html": "566856e21d8817b652d6a67c32e95bf875fdaeb928a3cb4dcebf9ec33770447b"
+  },
+  "status": "PASS",
+  "actionRequests": [],
+  "requests": [
+    {
+      "method": "GET",
+      "pathname": "/"
+    },
+    {
+      "method": "GET",
+      "pathname": "/app.css"
+    },
+    {
+      "method": "GET",
+      "pathname": "/trends.js"
+    },
+    {
+      "method": "GET",
+      "pathname": "/app.js"
+    },
+    {
+      "method": "POST",
+      "pathname": "/api/session"
+    },
+    {
+      "method": "POST",
+      "pathname": "/api/heartbeat"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/snapshot"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/jobs"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/jobs"
+    }
+  ]
+}

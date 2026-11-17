@@ -698,3 +698,35 @@ body[data-page="review"].pdf-viewing .review-workspace{grid-template-columns:min
 .calendar-scanner-tab[aria-pressed="true"]{border-color:var(--scanner-color,var(--teal));background:var(--scanner-soft,var(--teal-light));color:var(--ink);box-shadow:inset 0 -2px 0 var(--scanner-color,var(--teal))}
 @media(max-width:1100px){.calendar-toolbar{align-items:flex-start;flex-wrap:wrap}.calendar-scanner-tabs{justify-content:flex-start}}
 @media(max-width:600px){.calendar-scanner-tabs{width:100%;display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}.calendar-scanner-tab{min-height:44px;padding:10px}}
+
+/* Print only the selected receipt calendar; PDF printing opens the original file. */
+.calendar-print-only{display:none}
+#calendar-print{min-height:40px;white-space:nowrap}
+@page ctqa-receipt{size:landscape;margin:10mm}
+@media print{
+ body[data-print="calendar"]{page:ctqa-receipt;height:auto!important;min-height:0!important;overflow:visible!important;background:#fff!important;color:#111!important;margin:0!important;padding:0!important;font-family:Segoe UI,Arial,sans-serif;--ink:#111;--muted:#333;--white:#fff;--line:#999}
+ body[data-print="calendar"] .sidebar,body[data-print="calendar"] .page-header,body[data-print="calendar"] .workspace-footer,body[data-print="calendar"] .job-toast,body[data-print="calendar"] .banner,body[data-print="calendar"] #background-reading-band,body[data-print="calendar"] .skip-link,body[data-print="calendar"] .ct-art-symbols{display:none!important}
+ body[data-print="calendar"] .app-shell,body[data-print="calendar"] .workspace,body[data-print="calendar"] main,body[data-print="calendar"] #page-reports{display:block!important;height:auto!important;min-height:0!important;max-height:none!important;overflow:visible!important;padding:0!important;margin:0!important;background:#fff!important}
+ body[data-print="calendar"] main>.page:not(#page-reports),body[data-print="calendar"] #page-reports>:not(#daily-calendar){display:none!important}
+ body[data-print="calendar"] #daily-calendar{display:block!important;width:100%;border:0;border-radius:0;padding:0;margin:0;box-shadow:none;background:#fff;color:#111}
+ body[data-print="calendar"] #daily-calendar>summary{display:flex;padding:0 0 3mm;border:0;color:#111;background:#fff;gap:6mm;align-items:center;list-style:none}
+ body[data-print="calendar"] #daily-calendar>summary strong{font-size:15pt;color:#111}
+ body[data-print="calendar"] #daily-calendar>summary small{font-size:9pt;color:#333}
+ body[data-print="calendar"] #daily-calendar>summary svg,body[data-print="calendar"] #daily-calendar>summary .calendar-summary-icon{display:none}
+ body[data-print="calendar"] #calendar-caption{font-size:14pt;font-weight:600;color:#111;margin-left:auto}
+ body[data-print="calendar"] .calendar-content{padding:0;overflow:visible}
+ body[data-print="calendar"] .calendar-toolbar{display:none!important}
+ body[data-print="calendar"] .calendar-print-only{display:block;font-size:10pt;font-weight:600;margin:0 0 2mm;color:#111}
+ body[data-print="calendar"] .calendar-scanner-legend{font-size:9pt;margin:0 0 2mm;color:#111;gap:4mm}
+ body[data-print="calendar"] .calendar-scanner-key{color:#111}
+ body[data-print="calendar"] .calendar-summary{font-size:9pt;color:#111;margin:0 0 3mm;line-height:1.4}
+ body[data-print="calendar"] .calendar-grid,body[data-print="calendar"] .calendar-weekdays{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:1.5mm}
+ body[data-print="calendar"] .calendar-weekdays{font-size:9pt;color:#111;margin-bottom:1.5mm}
+ body[data-print="calendar"] .calendar-day{background:#fff!important;color:#111!important;border:1px solid #888!important;border-radius:2mm;box-shadow:none!important;padding:2mm;min-height:18mm;break-inside:avoid;outline:0!important}
+ body[data-print="calendar"] .calendar-day-number{font-size:10pt;color:#111!important}
+ body[data-print="calendar"] .calendar-day-status{font-size:8.5pt;line-height:1.25;color:#111!important}
+ body[data-print="calendar"] .calendar-scanner-markers{margin-top:1mm}
+ body[data-print="calendar"] .calendar-machine-marker{print-color-adjust:exact;-webkit-print-color-adjust:exact}
+ body[data-print="calendar"] .calendar-legend{font-size:8.5pt;margin-top:3mm;color:#111;gap:4mm}
+ body[data-print="calendar"] #calendar-notice{font-size:8pt;line-height:1.35;color:#333;margin:2mm 0 0}
+}

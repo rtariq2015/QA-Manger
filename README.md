@@ -1,8 +1,8 @@
-# CT QA Manager Pro 5.7.12
+# CT QA Manager Pro 5.7.13
 
 A portable, offline browser workspace for scanner QA reports. Extract the complete program folder and run **Start CT QA Manager.cmd**. The Windows x64 helper and PDF readers are included; the work computer needs no separate runtime installation or administrator launch. Its application policy must permit the included program and local browser connection.
 
-> **Version 5.7.12:** clickable scanner tabs replace the Receipt calendar dropdown. All scanners and configured machines keep the same filtering, month navigation and saved-report behavior.
+> **Version 5.7.13:** Print calendar opens the browser print dialog for the selected month/scanner. Print PDF opens the complete original report in a new tab for its printer icon or Ctrl+P.
 
 > **Version 5.7.0 baseline:** a refreshed medical imaging-console design with bundled CT artwork, faster large-library browsing, improved readability and keyboard access, and stronger archive/update/restore validation. See the [source audit](docs/ENGINEERING-AUDIT.md), [release validation](docs/TESTING.md) and [developer guide](docs/DEVELOPMENT.md).
 

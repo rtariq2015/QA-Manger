@@ -1,5 +1,10 @@
 # Changes
 
+## 5.7.13 — calendar and PDF printing options
+
+- Add Print calendar for the current month/scanner, with a clean landscape print layout containing the calendar, scope, totals and receipt disclaimer. Hide application menus and unrelated pages when printing.
+- Add Print PDF in the shared viewer. It opens the complete original report in the browser, where the printer icon or Ctrl+P prints all pages. Do not print the lazy-loaded preview images.
+
 ## 5.7.12 — calendar scanner tabs
 
 - Replace Receipt calendar’s scanner dropdown with clickable All scanners and configured-machine buttons. Preserve scanner accent colors, selection state, names, receipt calculations, month navigation and day-to-library filtering. Wrap the controls on smaller screens.

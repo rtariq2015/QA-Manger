@@ -1,0 +1,39 @@
+Daily receipt calendar                                                                                                                                                                           September 2026
+Saved reports by scanner and day
+
+Scanner: CT Flash
+  CT Flash
+27 of 30 scheduled Daily reports received. 3 have no separate Daily PDF. Monthly PDFs are available for 3 of those.
+
+             Sun                             Mon                              Tue                            Wed                             Thu                              Fri                             Sat
+
+                                                                   1                              2                               3                               4                               5
+                                                                   Received                       Received                        Received                        Received                        Monthly PDF available
+
+
+
+ 6                               7                                 8                              9                               10                              11                              12
+ Received                        Received                          Received                       Received                        Received                        Received                        Received
+
+
+
+ 13                              14                                15                             16                              17                              18                              19
+ Received                        Monthly PDF available             Monthly PDF available          Received                        Received                        Received                        Received
+
+
+
+ 20                              21                                22                             23                              24                              25                              26
+ Received                        Received                          Received                       Received                        Received                        Received                        Received
+
+
+
+ 27                              28                                29                             30
+ Received                        Received                          Received                       Received
+
+
+
+  Received         No saved report        Not scheduled / future
+
+
+Saved Daily report receipt follows each scanner schedule. Monthly PDFs on the same day are linked without changing Daily receipt totals. This view describes the saved archive; clinical test results are tracked separately.
+
