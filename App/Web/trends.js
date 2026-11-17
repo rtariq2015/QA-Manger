@@ -7,7 +7,7 @@
   const metricLabel=()=>metricDefinition().label;
   const metricUnit=()=>metricDefinition().unit;
   const PERIODS = new Set(['30','90','365','all']);
-  const state = {ready:false, api:null, openRecord:null, readPending:null, isBusy:()=>false, isBackgroundReading:()=>false, snapshot:null, sourceRevision:'', dataRevision:'', scanners:[], scanner:'', metric:'WaterCTNumber', series:'', seriesLabel:'', period:'90', data:null, dataKey:'', dirty:true, loading:false, controller:null, generation:0, requestKey:'', reading:false, error:'', notice:''};
+  const state = {ready:false, api:null, openRecord:null, readPending:null, isBusy:()=>false, isBackgroundReading:()=>false, snapshot:null, sourceRevision:'', dataRevision:'', scanners:[], scanner:'', metric:'WaterCTNumber', series:'', seriesLabel:'', period:'90', data:null, dataKey:'', dirty:true, loading:false, controller:null, generation:0, requestKey:'', reading:false, error:'', notice:'', view:'line', selectedReadingKey:'', selectedReadingScope:''};
   const $ = id => document.getElementById(id);
   const text = value => value == null ? '' : String(value);
   const list = value => Array.isArray(value) ? value : [];
@@ -100,12 +100,28 @@
     const seen=new Set();
     return list(value).map(item=>({id:text(field(item,'id','scannerId','scanner')),name:text(field(item,'name','scannerName'))})).filter(item=>item.id&&!seen.has(item.id)&&seen.add(item.id));
   }
+  function renderScannerTabs() {
+    const tabs=$('trend-scanner-tabs'),control=$('trend-scanner');if(!tabs||!control)return;
+    const key=JSON.stringify(state.scanners.map(scanner=>[scanner.id,scanner.name]));
+    if(tabs.dataset.optionsKey!==key){
+      const focused=tabs.contains(document.activeElement)?document.activeElement.dataset.scannerId:null,fragment=document.createDocumentFragment();
+      for(const [index,scanner] of state.scanners.entries()){
+        const button=html('button','trend-scanner-tab scanner-accent-'+index%3);button.type='button';button.dataset.scannerId=scanner.id;
+        const mark=html('span','scanner-tab-dot');mark.setAttribute('aria-hidden','true');button.append(mark,document.createTextNode(scanner.name||scanner.id));
+        button.addEventListener('click',()=>{if(control.value===scanner.id)return;control.value=scanner.id;control.dispatchEvent(new Event('change',{bubbles:true}));});fragment.append(button);
+      }
+      tabs.replaceChildren(fragment);tabs.dataset.optionsKey=key;
+      if(focused)tabs.querySelector('button[data-scanner-id="'+CSS.escape(focused)+'"]')?.focus({preventScroll:true});
+    }
+    for(const button of tabs.querySelectorAll('button')){const selected=button.dataset.scannerId===state.scanner;button.classList.toggle('active',selected);button.setAttribute('aria-pressed',String(selected));}
+  }
   function updateScanners(scanners) {
     if(scanners.length)state.scanners=scanners;
     const previous=state.scanner;
     if(!state.scanners.some(item=>item.id===state.scanner))state.scanner=state.scanners[0]?.id||'';
     options($('trend-scanner'),state.scanners.map(item=>({value:item.id,label:item.name||item.id})),state.scanner,'No saved scanners');
     if(previous!==state.scanner){state.series='';state.seriesLabel='';state.data=null;state.dataKey='';state.dirty=true;}
+    renderScannerTabs();
   }
   function currentSeries() {return state.data?.series.find(item=>item.key===state.series)||null;}
   function contextLabel(series) {
@@ -140,8 +156,11 @@
   }
   function renderCoverage() {
     const coverage=state.data?.coverage;
-    if(!coverage){setText('trend-coverage',state.loading?'Checking saved measurement coverage…':'Measurements appear after supported PDFs have been read.');return;}
+    if(!coverage){setText('trend-read-count',state.loading?'Checking saved PDFs…':'PDF reading details');setText('trend-available-count','Readings unavailable');setText('trend-waiting-count','');setText('trend-coverage',state.loading?'Checking saved measurement coverage…':'Measurements appear after supported PDFs have been read.');return;}
     const data=state.data,series=currentSeries(),readings=Number(data?.summary?.count??data?.totalPointCount??data?.points?.length)||0;
+    setText('trend-read-count',`${count(coverage.readReports)} of ${count(coverage.savedReports)} PDFs read`);
+    setText('trend-available-count',`${count(readings)} ${readings===1?'reading':'readings'} available`);
+    setText('trend-waiting-count',`${count(coverage.pendingReports)} waiting`);
     const details=[`${count(coverage.readReports)} of ${count(coverage.savedReports)} saved PDFs read for this scanner and period`,`${count(coverage.pendingReports)} waiting for text or measurement reading`,`${count(readings)} ${metricLabel()} readings${series?' · '+contextLabel(series):' in the selected context'}`];
     const hasSpecificAvailability=number(coverage.metricNotPresentReports)!==null&&number(coverage.metricUnavailableReports)!==null;
     if(hasSpecificAvailability){
@@ -160,8 +179,43 @@
   function pointLabel(point,series) {
     return `${dateLabel(point.date)}${point.time?' at '+point.time:''}: ${format(point.value)} ${point.unit||metricUnit()}. Printed limits: ${boundsLabel(point)}. ${contextLabel(series)}.${point.outsidePrintedRange?' Outside printed range.':''}${point.reviewWarning?' Source report needs review.':''} Open source PDF${point.page?', page '+point.page:''}.`;
   }
+  function displayedPoints() {return (state.data?.points||[]).slice(-MAX_POINTS);}
+  function readingKey(point) {return JSON.stringify([point.recordId,point.date,point.time,point.page,point.value]);}
+  function renderView() {
+    const table=state.view==='table';
+    if($('page-trends'))$('page-trends').dataset.trendView=state.view;
+    if($('trend-chart'))$('trend-chart').hidden=table;
+    if($('trend-table-section'))$('trend-table-section').hidden=!table;
+    for(const view of ['line','points','table']){const button=$('trend-view-'+view);if(button){const selected=state.view===view;button.classList.toggle('active',selected);button.setAttribute('aria-pressed',String(selected));}}
+    // View changes reuse the existing chart and table; printed limits stay visible.
+    for(const line of $('trend-chart')?.querySelectorAll('.data-line,.legend-value-line')||[])line.style.display=state.view==='points'?'none':'';
+  }
+  function renderSelectedReading(points,series,{updateOptions=true}={}) {
+    const panel=$('trend-selected-panel'),control=$('trend-selected-reading'),source=$('trend-selected-source');if(!panel||!control||!source)return;
+    const scope=JSON.stringify([state.scanner,state.metric,state.series]);
+    if(scope!==state.selectedReadingScope){state.selectedReadingScope=scope;state.selectedReadingKey='';}
+    let selected=points.find(point=>readingKey(point)===state.selectedReadingKey)||points[points.length-1]||null;
+    state.selectedReadingKey=selected?readingKey(selected):'';panel.hidden=!selected;
+    if(updateOptions)options(control,[...points].reverse().map(point=>({value:readingKey(point),label:`${dateLabel(point.date)}${point.time?' · '+point.time:''}${point.page?' · p. '+point.page:''} · ${format(point.value)} ${point.unit}`})),state.selectedReadingKey,'No reading selected');
+    else control.value=state.selectedReadingKey;
+    source.disabled=!selected;source.dataset.recordId=selected?.recordId||'';source.dataset.page=selected?.page?String(selected.page):'';
+    if(!selected){setText('trend-selected-value','—');setText('trend-selected-context','Choose a reading from the chart or table.');setText('trend-selected-limits','Printed limits: Not printed');source.textContent='Open source PDF';return;}
+    setText('trend-selected-value',`${format(selected.value)} ${selected.unit}`);
+    setText('trend-selected-context',contextLabel(series)+(selected.outsidePrintedRange?' · Outside printed range':'')+(selected.reviewWarning?' · Check source report':''));
+    setText('trend-selected-limits','Printed limits: '+boundsLabel(selected));
+    source.textContent=`Open PDF${selected.page?' · page '+selected.page:''}`;
+    source.setAttribute('aria-label',`Open source PDF for ${dateLabel(selected.date)}${selected.page?', page '+selected.page:''}`);
+    for(const link of $('trend-chart')?.querySelectorAll('.selected-reading')||[]){link.classList.remove('selected-reading');link.removeAttribute('aria-current');}
+    const link=$('trend-chart')?.querySelector('a[data-reading-key="'+CSS.escape(state.selectedReadingKey)+'"]');
+    if(link){link.classList.add('selected-reading');link.setAttribute('aria-current','true');}
+  }
+  function selectReading(point) {
+    const points=displayedPoints(),key=readingKey(point);if(!points.some(item=>readingKey(item)===key))return;
+    state.selectedReadingKey=key;renderSelectedReading(points,currentSeries(),{updateOptions:false});
+  }
   function openSource(event,point) {
     event.preventDefault();
+    selectReading(point);
     if(typeof state.openRecord==='function')state.openRecord(point.recordId,point.page);
   }
   function renderTable(points,series) {
@@ -194,7 +248,7 @@
     const width=960,height=410,left=75,right=790,top=62,bottom=330;
     const chart=svg('svg',{viewBox:`0 0 ${width} ${height}`,role:'group','aria-labelledby':'qa-trend-svg-title qa-trend-svg-description'});
     chart.append(svg('title',{id:'qa-trend-svg-title'},`${metricLabel()} in ${metricUnit()} — ${contextLabel(series)}`));
-    chart.append(svg('desc',{id:'qa-trend-svg-description'},`${points.length} dated printed readings. Horizontal axis: printed report date. Vertical axis: ${metricDefinition().axisLabel}. Dashed lines and shading show reference limits printed in each source PDF where available. Amber diamonds are outside the printed range. These descriptions do not create clinical approval. Focus a point for its value and limits, then activate it to open the source report. The table below contains the same readings.`));
+    chart.append(svg('desc',{id:'qa-trend-svg-description'},`${points.length} dated printed readings. Horizontal axis: printed report date. Vertical axis: ${metricDefinition().axisLabel}. Dashed lines and shading show reference limits printed in each source PDF where available. Amber diamonds are outside the printed range. These descriptions do not create clinical approval. Focus a point for its value and limits, then activate it to open the source report. The Table view contains the same readings.`));
     const allValues=points.flatMap(point=>[point.value,...(point.lower===null?[]:[point.lower]),...(point.upper===null?[]:[point.upper])]);
     let min=Math.min(...allValues),max=Math.max(...allValues);const padding=Math.max((max-min)*.12,(max===min?Math.max(Math.abs(min)*.1,.5):.05));min-=padding;max+=padding;
     const first=localDate(points[0].date).getTime(),last=localDate(points[points.length-1].date).getTime();
@@ -224,14 +278,14 @@
     if(points.length>1)chart.append(svg('polyline',{points:points.map(point=>`${x(point)},${y(point.value)}`).join(' '),class:'data-line'}));
     const tooltip=html('p','small','Focus or point to a reading to see its printed value and source PDF.');tooltip.id='trend-tooltip';tooltip.style.minHeight='3.5em';tooltip.style.color='var(--ink)';tooltip.style.lineHeight='1.8';tooltip.setAttribute('aria-live','polite');tooltip.setAttribute('aria-atomic','true');
     for(const point of points) {
-      const px=x(point),py=y(point.value),description=pointLabel(point,series),link=svg('a',{href:'#review',tabindex:'0',role:'link','aria-label':description});
+      const px=x(point),py=y(point.value),description=pointLabel(point,series),link=svg('a',{href:'#review',tabindex:'0',role:'link','aria-label':description,'data-reading-key':readingKey(point)});
       link.append(svg('title',{},description));
       const shape=point.outsidePrintedRange?svg('path',{class:'data-point',d:`M ${px} ${py-6} L ${px+6} ${py} L ${px} ${py+6} L ${px-6} ${py} Z`}):svg('circle',{class:'data-point',cx:px,cy:py,r:4.5});
       if(point.outsidePrintedRange){shape.style.fill='var(--amber)';shape.style.stroke='var(--white)';}
       link.append(shape);
       // A transparent target makes small points usable without obscuring their printed values.
       link.append(svg('circle',{cx:px,cy:py,r:10,fill:'transparent',stroke:'none'}));
-      const show=()=>{tooltip.textContent=description;};link.addEventListener('focus',show);link.addEventListener('pointerenter',show);link.addEventListener('click',event=>openSource(event,point));link.addEventListener('keydown',event=>{if(event.key===' '){event.preventDefault();if(typeof state.openRecord==='function')state.openRecord(point.recordId,point.page);}});chart.append(link);
+      const show=()=>{tooltip.textContent=description;selectReading(point);};link.addEventListener('focus',show);link.addEventListener('pointerenter',show);link.addEventListener('click',event=>openSource(event,point));link.addEventListener('keydown',event=>{if(event.key===' '){event.preventDefault();selectReading(point);if(typeof state.openRecord==='function')state.openRecord(point.recordId,point.page);}});chart.append(link);
     }
     const legend=html('div','small');legend.id='trend-legend';legend.setAttribute('aria-label','Chart legend');legend.style.display='flex';legend.style.flexWrap='wrap';legend.style.gap='8px 22px';legend.style.marginBottom='8px';legend.style.color='var(--ink)';
     const legendItem=(kind,label,color)=>{
@@ -239,7 +293,7 @@
       item.style.display='inline-flex';item.style.alignItems='center';item.style.gap='6px';marker.style.width='24px';marker.style.height='12px';marker.style.minHeight='0';marker.style.color=`var(${color})`;
       if(kind==='outside')marker.append(svg('path',{d:'M12 1 17 6 12 11 7 6Z',fill:'currentColor',stroke:'none'}));
       else{
-        marker.append(svg('line',{x1:1,y1:6,x2:23,y2:6,stroke:'currentColor','stroke-width':kind==='limits'?1.5:2,...(kind==='limits'?{'stroke-dasharray':'4 3'}:{})}));
+        marker.append(svg('line',{x1:1,y1:6,x2:23,y2:6,stroke:'currentColor','stroke-width':kind==='limits'?1.5:2,...(kind==='value'?{class:'legend-value-line'}:{}),...(kind==='limits'?{'stroke-dasharray':'4 3'}:{})}));
         if(kind==='value')marker.append(svg('circle',{cx:12,cy:6,r:3.5,fill:'currentColor',stroke:'var(--white)','stroke-width':1.5}));
       }
       item.append(marker,document.createTextNode(label));legend.append(item);
@@ -266,7 +320,7 @@
     setText('trend-change',change===null?'—':`${change>0?'+':''}${format(change)} ${metricUnit()}`);
     setText('trend-change-detail',!complete&&(data?.pointLimitReached||data?.dataLimitReached)?'Narrow the period to compare its first and latest readings.':first&&latest?`${dateLabel(fullSummary?summary.firstDate:first.date)} to ${dateLabel(fullSummary?summary.latestDate:latest.date)} · latest minus first`:'Latest minus first value in the selected period');
     setText('trend-count',points.length.toLocaleString());
-    renderCoverage();renderChart(points,series);renderTable(points,series);updateReadButton();
+    renderScannerTabs();renderCoverage();renderChart(points,series);renderTable(points,series);renderSelectedReading(points,series);renderView();updateReadButton();
     const notes=['Printed limits describe the source PDF. Change is latest minus first in the selected period; it does not create clinical approval.'];
     if(state.loading)notes.push('Updating saved measurements…');
     if(state.error)notes.push(`Could not refresh: ${state.error}`);
@@ -335,6 +389,9 @@
     options($('trend-metric'),Object.entries(METRICS).map(([value,definition])=>({value,label:definition.label})),state.metric,'No supported measurements');
     state.period=PERIODS.has($('trend-period')?.value)?$('trend-period').value:'90';
     for(const kind of ['scanner','metric','series','period'])$('trend-'+kind)?.addEventListener('change',()=>changed(kind));
+    for(const view of ['line','points','table'])$('trend-view-'+view)?.addEventListener('click',()=>{state.view=view;renderView();});
+    $('trend-selected-reading')?.addEventListener('change',()=>{const point=displayedPoints().find(item=>readingKey(item)===$('trend-selected-reading').value);if(point)selectReading(point);});
+    $('trend-selected-source')?.addEventListener('click',event=>{const point=displayedPoints().find(item=>readingKey(item)===state.selectedReadingKey);if(point)openSource(event,point);});
     $('trend-read-pending')?.addEventListener('click',readMeasurements);
     $('trend-status')?.setAttribute('role','status');$('trend-status')?.setAttribute('aria-live','polite');
     state.ready=true;updateReadButton();

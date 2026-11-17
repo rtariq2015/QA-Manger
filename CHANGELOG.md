@@ -1,5 +1,10 @@
 # Changes
 
+## 5.7.15 — clearer Trends and automatic Monthly view
+
+- Apply the approved Trends layout: scanner tabs, compact reading summaries, Line/Points/Table views that reuse loaded data, an expandable coverage explanation and selected-reading details with the original PDF/page link. Preserve all eight metrics, exact units and contexts, per-PDF printed limits, source warnings, cancellation and existing point/cache limits.
+- Hide Refresh monthly view, move Monthly scanner tabs toward the center and quietly check the cached host snapshot at most every 30 seconds while Monthly is visible and idle. Reuse revision gating to reload its model only after relevant saved data changes; retry failed Monthly loads automatically. Do not start extra scanner scans or parse PDFs on a view refresh.
+
 ## 5.7.14 — Monthly scanner tabs
 
 - Hide the older Windows-interface shortcut from Settings and rename Close local app to Exit CT QA. Retain the background host and Classic fallback components.

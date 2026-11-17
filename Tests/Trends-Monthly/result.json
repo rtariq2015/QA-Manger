@@ -1,0 +1,524 @@
+{
+  "syntheticOnly": true,
+  "scope": "One focused production web UI flow against synthetic snapshot, Monthly, Trends and generated PNG responses. Validates presentation mode changes, source-context values/units/printed limits/page references and read-only Monthly refresh behavior with a controlled browser clock. No real backend, PDF extraction, scanner, archive, Windows or hospital-workstation execution. Date.now/visibility are controlled only in the test browser; real timers and production polling execute normally. Screenshot themes are applied locally for visual inspection. One isolated follow-up HTTP503 Monthly retry case additionally retained the prior model and recovered at the next due interval.",
+  "checks": [
+    {
+      "name": "All existing scanners appear as Trends tabs",
+      "result": "PASS"
+    },
+    {
+      "name": "All eight existing metric families remain available",
+      "result": "PASS"
+    },
+    {
+      "name": "Change remains latest minus first, from exact supplied values",
+      "result": "PASS"
+    },
+    {
+      "name": "Exact reading count retained",
+      "result": "PASS"
+    },
+    {
+      "name": "Default measurement context is the exact backend-selected series",
+      "result": "PASS"
+    },
+    {
+      "name": "Coverage summary distinguishes read PDF count",
+      "result": "PASS"
+    },
+    {
+      "name": "Coverage summary retains waiting count",
+      "result": "PASS"
+    },
+    {
+      "name": "Expanded coverage retains the absent-test count",
+      "result": "PASS"
+    },
+    {
+      "name": "Points mode updates only presentation state",
+      "result": "PASS"
+    },
+    {
+      "name": "Points mode hides the joining line",
+      "result": "PASS"
+    },
+    {
+      "name": "Points mode keeps source-printed limits and bounds",
+      "result": "PASS"
+    },
+    {
+      "name": "Printed-limit lines stay visible in Points mode",
+      "result": "PASS"
+    },
+    {
+      "name": "Table mode shows the existing source-evidence table",
+      "result": "PASS"
+    },
+    {
+      "name": "Table view retains all six readings",
+      "result": "PASS"
+    },
+    {
+      "name": "Table preserves source numeric value and HU for reading 0",
+      "result": "PASS"
+    },
+    {
+      "name": "Table preserves this PDF\u2019s printed bounds for reading 0",
+      "result": "PASS"
+    },
+    {
+      "name": "Table does not mix test contexts for reading 0",
+      "result": "PASS"
+    },
+    {
+      "name": "Table preserves source page for reading 0",
+      "result": "PASS"
+    },
+    {
+      "name": "Table preserves source numeric value and HU for reading 1",
+      "result": "PASS"
+    },
+    {
+      "name": "Table preserves this PDF\u2019s printed bounds for reading 1",
+      "result": "PASS"
+    },
+    {
+      "name": "Table does not mix test contexts for reading 1",
+      "result": "PASS"
+    },
+    {
+      "name": "Table preserves source page for reading 1",
+      "result": "PASS"
+    },
+    {
+      "name": "Table preserves source numeric value and HU for reading 2",
+      "result": "PASS"
+    },
+    {
+      "name": "Table preserves this PDF\u2019s printed bounds for reading 2",
+      "result": "PASS"
+    },
+    {
+      "name": "Table does not mix test contexts for reading 2",
+      "result": "PASS"
+    },
+    {
+      "name": "Table preserves source page for reading 2",
+      "result": "PASS"
+    },
+    {
+      "name": "Table preserves source numeric value and HU for reading 3",
+      "result": "PASS"
+    },
+    {
+      "name": "Table preserves this PDF\u2019s printed bounds for reading 3",
+      "result": "PASS"
+    },
+    {
+      "name": "Table does not mix test contexts for reading 3",
+      "result": "PASS"
+    },
+    {
+      "name": "Table preserves source page for reading 3",
+      "result": "PASS"
+    },
+    {
+      "name": "Table preserves source numeric value and HU for reading 4",
+      "result": "PASS"
+    },
+    {
+      "name": "Table preserves this PDF\u2019s printed bounds for reading 4",
+      "result": "PASS"
+    },
+    {
+      "name": "Table does not mix test contexts for reading 4",
+      "result": "PASS"
+    },
+    {
+      "name": "Table preserves source page for reading 4",
+      "result": "PASS"
+    },
+    {
+      "name": "Table preserves source numeric value and HU for reading 5",
+      "result": "PASS"
+    },
+    {
+      "name": "Table preserves this PDF\u2019s printed bounds for reading 5",
+      "result": "PASS"
+    },
+    {
+      "name": "Table does not mix test contexts for reading 5",
+      "result": "PASS"
+    },
+    {
+      "name": "Table preserves source page for reading 5",
+      "result": "PASS"
+    },
+    {
+      "name": "Line/Points/Table toggles reuse the same rendered chart evidence",
+      "result": "PASS"
+    },
+    {
+      "name": "Presentation toggles make no additional Trends API requests",
+      "result": "PASS"
+    },
+    {
+      "name": "Selected source defaults to the latest real supplied point",
+      "result": "PASS"
+    },
+    {
+      "name": "Prominent selected source keeps its exact context",
+      "result": "PASS"
+    },
+    {
+      "name": "Prominent selected source keeps printed limits",
+      "result": "PASS"
+    },
+    {
+      "name": "Prominent source control targets the exact original record ID",
+      "result": "PASS"
+    },
+    {
+      "name": "Prominent source control keeps the exact source-page reference",
+      "result": "PASS"
+    },
+    {
+      "name": "Selected-reading control exposes a different original value",
+      "result": "PASS"
+    },
+    {
+      "name": "Changing selected reading preserves its distinct PDF page",
+      "result": "PASS"
+    },
+    {
+      "name": "Selecting an already-loaded reading does not refetch Trends",
+      "result": "PASS"
+    },
+    {
+      "name": "Source opens existing view-only PDF mode",
+      "result": "PASS"
+    },
+    {
+      "name": "Source viewing does not turn filing or clinical approval into a chart action",
+      "result": "PASS"
+    },
+    {
+      "name": "Clicking the active scanner tab does not reload data",
+      "result": "PASS"
+    },
+    {
+      "name": "CT Flash tab updates existing scanner selection",
+      "result": "PASS"
+    },
+    {
+      "name": "CT Flash requests only its scanner context",
+      "result": "PASS"
+    },
+    {
+      "name": "MDP Building tab updates existing scanner selection",
+      "result": "PASS"
+    },
+    {
+      "name": "MDP Building requests only its scanner context",
+      "result": "PASS"
+    },
+    {
+      "name": "Table-position family retains millimetres",
+      "result": "PASS"
+    },
+    {
+      "name": "Table-position method/position context remains distinct",
+      "result": "PASS"
+    },
+    {
+      "name": "Changing test setup does not merge separate context readings",
+      "result": "PASS"
+    },
+    {
+      "name": "Explicit alternate test setup is retained",
+      "result": "PASS"
+    },
+    {
+      "name": "Absent bounds are never invented",
+      "result": "PASS"
+    },
+    {
+      "name": "Manual Monthly refresh is hidden",
+      "result": "PASS"
+    },
+    {
+      "name": "Monthly scanner tabs are centered in the toolbar: {\"toolbar\":{\"x\":242,\"y\":157.296875,\"width\":1164,\"height\":107},\"tabBounds\":{\"x\":591.234375,\"y\":190.796875,\"width\":465.53125,\"height\":40},\"centerDifference\":0}",
+      "result": "PASS"
+    },
+    {
+      "name": "Visible Monthly does not refresh before30seconds",
+      "result": "PASS"
+    },
+    {
+      "name": "Unchanged snapshot reuses the existing Monthly model",
+      "result": "PASS"
+    },
+    {
+      "name": "Monthly defers periodic snapshot work while its model is loading",
+      "result": "PASS"
+    },
+    {
+      "name": "A changed saved revision reloads Monthly exactly once",
+      "result": "PASS"
+    },
+    {
+      "name": "Monthly defers periodic snapshot work during a foreground operation",
+      "result": "PASS"
+    },
+    {
+      "name": "Hidden Monthly does not start periodic snapshot work",
+      "result": "PASS"
+    },
+    {
+      "name": "An in-flight saved snapshot is not duplicated",
+      "result": "PASS"
+    },
+    {
+      "name": "Centered Monthly tabs retain scanner filtering",
+      "result": "PASS"
+    },
+    {
+      "name": "Monthly scanner tab filters the model locally",
+      "result": "PASS"
+    },
+    {
+      "name": "This flow submits no mutation, scanner Refresh or filing actions",
+      "result": "PASS"
+    },
+    {
+      "name": "No browser JavaScript or synthetic route errors",
+      "result": "PASS"
+    },
+    {
+      "name": "Production frontend needs no external requests",
+      "result": "PASS"
+    },
+    {
+      "name": "Initial Monthly model loads once",
+      "result": "PASS"
+    },
+    {
+      "name": "One deliberately failed Monthly read is recorded",
+      "result": "PASS"
+    },
+    {
+      "name": "Failed refresh retains the previously saved Monthly model",
+      "result": "PASS"
+    },
+    {
+      "name": "Next due interval retries the failed model once",
+      "result": "PASS"
+    },
+    {
+      "name": "Fault recovery submits no scanner Refresh or other mutation",
+      "result": "PASS"
+    },
+    {
+      "name": "Controlled HTTP503 causes no uncaught browser JavaScript error",
+      "result": "PASS"
+    }
+  ],
+  "errors": [],
+  "externalRequests": [],
+  "mutations": [],
+  "pdfRequests": [],
+  "screenshots": [
+    "/tmp/ctqa-trends-monthly/Trends-Dark.png",
+    "/tmp/ctqa-trends-monthly/Trends-Light.png",
+    "/tmp/ctqa-trends-monthly/Monthly-Dark.png",
+    "/tmp/ctqa-trends-monthly/Monthly-Light.png"
+  ],
+  "sourceHashes": {
+    "index.html": "df065122bb76d738f7e8ea71cf194c6938fe4ab0064ac09e74229f996a69c3c7",
+    "app.css": "1387db7107cf493d3be9a04539207471ee364bf077fd9d2b484b2da1c5ea05d2",
+    "app.js": "465231587c3857ebcbf07bcb463ebb87f2029c5c38e0b899c463e71fa43ef896",
+    "trends.js": "4f92f9abd64afeaaa4905cbfe192da8cff2b0e08fe92812edc82ab934c4e44d6"
+  },
+  "screenshotSourceHashes": {
+    "Trends-Dark.png": {
+      "index.html": "df065122bb76d738f7e8ea71cf194c6938fe4ab0064ac09e74229f996a69c3c7",
+      "app.css": "2cbeabbae11b3328e0c5f7858ee93cdd5b763498fe4639e8b8f62892ba8bf404",
+      "app.js": "465231587c3857ebcbf07bcb463ebb87f2029c5c38e0b899c463e71fa43ef896",
+      "trends.js": "4f92f9abd64afeaaa4905cbfe192da8cff2b0e08fe92812edc82ab934c4e44d6"
+    },
+    "Trends-Light.png": {
+      "index.html": "df065122bb76d738f7e8ea71cf194c6938fe4ab0064ac09e74229f996a69c3c7",
+      "app.css": "2cbeabbae11b3328e0c5f7858ee93cdd5b763498fe4639e8b8f62892ba8bf404",
+      "app.js": "465231587c3857ebcbf07bcb463ebb87f2029c5c38e0b899c463e71fa43ef896",
+      "trends.js": "4f92f9abd64afeaaa4905cbfe192da8cff2b0e08fe92812edc82ab934c4e44d6"
+    },
+    "Monthly-Dark.png": {
+      "index.html": "df065122bb76d738f7e8ea71cf194c6938fe4ab0064ac09e74229f996a69c3c7",
+      "app.css": "1387db7107cf493d3be9a04539207471ee364bf077fd9d2b484b2da1c5ea05d2",
+      "app.js": "465231587c3857ebcbf07bcb463ebb87f2029c5c38e0b899c463e71fa43ef896",
+      "trends.js": "4f92f9abd64afeaaa4905cbfe192da8cff2b0e08fe92812edc82ab934c4e44d6"
+    },
+    "Monthly-Light.png": {
+      "index.html": "df065122bb76d738f7e8ea71cf194c6938fe4ab0064ac09e74229f996a69c3c7",
+      "app.css": "1387db7107cf493d3be9a04539207471ee364bf077fd9d2b484b2da1c5ea05d2",
+      "app.js": "465231587c3857ebcbf07bcb463ebb87f2029c5c38e0b899c463e71fa43ef896",
+      "trends.js": "4f92f9abd64afeaaa4905cbfe192da8cff2b0e08fe92812edc82ab934c4e44d6"
+    }
+  },
+  "priorTrendsEvidence": {
+    "status": "PASS for completed Trends checks",
+    "sourceHashes": {
+      "index.html": "df065122bb76d738f7e8ea71cf194c6938fe4ab0064ac09e74229f996a69c3c7",
+      "app.css": "2cbeabbae11b3328e0c5f7858ee93cdd5b763498fe4639e8b8f62892ba8bf404",
+      "app.js": "465231587c3857ebcbf07bcb463ebb87f2029c5c38e0b899c463e71fa43ef896",
+      "trends.js": "4f92f9abd64afeaaa4905cbfe192da8cff2b0e08fe92812edc82ab934c4e44d6"
+    },
+    "note": "The preceding run completed all Trends assertions, then stopped at Monthly centering. Only Monthly CSS changed before this Monthly-only continuation."
+  },
+  "monthlyGeometry": {
+    "toolbar": {
+      "x": 242,
+      "y": 157.296875,
+      "width": 1164,
+      "height": 107
+    },
+    "tabBounds": {
+      "x": 591.234375,
+      "y": 190.796875,
+      "width": 465.53125,
+      "height": 40
+    },
+    "centerDifference": 0
+  },
+  "status": "PASS",
+  "assertions": 80,
+  "requests": [
+    {
+      "method": "GET",
+      "pathname": "/"
+    },
+    {
+      "method": "GET",
+      "pathname": "/app.css"
+    },
+    {
+      "method": "GET",
+      "pathname": "/trends.js"
+    },
+    {
+      "method": "GET",
+      "pathname": "/app.js"
+    },
+    {
+      "method": "POST",
+      "pathname": "/api/session"
+    },
+    {
+      "method": "POST",
+      "pathname": "/api/heartbeat"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/snapshot"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/jobs"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/monthly",
+      "month": "2026-11"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/jobs"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/jobs"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/snapshot"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/jobs"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/snapshot"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/monthly",
+      "month": "2026-11"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/jobs"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/jobs"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/jobs"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/snapshot"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/jobs"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/jobs"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/snapshot"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/jobs"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/snapshot"
+    }
+  ],
+  "trendRequests": [],
+  "sourceHashesAtEnd": {
+    "index.html": "df065122bb76d738f7e8ea71cf194c6938fe4ab0064ac09e74229f996a69c3c7",
+    "app.css": "1387db7107cf493d3be9a04539207471ee364bf077fd9d2b484b2da1c5ea05d2",
+    "app.js": "465231587c3857ebcbf07bcb463ebb87f2029c5c38e0b899c463e71fa43ef896",
+    "trends.js": "4f92f9abd64afeaaa4905cbfe192da8cff2b0e08fe92812edc82ab934c4e44d6"
+  },
+  "monthlyRetry": {
+    "status": "PASS",
+    "assertions": 6,
+    "expectedHttpFailure": {
+      "status": 503,
+      "route": "/api/monthly",
+      "count": 1
+    },
+    "scope": "Single isolated Monthly fault/recovery frontend case with production assets and synthetic HTTP503; no backend or scanner execution."
+  },
+  "controller": {
+    "tests": 7,
+    "assertions": 25,
+    "failed": 0,
+    "sourceSHA256": "4f92f9abd64afeaaa4905cbfe192da8cff2b0e08fe92812edc82ab934c4e44d6"
+  },
+  "testedFiles": {
+    "App/Web/index.html": "df065122bb76d738f7e8ea71cf194c6938fe4ab0064ac09e74229f996a69c3c7",
+    "App/Web/app.css": "1387db7107cf493d3be9a04539207471ee364bf077fd9d2b484b2da1c5ea05d2",
+    "App/Web/app.js": "465231587c3857ebcbf07bcb463ebb87f2029c5c38e0b899c463e71fa43ef896",
+    "App/Web/trends.js": "4f92f9abd64afeaaa4905cbfe192da8cff2b0e08fe92812edc82ab934c4e44d6"
+  }
+}

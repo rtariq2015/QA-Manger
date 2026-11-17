@@ -1,0 +1,49 @@
+{
+  "syntheticOnly": true,
+  "scope": "Single isolated Monthly fault/recovery frontend case with production assets and synthetic HTTP503; no backend or scanner execution.",
+  "checks": [
+    {
+      "name": "Initial Monthly model loads once",
+      "result": "PASS"
+    },
+    {
+      "name": "One deliberately failed Monthly read is recorded",
+      "result": "PASS"
+    },
+    {
+      "name": "Failed refresh retains the previously saved Monthly model",
+      "result": "PASS"
+    },
+    {
+      "name": "Next due interval retries the failed model once",
+      "result": "PASS"
+    },
+    {
+      "name": "Fault recovery submits no scanner Refresh or other mutation",
+      "result": "PASS"
+    },
+    {
+      "name": "Controlled HTTP503 causes no uncaught browser JavaScript error",
+      "result": "PASS"
+    }
+  ],
+  "errors": [],
+  "externalRequests": [],
+  "mutations": [],
+  "pdfRequests": [],
+  "screenshots": [],
+  "sourceHashes": {
+    "index.html": "df065122bb76d738f7e8ea71cf194c6938fe4ab0064ac09e74229f996a69c3c7",
+    "app.css": "1387db7107cf493d3be9a04539207471ee364bf077fd9d2b484b2da1c5ea05d2",
+    "app.js": "465231587c3857ebcbf07bcb463ebb87f2029c5c38e0b899c463e71fa43ef896",
+    "trends.js": "4f92f9abd64afeaaa4905cbfe192da8cff2b0e08fe92812edc82ab934c4e44d6"
+  },
+  "screenshotSourceHashes": {},
+  "status": "PASS",
+  "assertions": 6,
+  "expectedHttpFailure": {
+    "status": 503,
+    "route": "/api/monthly",
+    "count": 1
+  }
+}
