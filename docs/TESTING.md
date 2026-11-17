@@ -1,4 +1,12 @@
-# Validation — CT QA Manager Pro 5.7.1
+# Validation — CT QA Manager Pro
+
+## 5.7.16 focused Monthly cache check
+
+Executed one synthetic production-web Chromium flow: **75 assertions passed**, with no unexpected browser errors, external requests, mutation requests or PDF requests. Arrow/picker returns to cached months made zero additional Monthly HTTP requests. It also checks scanner filtering during an in-flight load, cancellation, error retry, report/configuration/archive invalidation, rapid-arrow debounce, the 12-month LRU bound, oversize-response exclusion and five-minute expiry. Source hashes match before/after execution; see [raw evidence](../Tests/Monthly-Cache/result.json) and [the focused fixture](../Tests/Web/run-monthly-cache-ui.cjs).
+
+This is a local synthetic frontend check with a controlled 80 ms response delay, not Windows, real scanner/reader or hospital workstation throughput validation. The release workflow separately checks syntax, version-only backend scope, package CRC/manifests and uploaded hashes. No broad suite was repeated for this frontend change. The initial uncached month still needs a backend request, and this session cache is cleared by a browser reload/restart.
+
+## 5.7.1 historical validation
 
 The Review saving fix uses the exact Windows application source `3d46b34f43336349d793edc7e9ee9087a6061f0d` and its tested host artifact. The subsequent commit changes only test readiness observation and checksums; App, Host, Config, launchers, guide and package-builder bytes remain unchanged.
 

@@ -1,0 +1,936 @@
+{
+  "syntheticOnly": true,
+  "scope": "One production-web Monthly cache flow against reused synthetic snapshot/Monthly fixtures, controlled80ms HTTP delay and test-only Date.now. Checks month/scanner identities, request reuse, invalidation, cancellation/failure/retry and boundedcache behavior. No live backend, archive, scanner, PDF extraction, native runtime or hospital speed validation.",
+  "checks": [
+    {
+      "name": "Initial November preserves scanner identities",
+      "result": "PASS"
+    },
+    {
+      "name": "Initial November preserves CT_Edge receipt count",
+      "result": "PASS"
+    },
+    {
+      "name": "Initial November preserves exact CT_Edge source report IDs",
+      "result": "PASS"
+    },
+    {
+      "name": "Initial November preserves CT_Flash receipt count",
+      "result": "PASS"
+    },
+    {
+      "name": "Initial November preserves exact CT_Flash source report IDs",
+      "result": "PASS"
+    },
+    {
+      "name": "Initial November preserves CT_Drive receipt count",
+      "result": "PASS"
+    },
+    {
+      "name": "Initial November preserves exact CT_Drive source report IDs",
+      "result": "PASS"
+    },
+    {
+      "name": "Initial month has one cold API read",
+      "result": "PASS"
+    },
+    {
+      "name": "Cold December preserves scanner identities",
+      "result": "PASS"
+    },
+    {
+      "name": "Cold December preserves CT_Edge receipt count",
+      "result": "PASS"
+    },
+    {
+      "name": "Cold December preserves exact CT_Edge source report IDs",
+      "result": "PASS"
+    },
+    {
+      "name": "Cold December preserves CT_Flash receipt count",
+      "result": "PASS"
+    },
+    {
+      "name": "Cold December preserves exact CT_Flash source report IDs",
+      "result": "PASS"
+    },
+    {
+      "name": "Cold December preserves CT_Drive receipt count",
+      "result": "PASS"
+    },
+    {
+      "name": "Cold December preserves exact CT_Drive source report IDs",
+      "result": "PASS"
+    },
+    {
+      "name": "Warm November preserves scanner identities",
+      "result": "PASS"
+    },
+    {
+      "name": "Warm November preserves CT_Edge receipt count",
+      "result": "PASS"
+    },
+    {
+      "name": "Warm November preserves exact CT_Edge source report IDs",
+      "result": "PASS"
+    },
+    {
+      "name": "Warm November preserves CT_Flash receipt count",
+      "result": "PASS"
+    },
+    {
+      "name": "Warm November preserves exact CT_Flash source report IDs",
+      "result": "PASS"
+    },
+    {
+      "name": "Warm November preserves CT_Drive receipt count",
+      "result": "PASS"
+    },
+    {
+      "name": "Warm November preserves exact CT_Drive source report IDs",
+      "result": "PASS"
+    },
+    {
+      "name": "A→B→A arrow return uses zero additional Monthly HTTP requests",
+      "result": "PASS"
+    },
+    {
+      "name": "Warm picker December preserves scanner identities",
+      "result": "PASS"
+    },
+    {
+      "name": "Warm picker December preserves CT_Edge receipt count",
+      "result": "PASS"
+    },
+    {
+      "name": "Warm picker December preserves exact CT_Edge source report IDs",
+      "result": "PASS"
+    },
+    {
+      "name": "Warm picker December preserves CT_Flash receipt count",
+      "result": "PASS"
+    },
+    {
+      "name": "Warm picker December preserves exact CT_Flash source report IDs",
+      "result": "PASS"
+    },
+    {
+      "name": "Warm picker December preserves CT_Drive receipt count",
+      "result": "PASS"
+    },
+    {
+      "name": "Warm picker December preserves exact CT_Drive source report IDs",
+      "result": "PASS"
+    },
+    {
+      "name": "Picker reuses an already loaded month without a Monthly request",
+      "result": "PASS"
+    },
+    {
+      "name": "Changing scanner in the same in-flight month does not duplicate its API request",
+      "result": "PASS"
+    },
+    {
+      "name": "Changing only scanner does not cancel the shared in-flight model",
+      "result": "PASS"
+    },
+    {
+      "name": "January selected scanner preserves scanner identities",
+      "result": "PASS"
+    },
+    {
+      "name": "January selected scanner preserves CT_Flash receipt count",
+      "result": "PASS"
+    },
+    {
+      "name": "January selected scanner preserves exact CT_Flash source report IDs",
+      "result": "PASS"
+    },
+    {
+      "name": "Scanner choice is preserved when the shared response arrives",
+      "result": "PASS"
+    },
+    {
+      "name": "Leaving an in-flight month can restore a warm month immediately without fetching",
+      "result": "PASS"
+    },
+    {
+      "name": "After cancelled late response preserves scanner identities",
+      "result": "PASS"
+    },
+    {
+      "name": "After cancelled late response preserves CT_Edge receipt count",
+      "result": "PASS"
+    },
+    {
+      "name": "After cancelled late response preserves exact CT_Edge source report IDs",
+      "result": "PASS"
+    },
+    {
+      "name": "After cancelled late response preserves CT_Flash receipt count",
+      "result": "PASS"
+    },
+    {
+      "name": "After cancelled late response preserves exact CT_Flash source report IDs",
+      "result": "PASS"
+    },
+    {
+      "name": "After cancelled late response preserves CT_Drive receipt count",
+      "result": "PASS"
+    },
+    {
+      "name": "After cancelled late response preserves exact CT_Drive source report IDs",
+      "result": "PASS"
+    },
+    {
+      "name": "Navigation away cancels the obsolete month request",
+      "result": "PASS"
+    },
+    {
+      "name": "Cancelled/late response is not inserted as a successful cached model",
+      "result": "PASS"
+    },
+    {
+      "name": "A failed month is fetched again instead of cached as success",
+      "result": "PASS"
+    },
+    {
+      "name": "Successful retry after navigation preserves scanner identities",
+      "result": "PASS"
+    },
+    {
+      "name": "Successful retry after navigation preserves CT_Edge receipt count",
+      "result": "PASS"
+    },
+    {
+      "name": "Successful retry after navigation preserves exact CT_Edge source report IDs",
+      "result": "PASS"
+    },
+    {
+      "name": "Successful retry after navigation preserves CT_Flash receipt count",
+      "result": "PASS"
+    },
+    {
+      "name": "Successful retry after navigation preserves exact CT_Flash source report IDs",
+      "result": "PASS"
+    },
+    {
+      "name": "Successful retry after navigation preserves CT_Drive receipt count",
+      "result": "PASS"
+    },
+    {
+      "name": "Successful retry after navigation preserves exact CT_Drive source report IDs",
+      "result": "PASS"
+    },
+    {
+      "name": "Existing due-interval retry still recovers an uncached failed month",
+      "result": "PASS"
+    },
+    {
+      "name": "Rapid uncached arrow changes read only the final month after debounce",
+      "result": "PASS"
+    },
+    {
+      "name": "Saved record change reloads once",
+      "result": "PASS"
+    },
+    {
+      "name": "Saved data change invalidates a previously warm alternate month",
+      "result": "PASS"
+    },
+    {
+      "name": "Scanner configuration change reloads once",
+      "result": "PASS"
+    },
+    {
+      "name": "Configuration change invalidates a previously warm alternate month",
+      "result": "PASS"
+    },
+    {
+      "name": "Failed archive-identity reload never displays cards from the prior archive",
+      "result": "PASS"
+    },
+    {
+      "name": "Failed archive-identity reload does not retain stale receipt totals",
+      "result": "PASS"
+    },
+    {
+      "name": "Archive identity change retries its new model successfully",
+      "result": "PASS"
+    },
+    {
+      "name": "Archive identity change invalidates a previously warm alternate month",
+      "result": "PASS"
+    },
+    {
+      "name": "Recent twelve-month cache retains its oldest entry before pressure",
+      "result": "PASS"
+    },
+    {
+      "name": "A recently touched month survives the thirteenth distinct month",
+      "result": "PASS"
+    },
+    {
+      "name": "The least recently used month is evicted at the twelve-month bound",
+      "result": "PASS"
+    },
+    {
+      "name": "An oversized serialized response remains usable but is not retained for warm navigation",
+      "result": "PASS"
+    },
+    {
+      "name": "Oversize probe really exceeds the four-MiB cache budget",
+      "result": "PASS"
+    },
+    {
+      "name": "Five-minute freshness expiry refetches an otherwise warm month",
+      "result": "PASS"
+    },
+    {
+      "name": "Month caching and invalidation never submit scanner Refresh or another mutation",
+      "result": "PASS"
+    },
+    {
+      "name": "Monthly navigation never opens or re-parses a PDF",
+      "result": "PASS"
+    },
+    {
+      "name": "No unexpected browser or route errors",
+      "result": "PASS"
+    },
+    {
+      "name": "No external requests",
+      "result": "PASS"
+    }
+  ],
+  "errors": [],
+  "externalRequests": [],
+  "mutations": [],
+  "pdfRequests": [],
+  "sourceHashes": {
+    "index.html": "69ba3945d85eaef6ff46f207d27c30d30f2ed8b2ecf30329f462b55d095ebd39",
+    "app.css": "1387db7107cf493d3be9a04539207471ee364bf077fd9d2b484b2da1c5ea05d2",
+    "app.js": "8e0c8a3e7d601ad64b0b68eed76d64930e034e2af367f0c56d9a873a678ffca4",
+    "trends.js": "4f92f9abd64afeaaa4905cbfe192da8cff2b0e08fe92812edc82ab934c4e44d6"
+  },
+  "illustrativeTiming": {
+    "controlledResponseDelayMs": 80,
+    "coldArrowDebounceMs": 150,
+    "coldArrowAndIdentityCheckMs": 305.2068919999997,
+    "warmArrowAndIdentityCheckMs": 77.62742600000001,
+    "note": "One local synthetic observation including browser/DOM checks. Request elimination is asserted; these timings are not a reader or hospital workstation speed benchmark."
+  },
+  "status": "PASS",
+  "assertions": 75,
+  "requests": [
+    {
+      "method": "GET",
+      "pathname": "/",
+      "startedMs": 921.693954
+    },
+    {
+      "method": "GET",
+      "pathname": "/app.css",
+      "startedMs": 964.70747
+    },
+    {
+      "method": "GET",
+      "pathname": "/trends.js",
+      "startedMs": 967.629031
+    },
+    {
+      "method": "GET",
+      "pathname": "/app.js",
+      "startedMs": 970.55525
+    },
+    {
+      "method": "POST",
+      "pathname": "/api/session",
+      "startedMs": 1093.668858
+    },
+    {
+      "method": "POST",
+      "pathname": "/api/heartbeat",
+      "startedMs": 1108.425139
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/snapshot",
+      "startedMs": 1116.061027
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/jobs",
+      "startedMs": 1180.914291
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/monthly",
+      "month": "2026-11",
+      "startedMs": 1771.927423,
+      "completedMs": 1851.990285,
+      "responseBytes": 5762,
+      "cancelled": false
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/monthly",
+      "month": "2026-12",
+      "startedMs": 2123.355112,
+      "completedMs": 2203.01656,
+      "responseBytes": 6029,
+      "cancelled": false
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/jobs",
+      "startedMs": 2479.944975
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/monthly",
+      "month": "2027-01",
+      "startedMs": 2567.472697,
+      "completedMs": 2795.855086,
+      "responseBytes": 3791,
+      "cancelled": false
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/monthly",
+      "month": "2027-02",
+      "startedMs": 3007.652523,
+      "cancelled": true
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/monthly",
+      "month": "2027-02",
+      "startedMs": 3360.070445,
+      "completedMs": 3440.214153,
+      "responseBytes": 4249,
+      "cancelled": false
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/monthly",
+      "month": "2027-03",
+      "startedMs": 3617.889903,
+      "completedMs": 3698.077447,
+      "cancelled": false
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/jobs",
+      "startedMs": 3779.802471
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/monthly",
+      "month": "2027-03",
+      "startedMs": 3893.756331,
+      "completedMs": 3973.955732,
+      "responseBytes": 4568,
+      "cancelled": false
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/monthly",
+      "month": "2027-04",
+      "startedMs": 4166.27339,
+      "completedMs": 4245.962008,
+      "cancelled": false
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/jobs",
+      "startedMs": 5079.31906
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/snapshot",
+      "startedMs": 5082.247298
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/monthly",
+      "month": "2027-04",
+      "startedMs": 5091.527957,
+      "completedMs": 5173.443941,
+      "responseBytes": 4249,
+      "cancelled": false
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/monthly",
+      "month": "2028-01",
+      "startedMs": 5368.347219,
+      "completedMs": 5447.877667,
+      "responseBytes": 4568,
+      "cancelled": false
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/monthly",
+      "month": "2028-04",
+      "startedMs": 5645.668351,
+      "completedMs": 5726.341884,
+      "responseBytes": 4249,
+      "cancelled": false
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/jobs",
+      "startedMs": 6381.56195
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/snapshot",
+      "startedMs": 6385.56436
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/monthly",
+      "month": "2026-11",
+      "startedMs": 6399.121566,
+      "completedMs": 6479.060146,
+      "responseBytes": 5762,
+      "cancelled": false
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/monthly",
+      "month": "2026-12",
+      "startedMs": 6655.440976,
+      "completedMs": 6735.561762,
+      "responseBytes": 6029,
+      "cancelled": false
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/jobs",
+      "startedMs": 7679.781254
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/snapshot",
+      "startedMs": 7684.438784
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/monthly",
+      "month": "2026-11",
+      "startedMs": 7694.277078,
+      "completedMs": 7773.964868,
+      "responseBytes": 5762,
+      "cancelled": false
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/monthly",
+      "month": "2026-12",
+      "startedMs": 7962.494621,
+      "completedMs": 8042.847292,
+      "responseBytes": 6029,
+      "cancelled": false
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/jobs",
+      "startedMs": 8979.486457
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/snapshot",
+      "startedMs": 8982.963491
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/monthly",
+      "month": "2026-11",
+      "startedMs": 8990.956452,
+      "completedMs": 9071.242053,
+      "cancelled": false
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/jobs",
+      "startedMs": 10279.348393
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/snapshot",
+      "startedMs": 10282.996649
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/monthly",
+      "month": "2026-11",
+      "startedMs": 10290.507084,
+      "completedMs": 10371.142772,
+      "responseBytes": 5762,
+      "cancelled": false
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/monthly",
+      "month": "2026-12",
+      "startedMs": 10545.593383,
+      "completedMs": 10626.075878,
+      "responseBytes": 6029,
+      "cancelled": false
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/monthly",
+      "month": "2025-01",
+      "startedMs": 10809.212841,
+      "completedMs": 10888.873599,
+      "responseBytes": 4568,
+      "cancelled": false
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/monthly",
+      "month": "2025-02",
+      "startedMs": 11061.36195,
+      "completedMs": 11141.048407,
+      "responseBytes": 4249,
+      "cancelled": false
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/monthly",
+      "month": "2025-03",
+      "startedMs": 11331.280718,
+      "completedMs": 11411.866858,
+      "responseBytes": 4568,
+      "cancelled": false
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/jobs",
+      "startedMs": 11579.827608
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/monthly",
+      "month": "2025-04",
+      "startedMs": 11599.509575,
+      "completedMs": 11678.819795,
+      "responseBytes": 4249,
+      "cancelled": false
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/monthly",
+      "month": "2025-05",
+      "startedMs": 11851.755041,
+      "completedMs": 11932.334659,
+      "responseBytes": 4568,
+      "cancelled": false
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/monthly",
+      "month": "2025-06",
+      "startedMs": 12106.073728,
+      "completedMs": 12186.52223,
+      "responseBytes": 4249,
+      "cancelled": false
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/monthly",
+      "month": "2025-07",
+      "startedMs": 12360.359571,
+      "completedMs": 12439.812066,
+      "responseBytes": 4568,
+      "cancelled": false
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/monthly",
+      "month": "2025-08",
+      "startedMs": 12610.005157,
+      "completedMs": 12690.13866,
+      "responseBytes": 4968,
+      "cancelled": false
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/monthly",
+      "month": "2025-09",
+      "startedMs": 12874.864912,
+      "completedMs": 12955.102404,
+      "responseBytes": 4568,
+      "cancelled": false
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/jobs",
+      "startedMs": 12878.931466
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/monthly",
+      "month": "2025-10",
+      "startedMs": 13147.200543,
+      "completedMs": 13227.140344,
+      "responseBytes": 4249,
+      "cancelled": false
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/monthly",
+      "month": "2025-11",
+      "startedMs": 13400.534176,
+      "completedMs": 13480.902489,
+      "responseBytes": 4568,
+      "cancelled": false
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/monthly",
+      "month": "2025-12",
+      "startedMs": 13655.938218,
+      "completedMs": 13736.199085,
+      "responseBytes": 4249,
+      "cancelled": false
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/monthly",
+      "month": "2026-01",
+      "startedMs": 13929.338926,
+      "completedMs": 14009.024936,
+      "responseBytes": 4568,
+      "cancelled": false
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/jobs",
+      "startedMs": 14179.85424
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/monthly",
+      "month": "2025-02",
+      "startedMs": 14196.24302,
+      "completedMs": 14276.05046,
+      "responseBytes": 4249,
+      "cancelled": false
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/monthly",
+      "month": "2029-01",
+      "startedMs": 14450.436711,
+      "completedMs": 14530.454392,
+      "responseBytes": 4199151,
+      "cancelled": false
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/monthly",
+      "month": "2029-01",
+      "startedMs": 14826.684106,
+      "completedMs": 14907.752714,
+      "responseBytes": 4199151,
+      "cancelled": false
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/monthly",
+      "month": "2025-01",
+      "startedMs": 15133.021008,
+      "completedMs": 15212.956063,
+      "responseBytes": 4568,
+      "cancelled": false
+    }
+  ],
+  "networkTimings": [
+    {
+      "month": "2026-11",
+      "elapsedMs": 80.062862,
+      "responseBytes": 5762
+    },
+    {
+      "month": "2026-12",
+      "elapsedMs": 79.66144799999984,
+      "responseBytes": 6029
+    },
+    {
+      "month": "2027-01",
+      "elapsedMs": 228.38238899999988,
+      "responseBytes": 3791
+    },
+    {
+      "month": "2027-02",
+      "elapsedMs": 80.14370800000006,
+      "responseBytes": 4249
+    },
+    {
+      "month": "2027-03",
+      "elapsedMs": 80.19940099999985,
+      "responseBytes": 4568
+    },
+    {
+      "month": "2027-04",
+      "elapsedMs": 81.91598400000021,
+      "responseBytes": 4249
+    },
+    {
+      "month": "2028-01",
+      "elapsedMs": 79.53044799999952,
+      "responseBytes": 4568
+    },
+    {
+      "month": "2028-04",
+      "elapsedMs": 80.67353300000013,
+      "responseBytes": 4249
+    },
+    {
+      "month": "2026-11",
+      "elapsedMs": 79.93858,
+      "responseBytes": 5762
+    },
+    {
+      "month": "2026-12",
+      "elapsedMs": 80.12078600000041,
+      "responseBytes": 6029
+    },
+    {
+      "month": "2026-11",
+      "elapsedMs": 79.68778999999995,
+      "responseBytes": 5762
+    },
+    {
+      "month": "2026-12",
+      "elapsedMs": 80.35267100000056,
+      "responseBytes": 6029
+    },
+    {
+      "month": "2026-11",
+      "elapsedMs": 80.63568799999848,
+      "responseBytes": 5762
+    },
+    {
+      "month": "2026-12",
+      "elapsedMs": 80.4824950000002,
+      "responseBytes": 6029
+    },
+    {
+      "month": "2025-01",
+      "elapsedMs": 79.66075799999999,
+      "responseBytes": 4568
+    },
+    {
+      "month": "2025-02",
+      "elapsedMs": 79.68645699999979,
+      "responseBytes": 4249
+    },
+    {
+      "month": "2025-03",
+      "elapsedMs": 80.58613999999943,
+      "responseBytes": 4568
+    },
+    {
+      "month": "2025-04",
+      "elapsedMs": 79.31021999999939,
+      "responseBytes": 4249
+    },
+    {
+      "month": "2025-05",
+      "elapsedMs": 80.57961799999975,
+      "responseBytes": 4568
+    },
+    {
+      "month": "2025-06",
+      "elapsedMs": 80.4485020000011,
+      "responseBytes": 4249
+    },
+    {
+      "month": "2025-07",
+      "elapsedMs": 79.45249499999954,
+      "responseBytes": 4568
+    },
+    {
+      "month": "2025-08",
+      "elapsedMs": 80.13350300000093,
+      "responseBytes": 4968
+    },
+    {
+      "month": "2025-09",
+      "elapsedMs": 80.2374920000002,
+      "responseBytes": 4568
+    },
+    {
+      "month": "2025-10",
+      "elapsedMs": 79.93980099999862,
+      "responseBytes": 4249
+    },
+    {
+      "month": "2025-11",
+      "elapsedMs": 80.36831300000085,
+      "responseBytes": 4568
+    },
+    {
+      "month": "2025-12",
+      "elapsedMs": 80.26086700000087,
+      "responseBytes": 4249
+    },
+    {
+      "month": "2026-01",
+      "elapsedMs": 79.68600999999944,
+      "responseBytes": 4568
+    },
+    {
+      "month": "2025-02",
+      "elapsedMs": 79.8074400000005,
+      "responseBytes": 4249
+    },
+    {
+      "month": "2029-01",
+      "elapsedMs": 80.01768099999936,
+      "responseBytes": 4199151
+    },
+    {
+      "month": "2029-01",
+      "elapsedMs": 81.06860799999959,
+      "responseBytes": 4199151
+    },
+    {
+      "month": "2025-01",
+      "elapsedMs": 79.93505499999992,
+      "responseBytes": 4568
+    }
+  ],
+  "expectedHttpFailures": [
+    {
+      "month": "2027-03",
+      "status": 503
+    },
+    {
+      "month": "2027-04",
+      "status": 503
+    },
+    {
+      "month": "2026-11",
+      "status": 503
+    }
+  ],
+  "sourceHashesAtEnd": {
+    "index.html": "69ba3945d85eaef6ff46f207d27c30d30f2ed8b2ecf30329f462b55d095ebd39",
+    "app.css": "1387db7107cf493d3be9a04539207471ee364bf077fd9d2b484b2da1c5ea05d2",
+    "app.js": "8e0c8a3e7d601ad64b0b68eed76d64930e034e2af367f0c56d9a873a678ffca4",
+    "trends.js": "4f92f9abd64afeaaa4905cbfe192da8cff2b0e08fe92812edc82ab934c4e44d6"
+  },
+  "sourceHashesStable": true,
+  "testedFiles": {
+    "App/Web/index.html": "69ba3945d85eaef6ff46f207d27c30d30f2ed8b2ecf30329f462b55d095ebd39",
+    "App/Web/app.css": "1387db7107cf493d3be9a04539207471ee364bf077fd9d2b484b2da1c5ea05d2",
+    "App/Web/app.js": "8e0c8a3e7d601ad64b0b68eed76d64930e034e2af367f0c56d9a873a678ffca4",
+    "App/Web/trends.js": "4f92f9abd64afeaaa4905cbfe192da8cff2b0e08fe92812edc82ab934c4e44d6"
+  }
+}

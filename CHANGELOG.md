@@ -1,5 +1,10 @@
 # Changes
 
+## 5.7.16 — faster Monthly month switching
+
+- Keep up to 12 recently opened Monthly views in a session-only LRU cache, with a 4 MiB serialized metadata budget and five-minute freshness limit. Reuse a visited month immediately when its saved-data, analysis, scanner configuration and archive revisions still match; do not cache failed, cancelled or stale responses. Retain the existing automatic snapshot refresh.
+- Avoid restarting the all-scanner Monthly load when changing scanner tabs. Debounce uncached month navigation by 150 ms so quick arrow clicks skip intermediate work; preserve cancellation when leaving a month or the page. No PDF processing, archive layout or clinical evidence changes.
+
 ## 5.7.15 — clearer Trends and automatic Monthly view
 
 - Apply the approved Trends layout: scanner tabs, compact reading summaries, Line/Points/Table views that reuse loaded data, an expandable coverage explanation and selected-reading details with the original PDF/page link. Preserve all eight metrics, exact units and contexts, per-PDF printed limits, source warnings, cancellation and existing point/cache limits.
