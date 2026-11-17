@@ -1,0 +1,119 @@
+{
+  "syntheticOnly": true,
+  "scope": "One tiny synthetic Chromium flow using existing Monthly/snapshot fixture and production web assets. Checks only scanner tabs, existing month navigation and toolbar placement/wrapping. No PDF processing, real backend, scanner, Windows runtime, clinical review or performance validation.",
+  "checks": [
+    {
+      "name": "Tabs use All scanners and configured scanner display names",
+      "result": "PASS"
+    },
+    {
+      "name": "Existing compatibility selector is hidden",
+      "result": "PASS"
+    },
+    {
+      "name": "CT Edge tab filters its card/count without changing selected month",
+      "result": "PASS"
+    },
+    {
+      "name": "CT Flash tab filters its card/count without changing selected month",
+      "result": "PASS"
+    },
+    {
+      "name": "CT Drive tab filters its card/count without changing selected month",
+      "result": "PASS"
+    },
+    {
+      "name": "All scanners restores all three scanner cards and total",
+      "result": "PASS"
+    },
+    {
+      "name": "Existing month arrow preserves scanner scope and updates saved report counts for 2026-12",
+      "result": "PASS"
+    },
+    {
+      "name": "Existing month arrow preserves scanner scope and updates saved report counts for 2026-11",
+      "result": "PASS"
+    },
+    {
+      "name": "Desktop toolbar places month navigation on the left and scanner tabs on the right",
+      "result": "PASS"
+    },
+    {
+      "name": "Narrow toolbar wraps tabs without horizontal overflow or clipped tab controls",
+      "result": "PASS"
+    },
+    {
+      "name": "Scanner/month navigation remains read-only with no browser errors or external requests",
+      "result": "PASS"
+    },
+    {
+      "name": "Final markup hides Additional Windows tools while retaining Classic fallback control and displaying Exit CT QA",
+      "result": "PASS"
+    }
+  ],
+  "errors": [],
+  "externalRequests": [],
+  "mutations": [],
+  "pdfRequests": [],
+  "screenshot": "/tmp/ctqa-monthly-scanner-tabs/monthly-scanner-tabs.png",
+  "testedFiles": {
+    "App/Web/app.js": "32a99552aea75ac9f8a06d4e479bd0f819fc26a36447c222d2d959ef73607de3",
+    "App/Web/app.css": "6dfd93cb6aed8124e3d6ab655ecca205c9b87c7760799be7d509ea7285614f5c",
+    "App/Web/index.html": "d5298ff39286871745991019f4930e4da3581c805b719343d94921ee1c606b07"
+  },
+  "status": "PASS",
+  "requests": [
+    {
+      "method": "GET",
+      "pathname": "/"
+    },
+    {
+      "method": "GET",
+      "pathname": "/app.css"
+    },
+    {
+      "method": "GET",
+      "pathname": "/trends.js"
+    },
+    {
+      "method": "GET",
+      "pathname": "/app.js"
+    },
+    {
+      "method": "POST",
+      "pathname": "/api/session"
+    },
+    {
+      "method": "POST",
+      "pathname": "/api/heartbeat"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/snapshot"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/jobs"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/monthly",
+      "month": "2026-11"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/monthly",
+      "month": "2026-12"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/monthly",
+      "month": "2026-11"
+    }
+  ],
+  "settingsFinalReload": {
+    "status": "PASS",
+    "scope": "One fresh final-markup browser load and Settings visibility/Exit-label check. Monthly JS/CSS and Monthly markup unchanged after earlier11-check flow; screenshot retained from that flow.",
+    "originalIndexHash": "4a3be38f668c4f04d91e3fae6327fc5cacc2b11c6b74824dd53720678b7a4b53"
+  }
+}

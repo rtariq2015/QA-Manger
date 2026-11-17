@@ -1,5 +1,10 @@
 # Changes
 
+## 5.7.14 — Monthly scanner tabs
+
+- Hide the older Windows-interface shortcut from Settings and rename Close local app to Exit CT QA. Retain the background host and Classic fallback components.
+- Replace Monthly QA’s scanner dropdown with clickable All scanners and configured-machine tabs. Keep the month controls on the left and scanner tabs on the right, wrapping below on narrow screens. Reuse the existing selection/filtering and month navigation without changing saved evidence or processing.
+
 ## 5.7.13 — calendar and PDF printing options
 
 - Add Print calendar for the current month/scanner, with a clean landscape print layout containing the calendar, scope, totals and receipt disclaimer. Hide application menus and unrelated pages when printing.
