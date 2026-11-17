@@ -1,5 +1,9 @@
 # Changes
 
+## 5.7.12 — calendar scanner tabs
+
+- Replace Receipt calendar’s scanner dropdown with clickable All scanners and configured-machine buttons. Preserve scanner accent colors, selection state, names, receipt calculations, month navigation and day-to-library filtering. Wrap the controls on smaller screens.
+
 ## 5.7.11 — document-first Review
 
 - Give the PDF the full Review width until the file list is opened; remove repeated Current PDF information from the main layout. Keep grouped and batch review accessible.

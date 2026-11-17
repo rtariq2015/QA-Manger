@@ -100,7 +100,7 @@ async function openCalendar(page) {
   await page.locator('#reports-calendar-view').click();
   await page.locator('#calendar-month').fill('2026-09');
   await page.locator('#calendar-month').dispatchEvent('change');
-  await page.locator('#calendar-scanner').selectOption('CT_Flash');
+  await page.locator('#calendar-scanner-tabs button[data-scanner-id="CT_Flash"]').click();
   await page.waitForFunction(() => document.querySelectorAll('#calendar-grid [data-calendar-date]').length === 30);
 }
 async function checkExport(page, expectedIds) {

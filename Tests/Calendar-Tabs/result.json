@@ -1,0 +1,233 @@
+{
+  "scope": "Synthetic HTTP API stub with production frontend assets; no live backend, PDF content, native runtime or archive validation. Export checks inspect submitted IDs only; no ZIP is created.",
+  "syntheticOnly": true,
+  "checks": [
+    {
+      "name": "Synthetic snapshot loads without an application error",
+      "result": "PASS"
+    },
+    {
+      "name": "27 synthetic Daily PDFs remain 27 of 30 Daily receipts",
+      "result": "PASS"
+    },
+    {
+      "name": "Summary distinguishes missing separate Daily PDFs from available Monthly PDFs",
+      "result": "PASS"
+    },
+    {
+      "name": "2026-09-05 shows Monthly PDF available",
+      "result": "PASS"
+    },
+    {
+      "name": "2026-09-05 does not become a Daily receipt",
+      "result": "PASS"
+    },
+    {
+      "name": "2026-09-14 shows Monthly PDF available",
+      "result": "PASS"
+    },
+    {
+      "name": "2026-09-14 does not become a Daily receipt",
+      "result": "PASS"
+    },
+    {
+      "name": "2026-09-15 shows Monthly PDF available",
+      "result": "PASS"
+    },
+    {
+      "name": "2026-09-15 does not become a Daily receipt",
+      "result": "PASS"
+    },
+    {
+      "name": "A day with Daily and Monthly PDFs retains Daily Received status",
+      "result": "PASS"
+    },
+    {
+      "name": "September 5 opens its original Monthly PDF and excludes other day/scanner/pending/reference/type records: no duplicate identities",
+      "result": "PASS"
+    },
+    {
+      "name": "September 5 opens its original Monthly PDF and excludes other day/scanner/pending/reference/type records",
+      "result": "PASS",
+      "ids": [
+        "135ec375409fc0e7b5adaea5c7d2607ae6e5f1f9f7d353f80949d771212c5c8e"
+      ]
+    },
+    {
+      "name": "September 5 retains the original synthetic Monthly filename",
+      "result": "PASS"
+    },
+    {
+      "name": "September 5 Monthly type is unchanged",
+      "result": "PASS"
+    },
+    {
+      "name": "Export shortcut keeps the exact calendar date",
+      "result": "PASS"
+    },
+    {
+      "name": "Export preview retains the report count",
+      "result": "PASS"
+    },
+    {
+      "name": "Export submits the same original report IDs as the day list: no duplicate identities",
+      "result": "PASS"
+    },
+    {
+      "name": "Export submits the same original report IDs as the day list",
+      "result": "PASS",
+      "ids": [
+        "135ec375409fc0e7b5adaea5c7d2607ae6e5f1f9f7d353f80949d771212c5c8e"
+      ]
+    },
+    {
+      "name": "A shared date opens both original Daily and Monthly PDFs: no duplicate identities",
+      "result": "PASS"
+    },
+    {
+      "name": "A shared date opens both original Daily and Monthly PDFs",
+      "result": "PASS",
+      "ids": [
+        "2617f23e95bef511fffaffabdb726739b6f18763fba1105be29087926de16972",
+        "ae7e9c05ae2862f93633064b63f9cf1fcb1c6bcd02239b24cf9707d528bca71c"
+      ]
+    },
+    {
+      "name": "Shared-date PDFs retain both original file types",
+      "result": "PASS"
+    },
+    {
+      "name": "Export shortcut keeps the exact calendar date",
+      "result": "PASS"
+    },
+    {
+      "name": "Export preview retains the report count",
+      "result": "PASS"
+    },
+    {
+      "name": "Export submits the same original report IDs as the day list: no duplicate identities",
+      "result": "PASS"
+    },
+    {
+      "name": "Export submits the same original report IDs as the day list",
+      "result": "PASS",
+      "ids": [
+        "2617f23e95bef511fffaffabdb726739b6f18763fba1105be29087926de16972",
+        "ae7e9c05ae2862f93633064b63f9cf1fcb1c6bcd02239b24cf9707d528bca71c"
+      ]
+    },
+    {
+      "name": "Daily totals remain unchanged after list and export navigation",
+      "result": "PASS"
+    },
+    {
+      "name": "Frontend navigation preserves the original total record count",
+      "result": "PASS"
+    },
+    {
+      "name": "Synthetic fixture retains every original identity and category",
+      "result": "PASS"
+    },
+    {
+      "name": "Frontend sends only the two expected Export requests; no copy/create/type-change request",
+      "result": "PASS"
+    },
+    {
+      "name": "No JavaScript or browser console errors",
+      "result": "PASS"
+    },
+    {
+      "name": "No external asset requests",
+      "result": "PASS"
+    }
+  ],
+  "errors": [],
+  "externalRequests": [],
+  "screenshot": "/tmp/ctqa-calendar-scanner-tabs/calendar-monthly-available.png",
+  "status": "PASS",
+  "recordCount": 36,
+  "dailyReceiptCount": 27,
+  "scheduledDailyCount": 30,
+  "actionRequests": [
+    {
+      "action": "Export",
+      "ids": [
+        "135ec375409fc0e7b5adaea5c7d2607ae6e5f1f9f7d353f80949d771212c5c8e"
+      ]
+    },
+    {
+      "action": "Export",
+      "ids": [
+        "2617f23e95bef511fffaffabdb726739b6f18763fba1105be29087926de16972",
+        "ae7e9c05ae2862f93633064b63f9cf1fcb1c6bcd02239b24cf9707d528bca71c"
+      ]
+    }
+  ],
+  "requests": [
+    {
+      "method": "GET",
+      "pathname": "/"
+    },
+    {
+      "method": "GET",
+      "pathname": "/app.css"
+    },
+    {
+      "method": "GET",
+      "pathname": "/trends.js"
+    },
+    {
+      "method": "GET",
+      "pathname": "/app.js"
+    },
+    {
+      "method": "POST",
+      "pathname": "/api/session"
+    },
+    {
+      "method": "POST",
+      "pathname": "/api/heartbeat"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/snapshot"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/jobs"
+    },
+    {
+      "method": "POST",
+      "pathname": "/api/actions"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/jobs"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/snapshot"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/jobs"
+    },
+    {
+      "method": "POST",
+      "pathname": "/api/actions"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/jobs"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/snapshot"
+    }
+  ],
+  "testedFiles": {
+    "App/Web/app.js": "60c976fdf4bee57ec5d26cd28f7b520a1c83c32fe95ff8626f427952f8ac058f",
+    "App/Web/app.css": "610dda9d2a2b527107c425ff63cbe43ada78028eb381d1ebcef6d81f82ed6e94",
+    "App/Web/index.html": "1571757ecec49cf94c6d793599b0d83afb900a796aaff1ce3aa01c7fcdd3c4c4"
+  }
+}
