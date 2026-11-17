@@ -1,0 +1,305 @@
+{
+  "syntheticOnly": true,
+  "scope": "One synthetic Chromium frontend flow. Production HTML/CSS/JS with generated PNG previews and simulated API filing jobs. Covers document-first Review layout and existing guarded request payloads; does not validate actual backend transactions, Windows PDF rendering, hospital deployment, scanner I/O, clinical evidence or performance.",
+  "checks": [
+    {
+      "name": "Pending Review starts with its queue closed and filing controls available",
+      "result": "PASS"
+    },
+    {
+      "name": "Closed queue gives the PDF a broad document area at1366px",
+      "result": "PASS",
+      "actual": {
+        "x": 100,
+        "y": 180.9375,
+        "width": 1242,
+        "height": 544.0625
+      }
+    },
+    {
+      "name": "Single-file actions live in the document filing bar",
+      "result": "PASS"
+    },
+    {
+      "name": "Filing bar follows the continuous PDF preview",
+      "result": "PASS"
+    },
+    {
+      "name": "New PDFs retain100% default zoom",
+      "result": "PASS",
+      "actual": "100"
+    },
+    {
+      "name": "Continuous preview retains all three generated pages",
+      "result": "PASS",
+      "actual": 3
+    },
+    {
+      "name": "Opening review groups reveals the existing queue beside the document",
+      "result": "PASS"
+    },
+    {
+      "name": "Choose another type exposes existing Daily/Monthly/Other choices",
+      "result": "PASS",
+      "actual": [
+        "Daily",
+        "Monthly",
+        "Other"
+      ]
+    },
+    {
+      "name": "File action identifies the explicit Daily target",
+      "result": "PASS"
+    },
+    {
+      "name": "File action identifies the explicit Monthly target",
+      "result": "PASS"
+    },
+    {
+      "name": "File action identifies the explicit Other target",
+      "result": "PASS"
+    },
+    {
+      "name": "File and Choose another type are reachable below the PDF",
+      "result": "PASS"
+    },
+    {
+      "name": "Repeated current-file clicks submit exactly one guarded explicit filing payload",
+      "result": "PASS",
+      "actual": [
+        {
+          "action": "Approve",
+          "id": "a9a3b24af30e9b2b74168bfcdf99107645ca66a7dea3ae46d6639f4e8784bc21",
+          "stamp": "58eec58d708b2fdcd47184e6097a69d023651335d535f4b5149bcbf4326191fc",
+          "category": "Monthly"
+        }
+      ]
+    },
+    {
+      "name": "Single Undo and existing batch Undo remain reachable",
+      "result": "PASS"
+    },
+    {
+      "name": "Undo preserves the same record, saved decision reference and stamp",
+      "result": "PASS"
+    },
+    {
+      "name": "Uncertain type still requires an explicit choice before filing",
+      "result": "PASS"
+    },
+    {
+      "name": "Switching from an untyped PDF to an already filed PDF hides the stale type chooser",
+      "result": "PASS"
+    },
+    {
+      "name": "Keep as Other sends the existing guarded decline payload",
+      "result": "PASS",
+      "actual": [
+        {
+          "action": "Disapprove",
+          "id": "97ff24ebb8028e37a6ed72292e8d14d2adad6dc91b3aed78921684e94146abe7",
+          "stamp": "e88a83725847a435116ef015890eaa9eeb09c781611191149eab7b70e3947cbd"
+        }
+      ]
+    },
+    {
+      "name": "Existing batch choices are available when reports are selected",
+      "result": "PASS"
+    },
+    {
+      "name": "Light Review keeps both primary controls reachable without horizontal overflow at1366×768",
+      "result": "PASS"
+    },
+    {
+      "name": "Dark Review keeps both primary controls reachable without horizontal overflow at1366×768",
+      "result": "PASS"
+    },
+    {
+      "name": "Narrow1024×768 Review keeps both primary controls reachable without document overflow",
+      "result": "PASS"
+    },
+    {
+      "name": "Automatically filed PDF displays a filed status without new decision controls",
+      "result": "PASS"
+    },
+    {
+      "name": "Existing full-view mode hides all filing controls",
+      "result": "PASS"
+    },
+    {
+      "name": "External PDF control clearly labels a new tab and retains selected identity100%",
+      "result": "PASS"
+    },
+    {
+      "name": "Existing Report details drawer remains available in full view",
+      "result": "PASS"
+    },
+    {
+      "name": "Back restores filed Review without enabling filing actions",
+      "result": "PASS"
+    },
+    {
+      "name": "Focused frontend flow has no browser errors, unexpected API calls or external requests",
+      "result": "PASS"
+    }
+  ],
+  "errors": [],
+  "externalRequests": [],
+  "mutations": [
+    {
+      "action": "Approve",
+      "id": "a9a3b24af30e9b2b74168bfcdf99107645ca66a7dea3ae46d6639f4e8784bc21",
+      "stamp": "58eec58d708b2fdcd47184e6097a69d023651335d535f4b5149bcbf4326191fc",
+      "category": "Monthly"
+    },
+    {
+      "action": "Undo",
+      "id": "a9a3b24af30e9b2b74168bfcdf99107645ca66a7dea3ae46d6639f4e8784bc21",
+      "reviewId": "d50ec076a90ac84fca751f7b7cd8c81deae59b3dc0e345588dd9f31127f76f34",
+      "stamp": "7031eb7f6105ece77da477fe2a2c4b042258428650425139ea46af5955bb6d74"
+    },
+    {
+      "action": "Disapprove",
+      "id": "97ff24ebb8028e37a6ed72292e8d14d2adad6dc91b3aed78921684e94146abe7",
+      "stamp": "e88a83725847a435116ef015890eaa9eeb09c781611191149eab7b70e3947cbd"
+    },
+    {
+      "action": "Settings",
+      "theme": "Dark"
+    }
+  ],
+  "screenshots": [
+    "/tmp/ctqa-review-document-first/review-pending-light-1366x768.png",
+    "/tmp/ctqa-review-document-first/review-pending-dark-1366x768.png",
+    "/tmp/ctqa-review-document-first/review-pending-dark-1024x768.png",
+    "/tmp/ctqa-review-document-first/review-filed-dark-1366x768.png"
+  ],
+  "status": "PASS",
+  "testedFiles": {
+    "App/Web/app.js": "ef9c92e53180abd86c1e1edbdefbb67cff9a5bc85c637e33e8613c25ddb1a95f",
+    "App/Web/app.css": "39dc938ae3beb2a398b4956da576dc044f0fe398f8234bda0fa6f299b2e8be10",
+    "App/Web/index.html": "614db4432ac60612b15bdf6fca2a29d0565039889a6e84472514ea643152ff98"
+  },
+  "previews": [
+    {
+      "recordId": "a9a3b24af30e9b2b74168bfcdf99107645ca66a7dea3ae46d6639f4e8784bc21",
+      "pageNumber": 0
+    },
+    {
+      "recordId": "a9a3b24af30e9b2b74168bfcdf99107645ca66a7dea3ae46d6639f4e8784bc21",
+      "pageNumber": 1
+    },
+    {
+      "recordId": "a9a3b24af30e9b2b74168bfcdf99107645ca66a7dea3ae46d6639f4e8784bc21",
+      "pageNumber": 2
+    },
+    {
+      "recordId": "97ff24ebb8028e37a6ed72292e8d14d2adad6dc91b3aed78921684e94146abe7",
+      "pageNumber": 0
+    },
+    {
+      "recordId": "97ff24ebb8028e37a6ed72292e8d14d2adad6dc91b3aed78921684e94146abe7",
+      "pageNumber": 1
+    },
+    {
+      "recordId": "97ff24ebb8028e37a6ed72292e8d14d2adad6dc91b3aed78921684e94146abe7",
+      "pageNumber": 2
+    },
+    {
+      "recordId": "a9a3b24af30e9b2b74168bfcdf99107645ca66a7dea3ae46d6639f4e8784bc21",
+      "pageNumber": 0
+    },
+    {
+      "recordId": "a9a3b24af30e9b2b74168bfcdf99107645ca66a7dea3ae46d6639f4e8784bc21",
+      "pageNumber": 1
+    },
+    {
+      "recordId": "a9a3b24af30e9b2b74168bfcdf99107645ca66a7dea3ae46d6639f4e8784bc21",
+      "pageNumber": 2
+    },
+    {
+      "recordId": "97ff24ebb8028e37a6ed72292e8d14d2adad6dc91b3aed78921684e94146abe7",
+      "pageNumber": 0
+    },
+    {
+      "recordId": "97ff24ebb8028e37a6ed72292e8d14d2adad6dc91b3aed78921684e94146abe7",
+      "pageNumber": 1
+    },
+    {
+      "recordId": "97ff24ebb8028e37a6ed72292e8d14d2adad6dc91b3aed78921684e94146abe7",
+      "pageNumber": 2
+    },
+    {
+      "recordId": "876151fd3d1685d0ae895695546dd37f73dc232d522ca920e05b6e60331abfcd",
+      "pageNumber": 0
+    },
+    {
+      "recordId": "876151fd3d1685d0ae895695546dd37f73dc232d522ca920e05b6e60331abfcd",
+      "pageNumber": 1
+    },
+    {
+      "recordId": "876151fd3d1685d0ae895695546dd37f73dc232d522ca920e05b6e60331abfcd",
+      "pageNumber": 2
+    },
+    {
+      "recordId": "97ff24ebb8028e37a6ed72292e8d14d2adad6dc91b3aed78921684e94146abe7",
+      "pageNumber": 0
+    },
+    {
+      "recordId": "97ff24ebb8028e37a6ed72292e8d14d2adad6dc91b3aed78921684e94146abe7",
+      "pageNumber": 1
+    },
+    {
+      "recordId": "97ff24ebb8028e37a6ed72292e8d14d2adad6dc91b3aed78921684e94146abe7",
+      "pageNumber": 2
+    },
+    {
+      "recordId": "a9a3b24af30e9b2b74168bfcdf99107645ca66a7dea3ae46d6639f4e8784bc21",
+      "pageNumber": 0
+    },
+    {
+      "recordId": "a9a3b24af30e9b2b74168bfcdf99107645ca66a7dea3ae46d6639f4e8784bc21",
+      "pageNumber": 1
+    },
+    {
+      "recordId": "a9a3b24af30e9b2b74168bfcdf99107645ca66a7dea3ae46d6639f4e8784bc21",
+      "pageNumber": 2
+    },
+    {
+      "recordId": "9eee8c93c4e1fe60d8e0c96af17d7a49522f7045fd1be223e1b774f6c9ca5985",
+      "pageNumber": 0
+    },
+    {
+      "recordId": "9eee8c93c4e1fe60d8e0c96af17d7a49522f7045fd1be223e1b774f6c9ca5985",
+      "pageNumber": 1
+    },
+    {
+      "recordId": "9eee8c93c4e1fe60d8e0c96af17d7a49522f7045fd1be223e1b774f6c9ca5985",
+      "pageNumber": 2
+    },
+    {
+      "recordId": "a9a3b24af30e9b2b74168bfcdf99107645ca66a7dea3ae46d6639f4e8784bc21",
+      "pageNumber": 0
+    },
+    {
+      "recordId": "a9a3b24af30e9b2b74168bfcdf99107645ca66a7dea3ae46d6639f4e8784bc21",
+      "pageNumber": 1
+    },
+    {
+      "recordId": "a9a3b24af30e9b2b74168bfcdf99107645ca66a7dea3ae46d6639f4e8784bc21",
+      "pageNumber": 2
+    },
+    {
+      "recordId": "876151fd3d1685d0ae895695546dd37f73dc232d522ca920e05b6e60331abfcd",
+      "pageNumber": 0
+    },
+    {
+      "recordId": "876151fd3d1685d0ae895695546dd37f73dc232d522ca920e05b6e60331abfcd",
+      "pageNumber": 1
+    },
+    {
+      "recordId": "876151fd3d1685d0ae895695546dd37f73dc232d522ca920e05b6e60331abfcd",
+      "pageNumber": 2
+    }
+  ]
+}

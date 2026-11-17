@@ -1,5 +1,11 @@
 # Changes
 
+## 5.7.11 — document-first Review
+
+- Give the PDF the full Review width until the file list is opened; remove repeated Current PDF information from the main layout. Keep grouped and batch review accessible.
+- Place current-file filing choices, saved status and Undo below the PDF. Use File as Daily/Monthly/Other and Choose another type, with Keep as Other available among the alternatives. These actions save file labels, not clinical QA approval.
+- Rename Open PDF to Open in new tab, keep Details collapsed with the original filename and filing reason, and retain Expand PDF under More options. Keep 100% default zoom, continuous scrolling, existing preview caches and processing unchanged.
+
 ## 5.7.10 — Back button beside Open folders
 
 - Move Report Library’s existing Back to Today button from the top view tabs to the action row immediately beside Open folders. Keep its label, destination and visibility behavior unchanged.
