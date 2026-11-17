@@ -1,0 +1,487 @@
+{
+  "syntheticOnly": true,
+  "scope": "Focused presentation check of production Exports/Folders frontend, Monthly panel visibility and Reports calendar/library reachability using static synthetic HTTP responses. Export and Browse payloads are recorded by the stub; no backend, ZIP creation, archive, scanner, PDF reader, native Windows runtime or clinical QA validation runs.",
+  "checks": [
+    {
+      "name": "#monthly-reviewed-details stays hidden in the DOM",
+      "result": "PASS"
+    },
+    {
+      "name": "#monthly-setup-panel stays hidden in the DOM",
+      "result": "PASS"
+    },
+    {
+      "name": "#monthly-document-coverage stays hidden in the DOM",
+      "result": "PASS"
+    },
+    {
+      "name": "Reports opens its receipt calendar first",
+      "result": "PASS"
+    },
+    {
+      "name": "Report library remains reachable through its view control",
+      "result": "PASS"
+    },
+    {
+      "name": "Report library retains every synthetic report",
+      "result": "PASS"
+    },
+    {
+      "name": "Export preview is a native disclosure collapsed by default",
+      "result": "PASS"
+    },
+    {
+      "name": "Export preview has a clear summary",
+      "result": "PASS"
+    },
+    {
+      "name": "Default package count includes every synthetic report",
+      "result": "PASS"
+    },
+    {
+      "name": "Default package count includes every synthetic report also appears in preview summary",
+      "result": "PASS"
+    },
+    {
+      "name": "Preview rows remain hidden while collapsed",
+      "result": "PASS"
+    },
+    {
+      "name": "Clear export filters stays visible with preview closed",
+      "result": "PASS"
+    },
+    {
+      "name": "Opening preview preserves the same first twelve report filenames and order",
+      "result": "PASS"
+    },
+    {
+      "name": "Preview keeps the twelve-row limit and complete-export explanation",
+      "result": "PASS"
+    },
+    {
+      "name": "Scanner filter updates package count",
+      "result": "PASS"
+    },
+    {
+      "name": "Scanner filter updates package count also appears in preview summary",
+      "result": "PASS"
+    },
+    {
+      "name": "Year filter updates package count",
+      "result": "PASS"
+    },
+    {
+      "name": "Year filter updates package count also appears in preview summary",
+      "result": "PASS"
+    },
+    {
+      "name": "Month filter updates package count",
+      "result": "PASS"
+    },
+    {
+      "name": "Month filter updates package count also appears in preview summary",
+      "result": "PASS"
+    },
+    {
+      "name": "QA type filter updates package count",
+      "result": "PASS"
+    },
+    {
+      "name": "QA type filter updates package count also appears in preview summary",
+      "result": "PASS"
+    },
+    {
+      "name": "Filtered preview contains the original matching report",
+      "result": "PASS"
+    },
+    {
+      "name": "Export submits exactly the selected synthetic IDs to the recording stub",
+      "result": "PASS"
+    },
+    {
+      "name": "Visible clear filters restores all reports with preview closed",
+      "result": "PASS"
+    },
+    {
+      "name": "Visible clear filters restores all reports with preview closed also appears in preview summary",
+      "result": "PASS"
+    },
+    {
+      "name": "Filtering and clearing keep preview closed",
+      "result": "PASS"
+    },
+    {
+      "name": "Folders uses Browse by scanner heading",
+      "result": "PASS"
+    },
+    {
+      "name": "Library location is a native disclosure collapsed by default",
+      "result": "PASS"
+    },
+    {
+      "name": "Library path is hidden until requested",
+      "result": "PASS"
+    },
+    {
+      "name": "Folder total remains unchanged",
+      "result": "PASS"
+    },
+    {
+      "name": "Folder scanner total remains unchanged",
+      "result": "PASS"
+    },
+    {
+      "name": "Opening location shows the original synthetic library path",
+      "result": "PASS"
+    },
+    {
+      "name": "Folder tree retains both scanners",
+      "result": "PASS"
+    },
+    {
+      "name": "CT Edge tree name remains",
+      "result": "PASS"
+    },
+    {
+      "name": "CT Edge scanner count remains",
+      "result": "PASS"
+    },
+    {
+      "name": "CT Edge keeps both year targets",
+      "result": "PASS"
+    },
+    {
+      "name": "CT Edge year target 2025",
+      "result": "PASS"
+    },
+    {
+      "name": "CT Edge/2025 keeps both months",
+      "result": "PASS"
+    },
+    {
+      "name": "CT Edge/2025/05 target label",
+      "result": "PASS"
+    },
+    {
+      "name": "CT Edge/2025/05 keeps all categories",
+      "result": "PASS"
+    },
+    {
+      "name": "CT Edge/2025/05 category counts remain",
+      "result": "PASS"
+    },
+    {
+      "name": "CT Edge/2025/11 target label",
+      "result": "PASS"
+    },
+    {
+      "name": "CT Edge/2025/11 keeps all categories",
+      "result": "PASS"
+    },
+    {
+      "name": "CT Edge/2025/11 category counts remain",
+      "result": "PASS"
+    },
+    {
+      "name": "CT Edge year target 2026",
+      "result": "PASS"
+    },
+    {
+      "name": "CT Edge/2026 keeps both months",
+      "result": "PASS"
+    },
+    {
+      "name": "CT Edge/2026/05 target label",
+      "result": "PASS"
+    },
+    {
+      "name": "CT Edge/2026/05 keeps all categories",
+      "result": "PASS"
+    },
+    {
+      "name": "CT Edge/2026/05 category counts remain",
+      "result": "PASS"
+    },
+    {
+      "name": "CT Edge/2026/11 target label",
+      "result": "PASS"
+    },
+    {
+      "name": "CT Edge/2026/11 keeps all categories",
+      "result": "PASS"
+    },
+    {
+      "name": "CT Edge/2026/11 category counts remain",
+      "result": "PASS"
+    },
+    {
+      "name": "CT Flash tree name remains",
+      "result": "PASS"
+    },
+    {
+      "name": "CT Flash scanner count remains",
+      "result": "PASS"
+    },
+    {
+      "name": "CT Flash keeps both year targets",
+      "result": "PASS"
+    },
+    {
+      "name": "CT Flash year target 2025",
+      "result": "PASS"
+    },
+    {
+      "name": "CT Flash/2025 keeps both months",
+      "result": "PASS"
+    },
+    {
+      "name": "CT Flash/2025/05 target label",
+      "result": "PASS"
+    },
+    {
+      "name": "CT Flash/2025/05 keeps all categories",
+      "result": "PASS"
+    },
+    {
+      "name": "CT Flash/2025/05 category counts remain",
+      "result": "PASS"
+    },
+    {
+      "name": "CT Flash/2025/11 target label",
+      "result": "PASS"
+    },
+    {
+      "name": "CT Flash/2025/11 keeps all categories",
+      "result": "PASS"
+    },
+    {
+      "name": "CT Flash/2025/11 category counts remain",
+      "result": "PASS"
+    },
+    {
+      "name": "CT Flash year target 2026",
+      "result": "PASS"
+    },
+    {
+      "name": "CT Flash/2026 keeps both months",
+      "result": "PASS"
+    },
+    {
+      "name": "CT Flash/2026/05 target label",
+      "result": "PASS"
+    },
+    {
+      "name": "CT Flash/2026/05 keeps all categories",
+      "result": "PASS"
+    },
+    {
+      "name": "CT Flash/2026/05 category counts remain",
+      "result": "PASS"
+    },
+    {
+      "name": "CT Flash/2026/11 target label",
+      "result": "PASS"
+    },
+    {
+      "name": "CT Flash/2026/11 keeps all categories",
+      "result": "PASS"
+    },
+    {
+      "name": "CT Flash/2026/11 category counts remain",
+      "result": "PASS"
+    },
+    {
+      "name": "Full library export remains available",
+      "result": "PASS"
+    },
+    {
+      "name": "Full backup remains available",
+      "result": "PASS"
+    },
+    {
+      "name": "Open organized folders submits Browse only",
+      "result": "PASS"
+    },
+    {
+      "name": "Opening folders sends exactly one recorded action",
+      "result": "PASS"
+    },
+    {
+      "name": "Folders has no horizontal overflow at 1024px",
+      "result": "PASS"
+    },
+    {
+      "name": "#folders-open-button is available at 1024px",
+      "result": "PASS"
+    },
+    {
+      "name": "#folders-open-button can receive keyboard focus within the narrow viewport",
+      "result": "PASS"
+    },
+    {
+      "name": "Exports has no horizontal overflow at 1024px",
+      "result": "PASS"
+    },
+    {
+      "name": "#export-scanner-filter is available at 1024px",
+      "result": "PASS"
+    },
+    {
+      "name": "#export-scanner-filter can receive keyboard focus within the narrow viewport",
+      "result": "PASS"
+    },
+    {
+      "name": "#export-year-filter is available at 1024px",
+      "result": "PASS"
+    },
+    {
+      "name": "#export-year-filter can receive keyboard focus within the narrow viewport",
+      "result": "PASS"
+    },
+    {
+      "name": "#export-month-filter is available at 1024px",
+      "result": "PASS"
+    },
+    {
+      "name": "#export-month-filter can receive keyboard focus within the narrow viewport",
+      "result": "PASS"
+    },
+    {
+      "name": "#export-type-filter is available at 1024px",
+      "result": "PASS"
+    },
+    {
+      "name": "#export-type-filter can receive keyboard focus within the narrow viewport",
+      "result": "PASS"
+    },
+    {
+      "name": "#export-status-filter is available at 1024px",
+      "result": "PASS"
+    },
+    {
+      "name": "#export-status-filter can receive keyboard focus within the narrow viewport",
+      "result": "PASS"
+    },
+    {
+      "name": "#export-search is available at 1024px",
+      "result": "PASS"
+    },
+    {
+      "name": "#export-search can receive keyboard focus within the narrow viewport",
+      "result": "PASS"
+    },
+    {
+      "name": "#export-clear-filters is available at 1024px",
+      "result": "PASS"
+    },
+    {
+      "name": "#export-clear-filters can receive keyboard focus within the narrow viewport",
+      "result": "PASS"
+    },
+    {
+      "name": "#export-button is available at 1024px",
+      "result": "PASS"
+    },
+    {
+      "name": "#export-button can receive keyboard focus within the narrow viewport",
+      "result": "PASS"
+    },
+    {
+      "name": "No application error banner",
+      "result": "PASS"
+    },
+    {
+      "name": "Only the two intended actions reach the recording stub",
+      "result": "PASS"
+    },
+    {
+      "name": "No browser or JavaScript errors",
+      "result": "PASS"
+    },
+    {
+      "name": "No external asset requests",
+      "result": "PASS"
+    }
+  ],
+  "errors": [],
+  "externalRequests": [],
+  "submitted": [
+    {
+      "action": "Export",
+      "ids": [
+        "379fb3aa57b32f5071d16d7908d95238a6620ae1ebbceda0f7e1f82c022f0e16"
+      ]
+    },
+    {
+      "action": "Browse"
+    }
+  ],
+  "screenshots": [
+    "/tmp/ctqa-exports-folders-browser/exports-light-1440.png",
+    "/tmp/ctqa-exports-folders-browser/folders-light-1440.png",
+    "/tmp/ctqa-exports-folders-browser/exports-dark-1440.png",
+    "/tmp/ctqa-exports-folders-browser/folders-dark-1440.png",
+    "/tmp/ctqa-exports-folders-browser/folders-dark-1024.png",
+    "/tmp/ctqa-exports-folders-browser/exports-dark-1024.png"
+  ],
+  "sourceHashes": {
+    "index.html": "5b94951d22534d9eccb20d89952d1aedd3e71d9cf6f27786897996f0fb4d7e76",
+    "app.css": "c7ecee45ad90caa69c4cb370d1298b8dd7aa22a9ccc3d3cbd2001739647980ba",
+    "app.js": "99b823cae1bf8401817ec2f379c9808dbe65392889029c4b45ef76d8dccc8713",
+    "trends.js": "bf4c44cad7a0788a85fe7c1580fa6e413c7df9213153b91a9be13a16960be311"
+  },
+  "initialPreview": [
+    {
+      "id": "6975b7a023412f43eaaf392ae731a2433520928bc6cc9daa88a7db8641de8790",
+      "filename": "SYNTHETIC_CT_Edge_2026_11_Other.pdf"
+    },
+    {
+      "id": "f81e9941c00792f510518df5b3a03e95fc98f1b56d97d2a9aab0cb00e223d231",
+      "filename": "SYNTHETIC_CT_Flash_2026_11_Other.pdf"
+    },
+    {
+      "id": "55720ec33d88051e2b5ad568505a82df0bf47e3f4c44d141b557d718a87c80cf",
+      "filename": "SYNTHETIC_CT_Edge_2026_11_Monthly.pdf"
+    },
+    {
+      "id": "379fb3aa57b32f5071d16d7908d95238a6620ae1ebbceda0f7e1f82c022f0e16",
+      "filename": "SYNTHETIC_CT_Flash_2026_11_Monthly.pdf"
+    },
+    {
+      "id": "5576c31789c88de627a2abe3e66eb9010e0e97e037812767c06a937de0d04157",
+      "filename": "SYNTHETIC_CT_Edge_2026_11_Daily.pdf"
+    },
+    {
+      "id": "bac29b8a4a05ce49a2c694a680d46df8990ee3b7bc18c0a4a90d0f81a241a9cd",
+      "filename": "SYNTHETIC_CT_Flash_2026_11_Daily.pdf"
+    },
+    {
+      "id": "c857103c3858e5e6ee42db78083d466dcf1df403428427aa98df900f58d2fad0",
+      "filename": "SYNTHETIC_CT_Edge_2026_05_Other.pdf"
+    },
+    {
+      "id": "9359729a5690a6342cd9820213cb829aa5928c457137a143abb3e38313b5fcf2",
+      "filename": "SYNTHETIC_CT_Flash_2026_05_Other.pdf"
+    },
+    {
+      "id": "e5e6621390b3907d0904f63fc4f3a7602417717919dcbc7fb4237d7a63d3018a",
+      "filename": "SYNTHETIC_CT_Edge_2026_05_Monthly.pdf"
+    },
+    {
+      "id": "a73215f9872279826019c0ab0bcb7f12468358dfa334d508320ca9c085ee72a6",
+      "filename": "SYNTHETIC_CT_Flash_2026_05_Monthly.pdf"
+    },
+    {
+      "id": "a4b7da2205df5a58cc20ba81b36b3757321fbcdac4e655e2800e4474ef3f7a4c",
+      "filename": "SYNTHETIC_CT_Edge_2026_05_Daily.pdf"
+    },
+    {
+      "id": "18ff058a90c4721bd16780b0e5c7305d181bb329e354be3744eef37810aa13ef",
+      "filename": "SYNTHETIC_CT_Flash_2026_05_Daily.pdf"
+    }
+  ],
+  "status": "PASS",
+  "applicationSHA256": "99b823cae1bf8401817ec2f379c9808dbe65392889029c4b45ef76d8dccc8713",
+  "stylesSHA256": "c7ecee45ad90caa69c4cb370d1298b8dd7aa22a9ccc3d3cbd2001739647980ba",
+  "markupSHA256": "5b94951d22534d9eccb20d89952d1aedd3e71d9cf6f27786897996f0fb4d7e76"
+}
