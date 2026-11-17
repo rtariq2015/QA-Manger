@@ -1,0 +1,1205 @@
+{
+  "syntheticOnly": true,
+  "scope": "One production-web Chromium navigation/cache flow with generated snapshot/PNG/Trends responses and response-only instrumentation. Before/after timings use identical synthetic 1,367/20,000-record libraries. No Windows, PowerShell, scanner, real reader/archive, hospital throughput or clinical validation.",
+  "checks": [
+    {
+      "name": "baseline 1367 exports retain every exact matching ID in order",
+      "result": "PASS"
+    },
+    {
+      "name": "baseline 1367 export preview stays at twelve rows",
+      "result": "PASS"
+    },
+    {
+      "name": "baseline 1367 report page stays at one hundred rows",
+      "result": "PASS"
+    },
+    {
+      "name": "baseline 1367 calendar retains all exact day identities",
+      "result": "PASS"
+    },
+    {
+      "name": "baseline 1367 calendar totals match the pure receipt model",
+      "result": "PASS"
+    },
+    {
+      "name": "baseline 20000 exports retain every exact matching ID in order",
+      "result": "PASS"
+    },
+    {
+      "name": "baseline 20000 export preview stays at twelve rows",
+      "result": "PASS"
+    },
+    {
+      "name": "baseline 20000 report page stays at one hundred rows",
+      "result": "PASS"
+    },
+    {
+      "name": "baseline 20000 calendar retains all exact day identities",
+      "result": "PASS"
+    },
+    {
+      "name": "baseline 20000 calendar totals match the pure receipt model",
+      "result": "PASS"
+    },
+    {
+      "name": "after 1367 exports retain every exact matching ID in order",
+      "result": "PASS"
+    },
+    {
+      "name": "after 1367 export preview stays at twelve rows",
+      "result": "PASS"
+    },
+    {
+      "name": "after 1367 report page stays at one hundred rows",
+      "result": "PASS"
+    },
+    {
+      "name": "after 1367 calendar retains all exact day identities",
+      "result": "PASS"
+    },
+    {
+      "name": "after 1367 calendar totals match the pure receipt model",
+      "result": "PASS"
+    },
+    {
+      "name": "1367 revisiting a filter reuses its result array",
+      "result": "PASS"
+    },
+    {
+      "name": "1367 Reports and Exports share the same matching result",
+      "result": "PASS"
+    },
+    {
+      "name": "1367 unchanged Today report metadata is reused",
+      "result": "PASS"
+    },
+    {
+      "name": "1367 unchanged calendar keeps its existing day nodes",
+      "result": "PASS"
+    },
+    {
+      "name": "1367 unchanged Folders keeps tree nodes and expanded state",
+      "result": "PASS"
+    },
+    {
+      "name": "1367 unchanged Exports keeps preview nodes",
+      "result": "PASS"
+    },
+    {
+      "name": "1367 unchanged calendar avoids another metadata build",
+      "result": "PASS"
+    },
+    {
+      "name": "1367 returning to a calendar month reuses its model",
+      "result": "PASS"
+    },
+    {
+      "name": "1367 a valid cached month restores calendar days after invalid input",
+      "result": "PASS"
+    },
+    {
+      "name": "1367 filter cache evicts an old search at its entry bound",
+      "result": "PASS"
+    },
+    {
+      "name": "1367 calendar cache evicts an old month at its bound",
+      "result": "PASS"
+    },
+    {
+      "name": "1367 filter cache stays within eight entries/eighty-thousand record references",
+      "result": "PASS"
+    },
+    {
+      "name": "1367 calendar cache stays within twelve entries/forty-thousand report-ID references",
+      "result": "PASS"
+    },
+    {
+      "name": "1367 changed report invalidates filter cache",
+      "result": "PASS"
+    },
+    {
+      "name": "1367 export retains the exact updated matching ID",
+      "result": "PASS"
+    },
+    {
+      "name": "1367 changed filter rebuilds the export preview",
+      "result": "PASS"
+    },
+    {
+      "name": "1367 archive/scanner metadata invalidates the folder tree",
+      "result": "PASS"
+    },
+    {
+      "name": "1367 changed scanner schedule refreshes exact calendar receipt totals",
+      "result": "PASS"
+    },
+    {
+      "name": "Trends metric A→B→A reuses cached response",
+      "result": "PASS"
+    },
+    {
+      "name": "Different Trends metric initially makes one request",
+      "result": "PASS"
+    },
+    {
+      "name": "Cached Trends retains exact value, units, printed bounds and source page",
+      "result": "PASS"
+    },
+    {
+      "name": "Changing archive invalidates Trends even with the same opaque revision",
+      "result": "PASS"
+    },
+    {
+      "name": "An expired Trends query requires fresh data",
+      "result": "PASS"
+    },
+    {
+      "name": "Trends response cache remains within eight queries/two MiB",
+      "result": "PASS"
+    },
+    {
+      "name": "PDF A→B→A reuses the successful page without a renderer request",
+      "result": "PASS"
+    },
+    {
+      "name": "Changed report stamp invalidates the displayed PDF page",
+      "result": "PASS"
+    },
+    {
+      "name": "PDF documents share the existing twenty-page/thirty-MiB limits",
+      "result": "PASS"
+    },
+    {
+      "name": "after 20000 exports retain every exact matching ID in order",
+      "result": "PASS"
+    },
+    {
+      "name": "after 20000 export preview stays at twelve rows",
+      "result": "PASS"
+    },
+    {
+      "name": "after 20000 report page stays at one hundred rows",
+      "result": "PASS"
+    },
+    {
+      "name": "after 20000 calendar retains all exact day identities",
+      "result": "PASS"
+    },
+    {
+      "name": "after 20000 calendar totals match the pure receipt model",
+      "result": "PASS"
+    },
+    {
+      "name": "20000 revisiting a filter reuses its result array",
+      "result": "PASS"
+    },
+    {
+      "name": "20000 Reports and Exports share the same matching result",
+      "result": "PASS"
+    },
+    {
+      "name": "20000 unchanged Today report metadata is reused",
+      "result": "PASS"
+    },
+    {
+      "name": "20000 unchanged calendar keeps its existing day nodes",
+      "result": "PASS"
+    },
+    {
+      "name": "20000 unchanged Folders keeps tree nodes and expanded state",
+      "result": "PASS"
+    },
+    {
+      "name": "20000 unchanged Exports keeps preview nodes",
+      "result": "PASS"
+    },
+    {
+      "name": "20000 unchanged calendar avoids another metadata build",
+      "result": "PASS"
+    },
+    {
+      "name": "20000 returning to a calendar month reuses its model",
+      "result": "PASS"
+    },
+    {
+      "name": "20000 a valid cached month restores calendar days after invalid input",
+      "result": "PASS"
+    },
+    {
+      "name": "20000 filter cache evicts an old search at its entry bound",
+      "result": "PASS"
+    },
+    {
+      "name": "20000 calendar cache evicts an old month at its bound",
+      "result": "PASS"
+    },
+    {
+      "name": "20000 filter cache stays within eight entries/eighty-thousand record references",
+      "result": "PASS"
+    },
+    {
+      "name": "20000 calendar cache stays within twelve entries/forty-thousand report-ID references",
+      "result": "PASS"
+    },
+    {
+      "name": "20000 changed report invalidates filter cache",
+      "result": "PASS"
+    },
+    {
+      "name": "20000 export retains the exact updated matching ID",
+      "result": "PASS"
+    },
+    {
+      "name": "20000 changed filter rebuilds the export preview",
+      "result": "PASS"
+    },
+    {
+      "name": "20000 archive/scanner metadata invalidates the folder tree",
+      "result": "PASS"
+    },
+    {
+      "name": "20000 changed scanner schedule refreshes exact calendar receipt totals",
+      "result": "PASS"
+    },
+    {
+      "name": "No unexpected browser errors",
+      "result": "PASS"
+    },
+    {
+      "name": "No external requests",
+      "result": "PASS"
+    },
+    {
+      "name": "Read-only caching checks submit no mutation action",
+      "result": "PASS"
+    }
+  ],
+  "results": [
+    {
+      "phase": "baseline",
+      "count": 1367,
+      "medianMs": {
+        "reports": 32.19999999925494,
+        "calendar": 12.100000001490116,
+        "folders": 11.199999999254942,
+        "exports": 5.099999997764826,
+        "unchangedSnapshot": 8.899999998509884
+      },
+      "samplesMs": {
+        "reports": [
+          31.599999997764826,
+          32.19999999925494,
+          38.899999998509884,
+          31.800000000745058,
+          36.100000001490116
+        ],
+        "calendar": [
+          15.100000001490116,
+          9.900000002235174,
+          12.100000001490116,
+          11.800000000745058,
+          12.300000000745058
+        ],
+        "folders": [
+          11.700000002980232,
+          9.899999998509884,
+          11.600000001490116,
+          10,
+          11.199999999254942
+        ],
+        "exports": [
+          4.399999998509884,
+          5.199999999254942,
+          4.5,
+          5.5,
+          5.099999997764826
+        ],
+        "unchangedSnapshot": [
+          9.300000000745058,
+          10.800000000745058,
+          8.899999998509884,
+          8.899999998509884,
+          7.700000002980232
+        ]
+      },
+      "repeatFilterSameArray": false,
+      "sharedFilterSameArray": false,
+      "todaySameMetadata": false,
+      "folderRetained": false,
+      "folderOpenPreserved": true,
+      "exportRetained": false,
+      "calendarRepeatedBuilds": 1,
+      "calendarReturnBuilds": 1,
+      "calendarDomRetained": false,
+      "calendarSummaryMatches": true,
+      "renderedCalendarIds": [
+        "2026-11-01",
+        "2026-11-02",
+        "2026-11-03",
+        "2026-11-04",
+        "2026-11-05",
+        "2026-11-06",
+        "2026-11-07",
+        "2026-11-08",
+        "2026-11-09",
+        "2026-11-10",
+        "2026-11-11",
+        "2026-11-12",
+        "2026-11-13",
+        "2026-11-14",
+        "2026-11-15",
+        "2026-11-16",
+        "2026-11-17",
+        "2026-11-18",
+        "2026-11-19",
+        "2026-11-20",
+        "2026-11-21",
+        "2026-11-22",
+        "2026-11-23",
+        "2026-11-24",
+        "2026-11-25",
+        "2026-11-26",
+        "2026-11-27",
+        "2026-11-28",
+        "2026-11-29",
+        "2026-11-30"
+      ],
+      "expectedCalendarIds": [
+        "2026-11-01",
+        "2026-11-02",
+        "2026-11-03",
+        "2026-11-04",
+        "2026-11-05",
+        "2026-11-06",
+        "2026-11-07",
+        "2026-11-08",
+        "2026-11-09",
+        "2026-11-10",
+        "2026-11-11",
+        "2026-11-12",
+        "2026-11-13",
+        "2026-11-14",
+        "2026-11-15",
+        "2026-11-16",
+        "2026-11-17",
+        "2026-11-18",
+        "2026-11-19",
+        "2026-11-20",
+        "2026-11-21",
+        "2026-11-22",
+        "2026-11-23",
+        "2026-11-24",
+        "2026-11-25",
+        "2026-11-26",
+        "2026-11-27",
+        "2026-11-28",
+        "2026-11-29",
+        "2026-11-30"
+      ],
+      "exportPreviewRows": 12,
+      "reportRows": 100
+    },
+    {
+      "phase": "baseline",
+      "count": 20000,
+      "medianMs": {
+        "reports": 59.100000001490116,
+        "calendar": 43.899999998509884,
+        "folders": 18.700000002980232,
+        "exports": 7.699999999254942,
+        "unchangedSnapshot": 32.899999998509884
+      },
+      "samplesMs": {
+        "reports": [
+          57.29999999701977,
+          58.399999998509884,
+          66.80000000074506,
+          59.100000001490116,
+          63.600000001490116
+        ],
+        "calendar": [
+          43.899999998509884,
+          36.80000000074506,
+          54.69999999925494,
+          50.69999999925494,
+          42.599999997764826
+        ],
+        "folders": [
+          19.600000001490116,
+          18.400000002235174,
+          21.300000000745058,
+          15.699999999254942,
+          18.700000002980232
+        ],
+        "exports": [
+          7.100000001490116,
+          7.699999999254942,
+          10.600000001490116,
+          6.599999997764826,
+          8
+        ],
+        "unchangedSnapshot": [
+          32.79999999701977,
+          32.899999998509884,
+          42.19999999925494,
+          37.30000000074506,
+          32.599999997764826
+        ]
+      },
+      "repeatFilterSameArray": false,
+      "sharedFilterSameArray": false,
+      "todaySameMetadata": false,
+      "folderRetained": false,
+      "folderOpenPreserved": true,
+      "exportRetained": false,
+      "calendarRepeatedBuilds": 1,
+      "calendarReturnBuilds": 1,
+      "calendarDomRetained": false,
+      "calendarSummaryMatches": true,
+      "renderedCalendarIds": [
+        "2026-11-01",
+        "2026-11-02",
+        "2026-11-03",
+        "2026-11-04",
+        "2026-11-05",
+        "2026-11-06",
+        "2026-11-07",
+        "2026-11-08",
+        "2026-11-09",
+        "2026-11-10",
+        "2026-11-11",
+        "2026-11-12",
+        "2026-11-13",
+        "2026-11-14",
+        "2026-11-15",
+        "2026-11-16",
+        "2026-11-17",
+        "2026-11-18",
+        "2026-11-19",
+        "2026-11-20",
+        "2026-11-21",
+        "2026-11-22",
+        "2026-11-23",
+        "2026-11-24",
+        "2026-11-25",
+        "2026-11-26",
+        "2026-11-27",
+        "2026-11-28",
+        "2026-11-29",
+        "2026-11-30"
+      ],
+      "expectedCalendarIds": [
+        "2026-11-01",
+        "2026-11-02",
+        "2026-11-03",
+        "2026-11-04",
+        "2026-11-05",
+        "2026-11-06",
+        "2026-11-07",
+        "2026-11-08",
+        "2026-11-09",
+        "2026-11-10",
+        "2026-11-11",
+        "2026-11-12",
+        "2026-11-13",
+        "2026-11-14",
+        "2026-11-15",
+        "2026-11-16",
+        "2026-11-17",
+        "2026-11-18",
+        "2026-11-19",
+        "2026-11-20",
+        "2026-11-21",
+        "2026-11-22",
+        "2026-11-23",
+        "2026-11-24",
+        "2026-11-25",
+        "2026-11-26",
+        "2026-11-27",
+        "2026-11-28",
+        "2026-11-29",
+        "2026-11-30"
+      ],
+      "exportPreviewRows": 12,
+      "reportRows": 100
+    },
+    {
+      "phase": "after",
+      "count": 1367,
+      "medianMs": {
+        "reports": 25.599999997764826,
+        "calendar": 5.5,
+        "folders": 3.599999997764826,
+        "exports": 3.900000002235174,
+        "unchangedSnapshot": 6.800000000745058
+      },
+      "samplesMs": {
+        "reports": [
+          15.800000000745058,
+          23.300000000745058,
+          25.800000000745058,
+          25.599999997764826,
+          28.400000002235174
+        ],
+        "calendar": [
+          8.399999998509884,
+          4.899999998509884,
+          5.5,
+          5.400000002235174,
+          6.300000000745058
+        ],
+        "folders": [
+          5.100000001490116,
+          3.399999998509884,
+          3.699999999254942,
+          3.5,
+          3.599999997764826
+        ],
+        "exports": [
+          2.699999999254942,
+          3.900000002235174,
+          4,
+          3.899999998509884,
+          4.600000001490116
+        ],
+        "unchangedSnapshot": [
+          5.300000000745058,
+          8,
+          5.899999998509884,
+          7.300000000745058,
+          6.800000000745058
+        ]
+      },
+      "repeatFilterSameArray": true,
+      "sharedFilterSameArray": true,
+      "todaySameMetadata": true,
+      "folderRetained": true,
+      "folderOpenPreserved": true,
+      "exportRetained": true,
+      "calendarRepeatedBuilds": 0,
+      "calendarReturnBuilds": 0,
+      "calendarDomRetained": true,
+      "calendarSummaryMatches": true,
+      "renderedCalendarIds": [
+        "2026-11-01",
+        "2026-11-02",
+        "2026-11-03",
+        "2026-11-04",
+        "2026-11-05",
+        "2026-11-06",
+        "2026-11-07",
+        "2026-11-08",
+        "2026-11-09",
+        "2026-11-10",
+        "2026-11-11",
+        "2026-11-12",
+        "2026-11-13",
+        "2026-11-14",
+        "2026-11-15",
+        "2026-11-16",
+        "2026-11-17",
+        "2026-11-18",
+        "2026-11-19",
+        "2026-11-20",
+        "2026-11-21",
+        "2026-11-22",
+        "2026-11-23",
+        "2026-11-24",
+        "2026-11-25",
+        "2026-11-26",
+        "2026-11-27",
+        "2026-11-28",
+        "2026-11-29",
+        "2026-11-30"
+      ],
+      "expectedCalendarIds": [
+        "2026-11-01",
+        "2026-11-02",
+        "2026-11-03",
+        "2026-11-04",
+        "2026-11-05",
+        "2026-11-06",
+        "2026-11-07",
+        "2026-11-08",
+        "2026-11-09",
+        "2026-11-10",
+        "2026-11-11",
+        "2026-11-12",
+        "2026-11-13",
+        "2026-11-14",
+        "2026-11-15",
+        "2026-11-16",
+        "2026-11-17",
+        "2026-11-18",
+        "2026-11-19",
+        "2026-11-20",
+        "2026-11-21",
+        "2026-11-22",
+        "2026-11-23",
+        "2026-11-24",
+        "2026-11-25",
+        "2026-11-26",
+        "2026-11-27",
+        "2026-11-28",
+        "2026-11-29",
+        "2026-11-30"
+      ],
+      "exportPreviewRows": 12,
+      "reportRows": 100
+    },
+    {
+      "phase": "after",
+      "count": 20000,
+      "medianMs": {
+        "reports": 15,
+        "calendar": 4.300000000745058,
+        "folders": 2.300000000745058,
+        "exports": 2.5,
+        "unchangedSnapshot": 6.600000001490116
+      },
+      "samplesMs": {
+        "reports": [
+          15,
+          15.400000002235174,
+          12.800000000745058,
+          13.199999999254942,
+          15.399999998509884
+        ],
+        "calendar": [
+          7.100000001490116,
+          3.699999999254942,
+          3.5,
+          4.300000000745058,
+          4.399999998509884
+        ],
+        "folders": [
+          3.899999998509884,
+          1.8999999985098839,
+          2,
+          2.300000000745058,
+          3
+        ],
+        "exports": [
+          2.5,
+          2.300000000745058,
+          2.300000000745058,
+          2.599999997764826,
+          2.600000001490116
+        ],
+        "unchangedSnapshot": [
+          6.899999998509884,
+          6.400000002235174,
+          6.599999997764826,
+          6.600000001490116,
+          7.399999998509884
+        ]
+      },
+      "repeatFilterSameArray": true,
+      "sharedFilterSameArray": true,
+      "todaySameMetadata": true,
+      "folderRetained": true,
+      "folderOpenPreserved": true,
+      "exportRetained": true,
+      "calendarRepeatedBuilds": 0,
+      "calendarReturnBuilds": 0,
+      "calendarDomRetained": true,
+      "calendarSummaryMatches": true,
+      "renderedCalendarIds": [
+        "2026-11-01",
+        "2026-11-02",
+        "2026-11-03",
+        "2026-11-04",
+        "2026-11-05",
+        "2026-11-06",
+        "2026-11-07",
+        "2026-11-08",
+        "2026-11-09",
+        "2026-11-10",
+        "2026-11-11",
+        "2026-11-12",
+        "2026-11-13",
+        "2026-11-14",
+        "2026-11-15",
+        "2026-11-16",
+        "2026-11-17",
+        "2026-11-18",
+        "2026-11-19",
+        "2026-11-20",
+        "2026-11-21",
+        "2026-11-22",
+        "2026-11-23",
+        "2026-11-24",
+        "2026-11-25",
+        "2026-11-26",
+        "2026-11-27",
+        "2026-11-28",
+        "2026-11-29",
+        "2026-11-30"
+      ],
+      "expectedCalendarIds": [
+        "2026-11-01",
+        "2026-11-02",
+        "2026-11-03",
+        "2026-11-04",
+        "2026-11-05",
+        "2026-11-06",
+        "2026-11-07",
+        "2026-11-08",
+        "2026-11-09",
+        "2026-11-10",
+        "2026-11-11",
+        "2026-11-12",
+        "2026-11-13",
+        "2026-11-14",
+        "2026-11-15",
+        "2026-11-16",
+        "2026-11-17",
+        "2026-11-18",
+        "2026-11-19",
+        "2026-11-20",
+        "2026-11-21",
+        "2026-11-22",
+        "2026-11-23",
+        "2026-11-24",
+        "2026-11-25",
+        "2026-11-26",
+        "2026-11-27",
+        "2026-11-28",
+        "2026-11-29",
+        "2026-11-30"
+      ],
+      "exportPreviewRows": 12,
+      "reportRows": 100
+    }
+  ],
+  "errors": [],
+  "externalRequests": [],
+  "browser": "156.0.8078.79",
+  "sourceHashes": {
+    "index.html": "8c57c0543b5fc12f27990c719dae0ae4bc9a230ae05c365e6969bc40da48343d",
+    "app.css": "1387db7107cf493d3be9a04539207471ee364bf077fd9d2b484b2da1c5ea05d2",
+    "app.js": "69c17042941d1202c096bd0d30b8995429a7203c3d00aa12efb5e58d8913f44b",
+    "trends.js": "9b7e4141c7e5accc73347eb64bb834299ef3f1201fe152ee8776c9abc7d9d50d"
+  },
+  "baselineSource": "v5.7.16",
+  "baselineSourceHashes": {
+    "index.html": "69ba3945d85eaef6ff46f207d27c30d30f2ed8b2ecf30329f462b55d095ebd39",
+    "app.css": "1387db7107cf493d3be9a04539207471ee364bf077fd9d2b484b2da1c5ea05d2",
+    "app.js": "8e0c8a3e7d601ad64b0b68eed76d64930e034e2af367f0c56d9a873a678ffca4",
+    "trends.js": "4f92f9abd64afeaaa4905cbfe192da8cff2b0e08fe92812edc82ab934c4e44d6"
+  },
+  "status": "PASS",
+  "assertions": 68,
+  "sourceHashesAtEnd": {
+    "index.html": "8c57c0543b5fc12f27990c719dae0ae4bc9a230ae05c365e6969bc40da48343d",
+    "app.css": "1387db7107cf493d3be9a04539207471ee364bf077fd9d2b484b2da1c5ea05d2",
+    "app.js": "69c17042941d1202c096bd0d30b8995429a7203c3d00aa12efb5e58d8913f44b",
+    "trends.js": "9b7e4141c7e5accc73347eb64bb834299ef3f1201fe152ee8776c9abc7d9d50d"
+  },
+  "sourceHashesStable": true,
+  "testedFiles": {
+    "App/Web/index.html": "8c57c0543b5fc12f27990c719dae0ae4bc9a230ae05c365e6969bc40da48343d",
+    "App/Web/app.css": "1387db7107cf493d3be9a04539207471ee364bf077fd9d2b484b2da1c5ea05d2",
+    "App/Web/app.js": "69c17042941d1202c096bd0d30b8995429a7203c3d00aa12efb5e58d8913f44b",
+    "App/Web/trends.js": "9b7e4141c7e5accc73347eb64bb834299ef3f1201fe152ee8776c9abc7d9d50d"
+  },
+  "requests": [
+    {
+      "phase": "baseline",
+      "method": "GET",
+      "pathname": "/",
+      "query": ""
+    },
+    {
+      "phase": "baseline",
+      "method": "GET",
+      "pathname": "/app.css",
+      "query": ""
+    },
+    {
+      "phase": "baseline",
+      "method": "GET",
+      "pathname": "/trends.js",
+      "query": ""
+    },
+    {
+      "phase": "baseline",
+      "method": "GET",
+      "pathname": "/app.js",
+      "query": ""
+    },
+    {
+      "phase": "baseline",
+      "method": "POST",
+      "pathname": "/api/session",
+      "query": ""
+    },
+    {
+      "phase": "baseline",
+      "method": "POST",
+      "pathname": "/api/heartbeat",
+      "query": ""
+    },
+    {
+      "phase": "baseline",
+      "method": "GET",
+      "pathname": "/api/snapshot",
+      "query": ""
+    },
+    {
+      "phase": "baseline",
+      "method": "GET",
+      "pathname": "/api/jobs",
+      "query": ""
+    },
+    {
+      "phase": "baseline",
+      "method": "GET",
+      "pathname": "/",
+      "query": ""
+    },
+    {
+      "phase": "baseline",
+      "method": "GET",
+      "pathname": "/app.css",
+      "query": ""
+    },
+    {
+      "phase": "baseline",
+      "method": "GET",
+      "pathname": "/trends.js",
+      "query": ""
+    },
+    {
+      "phase": "baseline",
+      "method": "GET",
+      "pathname": "/app.js",
+      "query": ""
+    },
+    {
+      "phase": "baseline",
+      "method": "POST",
+      "pathname": "/api/session",
+      "query": ""
+    },
+    {
+      "phase": "baseline",
+      "method": "POST",
+      "pathname": "/api/heartbeat",
+      "query": ""
+    },
+    {
+      "phase": "baseline",
+      "method": "GET",
+      "pathname": "/api/snapshot",
+      "query": ""
+    },
+    {
+      "phase": "baseline",
+      "method": "GET",
+      "pathname": "/api/jobs",
+      "query": ""
+    },
+    {
+      "phase": "after",
+      "method": "GET",
+      "pathname": "/",
+      "query": ""
+    },
+    {
+      "phase": "after",
+      "method": "GET",
+      "pathname": "/app.css",
+      "query": ""
+    },
+    {
+      "phase": "after",
+      "method": "GET",
+      "pathname": "/trends.js",
+      "query": ""
+    },
+    {
+      "phase": "after",
+      "method": "GET",
+      "pathname": "/app.js",
+      "query": ""
+    },
+    {
+      "phase": "after",
+      "method": "POST",
+      "pathname": "/api/session",
+      "query": ""
+    },
+    {
+      "phase": "after",
+      "method": "POST",
+      "pathname": "/api/heartbeat",
+      "query": ""
+    },
+    {
+      "phase": "after",
+      "method": "GET",
+      "pathname": "/api/snapshot",
+      "query": ""
+    },
+    {
+      "phase": "after",
+      "method": "GET",
+      "pathname": "/api/jobs",
+      "query": ""
+    },
+    {
+      "phase": "after",
+      "method": "GET",
+      "pathname": "/api/snapshot",
+      "query": ""
+    },
+    {
+      "phase": "after",
+      "method": "GET",
+      "pathname": "/api/snapshot",
+      "query": ""
+    },
+    {
+      "phase": "after",
+      "method": "GET",
+      "pathname": "/api/trends",
+      "query": "metric=WaterCTNumber&scanner=CT_Edge&start=2026-08-20&end=2026-11-17"
+    },
+    {
+      "phase": "after",
+      "method": "GET",
+      "pathname": "/api/trends",
+      "query": "metric=ImageNoise&scanner=CT_Edge&start=2026-08-20&end=2026-11-17"
+    },
+    {
+      "phase": "after",
+      "method": "GET",
+      "pathname": "/api/snapshot",
+      "query": ""
+    },
+    {
+      "phase": "after",
+      "method": "GET",
+      "pathname": "/api/trends",
+      "query": "metric=WaterCTNumber&scanner=CT_Edge&series=CT_Edge%7CWaterCTNumber%7CBody%7CA%7C1&start=2026-08-20&end=2026-11-17"
+    },
+    {
+      "phase": "after",
+      "method": "GET",
+      "pathname": "/api/trends",
+      "query": "metric=ImageNoise&scanner=CT_Edge&start=2026-08-20&end=2026-11-17"
+    },
+    {
+      "phase": "after",
+      "method": "GET",
+      "pathname": "/api/preview/0000000000000000000000000000000000000000000000000000000000000001",
+      "query": "page=0"
+    },
+    {
+      "phase": "after",
+      "method": "GET",
+      "pathname": "/api/preview/0000000000000000000000000000000000000000000000000000000000000002",
+      "query": "page=0"
+    },
+    {
+      "phase": "after",
+      "method": "GET",
+      "pathname": "/api/snapshot",
+      "query": ""
+    },
+    {
+      "phase": "after",
+      "method": "GET",
+      "pathname": "/api/preview/0000000000000000000000000000000000000000000000000000000000000001",
+      "query": "page=0"
+    },
+    {
+      "phase": "after",
+      "method": "GET",
+      "pathname": "/api/preview/0000000000000000000000000000000000000000000000000000000000000003",
+      "query": "page=0"
+    },
+    {
+      "phase": "after",
+      "method": "GET",
+      "pathname": "/api/preview/0000000000000000000000000000000000000000000000000000000000000004",
+      "query": "page=0"
+    },
+    {
+      "phase": "after",
+      "method": "GET",
+      "pathname": "/api/preview/0000000000000000000000000000000000000000000000000000000000000005",
+      "query": "page=0"
+    },
+    {
+      "phase": "after",
+      "method": "GET",
+      "pathname": "/api/preview/0000000000000000000000000000000000000000000000000000000000000006",
+      "query": "page=0"
+    },
+    {
+      "phase": "after",
+      "method": "GET",
+      "pathname": "/api/preview/0000000000000000000000000000000000000000000000000000000000000007",
+      "query": "page=0"
+    },
+    {
+      "phase": "after",
+      "method": "GET",
+      "pathname": "/api/preview/0000000000000000000000000000000000000000000000000000000000000008",
+      "query": "page=0"
+    },
+    {
+      "phase": "after",
+      "method": "GET",
+      "pathname": "/api/preview/0000000000000000000000000000000000000000000000000000000000000009",
+      "query": "page=0"
+    },
+    {
+      "phase": "after",
+      "method": "GET",
+      "pathname": "/api/preview/000000000000000000000000000000000000000000000000000000000000000a",
+      "query": "page=0"
+    },
+    {
+      "phase": "after",
+      "method": "GET",
+      "pathname": "/api/preview/000000000000000000000000000000000000000000000000000000000000000b",
+      "query": "page=0"
+    },
+    {
+      "phase": "after",
+      "method": "GET",
+      "pathname": "/api/preview/000000000000000000000000000000000000000000000000000000000000000c",
+      "query": "page=0"
+    },
+    {
+      "phase": "after",
+      "method": "GET",
+      "pathname": "/api/preview/000000000000000000000000000000000000000000000000000000000000000d",
+      "query": "page=0"
+    },
+    {
+      "phase": "after",
+      "method": "GET",
+      "pathname": "/api/preview/000000000000000000000000000000000000000000000000000000000000000e",
+      "query": "page=0"
+    },
+    {
+      "phase": "after",
+      "method": "GET",
+      "pathname": "/api/preview/000000000000000000000000000000000000000000000000000000000000000f",
+      "query": "page=0"
+    },
+    {
+      "phase": "after",
+      "method": "GET",
+      "pathname": "/api/preview/0000000000000000000000000000000000000000000000000000000000000010",
+      "query": "page=0"
+    },
+    {
+      "phase": "after",
+      "method": "GET",
+      "pathname": "/api/preview/0000000000000000000000000000000000000000000000000000000000000011",
+      "query": "page=0"
+    },
+    {
+      "phase": "after",
+      "method": "GET",
+      "pathname": "/api/preview/0000000000000000000000000000000000000000000000000000000000000012",
+      "query": "page=0"
+    },
+    {
+      "phase": "after",
+      "method": "GET",
+      "pathname": "/api/preview/0000000000000000000000000000000000000000000000000000000000000013",
+      "query": "page=0"
+    },
+    {
+      "phase": "after",
+      "method": "GET",
+      "pathname": "/api/preview/0000000000000000000000000000000000000000000000000000000000000014",
+      "query": "page=0"
+    },
+    {
+      "phase": "after",
+      "method": "GET",
+      "pathname": "/api/preview/0000000000000000000000000000000000000000000000000000000000000015",
+      "query": "page=0"
+    },
+    {
+      "phase": "after",
+      "method": "GET",
+      "pathname": "/api/preview/0000000000000000000000000000000000000000000000000000000000000016",
+      "query": "page=0"
+    },
+    {
+      "phase": "after",
+      "method": "GET",
+      "pathname": "/api/preview/0000000000000000000000000000000000000000000000000000000000000017",
+      "query": "page=0"
+    },
+    {
+      "phase": "after",
+      "method": "GET",
+      "pathname": "/",
+      "query": ""
+    },
+    {
+      "phase": "after",
+      "method": "GET",
+      "pathname": "/app.css",
+      "query": ""
+    },
+    {
+      "phase": "after",
+      "method": "GET",
+      "pathname": "/trends.js",
+      "query": ""
+    },
+    {
+      "phase": "after",
+      "method": "GET",
+      "pathname": "/app.js",
+      "query": ""
+    },
+    {
+      "phase": "after",
+      "method": "POST",
+      "pathname": "/api/session",
+      "query": ""
+    },
+    {
+      "phase": "after",
+      "method": "POST",
+      "pathname": "/api/heartbeat",
+      "query": ""
+    },
+    {
+      "phase": "after",
+      "method": "GET",
+      "pathname": "/api/snapshot",
+      "query": ""
+    },
+    {
+      "phase": "after",
+      "method": "GET",
+      "pathname": "/api/jobs",
+      "query": ""
+    },
+    {
+      "phase": "after",
+      "method": "GET",
+      "pathname": "/api/snapshot",
+      "query": ""
+    },
+    {
+      "phase": "after",
+      "method": "GET",
+      "pathname": "/api/snapshot",
+      "query": ""
+    }
+  ]
+}

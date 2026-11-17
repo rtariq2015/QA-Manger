@@ -1,5 +1,11 @@
 # Changes
 
+## 5.7.17 — reuse unchanged work across workspaces
+
+- Cache recent report/export filter results, Today metadata and receipt-calendar models with explicit count/reference limits. Reuse unchanged Folders, Exports and calendar DOM, preserving focus and expanded folders. Invalidate by saved-record/archive identity and applicable scanner/date/selection changes.
+- Reuse recent Trends responses and native PDF preview pages, with five-minute freshness limits and archive/content identity guards. Keep the existing PDF preview page/byte/concurrency limits shared across documents. Preserve printed measurement contexts, units, limits, source pages, cancellation and retry.
+- Keep all write operations and source-file verification authoritative; preserve the existing Monthly, analysis, snapshot and readable-folder caches. No new dependency, cloud feature or saved-data change.
+
 ## 5.7.16 — faster Monthly month switching
 
 - Keep up to 12 recently opened Monthly views in a session-only LRU cache, with a 4 MiB serialized metadata budget and five-minute freshness limit. Reuse a visited month immediately when its saved-data, analysis, scanner configuration and archive revisions still match; do not cache failed, cancelled or stale responses. Retain the existing automatic snapshot refresh.

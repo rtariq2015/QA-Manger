@@ -1,5 +1,29 @@
 # Validation — CT QA Manager Pro
 
+## 5.7.17 focused navigation/cache check
+
+Executed one synthetic production-web Chromium workload against 5.7.16 and 5.7.17: **68 assertions passed**. Reports/Exports keep exact matching IDs and existing row limits; Today metadata, unchanged Folders/Exports DOM and receipt-calendar models are reused. Saved-record, scanner-policy and archive changes invalidate their results. Calendar recovery after invalid input and the filter/calendar count/reference caps were checked.
+
+Repeated PDF and Trends A → B → A navigation made **zero additional backend GET requests**. Exact Trends values, units, printed bounds, report IDs and source page were preserved. PDF stamp changes, cache expiry and 23 generated one-page documents exercised reuse and the existing shared 20-page/30 MiB budget. No unexpected browser errors, external requests or mutation requests occurred. See [raw evidence](../Tests/Navigation-Cache/result.json) and [the focused fixture](../Tests/Web/run-navigation-cache.cjs).
+
+Local median of five repeat-navigation samples (synthetic browser fixture, milliseconds):
+
+| Synthetic records | View/work | 5.7.16 | 5.7.17 |
+| ---: | --- | ---: | ---: |
+| 1,367 | reports | 32.2 ms | 25.6 ms |
+| 1,367 | calendar | 12.1 ms | 5.5 ms |
+| 1,367 | folders | 11.2 ms | 3.6 ms |
+| 1,367 | exports | 5.1 ms | 3.9 ms |
+| 1,367 | unchangedSnapshot | 8.9 ms | 6.8 ms |
+| 20,000 | reports | 59.1 ms | 15.0 ms |
+| 20,000 | calendar | 43.9 ms | 4.3 ms |
+| 20,000 | folders | 18.7 ms | 2.3 ms |
+| 20,000 | exports | 7.7 ms | 2.5 ms |
+| 20,000 | unchangedSnapshot | 32.9 ms | 6.6 ms |
+
+These are local synthetic Chromium measurements, not Windows/hospital workstation timings, real PDF extraction or live scanner validation. No broad suite was repeated. First loads and verified writes still require their original work; browser-memory caches are cleared on restart. The release workflow separately checks syntax, version-only backend scope, package integrity/manifests and uploaded hashes.
+
+
 ## 5.7.16 focused Monthly cache check
 
 Executed one synthetic production-web Chromium flow: **75 assertions passed**, with no unexpected browser errors, external requests, mutation requests or PDF requests. Arrow/picker returns to cached months made zero additional Monthly HTTP requests. It also checks scanner filtering during an in-flight load, cancellation, error retry, report/configuration/archive invalidation, rapid-arrow debounce, the 12-month LRU bound, oversize-response exclusion and five-minute expiry. Source hashes match before/after execution; see [raw evidence](../Tests/Monthly-Cache/result.json) and [the focused fixture](../Tests/Web/run-monthly-cache-ui.cjs).

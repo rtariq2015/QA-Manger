@@ -2,12 +2,13 @@
 (() => {
   const NS = 'http://www.w3.org/2000/svg';
   const MAX_POINTS = 1000;
+  const queryCacheLimits = {entries:8,bytes:2*1024*1024,maxAgeMs:5*60*1000};
   const METRICS = {WaterCTNumber:{label:'Water CT number',unit:'HU',axisLabel:'Hounsfield units (HU)'},ImageNoise:{label:'Image noise',unit:'HU',axisLabel:'Hounsfield units (HU)'},SliceThickness:{label:'Slice thickness',unit:'mm',axisLabel:'Millimetres (mm)'},Lightmarker:{label:'Light marker alignment',unit:'mm',axisLabel:'Millimetres (mm)'},ExternalLightmarker:{label:'External light marker',unit:'mm',axisLabel:'Millimetres (mm)'},TopogramPosition:{label:'Topogram position',unit:'mm',axisLabel:'Millimetres (mm)'},SagittalCoronalLightmarker:{label:'Sagittal / coronal alignment',unit:'mm',axisLabel:'Millimetres (mm)'},TablePosition:{label:'Table position',unit:'mm',axisLabel:'Millimetres (mm)'}};
   const metricDefinition=()=>METRICS[state.metric]||METRICS.WaterCTNumber;
   const metricLabel=()=>metricDefinition().label;
   const metricUnit=()=>metricDefinition().unit;
   const PERIODS = new Set(['30','90','365','all']);
-  const state = {ready:false, api:null, openRecord:null, readPending:null, isBusy:()=>false, isBackgroundReading:()=>false, snapshot:null, sourceRevision:'', dataRevision:'', scanners:[], scanner:'', metric:'WaterCTNumber', series:'', seriesLabel:'', period:'90', data:null, dataKey:'', dirty:true, loading:false, controller:null, generation:0, requestKey:'', reading:false, error:'', notice:'', view:'line', selectedReadingKey:'', selectedReadingScope:''};
+  const state = {ready:false, api:null, openRecord:null, readPending:null, isBusy:()=>false, isBackgroundReading:()=>false, snapshot:null, sourceRevision:'', dataRevision:'', scanners:[], scanner:'', metric:'WaterCTNumber', series:'', seriesLabel:'', period:'90', data:null, dataKey:'', dirty:true, loading:false, controller:null, generation:0, requestKey:'', reading:false, error:'', notice:'', view:'line', selectedReadingKey:'', selectedReadingScope:'', queryCache:new Map(), queryCacheBytes:0, invalidated:false};
   const $ = id => document.getElementById(id);
   const text = value => value == null ? '' : String(value);
   const list = value => Array.isArray(value) ? value : [];
@@ -22,6 +23,39 @@
       const key=Object.keys(object).find(item=>item.toLowerCase()===name.toLowerCase());
       if (key !== undefined) return object[key];
     }
+  }
+  const archiveIdentity=snapshot=>text(field(snapshot,'archiveRoot'));
+  function clearQueryCache(){state.queryCache.clear();state.queryCacheBytes=0;}
+  function invalidateCache({reload=false}={}){
+    clearQueryCache();state.controller?.abort();state.generation++;state.controller=null;state.loading=false;state.requestKey='';
+    state.data=null;state.dataKey='';state.dataRevision='';state.dirty=true;state.invalidated=true;state.error='';state.notice='';state.selectedReadingKey='';state.selectedReadingScope='';
+    if(state.ready&&visible()){render();if(reload&&!state.isBusy()&&!state.isBackgroundReading())load();}
+  }
+  function dropQueryCache(key){const item=state.queryCache.get(key);if(item){state.queryCacheBytes-=item.bytes;state.queryCache.delete(key);}}
+  function queryCacheKey(requestKey){return JSON.stringify([archiveIdentity(state.snapshot),state.sourceRevision,requestKey]);}
+  function cacheCurrentQuery(requestKey){
+    const data=state.data;
+    if(!data||state.dirty||state.dataRevision!==state.sourceRevision||data.contextMissing||data.omitted||data.invalidBounds||data.pointLimitReached||data.dataLimitReached)return;
+    let serialized;
+    try{serialized=JSON.stringify({archive:archiveIdentity(state.snapshot),revision:state.sourceRevision,scanners:state.scanners,scanner:state.scanner,series:state.series,seriesLabel:state.seriesLabel,data});}catch{return;}
+    // Both request URLs describe the same completed result when the server picks
+    // a default series. Each alias counts toward the same entry/byte limits.
+    for(const alias of new Set([requestKey,state.dataKey])){
+      const key=queryCacheKey(alias),bytes=(key.length+serialized.length)*2;
+      if(bytes>queryCacheLimits.bytes)continue;
+      dropQueryCache(key);state.queryCache.set(key,{serialized,bytes,at:Date.now()});state.queryCacheBytes+=bytes;
+      while(state.queryCache.size>queryCacheLimits.entries||state.queryCacheBytes>queryCacheLimits.bytes)dropQueryCache(state.queryCache.keys().next().value);
+    }
+  }
+  function restoreQueryCache(requestKey){
+    const key=queryCacheKey(requestKey),item=state.queryCache.get(key);if(!item)return false;
+    if(Date.now()-item.at>=queryCacheLimits.maxAgeMs){dropQueryCache(key);return false;}
+    let saved;try{saved=JSON.parse(item.serialized);}catch{dropQueryCache(key);return false;}
+    if(saved.archive!==archiveIdentity(state.snapshot)||saved.revision!==state.sourceRevision||saved.scanner!==state.scanner||!Array.isArray(saved.scanners)||!saved.scanners.some(scanner=>scanner.id===saved.scanner)||!saved.data||!Array.isArray(saved.data.points)){dropQueryCache(key);return false;}
+    state.controller?.abort();state.generation++;state.controller=null;state.loading=false;state.requestKey='';
+    updateScanners(saved.scanners);state.data=saved.data;state.series=saved.series;state.seriesLabel=saved.seriesLabel;
+    state.dataKey=query();state.dataRevision=state.sourceRevision;state.dirty=false;state.invalidated=false;state.error='';state.notice='';
+    state.queryCache.delete(key);state.queryCache.set(key,item);render();return true;
   }
   function snapshotRevision(snapshot) {
     const supplied=text(field(snapshot,'trendsRevision'));
@@ -335,15 +369,17 @@
   }
   async function load() {
     if(!state.ready||!visible())return;
+    if(state.invalidated&&(state.isBusy()||state.isBackgroundReading()))return;
     const requestKey=query();
     if(state.loading&&state.requestKey===requestKey)return;
+    if(restoreQueryCache(requestKey))return;
     if(state.controller)state.controller.abort();
-    const controller=new AbortController(),generation=++state.generation,revision=state.sourceRevision,requestedSeries=state.series;
+    const controller=new AbortController(),generation=++state.generation,revision=state.sourceRevision,archive=archiveIdentity(state.snapshot),requestedSeries=state.series;
     let queryChanged=false;
-    state.controller=controller;state.requestKey=requestKey;state.loading=true;state.dirty=false;state.error='';render();
+    state.controller=controller;state.requestKey=requestKey;state.loading=true;state.dirty=false;state.invalidated=false;state.error='';render();
     try {
       const raw=await state.api(`/api/trends?${requestKey}`,{signal:controller.signal});
-      if(generation!==state.generation||controller.signal.aborted)return;
+      if(generation!==state.generation||controller.signal.aborted||archive!==archiveIdentity(state.snapshot))return;
       if(requestKey!==query()){state.dirty=true;queryChanged=true;return;}
       const scanners=normalizeScanners(raw?.scanners),previousScanner=state.scanner;
       if(scanners.length)updateScanners(scanners);
@@ -356,6 +392,7 @@
       if(data.selectedSeries)state.seriesLabel=contextLabel(data.series.find(item=>item.key===data.selectedSeries));
       // A default series becomes part of the current key, avoiding an unnecessary second fetch.
       state.dataKey=query();state.dataRevision=revision;state.dirty=revision!==state.sourceRevision;state.notice='';
+      if(!state.dirty&&Array.isArray(raw?.series)&&Array.isArray(raw?.points))cacheCurrentQuery(requestKey);
     } catch(error) {
       if(generation!==state.generation||error?.name==='AbortError')return;
       state.error=error instanceof Error?error.message:'The saved measurements could not be loaded.';state.dirty=true;
@@ -376,7 +413,7 @@
   async function readMeasurements() {
     if(state.loading||state.reading||state.isBusy()||state.isBackgroundReading())return;
     const ids=pendingIds().slice(0,20);if(!ids.length||typeof state.readPending!=='function')return;
-    state.reading=true;state.notice=`Reading printed measurements from ${count(ids.length)} saved PDF${ids.length===1?'':'s'}.`;render();
+    clearQueryCache();state.reading=true;state.notice=`Reading printed measurements from ${count(ids.length)} saved PDF${ids.length===1?'':'s'}.`;render();
     try{await state.readPending(ids);state.dirty=true;}
     catch(error){state.notice=error instanceof Error?error.message:'These saved PDFs could not be read. Try again.';}
     finally{state.reading=false;render();}
@@ -398,19 +435,22 @@
   }
   function refresh(snapshot) {
     if(!state.ready)return;
-    const revision=snapshotRevision(snapshot),changedRevision=revision!==state.sourceRevision;
+    const revision=snapshotRevision(snapshot),changedArchive=archiveIdentity(snapshot)!==archiveIdentity(state.snapshot),changedRevision=revision!==state.sourceRevision||changedArchive;
     state.snapshot=snapshot;
     if(changedRevision){
+      clearQueryCache();
+      if(changedArchive){state.controller?.abort();state.generation++;state.loading=false;state.controller=null;state.data=null;state.dataKey='';state.dataRevision='';state.selectedReadingKey='';state.selectedReadingScope='';state.error='';state.notice='';}
       const previousScanner=state.scanner;
       state.sourceRevision=revision;state.dirty=true;state.scanners=normalizeScanners(field(snapshot,'scanners'));updateScanners(state.scanners);
       if(previousScanner!==state.scanner){if(state.controller)state.controller.abort();state.generation++;state.loading=false;state.controller=null;}
     }
     updateReadButton();
-    if((changedRevision||(state.dataKey&&state.dataKey!==query()))&&visible())load();
+    if((changedRevision||(state.dataKey&&state.dataKey!==query())||state.invalidated)&&visible())load();
   }
   function show() {
     if(!state.ready||!visible())return;
     render();if(state.dirty||state.dataKey!==query())load();
   }
   window.QaTrends={init,show,refresh};
+  window.QaTrends.invalidateCache=invalidateCache;
 })();
