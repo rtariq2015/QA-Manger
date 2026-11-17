@@ -1,5 +1,9 @@
 # Changes
 
+## 5.7.10 — Back button beside Open folders
+
+- Move Report Library’s existing Back to Today button from the top view tabs to the action row immediately beside Open folders. Keep its label, destination and visibility behavior unchanged.
+
 ## 5.7.9 — direct return to Today and 100% PDF zoom
 
 - Show an explicit Back to Today button above Report Library filters, including Monthly report lists, regardless of how the list was opened. Return directly to the main screen.

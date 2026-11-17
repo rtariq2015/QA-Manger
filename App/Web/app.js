@@ -243,7 +243,7 @@
     const month=$(prefix+'month-filter');if(month.options.length<2){for(let number=1;number<=12;number++)month.add(new Option(new Intl.DateTimeFormat(undefined,{month:'long'}).format(new Date(2026,number-1,15)),String(number).padStart(2,'0')));}
   }
   function renderSnapshot() {
-    const snapshot=state.snapshot,version=text(field(snapshot,'version'),'5.7.9');$('sidebar-version').textContent=`Version ${version}`;$('settings-version').textContent=version;
+    const snapshot=state.snapshot,version=text(field(snapshot,'version'),'5.7.10');$('sidebar-version').textContent=`Version ${version}`;$('settings-version').textContent=version;
     populateFilters('reports');populateFilters('exports');
     state.undoBatch=normalizeUndoBatch(field(snapshot,'undoBatch'));renderBatchUndo();
     reviewUndoFromSnapshot();
