@@ -1,5 +1,10 @@
 # Changes
 
+## 5.7.9 — direct return to Today and 100% PDF zoom
+
+- Show an explicit Back to Today button above Report Library filters, including Monthly report lists, regardless of how the list was opened. Return directly to the main screen.
+- Open each new PDF at 100% by default in the built-in preview and request 100% in the browser PDF viewer. Keep Fit page, Fit width, scrolling and the existing PDF Back button.
+
 ## 5.7.8 — clearer saved-report message and Monthly Back button
 
 - Enlarge Today’s saved-report message and explain that reports are organized by scanner and date.
