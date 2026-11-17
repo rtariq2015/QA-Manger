@@ -1,5 +1,11 @@
 # Changes
 
+## 5.7.8 — clearer saved-report message and Monthly Back button
+
+- Enlarge Today’s saved-report message and explain that reports are organized by scanner and date.
+- Add a small Back button to Monthly report lists, returning to Today or Monthly according to where the list was opened. Retain the PDF viewer’s existing Back behavior and report filters.
+- Keep existing report, Monthly, analysis and preview caches; no processing or stored-data changes.
+
 ## 5.7.1 — responsive single-file review
 
 - Let distinct single-file filing decisions queue while staff read the next PDF. Show Sending, Queued and Saving states until a durable result and fresh snapshot confirm completion; preserve the PDF currently being viewed.

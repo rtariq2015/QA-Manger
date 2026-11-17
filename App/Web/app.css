@@ -624,3 +624,10 @@ body[data-page="review"].pdf-viewing #review-evidence-drawer{min-width:0;width:m
 @media(max-width:1100px){.export-builder,.export-package,.folder-simple-heading,.folder-tree-panel{padding:20px}.folder-machine>summary{padding:15px 12px}.folder-machine>summary .folder-tree-name{font-size:15px}}
 @media(max-width:800px){.folder-simple-heading{align-items:flex-start;flex-direction:column}#folders-open-button{width:100%}.folder-transfer-options>summary{align-items:flex-start;gap:8px;flex-wrap:wrap}.export-preview-details>summary{padding:16px;gap:10px}.export-preview-details .export-preview-list{padding:0 14px}.folder-transfer-grid{padding:16px;gap:14px}}
 @media(max-width:600px){.export-preview-count{font-size:12px}.export-preview-details>summary{flex-wrap:wrap}.folder-simple-heading h2{font-size:22px}.reports-view-tabs>button{padding:10px 12px}.calendar-day{padding:8px;min-height:88px}.calendar-day-status{font-size:12px}}
+
+/* Readable saved-report message and a small return control for Monthly lists. */
+#page-today .hero-footnote{display:flex;font-size:17px;font-weight:600;line-height:1.5;max-width:100%;gap:9px}
+#page-today .hero-footnote>span{width:8px;height:8px}
+.reports-navigation{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:20px}
+.reports-navigation>.reports-view-tabs{margin-bottom:0}
+#reports-back{min-height:38px;gap:6px}
