@@ -162,7 +162,8 @@ function Reconnect-QaScanner {
     [CmdletBinding()]param(
         [Parameter(Mandatory=$true)][object]$Scanner,
         [System.Management.Automation.PSCredential]$Credential,
-        [switch]$InWorker
+        [switch]$InWorker,
+        [switch]$ReuseAccessible
     )
     if(Test-QaPlaceholderConnection $Scanner){return (New-QaConnectionResult $Scanner 'NotConfigured' 'Example connection settings are still selected. Apply your local connection profile or enter the real scanner folder in Advanced settings.')}
     try{$location=Get-QaNetworkLocation ([string]$Scanner.Path)}catch{return (New-QaConnectionResult $Scanner 'NotConfigured' $_.Exception.Message)}
@@ -170,17 +171,19 @@ function Reconnect-QaScanner {
     if($letter -notmatch '^[A-Z]$'){return (New-QaConnectionResult $Scanner 'NotConfigured' 'Check the preferred drive letter in Advanced settings.')}
     if(-not $InWorker -and [Environment]::OSVersion.Platform -eq [PlatformID]::Win32NT) {
         Import-Module (Join-Path $PSScriptRoot 'Process.psm1')
-        try{return (Invoke-QaIsolatedTask Reconnect ([pscustomobject]@{Scanner=$Scanner;Credential=$Credential}) -TimeoutSeconds 30)}
+        try{return (Invoke-QaIsolatedTask Reconnect ([pscustomobject]@{Scanner=$Scanner;Credential=$Credential;ReuseAccessible=[bool]$ReuseAccessible}) -TimeoutSeconds 30)}
         catch{return (New-QaConnectionResult $Scanner 'Unavailable' 'Connection attempt timed out or the helper was blocked by workstation policy. Check the server address, network access, and IT policy. Saved reports remain available.')}
     }
     if([Environment]::OSVersion.Platform -ne [PlatformID]::Win32NT){return (New-QaConnectionResult $Scanner 'Unsupported' 'Network reconnection requires Windows.')}
-    return (Invoke-QaReconnectCore -Scanner $Scanner -Credential $Credential)
+    return (Invoke-QaReconnectCore -Scanner $Scanner -Credential $Credential -ReuseAccessible:$ReuseAccessible)
 }
 function Invoke-QaReconnectCore {
-    param($Scanner,[System.Management.Automation.PSCredential]$Credential)
+    param($Scanner,[System.Management.Automation.PSCredential]$Credential,[switch]$ReuseAccessible)
     $location=Get-QaNetworkLocation ([string]$Scanner.Path)
     $letter=([string]$Scanner.DriveLetter).Trim().TrimEnd(':').ToUpperInvariant()
-    if($null -eq $Credential){$access=Test-QaNetworkAvailability $Scanner;if($access.Status -eq 'Connected' -or $access.Status -eq 'NotConfigured'){return $access}}
+    # Refresh can reuse currently verified read/list access. Explicit sign-in still
+    # authenticates the supplied credentials, even if another session is accessible.
+    if($ReuseAccessible -or $null -eq $Credential){$access=Test-QaNetworkAvailability $Scanner;if($access.Status -eq 'Connected' -or $access.Status -eq 'NotConfigured'){return $access}}
     try{if(-not (Initialize-QaNetworkApi)){throw 'Native network services unavailable.'}}catch{return (New-QaConnectionResult $Scanner 'Unsupported' 'Workstation policy prevented the Windows network component from loading. Ask IT to approve the application.')}
     try {
         # Authenticate to the SMB share root first. The scanner source still points

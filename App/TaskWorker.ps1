@@ -12,7 +12,8 @@ try {
         }
         'Reconnect' {
             Import-Module (Join-Path $PSScriptRoot 'Network.psm1') -Force
-            $value=Reconnect-QaScanner -Scanner $request.Scanner -Credential $request.Credential -InWorker
+            $reuseAccessible=$false;if($null -ne $request.PSObject.Properties['ReuseAccessible']){$reuseAccessible=[bool]$request.ReuseAccessible}
+            $value=Reconnect-QaScanner -Scanner $request.Scanner -Credential $request.Credential -InWorker -ReuseAccessible:$reuseAccessible
         }
         'PreviewPdf' {
             Import-Module (Join-Path $PSScriptRoot 'PdfPreview.psm1') -Force

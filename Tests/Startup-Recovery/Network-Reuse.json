@@ -1,0 +1,91 @@
+{
+  "Status": "PASS",
+  "Assertions": 19,
+  "Runtime": "7.4.13",
+  "Platform": "Unix",
+  "SyntheticOnly": true,
+  "Scope": "Focused Linux PowerShell module-mock checks and parser validation only. Availability, native authentication and drive checks are synthetic function replacements; no live scanner/SMB, Windows DPAPI, Windows PowerShell 5.1 execution, hospital workstation or actual timeout validation.",
+  "Checks": [
+    {
+      "Name": "Refresh accepts currently accessible read/list access.",
+      "Result": "PASS"
+    },
+    {
+      "Name": "Refresh verifies access once before reusing it.",
+      "Result": "PASS"
+    },
+    {
+      "Name": "Healthy reuse avoids native authentication and mapping operations.",
+      "Result": "PASS"
+    },
+    {
+      "Name": "Explicit supplied credentials still authenticate instead of reusing another session.",
+      "Result": "PASS"
+    },
+    {
+      "Name": "Explicit sign-in retains the post-authentication access check.",
+      "Result": "PASS"
+    },
+    {
+      "Name": "Explicit sign-in retains the existing occupied-drive check.",
+      "Result": "PASS"
+    },
+    {
+      "Name": "Unavailable access falls back to authentication then verifies access again.",
+      "Result": "PASS"
+    },
+    {
+      "Name": "Fallback performs the existing native authentication.",
+      "Result": "PASS"
+    },
+    {
+      "Name": "Rejected fallback credentials remain a failed connection with the original Windows code.",
+      "Result": "PASS"
+    },
+    {
+      "Name": "Existing no-credential access reuse is preserved.",
+      "Result": "PASS"
+    },
+    {
+      "Name": "The source folder, scanner settings and drive preference are unchanged.",
+      "Result": "PASS"
+    },
+    {
+      "Name": "Reuse remains inside the existing isolated 30-second reconnect deadline.",
+      "Result": "PASS"
+    },
+    {
+      "Name": "Older worker inputs without the optional flag default to explicit reconnect behavior.",
+      "Result": "PASS"
+    },
+    {
+      "Name": "The private worker forwards the optional reuse flag.",
+      "Result": "PASS"
+    },
+    {
+      "Name": "The report-refresh preconnection opts into verified access reuse.",
+      "Result": "PASS"
+    },
+    {
+      "Name": "The explicit sign-in route is not accidentally replaced by the refresh call.",
+      "Result": "PASS"
+    },
+    {
+      "Name": "App/Network.psm1 parses successfully in the executed PowerShell runtime.",
+      "Result": "PASS"
+    },
+    {
+      "Name": "App/TaskWorker.ps1 parses successfully in the executed PowerShell runtime.",
+      "Result": "PASS"
+    },
+    {
+      "Name": "App/WebService.psm1 parses successfully in the executed PowerShell runtime.",
+      "Result": "PASS"
+    }
+  ],
+  "TestedFiles": {
+    "App/Network.psm1": "0464bb5aff05ba28f082b1345b8c4184d909d42b79646e71cd1e63f23b8bf518",
+    "App/TaskWorker.ps1": "7f8fb87f4ff71000a8684614dae012ba66a4088bb21f27407b33bf408adfd38a",
+    "App/WebService.psm1": "27f054e40ae797acbccfa9179233a8b9461003a9df89d0e41c24ea504a7aedc6"
+  }
+}
