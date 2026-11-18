@@ -1,5 +1,11 @@
 # Changes
 
+## 5.7.18 — startup recovery and existing scanner access
+
+- Replace the browser’s fixed initial 30-attempt wait with recovery through the existing polling loop, with coalesced snapshot requests and a five-second maximum retry backoff. Keep heartbeat/job polling active while waiting; normal local-library loading is informational and automatically clears when a valid snapshot arrives. Preserve unrelated errors and show genuine startup/session failures as errors.
+- During report updates, verify and reuse an existing accessible scanner folder before attempting native authentication. Keep explicit sign-in behavior, credential protection, isolated workers and the 30-second reconnect deadline unchanged. Failed access still uses the existing authentication path.
+- Retain all saved-data validation, browser caches, source integrity checks, archives and filing decisions. No persistent startup snapshot, new dependency or network-policy change.
+
 ## 5.7.17 — reuse unchanged work across workspaces
 
 - Cache recent report/export filter results, Today metadata and receipt-calendar models with explicit count/reference limits. Reuse unchanged Folders, Exports and calendar DOM, preserving focus and expanded folders. Invalidate by saved-record/archive identity and applicable scanner/date/selection changes.

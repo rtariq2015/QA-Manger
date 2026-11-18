@@ -1,5 +1,13 @@
 # Validation — CT QA Manager Pro
 
+## 5.7.18 focused startup and network reuse checks
+
+- **51 assertions passed** in one synthetic production-web Chromium flow. A library returning the ordinary loading response beyond 30 virtual seconds recovered automatically with no job events; heartbeat and job polling continued. Verified informational loading, 1/2/4/5-second maximum backoff, coalesced requests, exact saved report identities, library-owned notice cleanup, unrelated-error preservation, actual startup/session errors and manual retry. No unexpected browser errors, external requests or scanner/action mutations. [Evidence](../Tests/Startup-Recovery/Browser.json), [fixture](../Tests/Web/run-startup-recovery.cjs).
+- **19 assertions passed** on Linux PowerShell 7.4.13, using module mocks for availability/authentication/mapping and parser checks. Verified accessible-folder reuse avoids authentication, explicit credentials still authenticate, unavailable access falls back, the isolated 30-second deadline remains, worker compatibility and exact source fingerprints. No live network, credentials, Windows DPAPI or actual timeout execution. UTF-8 BOM/CRLF remain intact. [Evidence](../Tests/Startup-Recovery/Network-Reuse.json), [fixture](../Tests/Test-NetworkReuse.ps1).
+
+These are focused development checks, not Windows PowerShell 5.1, live scanner/SMB or hospital workstation validation. The existing host snapshot worker and its 90-second deadline are unchanged; browser recovery polls the in-memory result rather than restarting that worker. Actual host startup failure remains an error requiring corrective action. No broad suite or hospital startup benchmark was performed. Release delivery separately verifies syntax, source scope, ZIP/package integrity and uploaded asset hashes.
+
+
 ## 5.7.17 focused navigation/cache check
 
 Executed one synthetic production-web Chromium workload against 5.7.16 and 5.7.17: **68 assertions passed**. Reports/Exports keep exact matching IDs and existing row limits; Today metadata, unchanged Folders/Exports DOM and receipt-calendar models are reused. Saved-record, scanner-policy and archive changes invalidate their results. Calendar recovery after invalid input and the filter/calendar count/reference caps were checked.

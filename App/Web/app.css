@@ -803,3 +803,7 @@ body[data-page="review"].pdf-viewing .review-workspace{grid-template-columns:min
 #trend-chart .selected-reading>.data-point{stroke:var(--ink);stroke-width:2.5}
 @media(max-width:800px){.trend-measurement-controls{grid-template-columns:1fr}.trend-selection-row{gap:12px}#page-trends .trend-chart-panel>.section-heading{padding:15px}#page-trends .trend-stat-grid{gap:12px;padding:14px 15px}#page-trends .trend-stat>strong{font-size:25px}#page-trends #trend-chart{padding:13px 15px 0}#page-trends #trend-status{padding:10px 15px 14px}.trend-selected-panel{padding:15px}.trend-selected-panel>button{margin-left:auto}}
 @media(max-width:500px){.trend-scanner-tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));width:100%;gap:5px}.trend-scanner-tab{justify-content:center;padding:9px 7px;font-size:13px;white-space:normal}.trend-period-label{width:100%;justify-content:space-between}#page-trends .trend-stat-grid{grid-template-columns:1fr;gap:13px}#page-trends .trend-stat{display:grid;grid-template-columns:1fr auto;align-items:center;gap:4px 8px}#page-trends .trend-stat p{grid-column:1/-1}.trend-view-buttons{width:100%}.trend-view-buttons>.button{flex:1}.trend-selected-panel>*{width:100%}#trend-selected-source{margin:0}}
+
+/* Expected startup loading is informational; genuine errors keep the error tone. */
+#error-banner[data-loading="true"]{background:var(--teal-light);border-color:var(--teal);color:var(--ink)}
+#error-banner[data-loading="true"] strong,#error-banner[data-loading="true"] p{color:var(--ink)}

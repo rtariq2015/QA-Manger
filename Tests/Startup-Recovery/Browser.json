@@ -1,0 +1,516 @@
+{
+  "syntheticOnly": true,
+  "scope": "One focused production-web Chromium startup/recovery flow with a virtual Date.now and test-only interval scheduler. Synthetic 503/401 responses and saved-record metadata only; no actual PowerShell host startup, Windows browser, hospital workstation, scanner/SMB, credentials, PDF reader or real startup throughput validation.",
+  "checks": [
+    {
+      "name": "Expected startup loading stays recoverable.",
+      "result": "PASS"
+    },
+    {
+      "name": "Expected library loading uses an owned non-error status banner.",
+      "result": "PASS"
+    },
+    {
+      "name": "Loading guidance says the library will recover automatically.",
+      "result": "PASS"
+    },
+    {
+      "name": "Jobs polling and heartbeat are scheduled while the library is still opening.",
+      "result": "PASS"
+    },
+    {
+      "name": "Startup retry 0 has bounded positive backoff.",
+      "result": "PASS"
+    },
+    {
+      "name": "Startup retry 0 waits until its due time.",
+      "result": "PASS"
+    },
+    {
+      "name": "Startup retry 0 reads the existing snapshot once when due.",
+      "result": "PASS"
+    },
+    {
+      "name": "Startup retry 1 has bounded positive backoff.",
+      "result": "PASS"
+    },
+    {
+      "name": "Startup retry 1 waits until its due time.",
+      "result": "PASS"
+    },
+    {
+      "name": "Startup retry 1 reads the existing snapshot once when due.",
+      "result": "PASS"
+    },
+    {
+      "name": "Startup retry 2 has bounded positive backoff.",
+      "result": "PASS"
+    },
+    {
+      "name": "Startup retry 2 waits until its due time.",
+      "result": "PASS"
+    },
+    {
+      "name": "Startup retry 2 reads the existing snapshot once when due.",
+      "result": "PASS"
+    },
+    {
+      "name": "Startup retry 3 has bounded positive backoff.",
+      "result": "PASS"
+    },
+    {
+      "name": "Startup retry 3 waits until its due time.",
+      "result": "PASS"
+    },
+    {
+      "name": "Startup retry 3 reads the existing snapshot once when due.",
+      "result": "PASS"
+    },
+    {
+      "name": "Startup retry 4 has bounded positive backoff.",
+      "result": "PASS"
+    },
+    {
+      "name": "Startup retry 4 waits until its due time.",
+      "result": "PASS"
+    },
+    {
+      "name": "Startup retry 4 reads the existing snapshot once when due.",
+      "result": "PASS"
+    },
+    {
+      "name": "Startup retry 5 has bounded positive backoff.",
+      "result": "PASS"
+    },
+    {
+      "name": "Startup retry 5 waits until its due time.",
+      "result": "PASS"
+    },
+    {
+      "name": "Startup retry 5 reads the existing snapshot once when due.",
+      "result": "PASS"
+    },
+    {
+      "name": "Startup retry 6 has bounded positive backoff.",
+      "result": "PASS"
+    },
+    {
+      "name": "Startup retry 6 waits until its due time.",
+      "result": "PASS"
+    },
+    {
+      "name": "Startup retry 6 reads the existing snapshot once when due.",
+      "result": "PASS"
+    },
+    {
+      "name": "Startup retry 7 has bounded positive backoff.",
+      "result": "PASS"
+    },
+    {
+      "name": "Startup retry 7 waits until its due time.",
+      "result": "PASS"
+    },
+    {
+      "name": "Startup retry 7 reads the existing snapshot once when due.",
+      "result": "PASS"
+    },
+    {
+      "name": "Automatic recovery remains active beyond the old thirty-second cutoff.",
+      "result": "PASS"
+    },
+    {
+      "name": "No invented library data is rendered while waiting.",
+      "result": "PASS"
+    },
+    {
+      "name": "Expected loading remains a neutral status beyond thirty seconds.",
+      "result": "PASS"
+    },
+    {
+      "name": "The scheduled heartbeat still runs during long startup.",
+      "result": "PASS"
+    },
+    {
+      "name": "Job polling continues during startup without requiring a job event.",
+      "result": "PASS"
+    },
+    {
+      "name": "Concurrent startup recovery attempts coalesce while a snapshot is in flight.",
+      "result": "PASS"
+    },
+    {
+      "name": "Startup recovery never starts overlapping snapshot requests.",
+      "result": "PASS"
+    },
+    {
+      "name": "Automatic recovery loads every exact saved synthetic report.",
+      "result": "PASS"
+    },
+    {
+      "name": "A successful automatic load clears its own stale loading banner.",
+      "result": "PASS"
+    },
+    {
+      "name": "Successful recovery clears the retry-wait state.",
+      "result": "PASS"
+    },
+    {
+      "name": "Startup retries stop after the first successful snapshot.",
+      "result": "PASS"
+    },
+    {
+      "name": "A later successful library refresh keeps an unrelated error visible.",
+      "result": "PASS"
+    },
+    {
+      "name": "Library recovery does not overwrite an unrelated error title.",
+      "result": "PASS"
+    },
+    {
+      "name": "An actual saved-folder failure remains a real error rather than a loading status.",
+      "result": "PASS"
+    },
+    {
+      "name": "Actual saved-folder failure retains its actionable explanation.",
+      "result": "PASS"
+    },
+    {
+      "name": "Try again retries the library directly once.",
+      "result": "PASS"
+    },
+    {
+      "name": "Successful manual retry clears the library-owned failure.",
+      "result": "PASS"
+    },
+    {
+      "name": "Expired authentication remains an actionable session error.",
+      "result": "PASS"
+    },
+    {
+      "name": "An expired session is not retried indefinitely as normal startup loading.",
+      "result": "PASS"
+    },
+    {
+      "name": "Startup recovery and manual retry never request scanner scans or another mutation.",
+      "result": "PASS"
+    },
+    {
+      "name": "Startup recovery makes no external requests.",
+      "result": "PASS"
+    },
+    {
+      "name": "No unexpected browser errors occurred.",
+      "result": "PASS"
+    },
+    {
+      "name": "The tested product files remain unchanged during the focused flow.",
+      "result": "PASS"
+    }
+  ],
+  "requests": [
+    {
+      "case": "slow",
+      "method": "GET",
+      "pathname": "/"
+    },
+    {
+      "case": "slow",
+      "method": "GET",
+      "pathname": "/app.css"
+    },
+    {
+      "case": "slow",
+      "method": "GET",
+      "pathname": "/trends.js"
+    },
+    {
+      "case": "slow",
+      "method": "GET",
+      "pathname": "/app.js"
+    },
+    {
+      "case": "slow",
+      "method": "POST",
+      "pathname": "/api/session"
+    },
+    {
+      "case": "slow",
+      "method": "POST",
+      "pathname": "/api/heartbeat"
+    },
+    {
+      "case": "slow",
+      "method": "GET",
+      "pathname": "/api/snapshot"
+    },
+    {
+      "case": "slow",
+      "method": "GET",
+      "pathname": "/api/jobs"
+    },
+    {
+      "case": "slow",
+      "method": "GET",
+      "pathname": "/api/jobs"
+    },
+    {
+      "case": "slow",
+      "method": "GET",
+      "pathname": "/api/snapshot"
+    },
+    {
+      "case": "slow",
+      "method": "GET",
+      "pathname": "/api/jobs"
+    },
+    {
+      "case": "slow",
+      "method": "GET",
+      "pathname": "/api/jobs"
+    },
+    {
+      "case": "slow",
+      "method": "GET",
+      "pathname": "/api/snapshot"
+    },
+    {
+      "case": "slow",
+      "method": "GET",
+      "pathname": "/api/jobs"
+    },
+    {
+      "case": "slow",
+      "method": "GET",
+      "pathname": "/api/jobs"
+    },
+    {
+      "case": "slow",
+      "method": "GET",
+      "pathname": "/api/snapshot"
+    },
+    {
+      "case": "slow",
+      "method": "GET",
+      "pathname": "/api/jobs"
+    },
+    {
+      "case": "slow",
+      "method": "GET",
+      "pathname": "/api/jobs"
+    },
+    {
+      "case": "slow",
+      "method": "GET",
+      "pathname": "/api/snapshot"
+    },
+    {
+      "case": "slow",
+      "method": "GET",
+      "pathname": "/api/jobs"
+    },
+    {
+      "case": "slow",
+      "method": "GET",
+      "pathname": "/api/jobs"
+    },
+    {
+      "case": "slow",
+      "method": "GET",
+      "pathname": "/api/snapshot"
+    },
+    {
+      "case": "slow",
+      "method": "GET",
+      "pathname": "/api/jobs"
+    },
+    {
+      "case": "slow",
+      "method": "GET",
+      "pathname": "/api/jobs"
+    },
+    {
+      "case": "slow",
+      "method": "GET",
+      "pathname": "/api/snapshot"
+    },
+    {
+      "case": "slow",
+      "method": "GET",
+      "pathname": "/api/jobs"
+    },
+    {
+      "case": "slow",
+      "method": "GET",
+      "pathname": "/api/jobs"
+    },
+    {
+      "case": "slow",
+      "method": "GET",
+      "pathname": "/api/snapshot"
+    },
+    {
+      "case": "slow",
+      "method": "GET",
+      "pathname": "/api/jobs"
+    },
+    {
+      "case": "slow",
+      "method": "GET",
+      "pathname": "/api/jobs"
+    },
+    {
+      "case": "slow",
+      "method": "GET",
+      "pathname": "/api/snapshot"
+    },
+    {
+      "case": "slow",
+      "method": "GET",
+      "pathname": "/api/jobs"
+    },
+    {
+      "case": "slow",
+      "method": "POST",
+      "pathname": "/api/heartbeat"
+    },
+    {
+      "case": "slow",
+      "method": "GET",
+      "pathname": "/api/snapshot"
+    },
+    {
+      "case": "slow",
+      "method": "GET",
+      "pathname": "/api/jobs"
+    },
+    {
+      "case": "slow",
+      "method": "GET",
+      "pathname": "/api/jobs"
+    },
+    {
+      "case": "slow",
+      "method": "GET",
+      "pathname": "/api/snapshot"
+    },
+    {
+      "case": "permission",
+      "method": "GET",
+      "pathname": "/"
+    },
+    {
+      "case": "permission",
+      "method": "GET",
+      "pathname": "/app.css"
+    },
+    {
+      "case": "permission",
+      "method": "GET",
+      "pathname": "/trends.js"
+    },
+    {
+      "case": "permission",
+      "method": "GET",
+      "pathname": "/app.js"
+    },
+    {
+      "case": "permission",
+      "method": "POST",
+      "pathname": "/api/session"
+    },
+    {
+      "case": "permission",
+      "method": "POST",
+      "pathname": "/api/heartbeat"
+    },
+    {
+      "case": "permission",
+      "method": "GET",
+      "pathname": "/api/snapshot"
+    },
+    {
+      "case": "permission",
+      "method": "GET",
+      "pathname": "/api/jobs"
+    },
+    {
+      "case": "permission",
+      "method": "GET",
+      "pathname": "/api/snapshot"
+    },
+    {
+      "case": "expired",
+      "method": "GET",
+      "pathname": "/"
+    },
+    {
+      "case": "expired",
+      "method": "GET",
+      "pathname": "/app.css"
+    },
+    {
+      "case": "expired",
+      "method": "GET",
+      "pathname": "/trends.js"
+    },
+    {
+      "case": "expired",
+      "method": "GET",
+      "pathname": "/app.js"
+    },
+    {
+      "case": "expired",
+      "method": "POST",
+      "pathname": "/api/session"
+    },
+    {
+      "case": "expired",
+      "method": "POST",
+      "pathname": "/api/heartbeat"
+    },
+    {
+      "case": "expired",
+      "method": "GET",
+      "pathname": "/api/snapshot"
+    },
+    {
+      "case": "expired",
+      "method": "GET",
+      "pathname": "/api/jobs"
+    },
+    {
+      "case": "expired",
+      "method": "GET",
+      "pathname": "/api/jobs"
+    },
+    {
+      "case": "expired",
+      "method": "GET",
+      "pathname": "/api/jobs"
+    }
+  ],
+  "errors": [],
+  "externalRequests": [],
+  "mutations": [],
+  "sourceHashes": {
+    "index.html": "8432ea1a6228e71c96689770a98cdb31649878cd61d593c42ebd2a3528dd9b56",
+    "app.css": "07d14b80bbf939ab3361b7802035de0fbcc2da4e2c72ad5433d5d2c586f5a194",
+    "app.js": "9ade768d3e222eec2d8fc350744ad45a9a00d127c94e402dad9adf06cad90153",
+    "trends.js": "9b7e4141c7e5accc73347eb64bb834299ef3f1201fe152ee8776c9abc7d9d50d"
+  },
+  "browser": "156.0.8078.79",
+  "sourceHashesAtEnd": {
+    "index.html": "8432ea1a6228e71c96689770a98cdb31649878cd61d593c42ebd2a3528dd9b56",
+    "app.css": "07d14b80bbf939ab3361b7802035de0fbcc2da4e2c72ad5433d5d2c586f5a194",
+    "app.js": "9ade768d3e222eec2d8fc350744ad45a9a00d127c94e402dad9adf06cad90153",
+    "trends.js": "9b7e4141c7e5accc73347eb64bb834299ef3f1201fe152ee8776c9abc7d9d50d"
+  },
+  "testedFiles": {
+    "App/Web/index.html": "8432ea1a6228e71c96689770a98cdb31649878cd61d593c42ebd2a3528dd9b56",
+    "App/Web/app.css": "07d14b80bbf939ab3361b7802035de0fbcc2da4e2c72ad5433d5d2c586f5a194",
+    "App/Web/app.js": "9ade768d3e222eec2d8fc350744ad45a9a00d127c94e402dad9adf06cad90153",
+    "App/Web/trends.js": "9b7e4141c7e5accc73347eb64bb834299ef3f1201fe152ee8776c9abc7d9d50d"
+  },
+  "status": "PASS",
+  "assertions": 51
+}

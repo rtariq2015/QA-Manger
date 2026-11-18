@@ -90,7 +90,7 @@
 'use strict';
 (() => {
   const $ = id => document.getElementById(id);
-  const state = {snapshot:null, records:[], sortedRecords:[], recordIndex:new Map(), recordsKey:'', recordsRevision:0, reportPage:0, reportFilterKey:'', reportRenderKey:'', reportMatchKey:'', reportSearchTimer:null, exportSearchTimer:null, reviewGroupsRevision:-1, reviewGroupsCache:[], pendingRecords:[], reviewRenderRevision:-1, scanners:[], selectedId:null, page:'today', pdfViewing:false, viewerReturn:'reports', matching:[], submitted:new Map(), reviewSaves:new Map(), snapshotRequest:null, completed:new Set(), jobs:[], undo:null, update:null, fetchingSnapshot:false, reconnecting:false, initial:true, previewId:null, poll:null, heartbeat:null, token:'', dismissedError:false, years:[], observedJobs:new Set(), jobsObserved:false, polling:false, previewAbort:null, previewPage:0, previewPages:0, previewLoading:false, connectionDrafts:new Map(), connectionDraftRevision:0, connectionFormScanner:'', activeJobId:'', cancelPending:new Set(), contentExpanded:new Map(), preferenceDrafts:new Map(), preferenceDraftRevision:0, exportMatching:[], exportYears:[], yearsContext:'reports', reviewQueueOpen:false, settingsTab:'connections', theme:'Light', themePending:null, previewGeneration:0, previewRequests:new Map(), previewEntries:new Map(), previewQueue:[], previewActive:0, previewObserver:null, previewVisible:new Set(), previewCacheBytes:0, previewClock:0, previewScrollFrame:null, previewFirstImage:null, requestedPreviewPage:null, requestedPreviewRecord:'', jobWaiters:new Map(), backgroundPausePending:new Map(), lastSnapshotAt:0, backgroundSnapshotCounters:new Map(), reviewSelection:new Map(), reviewGroupsOpen:new Map(), batchSubmitting:false, undoBatch:null, selectionNotice:'', reportDate:'', exportDate:'', reportReceiptOnly:false, exportReceiptOnly:false, calendarMonth:'', calendarFocusDate:'', reviewTypeChoices:new Map(), reviewTypeExpandedKey:'', reportsView:'library', reviewEvidenceOpen:false, monthlyOpen:new Map(), monthlyModel:null, monthlyMonth:'', monthlyLoading:false, monthlyModelKey:'', monthlyError:'', monthlyAbort:null, monthlyGeneration:0, monthlyDrafts:new Map(), monthlyDraftRevision:0, monthlySetupKey:'', monthlySaveMessages:new Map(), monthlySnapshotAttemptAt:0, monthlyCache:new Map(), monthlyCacheBytes:0, monthlyModelAt:0, monthlyLoadTimer:null};
+  const state = {snapshot:null, records:[], sortedRecords:[], recordIndex:new Map(), recordsKey:'', recordsRevision:0, reportPage:0, reportFilterKey:'', reportRenderKey:'', reportMatchKey:'', reportSearchTimer:null, exportSearchTimer:null, reviewGroupsRevision:-1, reviewGroupsCache:[], pendingRecords:[], reviewRenderRevision:-1, scanners:[], selectedId:null, page:'today', pdfViewing:false, viewerReturn:'reports', matching:[], submitted:new Map(), reviewSaves:new Map(), snapshotRequest:null, completed:new Set(), jobs:[], undo:null, update:null, fetchingSnapshot:false, reconnecting:false, initial:true, previewId:null, poll:null, heartbeat:null, token:'', dismissedError:false, years:[], observedJobs:new Set(), jobsObserved:false, polling:false, previewAbort:null, previewPage:0, previewPages:0, previewLoading:false, connectionDrafts:new Map(), connectionDraftRevision:0, connectionFormScanner:'', activeJobId:'', cancelPending:new Set(), contentExpanded:new Map(), preferenceDrafts:new Map(), preferenceDraftRevision:0, exportMatching:[], exportYears:[], yearsContext:'reports', reviewQueueOpen:false, settingsTab:'connections', theme:'Light', themePending:null, previewGeneration:0, previewRequests:new Map(), previewEntries:new Map(), previewQueue:[], previewActive:0, previewObserver:null, previewVisible:new Set(), previewCacheBytes:0, previewClock:0, previewScrollFrame:null, previewFirstImage:null, requestedPreviewPage:null, requestedPreviewRecord:'', jobWaiters:new Map(), backgroundPausePending:new Map(), lastSnapshotAt:0, backgroundSnapshotCounters:new Map(), reviewSelection:new Map(), reviewGroupsOpen:new Map(), batchSubmitting:false, undoBatch:null, selectionNotice:'', reportDate:'', exportDate:'', reportReceiptOnly:false, exportReceiptOnly:false, calendarMonth:'', calendarFocusDate:'', reviewTypeChoices:new Map(), reviewTypeExpandedKey:'', reportsView:'library', reviewEvidenceOpen:false, monthlyOpen:new Map(), monthlyModel:null, monthlyMonth:'', monthlyLoading:false, monthlyModelKey:'', monthlyError:'', monthlyAbort:null, monthlyGeneration:0, monthlyDrafts:new Map(), monthlyDraftRevision:0, monthlySetupKey:'', monthlySaveMessages:new Map(), monthlySnapshotAttemptAt:0, monthlyCache:new Map(), monthlyCacheBytes:0, monthlyModelAt:0, monthlyLoadTimer:null, libraryWaiting:false, libraryRetryAt:0, libraryFailures:0};
   // Cache derived views only. Saved decisions and file verification still use the host.
   const browseCache={revision:'',filters:new Map(),filterItems:0,counts:new WeakMap(),today:null,years:null,calendar:new Map(),calendarItems:0,foldersKey:'',exportsKey:'',calendarRenderKey:''};
   const browseCacheLimits={filters:8,filterItems:80000,calendar:12,calendarItems:40000};
@@ -148,8 +148,31 @@
     if(!response.ok){const error=new Error(text(field(result,'error','message'),response.status===401?'This session has ended. Open the app again using Start CT QA Manager.cmd.':`The local app could not complete the request (${response.status}).`));error.status=response.status;throw error;}
     return result;
   }
-  function showError(error,title='Something needs attention') { $('error-title').textContent=title;$('error-message').textContent=error instanceof Error?error.message:text(error);$('error-banner').hidden=false;state.dismissedError=false; }
+  function showError(error,title='Something needs attention') { const banner=$('error-banner');delete banner.dataset.source;delete banner.dataset.loading;banner.setAttribute('role','alert');$('retry-button').textContent='Try again';$('error-title').textContent=title;$('error-message').textContent=error instanceof Error?error.message:text(error);$('error-banner').hidden=false;state.dismissedError=false; }
   function hideError(){ $('error-banner').hidden=true; }
+  function showLibraryNotice(error){
+    const banner=$('error-banner');if(!banner.hidden&&banner.dataset.source!=='library')return;
+    const loading=error.status===503&&/^The saved library is loading\./.test(error.message||'');
+    showError(loading?'Your saved reports are loading locally. This screen will update automatically. Scanner access is checked separately.':error,loading?'Opening your saved reports…':'Could not open the local library');
+    banner.dataset.source='library';banner.dataset.loading=String(loading);banner.setAttribute('role',loading?'status':'alert');if(loading)$('retry-button').textContent='Check now';
+    if(!state.snapshot&&loading){$('today-headline').textContent='Opening your saved reports…';$('today-detail').textContent='Loading the saved local library. This screen will update automatically.';}
+  }
+  function libraryLoaded(){
+    state.libraryWaiting=false;state.libraryRetryAt=0;state.libraryFailures=0;
+    const banner=$('error-banner');if(banner.dataset.source==='library'){hideError();delete banner.dataset.source;delete banner.dataset.loading;banner.setAttribute('role','alert');$('retry-button').textContent='Try again';}
+  }
+  async function retryLibrarySnapshot({manual=false}={}){
+    if(state.reconnecting||state.fetchingSnapshot||(!manual&&Date.now()<state.libraryRetryAt))return;
+    try{await refreshSnapshot({quiet:false});}
+    catch(error){
+      state.libraryFailures++;state.libraryWaiting=!state.snapshot&&error.status!==401&&error.status!==403;
+      state.libraryRetryAt=Date.now()+Math.min(5000,1000*2**Math.min(state.libraryFailures-1,3));showLibraryNotice(error);
+    }
+  }
+  async function recoverLibraryIfDue(){
+    if(!state.libraryWaiting||state.snapshot||state.reconnecting||state.fetchingSnapshot||document.visibilityState!=='visible'||Date.now()<state.libraryRetryAt)return;
+    await retryLibrarySnapshot();
+  }
   function showToast(title,message,{error=false,downloadUrl='',busy=false,job=null}={}) {
     const toast=$('job-toast');toast.hidden=false;toast.classList.toggle('error',error);$('job-title').textContent=title;$('job-message').textContent=message||'';$('job-spinner').hidden=!busy;$('job-dismiss').hidden=busy;$('job-download').hidden=!downloadUrl;$('job-progress').hidden=!busy;if(busy)renderJobProgress(job||state.jobs.find(item=>['queued','running','pending'].includes(text(field(item,'status')).toLowerCase()))||{});else state.activeJobId='';
     if(downloadUrl){try{$('job-download').href=safeUrl(downloadUrl);}catch(errorValue){$('job-download').hidden=true;showError(errorValue);}}
@@ -235,7 +258,7 @@
           if(recordsKey!==state.recordsKey){state.recordsKey=recordsKey;state.records=records.map(normalizeRecord);state.recordIndex=new Map(state.records.map(record=>[record.id,record]));state.sortedRecords=state.records.slice().sort(compareRecords);state.pendingRecords=state.sortedRecords.filter(record=>record.needsReview);state.recordsRevision++;}
           state.scanners=scanners.map(normalizeScanner);
           if(!state.selectedId||!state.records.some(record=>record.id===state.selectedId))state.selectedId=null;
-          renderSnapshot();state.initial=false;state.lastSnapshotAt=Date.now();return snapshot;
+          renderSnapshot();state.initial=false;state.lastSnapshotAt=Date.now();libraryLoaded();return snapshot;
         }finally{state.fetchingSnapshot=false;state.snapshotRequest=null;}
       })();
     }
@@ -252,7 +275,7 @@
     const month=$(prefix+'month-filter');if(month.options.length<2){for(let number=1;number<=12;number++)month.add(new Option(new Intl.DateTimeFormat(undefined,{month:'long'}).format(new Date(2026,number-1,15)),String(number).padStart(2,'0')));}
   }
   function renderSnapshot() {
-    const snapshot=state.snapshot,version=text(field(snapshot,'version'),'5.7.17');$('sidebar-version').textContent=`Version ${version}`;$('settings-version').textContent=version;
+    const snapshot=state.snapshot,version=text(field(snapshot,'version'),'5.7.18');$('sidebar-version').textContent=`Version ${version}`;$('settings-version').textContent=version;
     populateFilters('reports');populateFilters('exports');
     state.undoBatch=normalizeUndoBatch(field(snapshot,'undoBatch'));renderBatchUndo();
     reviewUndoFromSnapshot();
@@ -678,6 +701,7 @@
   async function pollJobs() {
     if(state.reconnecting||state.polling)return;state.polling=true;
     try{
+      await recoverLibraryIfDue();
       const response=await api('/api/jobs');const jobs=rows(field(response,'jobs')||response);state.jobs=jobs;
       let refresh=false;const finished=[];
       for(const job of jobs){const id=text(field(job,'id','jobId')),status=text(field(job,'status')).toLowerCase();if(['completed','failed','cancelled','succeeded','success'].includes(status)&&!state.observedJobs.has(id)){if(state.jobsObserved||isBackgroundJob(job)||isFilingAction(text(field(job,'action'))))refresh=true;state.observedJobs.add(id);}}state.jobsObserved=true;
@@ -756,7 +780,7 @@
     for(const button of document.querySelectorAll('[data-settings-tab]')){button.addEventListener('click',()=>showSettingsTab(button.dataset.settingsTab));button.addEventListener('keydown',event=>{if(!['ArrowDown','ArrowUp','ArrowRight','ArrowLeft','Home','End'].includes(event.key))return;event.preventDefault();const buttons=[...document.querySelectorAll('[data-settings-tab]')];let index=buttons.indexOf(button);index=event.key==='Home'?0:event.key==='End'?buttons.length-1:['ArrowDown','ArrowRight'].includes(event.key)?(index+1)%buttons.length:(index-1+buttons.length)%buttons.length;buttons[index].focus();showSettingsTab(buttons[index].dataset.settingsTab);});}showSettingsTab(state.settingsTab);
     $('open-classic-button').addEventListener('click',()=>runAction('OpenClassic'));$('restore-button').addEventListener('click',()=>runAction('Restore'));$('backup-button').addEventListener('click',()=>runAction('Backup'));$('diagnostics-button').addEventListener('click',()=>runAction('Diagnostics'));$('print-diagnostics-button').addEventListener('click',()=>runAction('PrintDiagnostics'));$('analyze-button').addEventListener('click',()=>runAction('Analyze'));$('read-backlog-button').addEventListener('click',()=>runAction('AnalyzeBacklog',{scope:'all'}));$('organize-pending-button').addEventListener('click',()=>runAction('AnalyzeBacklog',{scope:'pending'}));$('shutdown-button').addEventListener('click',()=>{if(!isWorking())runAction('Shutdown');});
     $('choose-update-button').addEventListener('click',()=>$('update-file').click());$('update-file').addEventListener('change',()=>chooseUpdate($('update-file').files[0]));$('install-update-button').addEventListener('click',()=>{if(state.update)runAction('InstallPreparedUpdate',{updateId:state.update.id});});const zone=$('update-drop-zone');zone.addEventListener('dragover',event=>{event.preventDefault();if(!isWorking())zone.classList.add('drag-over');});zone.addEventListener('dragleave',()=>zone.classList.remove('drag-over'));zone.addEventListener('drop',event=>{event.preventDefault();zone.classList.remove('drag-over');if(isWorking())return;const files=[...event.dataTransfer.files];if(files.length!==1){showError('Choose one update ZIP at a time.');return;}chooseUpdate(files[0]);});
-    $('job-cancel').addEventListener('click',cancelActiveJob);$('retry-button').addEventListener('click',()=>{hideError();refreshSnapshot({quiet:false}).catch(showError);});$('dismiss-error').addEventListener('click',hideError);$('job-dismiss').addEventListener('click',()=>{$('job-toast').hidden=true;});$('help-button').addEventListener('click',()=>$('help-dialog').showModal());for(const id of ['close-help','help-done'])$(id).addEventListener('click',()=>$('help-dialog').close());
+    $('job-cancel').addEventListener('click',cancelActiveJob);$('retry-button').addEventListener('click',()=>{hideError();retryLibrarySnapshot({manual:true});});$('dismiss-error').addEventListener('click',hideError);$('job-dismiss').addEventListener('click',()=>{$('job-toast').hidden=true;});$('help-button').addEventListener('click',()=>$('help-dialog').showModal());for(const id of ['close-help','help-done'])$(id).addEventListener('click',()=>$('help-dialog').close());
     for(const id of ['export-button','connect-button','import-profile-button','backup-button','restore-button','save-scanner-options','save-report-formats','analyze-button','read-backlog-button','organize-pending-button','choose-update-button','install-update-button','open-classic-button','shutdown-button','today-folder-button','report-folder-button'])$(id).dataset.mutation='true';document.querySelectorAll('#archive-form button,#preferences-form button').forEach(button=>button.dataset.mutation='true');window.addEventListener('beforeunload',clearNativePreviewCache);
   }
   async function boot(){
@@ -764,8 +788,8 @@
     bind();if($('display-density'))$('display-density').addEventListener('change',event=>applyDensity(event.target.value));const hash=new URLSearchParams(location.hash.replace(/^#/,'')),token=hash.get('session');
     if(token){state.token=token;try{sessionStorage.setItem('ctqa.session',token);}catch{}history.replaceState(null,'',location.pathname+location.search);}else{try{state.token=sessionStorage.getItem('ctqa.session')||'';}catch{}}
     if(!state.token){$('today-headline').textContent='Open your local workspace';$('today-detail').textContent='Start the program with Start CT QA Manager.cmd. This HTML interface connects to its local helper.';showError('Open Start CT QA Manager.cmd from the complete extracted application folder. A browser page by itself cannot access your report library.','Local app is not connected');return;}
-    try{await api('/api/session',{method:'POST'});await api('/api/heartbeat',{method:'POST'});let loaded=false;for(let attempt=0;attempt<30;attempt++){try{await refreshSnapshot();loaded=true;break;}catch(error){if(error.status!==503&&attempt>1)throw error;await new Promise(resolve=>setTimeout(resolve,1000));}}if(!loaded)throw new Error('The saved library is taking longer than expected. Try again in a moment.');hideError();}
-    catch(error){showError(error,'Could not open the local library');}
+    try{await api('/api/session',{method:'POST'});await api('/api/heartbeat',{method:'POST'});state.libraryWaiting=true;await retryLibrarySnapshot({manual:true});}
+    catch(error){showLibraryNotice(error);if(error.status===401||error.status===403)return;}
     state.poll=setInterval(pollJobs,1300);state.heartbeat=setInterval(()=>api('/api/heartbeat',{method:'POST'}).catch(()=>{}),30000);pollJobs();
   }
   boot().catch(error=>showError(error,'The workspace could not start'));
